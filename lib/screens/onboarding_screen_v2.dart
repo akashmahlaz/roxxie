@@ -67,7 +67,8 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
         subtitle: 'Verified by 12 Venues',
       ),
       imageAlignment: Alignment.topCenter, // Fix person cutoff
-      floatingCardBottomOffset: -15, // Position card lower so stars are visible
+      floatingCardBottomOffset:180, // Position card higher so stars are visible
+      floatingCardLeftOffset: 60, // Shift to the right
     ),
   ];
 
@@ -489,9 +490,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
         // Floating card
         if (page.floatingCard != null)
           Positioned(
-            left: 16,
+            left: page.floatingCardLeftOffset ?? 16,
             bottom: page.floatingCardBottomOffset ?? 20,
-            right: 50,
+            right: page.floatingCardRightOffset ?? 50,
             child: AnimatedBuilder(
               animation: _floatAnimation,
               builder: (context, child) {
@@ -795,6 +796,8 @@ class OnboardingPageData {
   final FloatingCardData? floatingCard;
   final Alignment? imageAlignment;
   final double? floatingCardBottomOffset;
+  final double? floatingCardLeftOffset;
+  final double? floatingCardRightOffset;
 
   OnboardingPageData({
     required this.imagePath,
@@ -805,6 +808,8 @@ class OnboardingPageData {
     this.floatingCard,
     this.imageAlignment,
     this.floatingCardBottomOffset,
+    this.floatingCardLeftOffset,
+    this.floatingCardRightOffset,
   });
 }
 
