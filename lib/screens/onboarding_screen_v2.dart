@@ -67,6 +67,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
         subtitle: 'Verified by 12 Venues',
       ),
       imageAlignment: Alignment.topCenter, // Fix person cutoff
+      floatingCardBottomOffset: -15, // Position card lower so stars are visible
     ),
   ];
 
@@ -315,23 +316,24 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+          padding: const EdgeInsets.fromLTRB(24, 60, 24, 16),
           child: Column(
             children: [
               // Hero image card
-              Expanded(flex: 55, child: _buildHeroImageCard(page, index)),
+              Expanded(flex: 58, child: _buildHeroImageCard(page, index)),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
 
               // Text content (centered)
               Expanded(
-                flex: 35,
+                flex: 42,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Split-color title
                     _buildSplitTitle(page.titleWhite, page.titleAccent),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // Description
                     Padding(
@@ -341,8 +343,8 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 16,
-                          height: 1.5,
+                          fontSize: 15,
+                          height: 1.4,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -353,7 +355,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     // Page indicators (centered)
                     _buildPageIndicators(),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // CTA Button
                     _buildPremiumButton(
@@ -488,7 +490,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
         if (page.floatingCard != null)
           Positioned(
             left: 16,
-            bottom: 20,
+            bottom: page.floatingCardBottomOffset ?? 20,
             right: 50,
             child: AnimatedBuilder(
               animation: _floatAnimation,
@@ -792,6 +794,7 @@ class OnboardingPageData {
   final bool isFullBleed;
   final FloatingCardData? floatingCard;
   final Alignment? imageAlignment;
+  final double? floatingCardBottomOffset;
 
   OnboardingPageData({
     required this.imagePath,
@@ -801,6 +804,7 @@ class OnboardingPageData {
     this.isFullBleed = false,
     this.floatingCard,
     this.imageAlignment,
+    this.floatingCardBottomOffset,
   });
 }
 
