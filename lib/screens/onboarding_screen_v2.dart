@@ -5,15 +5,11 @@ import 'role_selection_screen.dart';
 
 /// 🎠 PREMIUM ONBOARDING SCREEN V2
 ///
-/// Immersive carousel with full-bleed imagery and floating cards
+/// Immersive carousel with full-bleed imagery
 /// Inspired by world-class music apps
 ///
-/// Features:
-/// - Full-screen hero images with gradient overlays
-/// - Floating glassmorphic info cards
-/// - Split-color headlines
-/// - Animated page indicators with glow
-/// - Premium pill-shaped buttons
+/// Screen 1: Full-bleed hero with FAB navigation
+/// Screen 2-3: Card-based with floating info cards
 
 class OnboardingScreenV2 extends StatefulWidget {
   const OnboardingScreenV2({super.key});
@@ -27,17 +23,28 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  late AnimationController _fadeController;
   late AnimationController _floatController;
   late Animation<double> _floatAnimation;
 
   final List<OnboardingPageData> _pages = [
+    // First screen - Full bleed, no floating card
     OnboardingPageData(
       imagePath: 'assets/images/onboarding/image1.png',
       titleWhite: 'Unleash',
       titleAccent: 'Your Sound',
       description:
           'Connect with the perfect venues and let the world hear you. No agents, just music.',
+      isFullBleed: true, // Full-bleed layout
+      floatingCard: null, // No floating card on first screen
+    ),
+    // Second screen - Card with floating info
+    OnboardingPageData(
+      imagePath: 'assets/images/onboarding/image2.png',
+      titleWhite: 'Match with',
+      titleAccent: 'Local Venues',
+      description:
+          'Stop cold-calling. Let Roxxie pair you with the best spots in town based on your genre and availability.',
+      isFullBleed: false,
       floatingCard: FloatingCardData(
         icon: Icons.location_on_rounded,
         title: 'The Blue Note Jazz Club',
@@ -45,43 +52,27 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
         showCheckmark: true,
       ),
     ),
+    // Third screen - Card with floating info
     OnboardingPageData(
-      imagePath: 'assets/images/onboarding/image2.png',
-      titleWhite: 'Match with',
-      titleAccent: 'Local Venues',
+      imagePath: 'assets/images/onboarding/image3.png',
+      titleWhite: 'Build Your',
+      titleAccent: 'Fame',
       description:
-          'Stop cold-calling. Let Roxxie pair you with the best spots in town based on your genre and availability.',
+          'Automatic invoicing, verified reviews, and a portfolio that grows with every gig.',
+      isFullBleed: false,
       floatingCard: FloatingCardData(
         icon: Icons.verified_rounded,
         iconColor: AppColors.electricViolet,
         title: 'Top Rated Artist',
         subtitle: 'Verified by 12 Venues',
       ),
-    ),
-    OnboardingPageData(
-      imagePath: 'assets/images/onboarding/image3.png',
-      titleWhite: 'Build Your',
-      titleAccent: 'Fame',
-      description:
-          'Automatic invoicing, verified reviews, and a portfolio that grows with every gig. Let the venues come to you.',
-      floatingCard: FloatingCardData(
-        icon: Icons.calendar_today_rounded,
-        iconColor: AppColors.neonMagenta,
-        title: 'Gig Request',
-        subtitle: 'The Jazz Corner • Pending',
-        showProgress: true,
-      ),
+      imageAlignment: Alignment.topCenter, // Fix person cutoff
     ),
   ];
 
   @override
   void initState() {
     super.initState();
-
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
 
     _floatController = AnimationController(
       vsync: this,
@@ -96,7 +87,6 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   @override
   void dispose() {
     _pageController.dispose();
-    _fadeController.dispose();
     _floatController.dispose();
     super.dispose();
   }
@@ -142,35 +132,38 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    final isFirstPage = _currentPage == 0;
     final isLastPage = _currentPage == _pages.length - 1;
 
     return Scaffold(
       backgroundColor: AppColors.obsidian,
       body: Stack(
         children: [
-          // Background gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1A1020), // Dark purple tint
-                  AppColors.obsidian,
-                  AppColors.obsidian,
-                ],
-                stops: [0.0, 0.4, 1.0],
-              ),
-            ),
+          // PageView
+          PageView.builder(
+            controller: _pageController,
+            itemCount: _pages.length,
+            onPageChanged: (index) {
+              setState(() => _currentPage = index);
+            },
+            itemBuilder: (context, index) {
+              final page = _pages[index];
+              if (page.isFullBleed) {
+                return _buildFullBleedPage(page, index);
+              } else {
+                return _buildCardPage(page, index);
+              }
+            },
           ),
 
-          // Main content
-          SafeArea(
-            child: Column(
-              children: [
-                // Skip button row
-                Padding(
+          // Top navigation (Skip button) - only show on non-first pages
+          if (!isFirstPage)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 12,
@@ -178,24 +171,15 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Back button (visible after first page)
-                      AnimatedOpacity(
-                        opacity: _currentPage > 0 ? 1.0 : 0.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: IconButton(
-                          onPressed: _currentPage > 0
-                              ? () {
-                                  _pageController.previousPage(
-                                    duration: const Duration(milliseconds: 500),
-                                    curve: Curves.easeOutCubic,
-                                  );
-                                }
-                              : null,
-                          icon: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                      // Back button
+                      _buildGlassIconButton(
+                        icon: Icons.arrow_back_rounded,
+                        onPressed: () {
+                          _pageController.previousPage(
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeOutCubic,
+                          );
+                        },
                       ),
                       // Skip button
                       TextButton(
@@ -212,117 +196,206 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     ],
                   ),
                 ),
-
-                // PageView with hero images
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _pages.length,
-                    onPageChanged: (index) {
-                      setState(() => _currentPage = index);
-                    },
-                    itemBuilder: (context, index) {
-                      return _buildPage(_pages[index], index);
-                    },
-                  ),
-                ),
-
-                // Bottom section with indicators and button
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-                  child: Column(
-                    children: [
-                      // Page indicators
-                      _buildPageIndicators(),
-
-                      const SizedBox(height: 32),
-
-                      // CTA Button
-                      _buildPremiumButton(
-                        text: isLastPage ? 'Get Started' : 'Next',
-                        onPressed: _nextPage,
-                      ),
-
-                      // Login link on last page
-                      if (isLastPage) ...[
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Already have an account? ',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                // TODO: Navigate to login
-                              },
-                              child: Text(
-                                'Log in',
-                                style: TextStyle(
-                                  color: AppColors.electricViolet,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildPage(OnboardingPageData page, int index) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          // Hero image container
-          Expanded(flex: 55, child: _buildHeroImageCard(page, index)),
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🌟 FULL-BLEED PAGE (First Screen)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-          const SizedBox(height: 32),
+  Widget _buildFullBleedPage(OnboardingPageData page, int index) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Full-screen background image
+        Image.asset(
+          page.imagePath,
+          fit: BoxFit.cover,
+          alignment: page.imageAlignment ?? Alignment.center,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.electricViolet.withOpacity(0.3),
+                    AppColors.obsidian,
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
 
-          // Text content
-          Expanded(
-            flex: 35,
+        // Gradient overlay for text readability
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.transparent,
+                Colors.black.withOpacity(0.4),
+                Colors.black.withOpacity(0.85),
+                Colors.black.withOpacity(0.95),
+              ],
+              stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
+            ),
+          ),
+        ),
+
+        // Content at bottom
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Split-color title
-                _buildSplitTitle(page.titleWhite, page.titleAccent),
+                const Spacer(),
+
+                // Split-color title (left-aligned)
+                _buildSplitTitleLeftAligned(page.titleWhite, page.titleAccent),
 
                 const SizedBox(height: 16),
 
-                // Description
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    page.description,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
-                      height: 1.5,
-                      fontWeight: FontWeight.w400,
-                    ),
+                // Description (left-aligned)
+                Text(
+                  page.description,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 16,
+                    height: 1.5,
+                    fontWeight: FontWeight.w400,
                   ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Bottom row: Page indicators + FAB
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Page indicators (left)
+                    _buildPageIndicators(),
+
+                    // Glassmorphic FAB (right)
+                    _buildGlassFAB(onPressed: _nextPage),
+                  ],
                 ),
               ],
             ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎴 CARD-BASED PAGE (Screen 2 & 3)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildCardPage(OnboardingPageData page, int index) {
+    final isLastPage = index == _pages.length - 1;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1A1020), AppColors.obsidian, AppColors.obsidian],
+          stops: [0.0, 0.3, 1.0],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+          child: Column(
+            children: [
+              // Hero image card
+              Expanded(flex: 55, child: _buildHeroImageCard(page, index)),
+
+              const SizedBox(height: 32),
+
+              // Text content (centered)
+              Expanded(
+                flex: 35,
+                child: Column(
+                  children: [
+                    // Split-color title
+                    _buildSplitTitle(page.titleWhite, page.titleAccent),
+
+                    const SizedBox(height: 16),
+
+                    // Description
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        page.description,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
+                          height: 1.5,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // Page indicators (centered)
+                    _buildPageIndicators(),
+
+                    const SizedBox(height: 24),
+
+                    // CTA Button
+                    _buildPremiumButton(
+                      text: isLastPage ? 'Get Started' : 'Next',
+                      onPressed: _nextPage,
+                    ),
+
+                    // Login link on last page
+                    if (isLastPage) ...[
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Already have an account? ',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              // TODO: Navigate to login
+                            },
+                            child: Text(
+                              'Log in',
+                              style: TextStyle(
+                                color: AppColors.electricViolet,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -349,10 +422,36 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Image with fallback
-                _buildImageWithFallback(page.imagePath),
+                // Image
+                Image.asset(
+                  page.imagePath,
+                  fit: BoxFit.cover,
+                  alignment: page.imageAlignment ?? Alignment.center,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.electricViolet.withOpacity(0.4),
+                            AppColors.neonMagenta.withOpacity(0.3),
+                            AppColors.obsidian,
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.music_note_rounded,
+                          size: 80,
+                          color: AppColors.textSecondary.withOpacity(0.5),
+                        ),
+                      ),
+                    );
+                  },
+                ),
 
-                // Gradient overlay for text readability
+                // Gradient overlay
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -360,22 +459,21 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.3),
-                        Colors.black.withOpacity(0.6),
+                        Colors.black.withOpacity(0.4),
                       ],
-                      stops: const [0.4, 0.7, 1.0],
+                      stops: const [0.5, 1.0],
                     ),
                   ),
                 ),
 
-                // Subtle purple tint overlay
+                // Purple tint
                 Container(
                   decoration: BoxDecoration(
                     gradient: RadialGradient(
-                      center: Alignment.topRight,
+                      center: Alignment.topCenter,
                       radius: 1.5,
                       colors: [
-                        AppColors.electricViolet.withOpacity(0.2),
+                        AppColors.electricViolet.withOpacity(0.15),
                         Colors.transparent,
                       ],
                     ),
@@ -391,7 +489,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
           Positioned(
             left: 16,
             bottom: 20,
-            right: 60,
+            right: 50,
             child: AnimatedBuilder(
               animation: _floatAnimation,
               builder: (context, child) {
@@ -406,48 +504,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
     );
   }
 
-  Widget _buildImageWithFallback(String imagePath) {
-    return Image.asset(
-      imagePath,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        // Fallback gradient with icon when image not found
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.electricViolet.withOpacity(0.4),
-                AppColors.neonMagenta.withOpacity(0.3),
-                AppColors.obsidian,
-              ],
-            ),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.music_note_rounded,
-                  size: 80,
-                  color: AppColors.textSecondary.withOpacity(0.5),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Add your image',
-                  style: TextStyle(
-                    color: AppColors.textSecondary.withOpacity(0.7),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🧩 REUSABLE COMPONENTS
+  // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildFloatingInfoCard(FloatingCardData data) {
     return ClipRRect(
@@ -496,42 +555,13 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       ),
                     ),
                     const SizedBox(height: 2),
-                    if (data.showProgress) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(2),
-                              child: LinearProgressIndicator(
-                                value: 0.6,
-                                backgroundColor: Colors.white.withOpacity(0.2),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.neonMagenta,
-                                ),
-                                minHeight: 3,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Pending',
-                            style: TextStyle(
-                              color: AppColors.neonMagenta,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      data.subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12,
                       ),
-                    ] else
-                      Text(
-                        data.subtitle,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
+                    ),
                   ],
                 ),
               ),
@@ -583,34 +613,121 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
     );
   }
 
+  Widget _buildSplitTitleLeftAligned(String white, String accent) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          white,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 42,
+            fontWeight: FontWeight.w800,
+            fontStyle: FontStyle.italic,
+            height: 1.0,
+          ),
+        ),
+        Text(
+          accent,
+          style: TextStyle(
+            color: AppColors.electricViolet,
+            fontSize: 42,
+            fontWeight: FontWeight.w800,
+            fontStyle: FontStyle.italic,
+            height: 1.0,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPageIndicators() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: List.generate(_pages.length, (index) {
         final isActive = index == _currentPage;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
           width: isActive ? 28 : 8,
-          height: 8,
+          height: 4,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(2),
             color: isActive
                 ? AppColors.electricViolet
-                : AppColors.textSecondary.withOpacity(0.3),
+                : AppColors.textSecondary.withOpacity(0.4),
             boxShadow: isActive
                 ? [
                     BoxShadow(
                       color: AppColors.electricViolet.withOpacity(0.5),
-                      blurRadius: 12,
-                      spreadRadius: 1,
+                      blurRadius: 8,
                     ),
                   ]
                 : null,
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildGlassFAB({required VoidCallback onPressed}) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.electricViolet,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.electricViolet.withOpacity(0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.arrow_forward_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.1),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.15),
+                width: 1,
+              ),
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
     );
   }
 
@@ -629,17 +746,12 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
             end: Alignment.bottomRight,
             colors: [AppColors.electricViolet, AppColors.deepViolet],
           ),
-          borderRadius: BorderRadius.circular(29), // Pill shape
+          borderRadius: BorderRadius.circular(29),
           boxShadow: [
             BoxShadow(
               color: AppColors.electricViolet.withOpacity(0.4),
               blurRadius: 20,
               offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: AppColors.electricViolet.withOpacity(0.2),
-              blurRadius: 40,
-              offset: const Offset(0, 16),
             ),
           ],
         ),
@@ -677,14 +789,18 @@ class OnboardingPageData {
   final String titleWhite;
   final String titleAccent;
   final String description;
+  final bool isFullBleed;
   final FloatingCardData? floatingCard;
+  final Alignment? imageAlignment;
 
   OnboardingPageData({
     required this.imagePath,
     required this.titleWhite,
     required this.titleAccent,
     required this.description,
+    this.isFullBleed = false,
     this.floatingCard,
+    this.imageAlignment,
   });
 }
 
