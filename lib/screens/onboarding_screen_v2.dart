@@ -305,26 +305,8 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
       child: SafeArea(
         child: Column(
           children: [
-            // Skip button at top
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: _goToRoleSelection,
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        color: const Color(0xFFC89393),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Spacer for top navigation (back + skip buttons are in global overlay)
+            const SizedBox(height: 56),
 
             // Main content
             Expanded(
@@ -644,7 +626,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                           // Page indicators
                           _buildPageIndicators(),
 
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 70),
 
                           // Continue button
                           _buildPrimaryButton(
