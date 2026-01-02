@@ -641,6 +641,11 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                           ),
                           const SizedBox(height: 20),
 
+                          // Page indicators
+                          _buildPageIndicators(),
+
+                          const SizedBox(height: 24),
+
                           // Continue button
                           _buildPrimaryButton(
                             text: 'Continue',
