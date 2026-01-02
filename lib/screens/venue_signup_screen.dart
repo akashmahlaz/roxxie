@@ -90,8 +90,10 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF211111),
+      backgroundColor: AppColors.background(brightness),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeController,
@@ -112,12 +114,12 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.surfaceSecondary(brightness),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.arrow_back_rounded,
-                            color: Colors.white,
+                            color: AppColors.text(brightness),
                             size: 22,
                           ),
                         ),
@@ -134,7 +136,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                           Text(
                             'GigMatch',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.text(brightness),
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
@@ -189,7 +191,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                       children: [
                         TextSpan(
                           text: "Let's put you ",
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.text(brightness)),
                         ),
                         TextSpan(
                           text: 'on the map.',
@@ -205,7 +207,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                     'Create your venue profile to find talented artists',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: AppColors.textSec(brightness),
                       fontSize: 15,
                     ),
                   ),
@@ -309,7 +311,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: Colors.white.withOpacity(0.5),
+                        color: AppColors.textTert(brightness),
                         size: 22,
                       ),
                       onPressed: () {
@@ -338,7 +340,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         gradient: LinearGradient(
                           colors: [AppColors.crimson, const Color(0xFFB91C1C)],
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.crimson.withOpacity(0.4),
@@ -379,7 +381,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                       Text(
                         'Already have an account?  ',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: AppColors.textSec(brightness),
                           fontSize: 14,
                         ),
                       ),
@@ -410,9 +412,11 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: AppColors.surfaceSecondary(
+                        brightness,
+                      ).withOpacity(0.5),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(color: AppColors.border(brightness)),
                     ),
                     child: Row(
                       children: [
@@ -420,12 +424,14 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.iconSecondary(
+                              brightness,
+                            ).withOpacity(0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.headphones_rounded,
-                            color: Colors.white.withOpacity(0.7),
+                            color: AppColors.icon(brightness),
                             size: 20,
                           ),
                         ),
@@ -437,7 +443,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                               Text(
                                 'Looking for gigs instead?',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: AppColors.textSec(brightness),
                                   fontSize: 14,
                                 ),
                               ),
@@ -465,7 +471,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         ),
                         Icon(
                           Icons.arrow_forward_ios_rounded,
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppColors.textTert(brightness),
                           size: 16,
                         ),
                       ],
@@ -479,7 +485,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                     'By signing up, you agree to our Terms of Service\nand Privacy Policy',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.35),
+                      color: AppColors.textTert(brightness),
                       fontSize: 12,
                       height: 1.5,
                     ),
@@ -504,48 +510,50 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
     Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
+    final brightness = Theme.of(context).brightness;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
       validator: validator,
-      style: TextStyle(color: Colors.white, fontSize: 16),
+      style: TextStyle(color: AppColors.text(brightness), fontSize: 16),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.5),
+          color: AppColors.textTert(brightness),
           fontSize: 16,
         ),
         prefixIcon: Icon(
           prefixIcon,
-          color: Colors.white.withOpacity(0.5),
+          color: AppColors.textTert(brightness),
           size: 22,
         ),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.08),
+        fillColor: AppColors.inputFill(brightness),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: AppColors.border(brightness)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: AppColors.border(brightness)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: AppColors.crimson, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.red.shade400),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
         ),
         errorStyle: TextStyle(color: Colors.red.shade300, fontSize: 12),

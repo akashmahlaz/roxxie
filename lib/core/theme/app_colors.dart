@@ -254,4 +254,101 @@ class AppColors {
   /// Super like - Star
   static const Color superLike = Color(0xFFF59E0B);
   static const Color superLikeGlow = Color(0x66F59E0B);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ☀️ LIGHT MODE SURFACES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Light mode background
+  static const Color lightBackground = Color(0xFFF9F9F9);
+
+  /// Light mode surface (cards, containers)
+  static const Color lightSurface = Color(0xFFFFFFFF);
+
+  /// Light mode secondary surface
+  static const Color lightSurfaceSecondary = Color(0xFFF3F4F6);
+
+  /// Light mode border color
+  static const Color lightBorder = Color(0xFFE5E7EB);
+
+  /// Light mode divider
+  static const Color lightDivider = Color(0xFFE5E7EB);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📝 LIGHT MODE TEXT COLORS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Light mode primary text
+  static const Color lightTextPrimary = Color(0xFF111827);
+
+  /// Light mode secondary text
+  static const Color lightTextSecondary = Color(0xFF6B7280);
+
+  /// Light mode tertiary text
+  static const Color lightTextTertiary = Color(0xFF9CA3AF);
+
+  /// Light mode disabled text
+  static const Color lightTextDisabled = Color(0xFFD1D5DB);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎨 ADAPTIVE COLOR HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Get background color based on brightness
+  static Color background(Brightness brightness) =>
+      brightness == Brightness.dark ? obsidian : lightBackground;
+
+  /// Get surface color based on brightness
+  static Color surface(Brightness brightness) =>
+      brightness == Brightness.dark ? charcoal : lightSurface;
+
+  /// Get secondary surface based on brightness
+  static Color surfaceSecondary(Brightness brightness) =>
+      brightness == Brightness.dark ? graphite : lightSurfaceSecondary;
+
+  /// Get card background color (warmer dark tone)
+  static Color cardBackground(Brightness brightness) =>
+      brightness == Brightness.dark ? const Color(0xFF2A1A1A) : lightSurface;
+
+  /// Get primary text color based on brightness
+  static Color text(Brightness brightness) =>
+      brightness == Brightness.dark ? textPrimary : lightTextPrimary;
+
+  /// Get secondary text color based on brightness
+  static Color textSec(Brightness brightness) =>
+      brightness == Brightness.dark ? textSecondary : lightTextSecondary;
+
+  /// Get tertiary text color based on brightness
+  static Color textTert(Brightness brightness) =>
+      brightness == Brightness.dark ? textTertiary : lightTextTertiary;
+
+  /// Get border color based on brightness
+  static Color border(Brightness brightness) => brightness == Brightness.dark
+      ? Colors.white.withOpacity(0.1)
+      : lightBorder;
+
+  /// Get divider color based on brightness
+  static Color divider(Brightness brightness) => brightness == Brightness.dark
+      ? Colors.white.withOpacity(0.1)
+      : lightDivider;
+
+  /// Get icon color based on brightness
+  static Color icon(Brightness brightness) => brightness == Brightness.dark
+      ? Colors.white.withOpacity(0.7)
+      : const Color(0xFF6B7280);
+
+  /// Get icon secondary color based on brightness
+  static Color iconSecondary(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? Colors.white.withOpacity(0.5)
+      : const Color(0xFF9CA3AF);
+
+  /// Get input fill color based on brightness
+  static Color inputFill(Brightness brightness) => brightness == Brightness.dark
+      ? Colors.white.withOpacity(0.08)
+      : lightSurface;
+
+  /// Get sheet/modal background based on brightness
+  static Color sheetBackground(Brightness brightness) =>
+      brightness == Brightness.dark ? const Color(0xFF211111) : lightSurface;
 }

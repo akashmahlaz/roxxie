@@ -72,10 +72,12 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildSignupTypeSheet() {
+    final brightness = Theme.of(context).brightness;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF211111),
+        color: AppColors.sheetBackground(brightness),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -85,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen>
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.textTert(brightness),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -93,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen>
           Text(
             'Sign up as...',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.text(brightness),
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
@@ -136,14 +138,16 @@ class _LoginScreenState extends State<LoginScreen>
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final brightness = Theme.of(context).brightness;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: AppColors.surfaceSecondary(brightness).withOpacity(0.5),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: AppColors.border(brightness)),
         ),
         child: Row(
           children: [
@@ -164,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.text(brightness),
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -172,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: AppColors.textSec(brightness),
                       fontSize: 13,
                     ),
                   ),
@@ -181,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             Icon(
               Icons.arrow_forward_ios_rounded,
-              color: Colors.white.withOpacity(0.5),
+              color: AppColors.textSec(brightness),
               size: 18,
             ),
           ],
@@ -192,8 +196,10 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: AppColors.background(brightness),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeController,
@@ -214,12 +220,12 @@ class _LoginScreenState extends State<LoginScreen>
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.05),
+                          color: AppColors.surfaceSecondary(brightness),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.arrow_back_rounded,
-                          color: Colors.black87,
+                          color: AppColors.text(brightness),
                           size: 22,
                         ),
                       ),
@@ -238,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen>
                     'Welcome back!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.black87,
+                      color: AppColors.text(brightness),
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
                       height: 1.2,
@@ -250,7 +256,10 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     'Log in to continue',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54, fontSize: 16),
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 16,
+                    ),
                   ),
 
                   const SizedBox(height: 40),
@@ -285,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen>
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: Colors.black38,
+                        color: AppColors.textTert(brightness),
                         size: 22,
                       ),
                       onPressed: () {
@@ -338,7 +347,7 @@ class _LoginScreenState extends State<LoginScreen>
                         gradient: LinearGradient(
                           colors: [AppColors.crimson, const Color(0xFFB91C1C)],
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.crimson.withOpacity(0.4),
@@ -375,15 +384,22 @@ class _LoginScreenState extends State<LoginScreen>
                   // Divider
                   Row(
                     children: [
-                      Expanded(child: Divider(color: Colors.black12)),
+                      Expanded(
+                        child: Divider(color: AppColors.divider(brightness)),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'or continue with',
-                          style: TextStyle(color: Colors.black38, fontSize: 13),
+                          style: TextStyle(
+                            color: AppColors.textTert(brightness),
+                            fontSize: 13,
+                          ),
                         ),
                       ),
-                      Expanded(child: Divider(color: Colors.black12)),
+                      Expanded(
+                        child: Divider(color: AppColors.divider(brightness)),
+                      ),
                     ],
                   ),
 
@@ -419,7 +435,10 @@ class _LoginScreenState extends State<LoginScreen>
                     children: [
                       Text(
                         "Don't have an account?  ",
-                        style: TextStyle(color: Colors.black54, fontSize: 14),
+                        style: TextStyle(
+                          color: AppColors.textSec(brightness),
+                          fontSize: 14,
+                        ),
                       ),
                       GestureDetector(
                         onTap: _navigateToSignup,
@@ -479,41 +498,50 @@ class _LoginScreenState extends State<LoginScreen>
     Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
+    final brightness = Theme.of(context).brightness;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
       validator: validator,
-      style: TextStyle(color: Colors.black87, fontSize: 16),
+      style: TextStyle(color: AppColors.text(brightness), fontSize: 16),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.black38, fontSize: 16),
-        prefixIcon: Icon(prefixIcon, color: Colors.black38, size: 22),
+        hintStyle: TextStyle(
+          color: AppColors.textTert(brightness),
+          fontSize: 16,
+        ),
+        prefixIcon: Icon(
+          prefixIcon,
+          color: AppColors.textTert(brightness),
+          size: 22,
+        ),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.inputFill(brightness),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.black.withOpacity(0.08)),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: AppColors.border(brightness)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.black.withOpacity(0.08)),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: AppColors.border(brightness)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: AppColors.crimson, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.red.shade400),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
         ),
       ),
@@ -526,34 +554,36 @@ class _LoginScreenState extends State<LoginScreen>
     required VoidCallback onTap,
     bool isApple = false,
   }) {
+    final brightness = Theme.of(context).brightness;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 52,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black.withOpacity(0.08)),
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border(brightness)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (isApple)
-              Icon(Icons.apple, color: Colors.black87, size: 24)
+              Icon(Icons.apple, color: AppColors.text(brightness), size: 24)
             else
               Text(
                 icon,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: AppColors.text(brightness),
                 ),
               ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: Colors.black87,
+                color: AppColors.text(brightness),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),

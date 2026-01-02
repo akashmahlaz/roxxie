@@ -99,6 +99,8 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
   }
 
   void _showGenrePicker() {
+    final brightness = Theme.of(context).brightness;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -106,7 +108,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.6,
         decoration: BoxDecoration(
-          color: const Color(0xFF211111),
+          color: AppColors.sheetBackground(brightness),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -116,7 +118,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
+                color: AppColors.textTert(brightness),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -124,7 +126,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
             Text(
               'Select Your Genre',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.text(brightness),
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
@@ -148,7 +150,9 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.crimson.withOpacity(0.2)
-                            : Colors.white.withOpacity(0.05),
+                            : AppColors.surfaceSecondary(
+                                brightness,
+                              ).withOpacity(0.5),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
@@ -161,7 +165,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                           Text(
                             genre,
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.text(brightness),
                               fontSize: 16,
                               fontWeight: isSelected
                                   ? FontWeight.w600
@@ -190,8 +194,10 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF211111),
+      backgroundColor: AppColors.background(brightness),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeController,
@@ -212,12 +218,12 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.surfaceSecondary(brightness),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.arrow_back_rounded,
-                            color: Colors.white,
+                            color: AppColors.text(brightness),
                             size: 22,
                           ),
                         ),
@@ -234,7 +240,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                           Text(
                             'GigMatch',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.text(brightness),
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
@@ -282,7 +288,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                     'Create Artist Profile',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.text(brightness),
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
                       height: 1.2,
@@ -295,7 +301,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                     'Get discovered by venues looking for talent',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: AppColors.textSec(brightness),
                       fontSize: 15,
                     ),
                   ),
@@ -324,17 +330,15 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                       height: 56,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
+                        color: AppColors.inputFill(brightness),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
-                        ),
+                        border: Border.all(color: AppColors.border(brightness)),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.music_note_rounded,
-                            color: Colors.white.withOpacity(0.5),
+                            color: AppColors.textTert(brightness),
                             size: 22,
                           ),
                           const SizedBox(width: 12),
@@ -342,15 +346,15 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                             _selectedGenre ?? 'Main Genre',
                             style: TextStyle(
                               color: _selectedGenre != null
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
+                                  ? AppColors.text(brightness)
+                                  : AppColors.textTert(brightness),
                               fontSize: 16,
                             ),
                           ),
                           const Spacer(),
                           Icon(
                             Icons.keyboard_arrow_down_rounded,
-                            color: Colors.white.withOpacity(0.5),
+                            color: AppColors.textTert(brightness),
                             size: 24,
                           ),
                         ],
@@ -390,7 +394,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: Colors.white.withOpacity(0.5),
+                        color: AppColors.textTert(brightness),
                         size: 22,
                       ),
                       onPressed: () {
@@ -419,7 +423,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                         gradient: LinearGradient(
                           colors: [AppColors.crimson, const Color(0xFFB91C1C)],
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.crimson.withOpacity(0.4),
@@ -459,7 +463,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                       Expanded(
                         child: Container(
                           height: 1,
-                          color: Colors.white.withOpacity(0.1),
+                          color: AppColors.divider(brightness),
                         ),
                       ),
                       Padding(
@@ -467,7 +471,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                         child: Text(
                           'or sign up with',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
+                            color: AppColors.textTert(brightness),
                             fontSize: 13,
                           ),
                         ),
@@ -475,7 +479,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                       Expanded(
                         child: Container(
                           height: 1,
-                          color: Colors.white.withOpacity(0.1),
+                          color: AppColors.divider(brightness),
                         ),
                       ),
                     ],
@@ -487,23 +491,29 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildSocialButton(
-                        icon: Icons.g_mobiledata_rounded,
-                        label: 'Google',
-                        onTap: () {},
+                      Flexible(
+                        child: _buildSocialButton(
+                          icon: Icons.g_mobiledata_rounded,
+                          label: 'Google',
+                          onTap: () {},
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      _buildSocialButton(
-                        icon: Icons.apple,
-                        label: 'Apple',
-                        onTap: () {},
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: _buildSocialButton(
+                          icon: Icons.apple,
+                          label: 'Apple',
+                          onTap: () {},
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      _buildSocialButton(
-                        icon: Icons.music_note,
-                        label: 'Spotify',
-                        onTap: () {},
-                        isSpotify: true,
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: _buildSocialButton(
+                          icon: Icons.music_note,
+                          label: 'Spotify',
+                          onTap: () {},
+                          isSpotify: true,
+                        ),
                       ),
                     ],
                   ),
@@ -517,7 +527,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                       Text(
                         'Already have an account?  ',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: AppColors.textSec(brightness),
                           fontSize: 14,
                         ),
                       ),
@@ -549,7 +559,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                     'By signing up, you agree to our Terms of Service\nand Privacy Policy',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.35),
+                      color: AppColors.textTert(brightness),
                       fontSize: 12,
                       height: 1.5,
                     ),
@@ -574,48 +584,50 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
     Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
+    final brightness = Theme.of(context).brightness;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
       validator: validator,
-      style: TextStyle(color: Colors.white, fontSize: 16),
+      style: TextStyle(color: AppColors.text(brightness), fontSize: 16),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.5),
+          color: AppColors.textTert(brightness),
           fontSize: 16,
         ),
         prefixIcon: Icon(
           prefixIcon,
-          color: Colors.white.withOpacity(0.5),
+          color: AppColors.textTert(brightness),
           size: 22,
         ),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.08),
+        fillColor: AppColors.inputFill(brightness),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: AppColors.border(brightness)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: AppColors.border(brightness)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: AppColors.crimson, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.red.shade400),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
         ),
         errorStyle: TextStyle(color: Colors.red.shade300, fontSize: 12),
@@ -629,19 +641,21 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
     required VoidCallback onTap,
     bool isSpotify = false,
   }) {
+    final brightness = Theme.of(context).brightness;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isSpotify
               ? const Color(0xFF1DB954).withOpacity(0.15)
-              : Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
+              : AppColors.surfaceSecondary(brightness).withOpacity(0.5),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSpotify
                 ? const Color(0xFF1DB954).withOpacity(0.4)
-                : Colors.white.withOpacity(0.1),
+                : AppColors.border(brightness),
           ),
         ),
         child: Row(
@@ -649,18 +663,23 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
           children: [
             Icon(
               icon,
-              color: isSpotify ? const Color(0xFF1DB954) : Colors.white,
-              size: 22,
+              color: isSpotify
+                  ? const Color(0xFF1DB954)
+                  : AppColors.text(brightness),
+              size: 20,
             ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSpotify
-                    ? const Color(0xFF1DB954)
-                    : Colors.white.withOpacity(0.8),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSpotify
+                      ? const Color(0xFF1DB954)
+                      : AppColors.text(brightness),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

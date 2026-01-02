@@ -136,12 +136,15 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF211111),
+      backgroundColor: AppColors.background(brightness),
       body: Stack(
         children: [
           // Particle background
-          const _ParticleBackground(),
+          _ParticleBackground(isDark: isDark),
 
           // Red glow at top
           Positioned(
@@ -215,7 +218,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                         Text(
                           'GigMatch',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.text(brightness),
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.5,
@@ -243,7 +246,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                           ),
                           TextSpan(
                             text: 'to the stage',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: AppColors.text(brightness)),
                           ),
                         ],
                       ),
@@ -254,7 +257,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                     Text(
                       'Select your role to get started.',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: AppColors.textSec(brightness),
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
                       ),
@@ -264,6 +267,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
 
                     // Artist Card
                     _buildRoleCard(
+                      context: context,
                       icon: Icons.headphones_rounded,
                       title: 'Artist / Band',
                       subtitle: 'Find gigs & get booked',
@@ -275,6 +279,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
 
                     // Venue Card
                     _buildRoleCard(
+                      context: context,
                       icon: Icons.storefront_rounded,
                       title: 'Venue / Host',
                       subtitle: 'Book talent for your stage',
@@ -293,7 +298,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                           Text(
                             'Already have an account?  ',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color: AppColors.textSec(brightness),
                               fontSize: 14,
                             ),
                           ),
@@ -302,11 +307,11 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                             child: Text(
                               'Log In',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.text(brightness),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.white,
+                                decorationColor: AppColors.text(brightness),
                               ),
                             ),
                           ),
@@ -324,12 +329,15 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
   }
 
   Widget _buildRoleCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required bool isHighlighted,
     required VoidCallback onTap,
   }) {
+    final brightness = Theme.of(context).brightness;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedBuilder(
@@ -339,12 +347,12 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF2A1A1A),
+              color: AppColors.cardBackground(brightness),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isHighlighted
                     ? AppColors.crimson.withOpacity(_glowAnimation.value + 0.3)
-                    : Colors.white.withOpacity(0.1),
+                    : AppColors.border(brightness),
                 width: isHighlighted ? 1.5 : 1,
               ),
               boxShadow: isHighlighted
@@ -366,12 +374,14 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: AppColors.iconSecondary(
+                      brightness,
+                    ).withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     icon,
-                    color: Colors.white.withOpacity(0.8),
+                    color: AppColors.icon(brightness),
                     size: 24,
                   ),
                 ),
@@ -386,7 +396,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                       Text(
                         title,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.text(brightness),
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
@@ -397,7 +407,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                         style: TextStyle(
                           color: isHighlighted
                               ? AppColors.crimson.withOpacity(0.8)
-                              : Colors.white.withOpacity(0.5),
+                              : AppColors.textSec(brightness),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                         ),
@@ -413,7 +423,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                   decoration: BoxDecoration(
                     color: isHighlighted
                         ? AppColors.crimson
-                        : Colors.white.withOpacity(0.1),
+                        : AppColors.iconSecondary(brightness).withOpacity(0.15),
                     shape: BoxShape.circle,
                     boxShadow: isHighlighted
                         ? [
@@ -427,7 +437,9 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                   ),
                   child: Icon(
                     Icons.arrow_forward_rounded,
-                    color: Colors.white,
+                    color: isHighlighted
+                        ? Colors.white
+                        : AppColors.icon(brightness),
                     size: 22,
                   ),
                 ),
@@ -442,7 +454,9 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
 
 // Particle background with floating dots
 class _ParticleBackground extends StatefulWidget {
-  const _ParticleBackground();
+  final bool isDark;
+
+  const _ParticleBackground({required this.isDark});
 
   @override
   State<_ParticleBackground> createState() => _ParticleBackgroundState();
@@ -491,6 +505,7 @@ class _ParticleBackgroundState extends State<_ParticleBackground>
           painter: _ParticlePainter(
             particles: _particles,
             progress: _controller.value,
+            isDark: widget.isDark,
           ),
           size: Size.infinite,
         );
@@ -518,14 +533,20 @@ class _Particle {
 class _ParticlePainter extends CustomPainter {
   final List<_Particle> particles;
   final double progress;
+  final bool isDark;
 
-  _ParticlePainter({required this.particles, required this.progress});
+  _ParticlePainter({
+    required this.particles,
+    required this.progress,
+    required this.isDark,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     for (final particle in particles) {
+      final color = isDark ? Colors.white : Colors.black;
       final paint = Paint()
-        ..color = Colors.white.withOpacity(particle.opacity)
+        ..color = color.withOpacity(particle.opacity * (isDark ? 1.0 : 0.3))
         ..style = PaintingStyle.fill;
 
       final y = (particle.y + progress * particle.speed) % 1.0;
