@@ -423,7 +423,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                         gradient: LinearGradient(
                           colors: [AppColors.crimson, const Color(0xFFB91C1C)],
                         ),
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.crimson.withOpacity(0.4),
@@ -611,23 +611,23 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
           vertical: 18,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: AppColors.border(brightness)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: AppColors.border(brightness)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: AppColors.crimson, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: Colors.red.shade400),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
         ),
         errorStyle: TextStyle(color: Colors.red.shade300, fontSize: 12),
