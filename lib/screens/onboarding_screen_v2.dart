@@ -28,18 +28,17 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // Image URLs from HTML designs
-  static const String _screen2Image =
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBrUNxXYfH5ZhIoSoZA54o4MyfdMGNpvHtg80LhRhI48bu78gdtFNtV02pHHxZ6QIIAJWgjVVXF66yFv6PKIi5lWd_o17aNbOjQkOAx6-5qIQYwRFO7iwWjIBkUVBBNQ1gFPbeKqTbZf2A2Hrp74r2-lAs1oYKwibNLIGjQqYzDN28Rj88CYjaQrp700Ebt3cM6GLsChiKyrn_fkb2I2R_mm2sxEdHjrK_DF9HbPYTQrmpeBjH4s6cSperyz3sOtwCQcBn8MeRKzI2W';
+  // Local asset images
+  static const String _screen2Image = 'assets/images/onboarding/image4.png';
 
   static const String _screen3Avatar =
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAky0Nd100ttAw4rS8QmtAtCqw53rOYlRu74Zc3fr2lK16AGp_a8WLIzRI-RYmrpk6iD0glpvqfLhXMATj2ppUfTWrJs2JkARno4cqqu7HslqQL3Np8b1ZR-TSsJtqZiUUMfq3q9dnFX7f0Py9l-nw6rsD2eUaVSZk5JGoe5gKbJi8_JT3R53FqfxXe9n0N5zELcj8_LPQCA1i-OBmVpdzKEvpswLTbezmipNQbTmH1VIzhSCFe1fRgMop--NGqn9oV_YsIu78RFtNI';
+      'assets/images/onboarding/Artist avatar(image5).png';
 
   static const String _screen3Video =
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAr7ZxhOa0v9NSCBxl7vASMA4s3ESM9x6urMCj7ecEh6tGTeqitS-PhnicVcXyiyZYKSY8zqF_HSktsG4lOAeipBzfUXjTODqvq9UVykcGqQwP9u2U8_ZdY8ZNvisnLaK4En_mSxlkm2lTi6BFlAx3LTJYiR-HatYTSa-hSMk1XG5tvZYD1B2kiCw_3fAkbGzMg6eGnwQ5SfSYRpw91EuG9qPQ6eU--YEmkuXHg-ltaiqd-RIIslCchIwqY43T2a-OaTgMjq_vpBzFu';
+      'assets/images/onboarding/performance preview(image6).png';
 
   static const String _screen4Venue =
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuADrkxPv6lV-J_qtZq6iuh9OAEC7T317J0Gg_27sA7jIjxaEth6oo9FLvecIUfq75Xd6dHIR69ed9t_nme4OzXmfuy2KUdMPoHuYJQ2lAzeHJJsV-v_tCHUR3R91LH7ITi-ejJU8BYmIcOKT-QyTiZzlfeBNK4DIInSTm51nXFtNs8X1ZDca9JJ7lrh14cT1In8IDePrLB_ocV20iANk49ODDpMZn0ktuXaDdVe9EZiTpjafWlDda8fDn6HuASbT9fOWN4ng4nzFqF_';
+      'assets/images/onboarding/Venue card image(image7).png';
 
   @override
   void initState() {
@@ -454,26 +453,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
+                  Image.asset(
                     _screen2Image,
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: const Color(0xFF2A1A1A),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.crimson,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: const Color(0xFF2A1A1A),
-                        child: Icon(
-                          Icons.music_note_rounded,
+                  ),
                           size: 60,
                           color: AppColors.crimson.withOpacity(0.5),
                         ),
@@ -673,24 +656,6 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             onPressed: _nextPage,
                             showArrow: false,
                           ),
-
-                          const SizedBox(height: 8),
-
-                          // Skip button
-                          TextButton(
-                            onPressed: _goToRoleSelection,
-                            style: TextButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 40),
-                            ),
-                            child: Text(
-                              'Skip',
-                              style: TextStyle(
-                                color: const Color(0xFF94A3B8),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -769,18 +734,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                               ),
                             ),
                             child: ClipOval(
-                              child: Image.network(
+                              child: Image.asset(
                                 _screen3Avatar,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: const Color(0xFF3A2A2A),
-                                    child: Icon(
-                                      Icons.person,
-                                      color: AppColors.crimson,
-                                    ),
-                                  );
-                                },
+                              ),
                               ),
                             ),
                           ),
@@ -825,16 +782,12 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             // Video thumbnail
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
+                              child: Image.asset(
                                 _screen3Video,
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 height: double.infinity,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: const Color(0xFF3A2A2A),
-                                  );
-                                },
+                              ),
                               ),
                             ),
                             // Overlay
@@ -1267,14 +1220,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                Image.network(
+                                Image.asset(
                                   _screen4Venue,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: const Color(0xFF3A2A2A),
-                                    );
-                                  },
                                 ),
                                 // Gradient overlay
                                 Container(
