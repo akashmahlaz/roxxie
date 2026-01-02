@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/theme/theme.dart';
-import 'screens/splash_screen.dart';
+import 'screens/splash_screen_v2.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,29 +15,29 @@ void main() {
     overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
   );
 
-  runApp(const RoxxieApp());
+  runApp(const GigMatchApp());
 }
 
-/// 🎵 ROXXIE - Where Artists Meet Stages
+/// 🎵 GIGMATCH - Where Artists Meet Stages
 ///
 /// Ultra-premium music gig matching platform
 /// Designed with world-class UI/UX principles
 
-class RoxxieApp extends StatelessWidget {
-  const RoxxieApp({super.key});
+class GigMatchApp extends StatelessWidget {
+  const GigMatchApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Roxxie',
+      title: 'GigMatch',
       debugShowCheckedModeBanner: false,
 
       // Apply our premium dark theme
       theme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,
 
-      // Start with splash screen
-      home: const SplashScreen(),
+      // Start with premium splash screen
+      home: const SplashScreenV2(),
     );
   }
 }

@@ -210,13 +210,13 @@ class _SplashScreenState extends State<SplashScreen>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: AppColors.primaryGradient,
-        boxShadow: AppShadows.neonViolet,
+        boxShadow: AppShadows.neonCrimson,
       ),
       child: const Center(
         child: Icon(
           Icons.music_note_rounded,
           size: 56,
-          color: AppColors.textPrimary,
+          color: AppColors.pureWhite,
         ),
       ),
     );
@@ -228,10 +228,10 @@ class _SplashScreenState extends State<SplashScreen>
           AppColors.primaryGradient.createShader(bounds),
       blendMode: BlendMode.srcIn,
       child: Text(
-        'ROXXIE',
+        'GIGMATCH',
         style: AppTypography.displayMedium.copyWith(
-          letterSpacing: 8,
-          fontWeight: FontWeight.w800,
+          letterSpacing: 6,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
@@ -244,7 +244,7 @@ class _SplashScreenState extends State<SplashScreen>
       child: CircularProgressIndicator(
         strokeWidth: 2,
         valueColor: AlwaysStoppedAnimation<Color>(
-          AppColors.electricViolet.withValues(alpha: 0.8),
+          AppColors.crimson.withValues(alpha: 0.8),
         ),
       ),
     );

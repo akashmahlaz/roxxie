@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/theme.dart';
+import '../core/theme/theme.dart';
 
 /// 🌈 ANIMATED GRADIENT BACKGROUND
 ///
 /// Creates a beautiful animated mesh gradient background
 /// that subtly shifts and moves - signature of premium apps
+///
+/// RED & WHITE Theme: Uses crimson and rose gradients
 ///
 /// Usage:
 /// ```dart
@@ -84,13 +86,9 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
 
   @override
   Widget build(BuildContext context) {
+    // RED & WHITE theme colors
     final colors =
-        widget.colors ??
-        [
-          AppColors.electricViolet,
-          AppColors.neonMagenta,
-          AppColors.electricCyan,
-        ];
+        widget.colors ?? [AppColors.crimson, AppColors.rose, AppColors.wine];
 
     return AnimatedBuilder(
       animation: _controller,
@@ -118,7 +116,7 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
 
 /// 🌟 AURORA BACKGROUND
 ///
-/// Creates a beautiful aurora borealis effect
+/// Creates a beautiful aurora effect with RED theme
 
 class AuroraBackground extends StatefulWidget {
   final Widget? child;
@@ -168,7 +166,7 @@ class _AuroraBackgroundState extends State<AuroraBackground>
       color: AppColors.obsidian,
       child: Stack(
         children: [
-          // First blob
+          // First blob - CRIMSON
           AnimatedBuilder(
             animation: _controller1,
             builder: (context, child) {
@@ -182,8 +180,8 @@ class _AuroraBackgroundState extends State<AuroraBackground>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        AppColors.electricViolet.withValues(alpha: 0.4),
-                        AppColors.electricViolet.withValues(alpha: 0.0),
+                        AppColors.crimson.withValues(alpha: 0.4),
+                        AppColors.crimson.withValues(alpha: 0.0),
                       ],
                     ),
                   ),
@@ -192,7 +190,7 @@ class _AuroraBackgroundState extends State<AuroraBackground>
             },
           ),
 
-          // Second blob
+          // Second blob - ROSE
           AnimatedBuilder(
             animation: _controller2,
             builder: (context, child) {
@@ -206,8 +204,8 @@ class _AuroraBackgroundState extends State<AuroraBackground>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        AppColors.neonMagenta.withValues(alpha: 0.35),
-                        AppColors.neonMagenta.withValues(alpha: 0.0),
+                        AppColors.rose.withValues(alpha: 0.35),
+                        AppColors.rose.withValues(alpha: 0.0),
                       ],
                     ),
                   ),
@@ -216,7 +214,7 @@ class _AuroraBackgroundState extends State<AuroraBackground>
             },
           ),
 
-          // Third blob
+          // Third blob - WINE (subtle)
           AnimatedBuilder(
             animation: _controller3,
             builder: (context, child) {
@@ -230,8 +228,8 @@ class _AuroraBackgroundState extends State<AuroraBackground>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        AppColors.electricCyan.withValues(alpha: 0.3),
-                        AppColors.electricCyan.withValues(alpha: 0.0),
+                        AppColors.wine.withValues(alpha: 0.3),
+                        AppColors.wine.withValues(alpha: 0.0),
                       ],
                     ),
                   ),
@@ -250,7 +248,7 @@ class _AuroraBackgroundState extends State<AuroraBackground>
 
 /// 🎆 PARTICLES BACKGROUND
 ///
-/// Floating particles effect for special screens
+/// Floating particles effect for special screens - RED themed
 
 class ParticlesBackground extends StatefulWidget {
   final int particleCount;
@@ -261,7 +259,7 @@ class ParticlesBackground extends StatefulWidget {
   const ParticlesBackground({
     super.key,
     this.particleCount = 50,
-    this.particleColor = AppColors.electricViolet,
+    this.particleColor = AppColors.crimson,
     this.maxParticleSize = 4,
     this.child,
   });

@@ -1,6 +1,6 @@
 # 🎵 Roxxie — Swipe. Match. Book Live Music Gigs.
 
-**Roxxie** is a modern, mobile-first platform that connects **singers & freelance musicians** with **local venues and event organizers** using a **Tinder-style swipe experience**.
+**Gigmatch** is a modern, mobile-first platform that connects **singers & freelance musicians** with **local venues and event organizers** using a **Tinder-style swipe experience**.
 
 Artists discover gigs.  
 Venues discover talent.  

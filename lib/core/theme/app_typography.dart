@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-/// 🔤 ROXXIE ULTRA PREMIUM TYPOGRAPHY SYSTEM
+/// 🔤 GIGMATCH ULTRA PREMIUM TYPOGRAPHY SYSTEM
 ///
 /// Font Choices (World-Class Selection):
 ///
-/// DISPLAY/HEADINGS: Space Grotesk
-/// - Modern, geometric sans-serif
-/// - Perfect for bold statements
-/// - Used by: Stripe, Vercel, top tech brands
+/// DISPLAY/HEADINGS: Satoshi (from Fontshare)
+/// - Modern, clean geometric sans-serif
+/// - Designed for contemporary digital products
+/// - Free & open source with variable weights
+/// - Perfect balance of warmth and professionalism
 ///
-/// BODY/UI: Inter
+/// BODY/UI: Inter (from Google Fonts)
 /// - Best readability on screens
 /// - Designed specifically for UI
 /// - Used by: GitHub, Figma, Linear
@@ -19,14 +20,19 @@ import 'app_colors.dart';
 /// ACCENT/SPECIAL: Playfair Display
 /// - Elegant serif for luxury moments
 /// - Premium feel for special text
-/// - Used by: Fashion brands, luxury apps
 ///
 /// MONO/NUMBERS: JetBrains Mono
-/// - Clean monospace for stats/numbers
-/// - Modern and readable
+/// - Clean monospace for stats/numbers/prices
+/// - Excellent legibility
 
 class AppTypography {
   AppTypography._();
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎨 SATOSHI FONT FAMILY (Local Asset)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const String _satoshiFamily = 'Satoshi';
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 📐 TYPE SCALE (Based on Golden Ratio 1.618)
@@ -50,7 +56,8 @@ class AppTypography {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// Massive display - Splash screen, major moments
-  static TextStyle displayLarge = GoogleFonts.spaceGrotesk(
+  static TextStyle displayLarge = TextStyle(
+    fontFamily: _satoshiFamily,
     fontSize: _scale6XL,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
@@ -59,7 +66,8 @@ class AppTypography {
   );
 
   /// Large display - Section headers
-  static TextStyle displayMedium = GoogleFonts.spaceGrotesk(
+  static TextStyle displayMedium = TextStyle(
+    fontFamily: _satoshiFamily,
     fontSize: _scale5XL,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
@@ -68,7 +76,8 @@ class AppTypography {
   );
 
   /// Medium display
-  static TextStyle displaySmall = GoogleFonts.spaceGrotesk(
+  static TextStyle displaySmall = TextStyle(
+    fontFamily: _satoshiFamily,
     fontSize: _scale4XL,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
@@ -80,7 +89,8 @@ class AppTypography {
   // 📰 HEADLINE STYLES (Page titles, Card headers)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static TextStyle headlineLarge = GoogleFonts.spaceGrotesk(
+  static TextStyle headlineLarge = TextStyle(
+    fontFamily: _satoshiFamily,
     fontSize: _scale3XL,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
@@ -88,7 +98,8 @@ class AppTypography {
     height: 1.2,
   );
 
-  static TextStyle headlineMedium = GoogleFonts.spaceGrotesk(
+  static TextStyle headlineMedium = TextStyle(
+    fontFamily: _satoshiFamily,
     fontSize: _scale2XL,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
@@ -96,7 +107,8 @@ class AppTypography {
     height: 1.3,
   );
 
-  static TextStyle headlineSmall = GoogleFonts.spaceGrotesk(
+  static TextStyle headlineSmall = TextStyle(
+    fontFamily: _satoshiFamily,
     fontSize: _scaleXXL,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,

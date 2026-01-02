@@ -4,10 +4,10 @@ import 'app_colors.dart';
 import 'app_typography.dart';
 import 'app_spacing.dart';
 
-/// 🎨 ROXXIE MASTER THEME
+/// 🎨 ROXXIE MASTER THEME - RED & WHITE
 ///
 /// This combines all our design tokens into a cohesive Material theme
-/// that feels ultra-premium and world-class.
+/// that feels ultra-premium with bold red accents and clean white typography.
 
 class AppTheme {
   AppTheme._();
@@ -19,26 +19,26 @@ class AppTheme {
       brightness: Brightness.dark,
 
       // ═══════════════════════════════════════════════════════════════════════
-      // 🎨 COLOR SCHEME
+      // 🎨 COLOR SCHEME - RED & WHITE
       // ═══════════════════════════════════════════════════════════════════════
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.electricViolet,
-        onPrimary: AppColors.textPrimary,
-        primaryContainer: AppColors.deepViolet,
-        onPrimaryContainer: AppColors.textPrimary,
+        primary: AppColors.crimson,
+        onPrimary: AppColors.pureWhite,
+        primaryContainer: AppColors.crimsonDark,
+        onPrimaryContainer: AppColors.pureWhite,
 
-        secondary: AppColors.neonMagenta,
-        onSecondary: AppColors.textPrimary,
-        secondaryContainer: AppColors.neonMagenta,
-        onSecondaryContainer: AppColors.textPrimary,
+        secondary: AppColors.rose,
+        onSecondary: AppColors.pureWhite,
+        secondaryContainer: AppColors.roseDark,
+        onSecondaryContainer: AppColors.pureWhite,
 
-        tertiary: AppColors.electricCyan,
+        tertiary: AppColors.cyan,
         onTertiary: AppColors.textInverse,
 
         error: AppColors.error,
-        onError: AppColors.textPrimary,
+        onError: AppColors.pureWhite,
         errorContainer: AppColors.errorDark,
-        onErrorContainer: AppColors.textPrimary,
+        onErrorContainer: AppColors.pureWhite,
 
         surface: AppColors.charcoal,
         onSurface: AppColors.textPrimary,
@@ -51,9 +51,9 @@ class AppTheme {
         shadow: Colors.black,
         scrim: Colors.black,
 
-        inverseSurface: AppColors.textPrimary,
+        inverseSurface: AppColors.pureWhite,
         onInverseSurface: AppColors.obsidian,
-        inversePrimary: AppColors.deepViolet,
+        inversePrimary: AppColors.crimsonDark,
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
@@ -89,8 +89,8 @@ class AppTheme {
       // Elevated Button
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.electricViolet,
-          foregroundColor: AppColors.textPrimary,
+          backgroundColor: AppColors.crimson,
+          foregroundColor: AppColors.pureWhite,
           padding: AppSpacing.buttonPaddingLg,
           shape: RoundedRectangleBorder(
             borderRadius: AppSpacing.borderRadiusMd,
@@ -103,8 +103,8 @@ class AppTheme {
       // Filled Button
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.electricViolet,
-          foregroundColor: AppColors.textPrimary,
+          backgroundColor: AppColors.crimson,
+          foregroundColor: AppColors.pureWhite,
           padding: AppSpacing.buttonPaddingLg,
           shape: RoundedRectangleBorder(
             borderRadius: AppSpacing.borderRadiusMd,
@@ -129,7 +129,7 @@ class AppTheme {
       // Text Button
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.electricViolet,
+          foregroundColor: AppColors.crimson,
           padding: AppSpacing.buttonPaddingMd,
           textStyle: AppTypography.labelLarge,
         ),
@@ -163,10 +163,7 @@ class AppTheme {
 
         focusedBorder: OutlineInputBorder(
           borderRadius: AppSpacing.borderRadiusMd,
-          borderSide: const BorderSide(
-            color: AppColors.electricViolet,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AppColors.crimson, width: 2),
         ),
 
         errorBorder: OutlineInputBorder(
@@ -188,7 +185,7 @@ class AppTheme {
         ),
 
         floatingLabelStyle: AppTypography.labelMedium.copyWith(
-          color: AppColors.electricViolet,
+          color: AppColors.crimson,
         ),
 
         errorStyle: AppTypography.labelSmall.copyWith(color: AppColors.error),
@@ -231,29 +228,24 @@ class AppTheme {
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // 🧭 NAVIGATION BAR
+      // 🧭 NAVIGATION BAR - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.charcoal,
-        indicatorColor: AppColors.electricViolet.withValues(alpha: 0.2),
+        indicatorColor: AppColors.crimson.withValues(alpha: 0.2),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         height: 80,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(
-              color: AppColors.electricViolet,
-              size: 24,
-            );
+            return const IconThemeData(color: AppColors.crimson, size: 24);
           }
           return const IconThemeData(color: AppColors.textTertiary, size: 24);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppTypography.labelSmall.copyWith(
-              color: AppColors.electricViolet,
-            );
+            return AppTypography.labelSmall.copyWith(color: AppColors.crimson);
           }
           return AppTypography.labelSmall.copyWith(
             color: AppColors.textTertiary,
@@ -289,11 +281,11 @@ class AppTheme {
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // 🏷️ CHIP
+      // 🏷️ CHIP - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.graphite,
-        selectedColor: AppColors.electricViolet.withValues(alpha: 0.2),
+        selectedColor: AppColors.crimson.withValues(alpha: 0.2),
         disabledColor: AppColors.graphite,
         labelStyle: AppTypography.labelMedium,
         secondaryLabelStyle: AppTypography.labelMedium,
@@ -316,67 +308,67 @@ class AppTheme {
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // 📊 PROGRESS INDICATOR
+      // 📊 PROGRESS INDICATOR - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.electricViolet,
+        color: AppColors.crimson,
         linearTrackColor: AppColors.graphite,
         circularTrackColor: AppColors.graphite,
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // 🎚️ SLIDER
+      // 🎚️ SLIDER - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
       sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.electricViolet,
+        activeTrackColor: AppColors.crimson,
         inactiveTrackColor: AppColors.graphite,
-        thumbColor: AppColors.textPrimary,
-        overlayColor: AppColors.electricViolet.withValues(alpha: 0.2),
+        thumbColor: AppColors.pureWhite,
+        overlayColor: AppColors.crimson.withValues(alpha: 0.2),
         trackHeight: 4,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
         overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // ☑️ CHECKBOX
+      // ☑️ CHECKBOX - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.electricViolet;
+            return AppColors.crimson;
           }
           return Colors.transparent;
         }),
-        checkColor: WidgetStateProperty.all(AppColors.textPrimary),
+        checkColor: WidgetStateProperty.all(AppColors.pureWhite),
         side: const BorderSide(color: AppColors.slate, width: 2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // 🔘 RADIO
+      // 🔘 RADIO - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.electricViolet;
+            return AppColors.crimson;
           }
           return AppColors.slate;
         }),
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // 🔄 SWITCH
+      // 🔄 SWITCH - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.textPrimary;
+            return AppColors.pureWhite;
           }
           return AppColors.textTertiary;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.electricViolet;
+            return AppColors.crimson;
           }
           return AppColors.graphite;
         }),
@@ -394,27 +386,27 @@ class AppTheme {
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // 📑 TAB BAR
+      // 📑 TAB BAR - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.textPrimary,
+        labelColor: AppColors.pureWhite,
         unselectedLabelColor: AppColors.textTertiary,
         labelStyle: AppTypography.labelLarge,
         unselectedLabelStyle: AppTypography.labelLarge,
         indicator: const UnderlineTabIndicator(
-          borderSide: BorderSide(color: AppColors.electricViolet, width: 2),
+          borderSide: BorderSide(color: AppColors.crimson, width: 2),
         ),
         indicatorSize: TabBarIndicatorSize.label,
         dividerColor: Colors.transparent,
       ),
 
       // ═══════════════════════════════════════════════════════════════════════
-      // ✨ SPLASH & HIGHLIGHT
+      // ✨ SPLASH & HIGHLIGHT - RED THEMED
       // ═══════════════════════════════════════════════════════════════════════
-      splashColor: AppColors.electricViolet.withValues(alpha: 0.1),
-      highlightColor: AppColors.electricViolet.withValues(alpha: 0.05),
-      hoverColor: AppColors.electricViolet.withValues(alpha: 0.05),
-      focusColor: AppColors.electricViolet.withValues(alpha: 0.1),
+      splashColor: AppColors.crimson.withValues(alpha: 0.1),
+      highlightColor: AppColors.crimson.withValues(alpha: 0.05),
+      hoverColor: AppColors.crimson.withValues(alpha: 0.05),
+      focusColor: AppColors.crimson.withValues(alpha: 0.1),
 
       // ═══════════════════════════════════════════════════════════════════════
       // 🎯 MISC

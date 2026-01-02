@@ -33,8 +33,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          AppColors.electricViolet.withValues(alpha: 0.3),
-          AppColors.neonMagenta.withValues(alpha: 0.1),
+          AppColors.crimson.withValues(alpha: 0.3),
+          AppColors.rose.withValues(alpha: 0.1),
         ],
       ),
     ),
@@ -47,8 +47,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          AppColors.neonMagenta.withValues(alpha: 0.3),
-          AppColors.electricCyan.withValues(alpha: 0.1),
+          AppColors.rose.withValues(alpha: 0.3),
+          AppColors.wine.withValues(alpha: 0.1),
         ],
       ),
     ),
@@ -61,8 +61,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          AppColors.electricCyan.withValues(alpha: 0.3),
-          AppColors.emeraldGlow.withValues(alpha: 0.1),
+          AppColors.wine.withValues(alpha: 0.3),
+          AppColors.success.withValues(alpha: 0.1),
         ],
       ),
     ),
@@ -205,7 +205,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: page.gradient,
-              boxShadow: AppShadows.violetGlow,
+              boxShadow: AppShadows.crimsonGlow,
             ),
             child: Icon(page.icon, size: 80, color: AppColors.textPrimary),
           ),
@@ -247,11 +247,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       height: 8,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(4),
-        color: isActive ? AppColors.electricViolet : AppColors.slate,
+        color: isActive ? AppColors.crimson : AppColors.slate,
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: AppColors.electricViolet.withValues(alpha: 0.5),
+                  color: AppColors.crimson.withValues(alpha: 0.5),
                   blurRadius: 8,
                 ),
               ]

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GigMatch Splash Screen</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#e61919",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#211111",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark antialiased overflow-hidden selection:bg-primary selection:text-white">
+<!-- Main Container -->
+<div class="relative flex h-screen w-full flex-col justify-between items-center overflow-hidden">
+<!-- Background Layers -->
+<div class="absolute inset-0 z-0">
+<!-- Base dark gradient -->
+<div class="absolute inset-0 bg-background-dark"></div>
+<!-- Abstract texture image -->
+<div class="absolute inset-0 opacity-20 mix-blend-overlay bg-cover bg-center" data-alt="Abstract dark concert crowd with red stage lights" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAAPLfH1J80vFyesWQTsiBN9PzCG5UPTPzVmF8N7ssBY62qFQXhUIMvsFpgDmGr3BtzrK9mb4FriAhW7PoA7F0BWudVXqn1bzD1RBoXzX1RID6Sc7xBGH0d_LiyXdpqW-pkxffXeNIyLq7tZ5P-487WuttY529uJp8baoSR7gilq9Vtbz6dEY5jWrgypKC9JU73kUupUuLkHgv60trMHy-xkbIMQb3_7LjfUSWhFe_mgLMI8lZpPpJnGx3bEkbSXiOYju9J0dK5aq6L');">
+</div>
+<!-- Gradient Overlays for depth -->
+<div class="absolute inset-0 bg-gradient-to-b from-background-dark/90 via-background-dark/60 to-background-dark"></div>
+<!-- Top Spotlight Effect -->
+<div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[120%] h-[70%] bg-primary/20 blur-[120px] rounded-full pointer-events-none"></div>
+<!-- Bottom Glow -->
+<div class="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-full h-[40%] bg-gradient-to-t from-primary/10 to-transparent blur-3xl pointer-events-none"></div>
+</div>
+<!-- Spacer for safe area/vertical balance -->
+<div class="flex-1"></div>
+<!-- Center Content: Logo & Title -->
+<div class="relative z-10 flex flex-col items-center justify-center w-full max-w-md px-6 animate-fade-in-up">
+<!-- Logo Mark -->
+<div class="mb-10 relative group cursor-default">
+<!-- Outer Pulse/Glow Ring -->
+<div class="absolute inset-0 bg-primary rounded-full blur-2xl opacity-30 animate-pulse-slow group-hover:opacity-50 transition-opacity duration-700"></div>
+<!-- Icon Container -->
+<div class="relative w-28 h-28 bg-gradient-to-br from-[#2a1515] to-[#1a0a0a] rounded-full flex items-center justify-center shadow-[0_0_30px_-5px_rgba(230,25,25,0.3)] border border-primary/20">
+<!-- Inner Ring -->
+<div class="absolute inset-2 rounded-full border border-white/5"></div>
+<!-- Icon -->
+<span class="material-symbols-outlined text-primary text-[64px] drop-shadow-[0_0_15px_rgba(230,25,25,0.6)]" style="font-variation-settings: 'FILL' 1, 'wght' 600;">
+                        music_note
+                    </span>
+<!-- Location Pin Accent (Simulated small badge) -->
+<div class="absolute bottom-1 right-1 bg-primary text-white p-1.5 rounded-full shadow-lg border-2 border-background-dark flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+</div>
+<!-- Text Content -->
+<div class="flex flex-col items-center gap-2 text-center">
+<h1 class="text-white text-5xl font-bold tracking-tight leading-tight drop-shadow-xl">
+                    Gig<span class="font-normal text-white/90">Match</span>
+</h1>
+<p class="text-white/60 text-lg font-normal tracking-wide leading-relaxed">
+                    Find your stage.
+                </p>
+</div>
+</div>
+<!-- Spacer -->
+<div class="flex-1"></div>
+<!-- Footer: Loading & Info -->
+<div class="relative z-10 w-full max-w-[280px] px-6 pb-12 flex flex-col gap-6 items-center">
+<!-- Loading Indicator -->
+<div class="w-full flex flex-col gap-2">
+<div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+<div class="h-full bg-primary w-[45%] rounded-full shadow-[0_0_15px_rgba(230,25,25,1)] relative overflow-hidden">
+<!-- Shimmer effect inside progress bar -->
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_1.5s_infinite]"></div>
+</div>
+</div>
+</div>
+<!-- Version/Tagline -->
+<div class="flex flex-col items-center gap-1">
+<p class="text-white/30 text-[10px] font-medium uppercase tracking-[0.2em]">Connect. Play. Amplify.</p>
+</div>
+</div>
+</div>
+<style>
+        /* Custom Keyframe for shimmer effect */
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        /* Utility for fade in animation on load */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 1s ease-out forwards;
+        }
+    </style>
+</body></html>

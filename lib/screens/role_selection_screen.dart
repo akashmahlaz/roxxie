@@ -118,7 +118,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                     _buildRoleCard(
                       role: 'artist',
                       icon: Icons.music_note_rounded,
-                      title: "I'm an Artist/Band",
+                      title: "I'm an Artist",
                       description:
                           'Showcase your music and find gigs at amazing venues',
                       gradient: AppColors.primaryGradient,
@@ -130,12 +130,10 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                     _buildRoleCard(
                       role: 'venue',
                       icon: Icons.stadium_rounded,
-                      title: "I'm a Venue/Organizer",
+                      title: "I'm a Venue",
                       description:
                           'Discover talented artists for your events and venues',
-                      gradient: LinearGradient(
-                        colors: [AppColors.electricCyan, AppColors.emeraldGlow],
-                      ),
+                      gradient: AppColors.venueGradient,
                       isSelected: _selectedRole == 'venue',
                     ),
 
@@ -183,14 +181,14 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
           borderRadius: AppSpacing.borderRadiusXl,
           border: Border.all(
             color: isSelected
-                ? (role == 'artist'
-                      ? AppColors.electricViolet
-                      : AppColors.electricCyan)
+                ? (role == 'artist' ? AppColors.crimson : AppColors.cyan)
                 : AppColors.slate,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
-              ? (role == 'artist' ? AppShadows.violetGlow : AppShadows.cyanGlow)
+              ? (role == 'artist'
+                    ? AppShadows.crimsonGlow
+                    : AppShadows.cyanGlow)
               : null,
         ),
         child: Row(
@@ -207,15 +205,15 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                         BoxShadow(
                           color:
                               (role == 'artist'
-                                      ? AppColors.electricViolet
-                                      : AppColors.electricCyan)
+                                      ? AppColors.crimson
+                                      : AppColors.cyan)
                                   .withValues(alpha: 0.4),
                           blurRadius: 16,
                         ),
                       ]
                     : null,
               ),
-              child: Icon(icon, size: 32, color: AppColors.textPrimary),
+              child: Icon(icon, size: 32, color: AppColors.pureWhite),
             ),
 
             const SizedBox(width: AppSpacing.lg),
@@ -245,9 +243,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isSelected
-                    ? (role == 'artist'
-                          ? AppColors.electricViolet
-                          : AppColors.electricCyan)
+                    ? (role == 'artist' ? AppColors.crimson : AppColors.cyan)
                     : Colors.transparent,
                 border: Border.all(
                   color: isSelected ? Colors.transparent : AppColors.slate,
@@ -258,7 +254,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                   ? const Icon(
                       Icons.check,
                       size: 16,
-                      color: AppColors.textPrimary,
+                      color: AppColors.pureWhite,
                     )
                   : null,
             ),
