@@ -64,6 +64,9 @@ dependencies:
   
   # Smooth page transitions
   page_transition: ^2.2.1
+  
+  # Image/Video picker for media upload
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
