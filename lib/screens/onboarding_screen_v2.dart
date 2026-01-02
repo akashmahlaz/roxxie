@@ -250,7 +250,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     Text(
                       'Your Sound',
                       style: TextStyle(
-                        color: AppColors.crimson,
+                        color: const Color(0xFFDC2626),
                         fontSize: 42,
                         fontWeight: FontWeight.w800,
                         fontStyle: FontStyle.italic,
@@ -453,16 +453,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    _screen2Image,
-                    fit: BoxFit.cover,
-                  ),
-                          size: 60,
-                          color: AppColors.crimson.withOpacity(0.5),
-                        ),
-                      );
-                    },
-                  ),
+                  Image.asset(_screen2Image, fit: BoxFit.cover),
                   // Gradient overlay at bottom
                   Container(
                     decoration: BoxDecoration(
@@ -738,7 +729,6 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                 _screen3Avatar,
                                 fit: BoxFit.cover,
                               ),
-                              ),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -787,7 +777,6 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 height: double.infinity,
-                              ),
                               ),
                             ),
                             // Overlay
@@ -1220,10 +1209,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                Image.asset(
-                                  _screen4Venue,
-                                  fit: BoxFit.cover,
-                                ),
+                                Image.asset(_screen4Venue, fit: BoxFit.cover),
                                 // Gradient overlay
                                 Container(
                                   decoration: BoxDecoration(
