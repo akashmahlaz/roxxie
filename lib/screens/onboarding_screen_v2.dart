@@ -5,11 +5,11 @@ import 'role_selection_screen.dart';
 
 /// 🎠 PREMIUM ONBOARDING SCREEN V2
 ///
-/// Immersive carousel with full-bleed imagery
-/// Inspired by world-class music apps
-///
+/// Immersive carousel with 4 unique screen designs
 /// Screen 1: Full-bleed hero with FAB navigation
-/// Screen 2-3: Card-based with floating info cards
+/// Screen 2: Circular hero image with floating badge
+/// Screen 3: Artist profile card showcase
+/// Screen 4: Swipe card stack visual
 
 class OnboardingScreenV2 extends StatefulWidget {
   const OnboardingScreenV2({super.key});
@@ -25,52 +25,21 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
 
   late AnimationController _floatController;
   late Animation<double> _floatAnimation;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
-  final List<OnboardingPageData> _pages = [
-    // First screen - Full bleed, no floating card
-    OnboardingPageData(
-      imagePath: 'assets/images/onboarding/image1.png',
-      titleWhite: 'Unleash',
-      titleAccent: 'Your Sound',
-      description:
-          'Connect with the perfect venues and let the world hear you. No agents, just music.',
-      isFullBleed: true, // Full-bleed layout
-      floatingCard: null, // No floating card on first screen
-    ),
-    // Second screen - Card with floating info
-    OnboardingPageData(
-      imagePath: 'assets/images/onboarding/image2.png',
-      titleWhite: 'Match with',
-      titleAccent: 'Local Venues',
-      description:
-          'Stop cold-calling. Let Roxxie pair you with the best spots in town based on your genre and availability.',
-      isFullBleed: false,
-      floatingCard: FloatingCardData(
-        icon: Icons.location_on_rounded,
-        title: 'The Blue Note Jazz Club',
-        subtitle: '0.8 mi away • Match 98%',
-        showCheckmark: true,
-      ),
-    ),
-    // Third screen - Card with floating info
-    OnboardingPageData(
-      imagePath: 'assets/images/onboarding/image3.png',
-      titleWhite: 'Build Your',
-      titleAccent: 'Fame',
-      description:
-          'Automatic invoicing, verified reviews, and a portfolio that grows with every gig.',
-      isFullBleed: false,
-      floatingCard: FloatingCardData(
-        icon: Icons.verified_rounded,
-        iconColor: AppColors.electricViolet,
-        title: 'Top Rated Artist',
-        subtitle: 'Verified by 12 Venues',
-      ),
-      imageAlignment: Alignment.topCenter, // Fix person cutoff
-      floatingCardBottomOffset:180, // Position card higher so stars are visible
-      floatingCardLeftOffset: 60, // Shift to the right
-    ),
-  ];
+  // Image URLs from HTML designs
+  static const String _screen2Image =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBrUNxXYfH5ZhIoSoZA54o4MyfdMGNpvHtg80LhRhI48bu78gdtFNtV02pHHxZ6QIIAJWgjVVXF66yFv6PKIi5lWd_o17aNbOjQkOAx6-5qIQYwRFO7iwWjIBkUVBBNQ1gFPbeKqTbZf2A2Hrp74r2-lAs1oYKwibNLIGjQqYzDN28Rj88CYjaQrp700Ebt3cM6GLsChiKyrn_fkb2I2R_mm2sxEdHjrK_DF9HbPYTQrmpeBjH4s6cSperyz3sOtwCQcBn8MeRKzI2W';
+
+  static const String _screen3Avatar =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAky0Nd100ttAw4rS8QmtAtCqw53rOYlRu74Zc3fr2lK16AGp_a8WLIzRI-RYmrpk6iD0glpvqfLhXMATj2ppUfTWrJs2JkARno4cqqu7HslqQL3Np8b1ZR-TSsJtqZiUUMfq3q9dnFX7f0Py9l-nw6rsD2eUaVSZk5JGoe5gKbJi8_JT3R53FqfxXe9n0N5zELcj8_LPQCA1i-OBmVpdzKEvpswLTbezmipNQbTmH1VIzhSCFe1fRgMop--NGqn9oV_YsIu78RFtNI';
+
+  static const String _screen3Video =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAr7ZxhOa0v9NSCBxl7vASMA4s3ESM9x6urMCj7ecEh6tGTeqitS-PhnicVcXyiyZYKSY8zqF_HSktsG4lOAeipBzfUXjTODqvq9UVykcGqQwP9u2U8_ZdY8ZNvisnLaK4En_mSxlkm2lTi6BFlAx3LTJYiR-HatYTSa-hSMk1XG5tvZYD1B2kiCw_3fAkbGzMg6eGnwQ5SfSYRpw91EuG9qPQ6eU--YEmkuXHg-ltaiqd-RIIslCchIwqY43T2a-OaTgMjq_vpBzFu';
+
+  static const String _screen4Venue =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuADrkxPv6lV-J_qtZq6iuh9OAEC7T317J0Gg_27sA7jIjxaEth6oo9FLvecIUfq75Xd6dHIR69ed9t_nme4OzXmfuy2KUdMPoHuYJQ2lAzeHJJsV-v_tCHUR3R91LH7ITi-ejJU8BYmIcOKT-QyTiZzlfeBNK4DIInSTm51nXFtNs8X1ZDca9JJ7lrh14cT1In8IDePrLB_ocV20iANk49ODDpMZn0ktuXaDdVe9EZiTpjafWlDda8fDn6HuASbT9fOWN4ng4nzFqF_';
 
   @override
   void initState() {
@@ -84,17 +53,27 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
     _floatAnimation = Tween<double>(begin: 0, end: 8).animate(
       CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _floatController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
   void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
+    if (_currentPage < 3) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeOutCubic,
@@ -134,32 +113,26 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
 
   @override
   Widget build(BuildContext context) {
-    final isFirstPage = _currentPage == 0;
-    final isLastPage = _currentPage == _pages.length - 1;
-
     return Scaffold(
-      backgroundColor: AppColors.obsidian,
+      backgroundColor: const Color(0xFF211111),
       body: Stack(
         children: [
           // PageView
-          PageView.builder(
+          PageView(
             controller: _pageController,
-            itemCount: _pages.length,
             onPageChanged: (index) {
               setState(() => _currentPage = index);
             },
-            itemBuilder: (context, index) {
-              final page = _pages[index];
-              if (page.isFullBleed) {
-                return _buildFullBleedPage(page, index);
-              } else {
-                return _buildCardPage(page, index);
-              }
-            },
+            children: [
+              _buildScreen1(),
+              _buildScreen2(),
+              _buildScreen3(),
+              _buildScreen4(),
+            ],
           ),
 
           // Top navigation (Skip button) - only show on non-first pages
-          if (!isFirstPage)
+          if (_currentPage > 0 && _currentPage < 3)
             Positioned(
               top: 0,
               left: 0,
@@ -189,7 +162,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                         child: Text(
                           'Skip',
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: const Color(0xFFC89393),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -206,18 +179,18 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🌟 FULL-BLEED PAGE (First Screen)
+  // 🌟 SCREEN 1: Full-Bleed Hero (Keep Original)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildFullBleedPage(OnboardingPageData page, int index) {
+  Widget _buildScreen1() {
     return Stack(
       fit: StackFit.expand,
       children: [
         // Full-screen background image
         Image.asset(
-          page.imagePath,
+          'assets/images/onboarding/image1.png',
           fit: BoxFit.cover,
-          alignment: page.imageAlignment ?? Alignment.center,
+          alignment: Alignment.center,
           errorBuilder: (context, error, stackTrace) {
             return Container(
               decoration: BoxDecoration(
@@ -225,8 +198,8 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.electricViolet.withOpacity(0.3),
-                    AppColors.obsidian,
+                    AppColors.crimson.withOpacity(0.3),
+                    const Color(0xFF211111),
                   ],
                 ),
               ),
@@ -262,13 +235,37 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                 const Spacer(),
 
                 // Split-color title (left-aligned)
-                _buildSplitTitleLeftAligned(page.titleWhite, page.titleAccent),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Unleash',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 42,
+                        fontWeight: FontWeight.w800,
+                        fontStyle: FontStyle.italic,
+                        height: 1.0,
+                      ),
+                    ),
+                    Text(
+                      'Your Sound',
+                      style: TextStyle(
+                        color: AppColors.crimson,
+                        fontSize: 42,
+                        fontWeight: FontWeight.w800,
+                        fontStyle: FontStyle.italic,
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
 
                 const SizedBox(height: 16),
 
                 // Description (left-aligned)
                 Text(
-                  page.description,
+                  'Connect with the perfect venues and let the world hear you. No agents, just music.',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 16,
@@ -300,210 +297,1215 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🎴 CARD-BASED PAGE (Screen 2 & 3)
+  // 🎯 SCREEN 2: Circular Hero Image
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildCardPage(OnboardingPageData page, int index) {
-    final isLastPage = index == _pages.length - 1;
-
+  Widget _buildScreen2() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF1A1020), AppColors.obsidian, AppColors.obsidian],
-          stops: [0.0, 0.3, 1.0],
-        ),
-      ),
+      color: const Color(0xFF211111),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 60, 24, 16),
-          child: Column(
-            children: [
-              // Hero image card
-              Expanded(flex: 58, child: _buildHeroImageCard(page, index)),
+        child: Column(
+          children: [
+            // Skip button at top
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _goToRoleSelection,
+                    child: Text(
+                      'Skip',
+                      style: TextStyle(
+                        color: const Color(0xFFC89393),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-              const SizedBox(height: 20),
-
-              // Text content (centered)
-              Expanded(
-                flex: 42,
+            // Main content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Split-color title
-                    _buildSplitTitle(page.titleWhite, page.titleAccent),
+                    // Hero Visual with circular image
+                    _buildCircularHeroImage(),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 32),
 
-                    // Description
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        page.description,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 15,
-                          height: 1.4,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-
-                    const Spacer(),
-
-                    // Page indicators (centered)
-                    _buildPageIndicators(),
-
-                    const SizedBox(height: 20),
-
-                    // CTA Button
-                    _buildPremiumButton(
-                      text: isLastPage ? 'Get Started' : 'Next',
-                      onPressed: _nextPage,
-                    ),
-
-                    // Login link on last page
-                    if (isLastPage) ...[
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Already have an account? ',
+                    // Text Content
+                    Column(
+                      children: [
+                        RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
                             style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              // TODO: Navigate to login
-                            },
-                            child: Text(
-                              'Log in',
-                              style: TextStyle(
-                                color: AppColors.electricViolet,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                            children: [
+                              TextSpan(
+                                text: 'Book Your\n',
+                                style: TextStyle(color: Colors.white),
                               ),
-                            ),
+                              TextSpan(
+                                text: 'Next Gig',
+                                style: TextStyle(color: AppColors.crimson),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'GigMatch bridges the gap between local talent and live venues. No agents, just music.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: const Color(0xFF9CA3AF),
+                            fontSize: 16,
+                            height: 1.5,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+
+            // Footer
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+              child: Column(
+                children: [
+                  // Page indicators
+                  _buildPageIndicators(),
+
+                  const SizedBox(height: 32),
+
+                  // Next button
+                  _buildPrimaryButton(
+                    text: 'Next',
+                    onPressed: _nextPage,
+                    showArrow: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeroImageCard(OnboardingPageData page, int index) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Main image container
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.electricViolet.withOpacity(0.15),
-                blurRadius: 40,
-                offset: const Offset(0, 20),
-              ),
-            ],
+  Widget _buildCircularHeroImage() {
+    final size = MediaQuery.of(context).size.width * 0.65;
+
+    return SizedBox(
+      height: size + 40,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Pulsing glow behind
+          AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              return Container(
+                width: size * _pulseAnimation.value,
+                height: size * _pulseAnimation.value,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.crimson.withOpacity(0.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.crimson.withOpacity(0.3),
+                      blurRadius: 60,
+                      spreadRadius: 20,
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Image
-                Image.asset(
-                  page.imagePath,
-                  fit: BoxFit.cover,
-                  alignment: page.imageAlignment ?? Alignment.center,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.electricViolet.withOpacity(0.4),
-                            AppColors.neonMagenta.withOpacity(0.3),
-                            AppColors.obsidian,
-                          ],
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.music_note_rounded,
-                          size: 80,
-                          color: AppColors.textSecondary.withOpacity(0.5),
-                        ),
-                      ),
-                    );
-                  },
-                ),
 
-                // Gradient overlay
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.4),
-                      ],
-                      stops: const [0.5, 1.0],
-                    ),
-                  ),
-                ),
-
-                // Purple tint
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: Alignment.topCenter,
-                      radius: 1.5,
-                      colors: [
-                        AppColors.electricViolet.withOpacity(0.15),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
+          // Main circular image
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF211111), width: 4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
+            child: ClipOval(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    _screen2Image,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        color: const Color(0xFF2A1A1A),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.crimson,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: const Color(0xFF2A1A1A),
+                        child: Icon(
+                          Icons.music_note_rounded,
+                          size: 60,
+                          color: AppColors.crimson.withOpacity(0.5),
+                        ),
+                      );
+                    },
+                  ),
+                  // Gradient overlay at bottom
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          const Color(0xFF211111).withOpacity(0.6),
+                        ],
+                        stops: const [0.6, 1.0],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
 
-        // Floating card
-        if (page.floatingCard != null)
+          // Floating music note badge
           Positioned(
-            left: page.floatingCardLeftOffset ?? 16,
-            bottom: page.floatingCardBottomOffset ?? 20,
-            right: page.floatingCardRightOffset ?? 50,
+            bottom: 0,
+            right: (MediaQuery.of(context).size.width - size) / 2 - 10,
             child: AnimatedBuilder(
               animation: _floatAnimation,
               builder: (context, child) {
                 return Transform.translate(
                   offset: Offset(0, -_floatAnimation.value),
-                  child: _buildFloatingInfoCard(page.floatingCard!),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF211111),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.crimson,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.music_note_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
           ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎴 SCREEN 3: Artist Profile Showcase
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildScreen3() {
+    return Container(
+      color: const Color(0xFF211111),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Top Section: Logo & Progress
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+              child: Column(
+                children: [
+                  // Logo
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.equalizer_rounded,
+                        color: AppColors.crimson,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'GigMatch',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Progress bars
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: AppColors.crimson,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Main content: Profile Card + Bottom Section (Scrollable)
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    // Profile Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildProfileShowcaseCard(),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Bottom Section: Text & Actions
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Showcase Your Sound',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Create a stunning artist profile. Upload high-quality audio samples, performance videos, and a bio that gets you booked.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: const Color(0xFFC89393),
+                              fontSize: 14,
+                              height: 1.4,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Continue button
+                          _buildPrimaryButton(
+                            text: 'Continue',
+                            onPressed: _nextPage,
+                            showArrow: false,
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Skip button
+                          TextButton(
+                            onPressed: _goToRoleSelection,
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 40),
+                            ),
+                            child: Text(
+                              'Skip',
+                              style: TextStyle(
+                                color: const Color(0xFF94A3B8),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileShowcaseCard() {
+    return AnimatedBuilder(
+      animation: _floatAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, -_floatAnimation.value * 0.5),
+          child: Transform.rotate(
+            angle: -0.035, // ~-2 degrees
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Glow behind card
+                Positioned.fill(
+                  child: Container(
+                    margin: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.crimson.withOpacity(0.15),
+                          blurRadius: 60,
+                          spreadRadius: 10,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Main card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A1A1A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.05),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 30,
+                        offset: const Offset(0, 15),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Card Header: Profile
+                      Row(
+                        children: [
+                          // Avatar
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.crimson,
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: Image.network(
+                                _screen3Avatar,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: const Color(0xFF3A2A2A),
+                                    child: Icon(
+                                      Icons.person,
+                                      color: AppColors.crimson,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'The Velvet Tones',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  'Jazz • Soul • R&B',
+                                  style: TextStyle(
+                                    color: const Color(0xFF9CA3AF),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.more_vert,
+                            color: const Color(0xFF9CA3AF),
+                            size: 20,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Video preview
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Stack(
+                          children: [
+                            // Video thumbnail
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                _screen3Video,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: const Color(0xFF3A2A2A),
+                                  );
+                                },
+                              ),
+                            ),
+                            // Overlay
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.black.withOpacity(0.4),
+                              ),
+                            ),
+                            // Play button
+                            Center(
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: AppColors.crimson.withOpacity(0.9),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 32,
+                                ),
+                              ),
+                            ),
+                            // Label
+                            Positioned(
+                              bottom: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.6),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Live at Blue Note',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Audio waveform section
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.music_note_rounded,
+                                    size: 16,
+                                    color: const Color(0xFF9CA3AF),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Latest Demo',
+                                    style: TextStyle(
+                                      color: const Color(0xFF9CA3AF),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '2:45',
+                                style: TextStyle(
+                                  color: const Color(0xFF9CA3AF),
+                                  fontSize: 12,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          _buildWaveform(),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Floating star badge
+                Positioned(
+                  top: -12,
+                  right: -12,
+                  child: AnimatedBuilder(
+                    animation: _floatAnimation,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(0, _floatAnimation.value * 0.5),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFFE5E7EB),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.star_rounded,
+                            color: AppColors.crimson,
+                            size: 20,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildWaveform() {
+    final bars = [
+      0.4,
+      0.7,
+      1.0,
+      0.6,
+      0.3,
+      0.5,
+      0.8,
+      0.9,
+      0.5,
+      0.3,
+      0.6,
+      0.4,
+      0.2,
+      0.5,
+      0.85,
+      0.65,
+      0.35,
+    ];
+
+    return SizedBox(
+      height: 32,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: bars.map((height) {
+          return Container(
+            width: 4,
+            height: 32 * height,
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withOpacity(height),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🃏 SCREEN 4: Swipe Card Stack
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildScreen4() {
+    return Container(
+      decoration: BoxDecoration(color: const Color(0xFF211111)),
+      child: Stack(
+        children: [
+          // Background decorations
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.crimson.withOpacity(0.1),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 80,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.crimson.withOpacity(0.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.crimson.withOpacity(0.2),
+                    blurRadius: 80,
+                    spreadRadius: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Main content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  // Login button
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            // TODO: Navigate to login
+                          },
+                          child: Text(
+                            'Login',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Card stack
+                  Expanded(flex: 50, child: _buildCardStack()),
+
+                  // Page indicators
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: _buildPageIndicators(),
+                  ),
+
+                  // Text content
+                  Text(
+                    'Swipe. Match. Play.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Venues post the gig. You bring the talent. Our smart matching system puts you in front of the right organizers instantly.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xFF9CA3AF),
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Start button
+                  _buildPrimaryButton(
+                    text: 'Start Gigging',
+                    onPressed: _goToRoleSelection,
+                    showArrow: true,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Terms text
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text.rich(
+                      TextSpan(
+                        text: 'By joining, you agree to our ',
+                        style: TextStyle(
+                          color: const Color(0xFF6B7280),
+                          fontSize: 11,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Terms',
+                            style: TextStyle(
+                              color: const Color(0xFFD1D5DB),
+                              decoration: TextDecoration.underline,
+                              decorationColor: const Color(0xFF6B7280),
+                            ),
+                          ),
+                          TextSpan(text: ' & '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: TextStyle(
+                              color: const Color(0xFFD1D5DB),
+                              decoration: TextDecoration.underline,
+                              decorationColor: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardStack() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = constraints.maxWidth * 0.95;
+        final cardHeight = constraints.maxHeight * 0.95;
+
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Background card (furthest back)
+            Transform.translate(
+              offset: const Offset(0, 16),
+              child: Transform.rotate(
+                angle: -0.1, // ~-6 degrees
+                child: Container(
+                  width: cardWidth * 0.85,
+                  height: cardHeight * 0.85,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A1A1A).withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  ),
+                ),
+              ),
+            ),
+
+            // Middle card
+            Transform.translate(
+              offset: const Offset(0, 8),
+              child: Transform.rotate(
+                angle: -0.05, // ~-3 degrees
+                child: Container(
+                  width: cardWidth * 0.9,
+                  height: cardHeight * 0.9,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A1A1A).withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Main active card (front)
+            AnimatedBuilder(
+              animation: _floatAnimation,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, -_floatAnimation.value * 0.3),
+                  child: Container(
+                    width: cardWidth * 0.95,
+                    height: cardHeight * 0.95,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2A1A1A),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.5),
+                          blurRadius: 40,
+                          offset: const Offset(0, 20),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Column(
+                        children: [
+                          // Card image (65%)
+                          Expanded(
+                            flex: 65,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.network(
+                                  _screen4Venue,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: const Color(0xFF3A2A2A),
+                                    );
+                                  },
+                                ),
+                                // Gradient overlay
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        const Color(0xFF2A1A1A),
+                                      ],
+                                      stops: const [0.5, 1.0],
+                                    ),
+                                  ),
+                                ),
+                                // Genre tag
+                                Positioned(
+                                  top: 16,
+                                  left: 16,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                        sigmaX: 10,
+                                        sigmaY: 10,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.4),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(
+                                              0.1,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.music_note_rounded,
+                                              size: 14,
+                                              color: AppColors.crimson,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'JAZZ',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 1,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Card details (35%)
+                          Expanded(
+                            flex: 35,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'The Blue Note',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.location_on_rounded,
+                                            size: 14,
+                                            color: Colors.white.withOpacity(
+                                              0.6,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Downtown, NY • 0.8mi',
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(
+                                                0.6,
+                                              ),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'OFFER',
+                                                style: TextStyle(
+                                                  color: Colors.white
+                                                      .withOpacity(0.4),
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 1,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 1),
+                                              RichText(
+                                                text: TextSpan(
+                                                  children: [
+                                                    TextSpan(
+                                                      text: '\$250',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text: '/set',
+                                                      style: TextStyle(
+                                                        color: Colors.white
+                                                            .withOpacity(0.6),
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(
+                                                0.05,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.white.withOpacity(
+                                                  0.1,
+                                                ),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              'View Details',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Heart badge
+                                Positioned(
+                                  top: -24,
+                                  right: 24,
+                                  child: Transform.rotate(
+                                    angle: 0.2, // ~12 degrees
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.crimson,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.crimson
+                                                .withOpacity(0.4),
+                                            blurRadius: 20,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.favorite_rounded,
+                                        color: Colors.white,
+                                        size: 28,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -511,159 +1513,24 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   // 🧩 REUSABLE COMPONENTS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildFloatingInfoCard(FloatingCardData data) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
-          ),
-          child: Row(
-            children: [
-              // Icon container
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: (data.iconColor ?? AppColors.electricViolet)
-                      .withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  data.icon,
-                  color: data.iconColor ?? AppColors.electricViolet,
-                  size: 22,
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Text content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      data.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      data.subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Checkmark
-              if (data.showCheckmark)
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.electricViolet,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSplitTitle(String white, String accent) {
-    return Column(
-      children: [
-        Text(
-          white,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            height: 1.1,
-          ),
-        ),
-        Text(
-          accent,
-          style: TextStyle(
-            color: AppColors.electricViolet,
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            height: 1.1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSplitTitleLeftAligned(String white, String accent) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          white,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 42,
-            fontWeight: FontWeight.w800,
-            fontStyle: FontStyle.italic,
-            height: 1.0,
-          ),
-        ),
-        Text(
-          accent,
-          style: TextStyle(
-            color: AppColors.electricViolet,
-            fontSize: 42,
-            fontWeight: FontWeight.w800,
-            fontStyle: FontStyle.italic,
-            height: 1.0,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPageIndicators() {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(_pages.length, (index) {
+      children: List.generate(4, (index) {
         final isActive = index == _currentPage;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          width: isActive ? 28 : 8,
-          height: 4,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isActive ? 24 : 8,
+          height: 8,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(2),
-            color: isActive
-                ? AppColors.electricViolet
-                : AppColors.textSecondary.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(4),
+            color: isActive ? AppColors.crimson : Colors.white.withOpacity(0.2),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: AppColors.electricViolet.withOpacity(0.5),
+                      color: AppColors.crimson.withOpacity(0.6),
                       blurRadius: 8,
                     ),
                   ]
@@ -677,30 +1544,24 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   Widget _buildGlassFAB({required VoidCallback onPressed}) {
     return GestureDetector(
       onTap: onPressed,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.electricViolet,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.electricViolet.withOpacity(0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.crimson,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.crimson.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            child: const Icon(
-              Icons.arrow_forward_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
+          ],
+        ),
+        child: const Icon(
+          Icons.arrow_forward_rounded,
+          color: Colors.white,
+          size: 28,
         ),
       ),
     );
@@ -734,25 +1595,22 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
     );
   }
 
-  Widget _buildPremiumButton({
+  Widget _buildPrimaryButton({
     required String text,
     required VoidCallback onPressed,
+    bool showArrow = false,
   }) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
         width: double.infinity,
-        height: 58,
+        height: 56,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.electricViolet, AppColors.deepViolet],
-          ),
-          borderRadius: BorderRadius.circular(29),
+          color: AppColors.crimson,
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: AppColors.electricViolet.withOpacity(0.4),
+              color: AppColors.crimson.withOpacity(0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -765,68 +1623,22 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
               text,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.arrow_forward_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
+            if (showArrow) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
           ],
         ),
       ),
     );
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 📦 DATA MODELS
-// ═══════════════════════════════════════════════════════════════════════════
-
-class OnboardingPageData {
-  final String imagePath;
-  final String titleWhite;
-  final String titleAccent;
-  final String description;
-  final bool isFullBleed;
-  final FloatingCardData? floatingCard;
-  final Alignment? imageAlignment;
-  final double? floatingCardBottomOffset;
-  final double? floatingCardLeftOffset;
-  final double? floatingCardRightOffset;
-
-  OnboardingPageData({
-    required this.imagePath,
-    required this.titleWhite,
-    required this.titleAccent,
-    required this.description,
-    this.isFullBleed = false,
-    this.floatingCard,
-    this.imageAlignment,
-    this.floatingCardBottomOffset,
-    this.floatingCardLeftOffset,
-    this.floatingCardRightOffset,
-  });
-}
-
-class FloatingCardData {
-  final IconData icon;
-  final Color? iconColor;
-  final String title;
-  final String subtitle;
-  final bool showCheckmark;
-  final bool showProgress;
-
-  FloatingCardData({
-    required this.icon,
-    this.iconColor,
-    required this.title,
-    required this.subtitle,
-    this.showCheckmark = false,
-    this.showProgress = false,
-  });
 }
