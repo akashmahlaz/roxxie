@@ -32,10 +32,10 @@ class GigMatchApp extends StatelessWidget {
       title: 'GigMatch',
       debugShowCheckedModeBanner: false,
 
-      // Apply our premium dark theme
-      theme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
-
+      // Apply both light and dark themes
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system, // Follows device system setting
       // Start with premium splash screen
       home: const SplashScreenV2(),
     );

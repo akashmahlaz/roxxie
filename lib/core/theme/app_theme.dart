@@ -416,6 +416,261 @@ class AppTheme {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ☀️ LIGHT THEME
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// The light theme for Roxxie
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 🎨 COLOR SCHEME - LIGHT
+      // ═══════════════════════════════════════════════════════════════════════
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.crimson,
+        onPrimary: AppColors.pureWhite,
+        primaryContainer: AppColors.crimsonLight,
+        onPrimaryContainer: AppColors.pureWhite,
+
+        secondary: AppColors.rose,
+        onSecondary: AppColors.pureWhite,
+        secondaryContainer: AppColors.roseDark,
+        onSecondaryContainer: AppColors.pureWhite,
+
+        tertiary: AppColors.cyan,
+        onTertiary: AppColors.pureWhite,
+
+        error: AppColors.error,
+        onError: AppColors.pureWhite,
+        errorContainer: AppColors.errorLight,
+        onErrorContainer: AppColors.pureWhite,
+
+        surface: AppColors.lightSurface,
+        onSurface: AppColors.lightTextPrimary,
+        surfaceContainerHighest: AppColors.lightSurfaceSecondary,
+        onSurfaceVariant: AppColors.lightTextSecondary,
+
+        outline: AppColors.lightBorder,
+        outlineVariant: AppColors.lightDivider,
+
+        shadow: Colors.black,
+        scrim: Colors.black,
+
+        inverseSurface: AppColors.obsidian,
+        onInverseSurface: AppColors.pureWhite,
+        inversePrimary: AppColors.crimsonLight,
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 🖼️ SCAFFOLD
+      // ═══════════════════════════════════════════════════════════════════════
+      scaffoldBackgroundColor: AppColors.lightBackground,
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 📝 TEXT THEME
+      // ═══════════════════════════════════════════════════════════════════════
+      textTheme: TextTheme(
+        displayLarge: AppTypography.displayLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        displayMedium: AppTypography.displayMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        displaySmall: AppTypography.displaySmall.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        headlineLarge: AppTypography.headlineLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        headlineMedium: AppTypography.headlineMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        headlineSmall: AppTypography.headlineSmall.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        titleLarge: AppTypography.titleLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        titleMedium: AppTypography.titleMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        titleSmall: AppTypography.titleSmall.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        bodyLarge: AppTypography.bodyLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        bodyMedium: AppTypography.bodyMedium.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        bodySmall: AppTypography.bodySmall.copyWith(
+          color: AppColors.lightTextSecondary,
+        ),
+        labelLarge: AppTypography.labelLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        labelMedium: AppTypography.labelMedium.copyWith(
+          color: AppColors.lightTextSecondary,
+        ),
+        labelSmall: AppTypography.labelSmall.copyWith(
+          color: AppColors.lightTextTertiary,
+        ),
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 🔘 BUTTON THEMES
+      // ═══════════════════════════════════════════════════════════════════════
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.crimson,
+          foregroundColor: AppColors.pureWhite,
+          padding: AppSpacing.buttonPaddingLg,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppSpacing.borderRadiusMd,
+          ),
+          elevation: 0,
+          textStyle: AppTypography.labelLarge,
+        ),
+      ),
+
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.crimson,
+          foregroundColor: AppColors.pureWhite,
+          padding: AppSpacing.buttonPaddingLg,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppSpacing.borderRadiusMd,
+          ),
+          textStyle: AppTypography.labelLarge,
+        ),
+      ),
+
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.lightTextPrimary,
+          padding: AppSpacing.buttonPaddingLg,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppSpacing.borderRadiusMd,
+          ),
+          side: BorderSide(color: AppColors.lightBorder, width: 1.5),
+          textStyle: AppTypography.labelLarge,
+        ),
+      ),
+
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.crimson,
+          padding: AppSpacing.buttonPaddingMd,
+          textStyle: AppTypography.labelLarge,
+        ),
+      ),
+
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: AppColors.lightTextPrimary,
+          padding: const EdgeInsets.all(12),
+        ),
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 📝 INPUT DECORATION
+      // ═══════════════════════════════════════════════════════════════════════
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.lightSurface,
+        contentPadding: AppSpacing.inputPadding,
+        border: OutlineInputBorder(
+          borderRadius: AppSpacing.borderRadiusMd,
+          borderSide: BorderSide(color: AppColors.lightBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.borderRadiusMd,
+          borderSide: BorderSide(color: AppColors.lightBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.borderRadiusMd,
+          borderSide: const BorderSide(color: AppColors.crimson, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: AppSpacing.borderRadiusMd,
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        hintStyle: TextStyle(color: AppColors.lightTextTertiary),
+        labelStyle: TextStyle(color: AppColors.lightTextSecondary),
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 🃏 CARD THEME
+      // ═══════════════════════════════════════════════════════════════════════
+      cardTheme: CardThemeData(
+        color: AppColors.lightSurface,
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.08),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.borderRadiusLg,
+          side: BorderSide(color: AppColors.lightBorder.withOpacity(0.5)),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 📱 APP BAR
+      // ═══════════════════════════════════════════════════════════════════════
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.lightBackground,
+        foregroundColor: AppColors.lightTextPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
+        centerTitle: true,
+        titleTextStyle: AppTypography.titleLarge.copyWith(
+          color: AppColors.lightTextPrimary,
+        ),
+        iconTheme: IconThemeData(color: AppColors.lightTextPrimary),
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 📋 BOTTOM SHEET
+      // ═══════════════════════════════════════════════════════════════════════
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: AppColors.lightSurface,
+        modalBackgroundColor: AppColors.lightSurface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        elevation: 8,
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 🍫 SNACK BAR
+      // ═══════════════════════════════════════════════════════════════════════
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.lightTextPrimary,
+        contentTextStyle: AppTypography.bodyMedium.copyWith(
+          color: AppColors.pureWhite,
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusMd),
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // ✨ SPLASH & HIGHLIGHT
+      // ═══════════════════════════════════════════════════════════════════════
+      splashColor: AppColors.crimson.withValues(alpha: 0.1),
+      highlightColor: AppColors.crimson.withValues(alpha: 0.05),
+      hoverColor: AppColors.crimson.withValues(alpha: 0.05),
+      focusColor: AppColors.crimson.withValues(alpha: 0.1),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // 🎯 MISC
+      // ═══════════════════════════════════════════════════════════════════════
+      visualDensity: VisualDensity.standard,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+    );
+  }
+
   /// System UI overlay style for immersive experience
   static const SystemUiOverlayStyle systemOverlayStyle = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
