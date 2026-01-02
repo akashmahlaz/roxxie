@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../core/theme/theme.dart';
-import 'role_selection_screen.dart';
+import 'role_selection_screen_v2.dart';
 
 /// 🎠 PREMIUM ONBOARDING SCREEN V2
 ///
@@ -86,7 +86,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const RoleSelectionScreen(),
+            const RoleSelectionScreenV2(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: animation,
