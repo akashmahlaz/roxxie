@@ -220,12 +220,14 @@ class _SplashScreenV2State extends State<SplashScreenV2>
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
     return Scaffold(
-      backgroundColor: AppColors.obsidian,
+      backgroundColor: AppColors.background(brightness),
       body: Stack(
         children: [
           // Premium animated background
-          _buildBackground(),
+          _buildBackground(brightness),
 
           // Radial glow behind logo
           _buildRadialGlow(),
@@ -244,12 +246,12 @@ class _SplashScreenV2State extends State<SplashScreenV2>
                   const SizedBox(height: 40),
 
                   // Brand name
-                  _buildBrandName(),
+                  _buildBrandName(brightness),
 
                   const SizedBox(height: 12),
 
                   // Tagline
-                  _buildTagline(),
+                  _buildTagline(brightness),
 
                   const Spacer(flex: 3),
 
@@ -266,7 +268,12 @@ class _SplashScreenV2State extends State<SplashScreenV2>
     );
   }
 
-  Widget _buildBackground() {
+  Widget _buildBackground(Brightness brightness) {
+    final bgColor = AppColors.background(brightness);
+    final accentColor = brightness == Brightness.dark
+        ? AppColors.wine.withValues(alpha: 0.3)
+        : AppColors.crimson.withValues(alpha: 0.1);
+
     return AnimatedBuilder(
       animation: _backgroundController,
       builder: (context, child) {
@@ -280,17 +287,16 @@ class _SplashScreenV2State extends State<SplashScreenV2>
                   gradient: RadialGradient(
                     center: const Alignment(0, -0.3),
                     radius: 1.5,
-                    colors: [
-                      AppColors.wine.withValues(alpha: 0.3),
-                      AppColors.obsidian,
-                    ],
+                    colors: [accentColor, bgColor],
                   ),
                 ),
               ),
 
               // Noise texture overlay (simulated with pattern)
               CustomPaint(
-                painter: _NoisePainter(opacity: 0.03),
+                painter: _NoisePainter(
+                  opacity: brightness == Brightness.dark ? 0.03 : 0.02,
+                ),
                 size: Size.infinite,
               ),
 
@@ -300,7 +306,7 @@ class _SplashScreenV2State extends State<SplashScreenV2>
                   gradient: RadialGradient(
                     colors: [
                       Colors.transparent,
-                      AppColors.obsidian.withValues(alpha: 0.8),
+                      bgColor.withValues(alpha: 0.8),
                     ],
                     stops: const [0.5, 1.0],
                   ),
@@ -448,7 +454,12 @@ class _SplashScreenV2State extends State<SplashScreenV2>
     );
   }
 
-  Widget _buildBrandName() {
+  Widget _buildBrandName(Brightness brightness) {
+    final textColor = AppColors.text(brightness);
+    final textColorSecondary = brightness == Brightness.dark
+        ? const Color(0xFFE0E0E0)
+        : const Color(0xFF374151);
+
     return AnimatedBuilder(
       animation: _textController,
       builder: (context, child) {
@@ -460,17 +471,17 @@ class _SplashScreenV2State extends State<SplashScreenV2>
               children: [
                 // Main brand name
                 ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [Colors.white, Color(0xFFE0E0E0)],
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: [textColor, textColorSecondary],
                   ).createShader(bounds),
-                  child: const Text(
+                  child: Text(
                     'GIGMATCH',
                     style: TextStyle(
                       fontFamily: 'Satoshi',
                       fontSize: 42,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 4,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -507,7 +518,7 @@ class _SplashScreenV2State extends State<SplashScreenV2>
     );
   }
 
-  Widget _buildTagline() {
+  Widget _buildTagline(Brightness brightness) {
     return AnimatedBuilder(
       animation: _taglineController,
       builder: (context, child) {
@@ -522,7 +533,7 @@ class _SplashScreenV2State extends State<SplashScreenV2>
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
                 letterSpacing: 1.5,
-                color: AppColors.textSecondary.withValues(alpha: 0.8),
+                color: AppColors.textSec(brightness).withValues(alpha: 0.8),
               ),
             ),
           ),

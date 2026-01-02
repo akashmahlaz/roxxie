@@ -112,8 +112,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF211111),
+      backgroundColor: AppColors.background(brightness),
       body: Stack(
         children: [
           // PageView
@@ -123,10 +125,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
               setState(() => _currentPage = index);
             },
             children: [
-              _buildScreen1(),
-              _buildScreen2(),
-              _buildScreen3(),
-              _buildScreen4(),
+              _buildScreen1(brightness),
+              _buildScreen2(brightness),
+              _buildScreen3(brightness),
+              _buildScreen4(brightness),
             ],
           ),
 
@@ -154,6 +156,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             curve: Curves.easeOutCubic,
                           );
                         },
+                        brightness: brightness,
                       ),
                       // Skip button
                       TextButton(
@@ -161,7 +164,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                         child: Text(
                           'Skip',
                           style: TextStyle(
-                            color: const Color(0xFFC89393),
+                            color: AppColors.textSec(brightness),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -181,7 +184,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   // 🌟 SCREEN 1: Full-Bleed Hero (Keep Original)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildScreen1() {
+  Widget _buildScreen1(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -198,7 +203,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   end: Alignment.bottomCenter,
                   colors: [
                     AppColors.crimson.withOpacity(0.3),
-                    const Color(0xFF211111),
+                    AppColors.background(brightness),
                   ],
                 ),
               ),
@@ -212,13 +217,21 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.transparent,
-                Colors.black.withOpacity(0.4),
-                Colors.black.withOpacity(0.85),
-                Colors.black.withOpacity(0.95),
-              ],
+              colors: isDark
+                  ? [
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.4),
+                      Colors.black.withOpacity(0.85),
+                      Colors.black.withOpacity(0.95),
+                    ]
+                  : [
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.white.withOpacity(0.4),
+                      Colors.white.withOpacity(0.85),
+                      Colors.white.withOpacity(0.95),
+                    ],
               stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
             ),
           ),
@@ -240,7 +253,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     Text(
                       'Unleash',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.text(brightness),
                         fontSize: 42,
                         fontWeight: FontWeight.w800,
                         fontStyle: FontStyle.italic,
@@ -250,7 +263,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     Text(
                       'Your Sound',
                       style: TextStyle(
-                        color: const Color(0xFFDC2626),
+                        color: AppColors.crimson,
                         fontSize: 42,
                         fontWeight: FontWeight.w800,
                         fontStyle: FontStyle.italic,
@@ -266,7 +279,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                 Text(
                   'Connect with the perfect venues and let the world hear you. No agents, just music.',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSec(brightness),
                     fontSize: 16,
                     height: 1.5,
                     fontWeight: FontWeight.w400,
@@ -281,7 +294,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Page indicators (left)
-                    _buildPageIndicators(),
+                    _buildPageIndicators(brightness),
 
                     // Glassmorphic FAB (right)
                     _buildGlassFAB(onPressed: _nextPage),
@@ -299,9 +312,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   // 🎯 SCREEN 2: Circular Hero Image
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildScreen2() {
+  Widget _buildScreen2(Brightness brightness) {
     return Container(
-      color: const Color(0xFF211111),
+      color: AppColors.background(brightness),
       child: SafeArea(
         child: Column(
           children: [
@@ -316,7 +329,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Hero Visual with circular image
-                    _buildCircularHeroImage(),
+                    _buildCircularHeroImage(brightness),
 
                     const SizedBox(height: 32),
 
@@ -334,7 +347,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             children: [
                               TextSpan(
                                 text: 'Book Your\n',
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                  color: AppColors.text(brightness),
+                                ),
                               ),
                               TextSpan(
                                 text: 'Next Gig',
@@ -348,7 +363,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                           'GigMatch bridges the gap between local talent and live venues. No agents, just music.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: const Color(0xFF9CA3AF),
+                            color: AppColors.textSec(brightness),
                             fontSize: 16,
                             height: 1.5,
                             fontWeight: FontWeight.w400,
@@ -367,7 +382,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
               child: Column(
                 children: [
                   // Page indicators
-                  _buildPageIndicators(),
+                  _buildPageIndicators(brightness),
 
                   const SizedBox(height: 32),
 
@@ -386,7 +401,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
     );
   }
 
-  Widget _buildCircularHeroImage() {
+  Widget _buildCircularHeroImage(Brightness brightness) {
     final size = MediaQuery.of(context).size.width * 0.65;
 
     return SizedBox(
@@ -422,7 +437,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF211111), width: 4),
+              border: Border.all(
+                color: AppColors.background(brightness),
+                width: 4,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.5),
@@ -444,7 +462,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          const Color(0xFF211111).withOpacity(0.6),
+                          AppColors.background(brightness).withOpacity(0.6),
                         ],
                         stops: const [0.6, 1.0],
                       ),
@@ -467,10 +485,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF211111),
+                      color: AppColors.background(brightness),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
+                        color: AppColors.border(brightness),
                         width: 1,
                       ),
                       boxShadow: [
@@ -508,9 +526,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   // 🎴 SCREEN 3: Artist Profile Showcase
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildScreen3() {
+  Widget _buildScreen3(Brightness brightness) {
     return Container(
-      color: const Color(0xFF211111),
+      color: AppColors.background(brightness),
       child: SafeArea(
         child: Column(
           children: [
@@ -532,7 +550,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       Text(
                         'GigMatch',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.text(brightness),
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.5,
@@ -550,7 +568,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                         child: Container(
                           height: 6,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.border(brightness),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
@@ -570,7 +588,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                         child: Container(
                           height: 6,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.border(brightness),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
@@ -590,7 +608,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     // Profile Card
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildProfileShowcaseCard(),
+                      child: _buildProfileShowcaseCard(brightness),
                     ),
 
                     const SizedBox(height: 24),
@@ -604,7 +622,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             'Showcase Your Sound',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.text(brightness),
                               fontSize: 28,
                               fontWeight: FontWeight.w700,
                               height: 1.2,
@@ -615,7 +633,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             'Create a stunning artist profile. Upload high-quality audio samples, performance videos, and a bio that gets you booked.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: const Color(0xFFC89393),
+                              color: AppColors.textSec(brightness),
                               fontSize: 14,
                               height: 1.4,
                               fontWeight: FontWeight.w400,
@@ -624,7 +642,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                           const SizedBox(height: 20),
 
                           // Page indicators
-                          _buildPageIndicators(),
+                          _buildPageIndicators(brightness),
 
                           const SizedBox(height: 70),
 
@@ -647,7 +665,12 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
     );
   }
 
-  Widget _buildProfileShowcaseCard() {
+  Widget _buildProfileShowcaseCard(Brightness brightness) {
+    final cardBg = brightness == Brightness.dark
+        ? const Color(0xFF2A1A1A)
+        : AppColors.cardBackground(brightness);
+    final subtitleColor = AppColors.textTert(brightness);
+
     return AnimatedBuilder(
       animation: _floatAnimation,
       builder: (context, child) {
@@ -680,10 +703,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2A1A1A),
+                    color: cardBg,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.05),
+                      color: AppColors.border(brightness),
                       width: 1,
                     ),
                     boxShadow: [
@@ -726,7 +749,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                 Text(
                                   'The Velvet Tones',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.text(brightness),
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -734,18 +757,14 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                 Text(
                                   'Jazz • Soul • R&B',
                                   style: TextStyle(
-                                    color: const Color(0xFF9CA3AF),
+                                    color: subtitleColor,
                                     fontSize: 11,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          Icon(
-                            Icons.more_vert,
-                            color: const Color(0xFF9CA3AF),
-                            size: 20,
-                          ),
+                          Icon(Icons.more_vert, color: subtitleColor, size: 20),
                         ],
                       ),
 
@@ -835,13 +854,13 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                   Icon(
                                     Icons.music_note_rounded,
                                     size: 16,
-                                    color: const Color(0xFF9CA3AF),
+                                    color: subtitleColor,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Latest Demo',
                                     style: TextStyle(
-                                      color: const Color(0xFF9CA3AF),
+                                      color: subtitleColor,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -851,7 +870,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                               Text(
                                 '2:45',
                                 style: TextStyle(
-                                  color: const Color(0xFF9CA3AF),
+                                  color: subtitleColor,
                                   fontSize: 12,
                                   fontFamily: 'monospace',
                                 ),
@@ -878,10 +897,12 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: brightness == Brightness.dark
+                                ? Colors.white
+                                : AppColors.cardBackground(brightness),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFFE5E7EB),
+                              color: AppColors.border(brightness),
                               width: 1,
                             ),
                             boxShadow: [
@@ -954,9 +975,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   // 🃏 SCREEN 4: Swipe Card Stack
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildScreen4() {
+  Widget _buildScreen4(Brightness brightness) {
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFF211111)),
+      decoration: BoxDecoration(color: AppColors.background(brightness)),
       child: Stack(
         children: [
           // Background decorations
@@ -1017,7 +1038,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                           child: Text(
                             'Login',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: AppColors.textSec(brightness),
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1028,12 +1049,12 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   ),
 
                   // Card stack
-                  Expanded(flex: 50, child: _buildCardStack()),
+                  Expanded(flex: 50, child: _buildCardStack(brightness)),
 
                   // Page indicators
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: _buildPageIndicators(),
+                    child: _buildPageIndicators(brightness),
                   ),
 
                   // Text content
@@ -1041,7 +1062,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     'Swipe. Match. Play.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.text(brightness),
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
                       height: 1.2,
@@ -1055,7 +1076,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       'Venues post the gig. You bring the talent. Our smart matching system puts you in front of the right organizers instantly.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: const Color(0xFF9CA3AF),
+                        color: AppColors.textSec(brightness),
                         fontSize: 14,
                         height: 1.4,
                       ),
@@ -1080,25 +1101,25 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       TextSpan(
                         text: 'By joining, you agree to our ',
                         style: TextStyle(
-                          color: const Color(0xFF6B7280),
+                          color: AppColors.textTert(brightness),
                           fontSize: 11,
                         ),
                         children: [
                           TextSpan(
                             text: 'Terms',
                             style: TextStyle(
-                              color: const Color(0xFFD1D5DB),
+                              color: AppColors.textSec(brightness),
                               decoration: TextDecoration.underline,
-                              decorationColor: const Color(0xFF6B7280),
+                              decorationColor: AppColors.textTert(brightness),
                             ),
                           ),
                           TextSpan(text: ' & '),
                           TextSpan(
                             text: 'Privacy Policy',
                             style: TextStyle(
-                              color: const Color(0xFFD1D5DB),
+                              color: AppColors.textSec(brightness),
                               decoration: TextDecoration.underline,
-                              decorationColor: const Color(0xFF6B7280),
+                              decorationColor: AppColors.textTert(brightness),
                             ),
                           ),
                         ],
@@ -1115,7 +1136,11 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
     );
   }
 
-  Widget _buildCardStack() {
+  Widget _buildCardStack(Brightness brightness) {
+    final cardBg = brightness == Brightness.dark
+        ? const Color(0xFF2A1A1A)
+        : AppColors.cardBackground(brightness);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final cardWidth = constraints.maxWidth * 0.95;
@@ -1133,9 +1158,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   width: cardWidth * 0.85,
                   height: cardHeight * 0.85,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2A1A1A).withOpacity(0.4),
+                    color: cardBg.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    border: Border.all(color: AppColors.border(brightness)),
                   ),
                 ),
               ),
@@ -1150,9 +1175,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   width: cardWidth * 0.9,
                   height: cardHeight * 0.9,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2A1A1A).withOpacity(0.8),
+                    color: cardBg.withOpacity(0.8),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    border: Border.all(color: AppColors.border(brightness)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.3),
@@ -1175,9 +1200,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     width: cardWidth * 0.95,
                     height: cardHeight * 0.95,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2A1A1A),
+                      color: cardBg,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(color: AppColors.border(brightness)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.5),
@@ -1203,10 +1228,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                     gradient: LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        const Color(0xFF2A1A1A),
-                                      ],
+                                      colors: [Colors.transparent, cardBg],
                                       stops: const [0.5, 1.0],
                                     ),
                                   ),
@@ -1282,7 +1304,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                       Text(
                                         'The Blue Note',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: AppColors.text(brightness),
                                           fontSize: 20,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -1293,16 +1315,16 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                           Icon(
                                             Icons.location_on_rounded,
                                             size: 14,
-                                            color: Colors.white.withOpacity(
-                                              0.6,
+                                            color: AppColors.textSec(
+                                              brightness,
                                             ),
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             'Downtown, NY • 0.8mi',
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.6,
+                                              color: AppColors.textSec(
+                                                brightness,
                                               ),
                                               fontSize: 12,
                                             ),
@@ -1321,8 +1343,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                               Text(
                                                 'OFFER',
                                                 style: TextStyle(
-                                                  color: Colors.white
-                                                      .withOpacity(0.4),
+                                                  color: AppColors.textTert(
+                                                    brightness,
+                                                  ),
                                                   fontSize: 9,
                                                   fontWeight: FontWeight.w700,
                                                   letterSpacing: 1,
@@ -1335,7 +1358,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                                     TextSpan(
                                                       text: '\$250',
                                                       style: TextStyle(
-                                                        color: Colors.white,
+                                                        color: AppColors.text(
+                                                          brightness,
+                                                        ),
                                                         fontSize: 16,
                                                         fontWeight:
                                                             FontWeight.w700,
@@ -1344,8 +1369,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                                     TextSpan(
                                                       text: '/set',
                                                       style: TextStyle(
-                                                        color: Colors.white
-                                                            .withOpacity(0.6),
+                                                        color:
+                                                            AppColors.textSec(
+                                                              brightness,
+                                                            ),
                                                         fontSize: 12,
                                                       ),
                                                     ),
@@ -1360,21 +1387,23 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                               vertical: 6,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(
-                                                0.05,
+                                              color: AppColors.border(
+                                                brightness,
                                               ),
                                               borderRadius:
                                                   BorderRadius.circular(16),
                                               border: Border.all(
-                                                color: Colors.white.withOpacity(
-                                                  0.1,
+                                                color: AppColors.border(
+                                                  brightness,
                                                 ),
                                               ),
                                             ),
                                             child: Text(
                                               'View Details',
                                               style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppColors.text(
+                                                  brightness,
+                                                ),
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -1434,7 +1463,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   // 🧩 REUSABLE COMPONENTS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildPageIndicators() {
+  Widget _buildPageIndicators(Brightness brightness) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(4, (index) {
@@ -1447,7 +1476,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
           height: 8,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
-            color: isActive ? AppColors.crimson : Colors.white.withOpacity(0.2),
+            color: isActive ? AppColors.crimson : AppColors.border(brightness),
             boxShadow: isActive
                 ? [
                     BoxShadow(
@@ -1491,6 +1520,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
   Widget _buildGlassIconButton({
     required IconData icon,
     required VoidCallback onPressed,
+    required Brightness brightness,
   }) {
     return GestureDetector(
       onTap: onPressed,
@@ -1503,13 +1533,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.1),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.15),
-                width: 1,
-              ),
+              color: AppColors.surface(brightness).withOpacity(0.3),
+              border: Border.all(color: AppColors.border(brightness), width: 1),
             ),
-            child: Icon(icon, color: Colors.white, size: 20),
+            child: Icon(icon, color: AppColors.text(brightness), size: 20),
           ),
         ),
       ),
