@@ -1,7 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/providers/providers.dart';
 import 'onboarding_screen_v2.dart';
+import 'home_screen.dart';
+import 'artist/artist_profile_setup_screen.dart';
+import 'venue/venue_profile_setup_screen.dart';
 
 /// 🌟 GIGMATCH PREMIUM SPLASH SCREEN V2
 ///
@@ -181,18 +186,43 @@ class _SplashScreenV2State extends State<SplashScreenV2>
     await Future.delayed(const Duration(milliseconds: 200));
     _loadingController.repeat();
 
-    // Navigate after splash
+    // Wait for auth check and navigate based on state
     await Future.delayed(const Duration(milliseconds: 2200));
     if (mounted) {
-      _navigateToOnboarding();
+      _navigateBasedOnAuthState();
     }
   }
 
-  void _navigateToOnboarding() {
+  void _navigateBasedOnAuthState() {
+    final authProvider = context.read<AuthProvider>();
+
+    Widget destination;
+
+    switch (authProvider.status) {
+      case AuthStatus.authenticated:
+        // User is logged in and profile is complete
+        destination = const HomeScreen();
+        break;
+      case AuthStatus.profileIncomplete:
+        // User is logged in but needs to complete profile
+        if (authProvider.isArtist) {
+          destination = const ArtistProfileSetupScreen();
+        } else {
+          destination = const VenueProfileSetupScreen();
+        }
+        break;
+      case AuthStatus.unauthenticated:
+      case AuthStatus.initial:
+      case AuthStatus.loading:
+      case AuthStatus.error:
+        // Not logged in, show onboarding
+        destination = const OnboardingScreenV2();
+        break;
+    }
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const OnboardingScreenV2(),
+        pageBuilder: (context, animation, secondaryAnimation) => destination,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurvedAnimation(
