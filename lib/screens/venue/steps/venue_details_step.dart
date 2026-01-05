@@ -157,7 +157,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.crimson.withOpacity(0.1),
+            color: AppColors.crimson.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.crimson, size: 20),
@@ -425,7 +425,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: hours.isOpen
-                    ? AppColors.crimson.withOpacity(0.15)
+                    ? AppColors.crimson.withValues(alpha: 0.15)
                     : AppColors.background(brightness),
                 borderRadius: BorderRadius.circular(6),
               ),
@@ -721,7 +721,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                 boxShadow: _isValid
                     ? [
                         BoxShadow(
-                          color: AppColors.crimson.withOpacity(0.3),
+                          color: AppColors.crimson.withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),

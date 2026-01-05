@@ -608,10 +608,10 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.lightSurface,
         elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.08),
+        shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(
           borderRadius: AppSpacing.borderRadiusLg,
-          side: BorderSide(color: AppColors.lightBorder.withOpacity(0.5)),
+          side: BorderSide(color: AppColors.lightBorder.withValues(alpha: 0.5)),
         ),
         margin: EdgeInsets.zero,
       ),

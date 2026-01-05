@@ -202,7 +202,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.crimson.withOpacity(0.3),
+                    AppColors.crimson.withValues(alpha: 0.3),
                     AppColors.background(brightness),
                   ],
                 ),
@@ -221,16 +221,16 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   ? [
                       Colors.transparent,
                       Colors.transparent,
-                      Colors.black.withOpacity(0.4),
-                      Colors.black.withOpacity(0.85),
-                      Colors.black.withOpacity(0.95),
+                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.85),
+                      Colors.black.withValues(alpha: 0.95),
                     ]
                   : [
                       Colors.transparent,
                       Colors.transparent,
-                      Colors.white.withOpacity(0.4),
-                      Colors.white.withOpacity(0.85),
-                      Colors.white.withOpacity(0.95),
+                      Colors.white.withValues(alpha: 0.4),
+                      Colors.white.withValues(alpha: 0.85),
+                      Colors.white.withValues(alpha: 0.95),
                     ],
               stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
             ),
@@ -418,10 +418,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                 height: size * _pulseAnimation.value,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.crimson.withOpacity(0.2),
+                  color: AppColors.crimson.withValues(alpha: 0.2),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.crimson.withOpacity(0.3),
+                      color: AppColors.crimson.withValues(alpha: 0.3),
                       blurRadius: 60,
                       spreadRadius: 20,
                     ),
@@ -443,7 +443,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -462,7 +462,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          AppColors.background(brightness).withOpacity(0.6),
+                          AppColors.background(
+                            brightness,
+                          ).withValues(alpha: 0.6),
                         ],
                         stops: const [0.6, 1.0],
                       ),
@@ -493,7 +495,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -689,7 +691,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.crimson.withOpacity(0.15),
+                          color: AppColors.crimson.withValues(alpha: 0.15),
                           blurRadius: 60,
                           spreadRadius: 10,
                         ),
@@ -711,7 +713,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
+                        color: Colors.black.withValues(alpha: 0.4),
                         blurRadius: 30,
                         offset: const Offset(0, 15),
                       ),
@@ -789,7 +791,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                color: Colors.black.withOpacity(0.4),
+                                color: Colors.black.withValues(alpha: 0.4),
                               ),
                             ),
                             // Play button
@@ -798,11 +800,15 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: AppColors.crimson.withOpacity(0.9),
+                                  color: AppColors.crimson.withValues(
+                                    alpha: 0.9,
+                                  ),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.3),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       blurRadius: 12,
                                     ),
                                   ],
@@ -824,7 +830,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.6),
+                                  color: Colors.black.withValues(alpha: 0.6),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -907,7 +913,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -962,7 +968,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
             width: 4,
             height: 32 * height,
             decoration: BoxDecoration(
-              color: AppColors.crimson.withOpacity(height),
+              color: AppColors.crimson.withValues(alpha: height),
               borderRadius: BorderRadius.circular(2),
             ),
           );
@@ -992,7 +998,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.crimson.withOpacity(0.1),
+                    AppColors.crimson.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                 ),
@@ -1007,10 +1013,10 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.crimson.withOpacity(0.2),
+                color: AppColors.crimson.withValues(alpha: 0.2),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.2),
+                    color: AppColors.crimson.withValues(alpha: 0.2),
                     blurRadius: 80,
                     spreadRadius: 20,
                   ),
@@ -1158,7 +1164,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   width: cardWidth * 0.85,
                   height: cardHeight * 0.85,
                   decoration: BoxDecoration(
-                    color: cardBg.withOpacity(0.4),
+                    color: cardBg.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.border(brightness)),
                   ),
@@ -1175,12 +1181,12 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                   width: cardWidth * 0.9,
                   height: cardHeight * 0.9,
                   decoration: BoxDecoration(
-                    color: cardBg.withOpacity(0.8),
+                    color: cardBg.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.border(brightness)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -1205,7 +1211,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       border: Border.all(color: AppColors.border(brightness)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           blurRadius: 40,
                           offset: const Offset(0, 20),
                         ),
@@ -1250,13 +1256,15 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.4),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.4,
+                                          ),
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
                                           border: Border.all(
-                                            color: Colors.white.withOpacity(
-                                              0.1,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.1,
                                             ),
                                           ),
                                         ),
@@ -1428,8 +1436,9 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                                         shape: BoxShape.circle,
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppColors.crimson
-                                                .withOpacity(0.4),
+                                            color: AppColors.crimson.withValues(
+                                              alpha: 0.4,
+                                            ),
                                             blurRadius: 20,
                                             spreadRadius: 2,
                                           ),
@@ -1480,7 +1489,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: AppColors.crimson.withOpacity(0.6),
+                      color: AppColors.crimson.withValues(alpha: 0.6),
                       blurRadius: 8,
                     ),
                   ]
@@ -1502,7 +1511,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
           color: AppColors.crimson,
           boxShadow: [
             BoxShadow(
-              color: AppColors.crimson.withOpacity(0.4),
+              color: AppColors.crimson.withValues(alpha: 0.4),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -1533,7 +1542,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.surface(brightness).withOpacity(0.3),
+              color: AppColors.surface(brightness).withValues(alpha: 0.3),
               border: Border.all(color: AppColors.border(brightness), width: 1),
             ),
             child: Icon(icon, color: AppColors.text(brightness), size: 20),
@@ -1558,7 +1567,7 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: AppColors.crimson.withOpacity(0.3),
+              color: AppColors.crimson.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),

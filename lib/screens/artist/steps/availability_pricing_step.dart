@@ -280,7 +280,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.crimson.withOpacity(0.1),
+                color: AppColors.crimson.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -437,7 +437,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
               color: isSelected
                   ? AppColors.crimson
                   : isToday
-                  ? AppColors.crimson.withOpacity(0.15)
+                  ? AppColors.crimson.withValues(alpha: 0.15)
                   : null,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -446,7 +446,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
                 day.toString(),
                 style: TextStyle(
                   color: isPast
-                      ? AppColors.textTert(brightness).withOpacity(0.5)
+                      ? AppColors.textTert(brightness).withValues(alpha: 0.5)
                       : isSelected
                       ? Colors.white
                       : AppColors.text(brightness),
@@ -498,7 +498,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.crimson.withOpacity(0.08),
+        color: AppColors.crimson.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -591,7 +591,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
             activeTrackColor: AppColors.crimson,
             inactiveTrackColor: AppColors.border(brightness),
             thumbColor: AppColors.crimson,
-            overlayColor: AppColors.crimson.withOpacity(0.2),
+            overlayColor: AppColors.crimson.withValues(alpha: 0.2),
             rangeThumbShape: const RoundRangeSliderThumbShape(
               enabledThumbRadius: 10,
             ),
@@ -785,7 +785,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.3),
+                    color: AppColors.crimson.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

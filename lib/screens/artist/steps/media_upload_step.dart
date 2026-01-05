@@ -256,7 +256,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
           boxShadow: hasPhoto
               ? [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.2),
+                    color: AppColors.crimson.withValues(alpha: 0.2),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -299,7 +299,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.crimson.withOpacity(0.1),
+                      color: AppColors.crimson.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -430,7 +430,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.crimson.withOpacity(0.1),
+                    color: AppColors.crimson.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -530,7 +530,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
                   width: 60,
                   height: 45,
                   decoration: BoxDecoration(
-                    color: AppColors.crimson.withOpacity(0.1),
+                    color: AppColors.crimson.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -639,7 +639,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.3),
+                    color: AppColors.crimson.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

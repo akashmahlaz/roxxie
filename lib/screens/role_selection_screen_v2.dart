@@ -160,8 +160,8 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                       center: Alignment.topCenter,
                       radius: 1.5,
                       colors: [
-                        AppColors.crimson.withOpacity(
-                          _glowAnimation.value * 0.3,
+                        AppColors.crimson.withValues(
+                          alpha: _glowAnimation.value * 0.3,
                         ),
                         Colors.transparent,
                       ],
@@ -183,9 +183,9 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,
-                    AppColors.crimson.withOpacity(0.6),
-                    Colors.white.withOpacity(0.8),
-                    AppColors.crimson.withOpacity(0.6),
+                    AppColors.crimson.withValues(alpha: 0.6),
+                    Colors.white.withValues(alpha: 0.8),
+                    AppColors.crimson.withValues(alpha: 0.6),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
@@ -350,15 +350,17 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isHighlighted
-                    ? AppColors.crimson.withOpacity(_glowAnimation.value + 0.3)
+                    ? AppColors.crimson.withValues(
+                        alpha: _glowAnimation.value + 0.3,
+                      )
                     : AppColors.border(brightness),
                 width: isHighlighted ? 1.5 : 1,
               ),
               boxShadow: isHighlighted
                   ? [
                       BoxShadow(
-                        color: AppColors.crimson.withOpacity(
-                          _glowAnimation.value * 0.3,
+                        color: AppColors.crimson.withValues(
+                          alpha: _glowAnimation.value * 0.3,
                         ),
                         blurRadius: 30,
                         spreadRadius: 0,
@@ -375,7 +377,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                   decoration: BoxDecoration(
                     color: AppColors.iconSecondary(
                       brightness,
-                    ).withOpacity(0.15),
+                    ).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -405,7 +407,7 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                         subtitle,
                         style: TextStyle(
                           color: isHighlighted
-                              ? AppColors.crimson.withOpacity(0.8)
+                              ? AppColors.crimson.withValues(alpha: 0.8)
                               : AppColors.textSec(brightness),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
@@ -422,12 +424,14 @@ class _RoleSelectionScreenV2State extends State<RoleSelectionScreenV2>
                   decoration: BoxDecoration(
                     color: isHighlighted
                         ? AppColors.crimson
-                        : AppColors.iconSecondary(brightness).withOpacity(0.15),
+                        : AppColors.iconSecondary(
+                            brightness,
+                          ).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                     boxShadow: isHighlighted
                         ? [
                             BoxShadow(
-                              color: AppColors.crimson.withOpacity(0.5),
+                              color: AppColors.crimson.withValues(alpha: 0.5),
                               blurRadius: 16,
                               spreadRadius: 0,
                             ),
@@ -545,7 +549,9 @@ class _ParticlePainter extends CustomPainter {
     for (final particle in particles) {
       final color = isDark ? Colors.white : Colors.black;
       final paint = Paint()
-        ..color = color.withOpacity(particle.opacity * (isDark ? 1.0 : 0.3))
+        ..color = color.withValues(
+          alpha: particle.opacity * (isDark ? 1.0 : 0.3),
+        )
         ..style = PaintingStyle.fill;
 
       final y = (particle.y + progress * particle.speed) % 1.0;

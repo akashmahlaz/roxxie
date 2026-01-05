@@ -68,16 +68,16 @@ class VenuePreviewStep extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.crimson.withOpacity(0.08),
+        color: AppColors.crimson.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.crimson.withOpacity(0.2)),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.crimson.withOpacity(0.15),
+              color: AppColors.crimson.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -123,7 +123,7 @@ class VenuePreviewStep extends StatelessWidget {
         border: Border.all(color: AppColors.border(brightness)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -136,7 +136,7 @@ class VenuePreviewStep extends StatelessWidget {
           Container(
             height: 160,
             decoration: BoxDecoration(
-              color: AppColors.crimson.withOpacity(0.1),
+              color: AppColors.crimson.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(19),
               ),
@@ -150,7 +150,7 @@ class VenuePreviewStep extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.storefront_rounded,
-                        color: AppColors.crimson.withOpacity(0.5),
+                        color: AppColors.crimson.withValues(alpha: 0.5),
                         size: 48,
                       ),
                       const SizedBox(height: 8),
@@ -176,7 +176,7 @@ class VenuePreviewStep extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -303,7 +303,7 @@ class VenuePreviewStep extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.crimson.withOpacity(0.08),
+                    color: AppColors.crimson.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -516,7 +516,7 @@ class VenuePreviewStep extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.crimson.withOpacity(0.1),
+                          color: AppColors.crimson.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -594,9 +594,9 @@ class VenuePreviewStep extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -666,7 +666,7 @@ class VenuePreviewStep extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.crimson.withOpacity(0.4),
+                  color: AppColors.crimson.withValues(alpha: 0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),

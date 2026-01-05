@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/constants/music_genres.dart';
 import '../venue_profile_setup_screen.dart';
-import '../../artist/artist_profile_setup_screen.dart' show MusicGenres;
 
 /// 🎵 STEP 4: GIG PREFERENCES
 ///
@@ -185,7 +185,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.crimson.withOpacity(0.15)
+                      ? AppColors.crimson.withValues(alpha: 0.15)
                       : AppColors.surface(brightness),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
@@ -287,7 +287,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.crimson.withOpacity(0.1),
+                  color: AppColors.crimson.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -412,7 +412,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.crimson.withOpacity(0.15)
+                  ? AppColors.crimson.withValues(alpha: 0.15)
                   : AppColors.surface(brightness),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
@@ -474,7 +474,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.crimson.withOpacity(0.15)
+                  ? AppColors.crimson.withValues(alpha: 0.15)
                   : AppColors.surface(brightness),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
@@ -563,7 +563,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: value
-              ? AppColors.crimson.withOpacity(0.08)
+              ? AppColors.crimson.withValues(alpha: 0.08)
               : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
@@ -576,7 +576,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: value
-                    ? AppColors.crimson.withOpacity(0.15)
+                    ? AppColors.crimson.withValues(alpha: 0.15)
                     : AppColors.background(brightness),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -692,7 +692,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.3),
+                    color: AppColors.crimson.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),

@@ -142,6 +142,20 @@ class AppColors {
     colors: [cyan, cyanDark],
   );
 
+  /// Light mode primary gradient - Subtle elegant
+  static const LinearGradient lightPrimaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+  );
+
+  /// Light mode background gradient - Premium subtle
+  static const LinearGradient lightBackgroundGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFFCFCFC), Color(0xFFF7F7F8)],
+  );
+
   /// Mesh gradient colors for animated backgrounds
   static const List<Color> meshGradientColors = [
     Color(0xFFDC2626),
@@ -256,39 +270,42 @@ class AppColors {
   static const Color superLikeGlow = Color(0x66F59E0B);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ☀️ LIGHT MODE SURFACES
+  // ☀️ LIGHT MODE SURFACES - Premium Clean Aesthetic
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Light mode background
-  static const Color lightBackground = Color(0xFFF9F9F9);
+  /// Light mode background - Warm off-white for premium feel
+  static const Color lightBackground = Color(0xFFFCFCFC);
 
-  /// Light mode surface (cards, containers)
+  /// Light mode surface (cards, containers) - Pure white for contrast
   static const Color lightSurface = Color(0xFFFFFFFF);
 
-  /// Light mode secondary surface
-  static const Color lightSurfaceSecondary = Color(0xFFF3F4F6);
+  /// Light mode secondary surface - Subtle warm gray
+  static const Color lightSurfaceSecondary = Color(0xFFF7F7F8);
 
-  /// Light mode border color
-  static const Color lightBorder = Color(0xFFE5E7EB);
+  /// Light mode tertiary surface - Slightly darker for depth
+  static const Color lightSurfaceTertiary = Color(0xFFF0F0F2);
 
-  /// Light mode divider
-  static const Color lightDivider = Color(0xFFE5E7EB);
+  /// Light mode border color - Soft elegant gray
+  static const Color lightBorder = Color(0xFFE8E8EC);
+
+  /// Light mode divider - Subtle separation
+  static const Color lightDivider = Color(0xFFEEEEF0);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 📝 LIGHT MODE TEXT COLORS
+  // 📝 LIGHT MODE TEXT COLORS - High Contrast Readability
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Light mode primary text
-  static const Color lightTextPrimary = Color(0xFF111827);
+  /// Light mode primary text - Rich black for maximum readability
+  static const Color lightTextPrimary = Color(0xFF1A1A1A);
 
-  /// Light mode secondary text
-  static const Color lightTextSecondary = Color(0xFF6B7280);
+  /// Light mode secondary text - Balanced gray
+  static const Color lightTextSecondary = Color(0xFF5C5C66);
 
-  /// Light mode tertiary text
-  static const Color lightTextTertiary = Color(0xFF9CA3AF);
+  /// Light mode tertiary text - Subtle hints
+  static const Color lightTextTertiary = Color(0xFF8E8E99);
 
   /// Light mode disabled text
-  static const Color lightTextDisabled = Color(0xFFD1D5DB);
+  static const Color lightTextDisabled = Color(0xFFBDBDC7);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 🎨 ADAPTIVE COLOR HELPERS
@@ -324,28 +341,28 @@ class AppColors {
 
   /// Get border color based on brightness
   static Color border(Brightness brightness) => brightness == Brightness.dark
-      ? Colors.white.withOpacity(0.1)
+      ? Colors.white.withValues(alpha: 0.1)
       : lightBorder;
 
   /// Get divider color based on brightness
   static Color divider(Brightness brightness) => brightness == Brightness.dark
-      ? Colors.white.withOpacity(0.1)
+      ? Colors.white.withValues(alpha: 0.1)
       : lightDivider;
 
   /// Get icon color based on brightness
   static Color icon(Brightness brightness) => brightness == Brightness.dark
-      ? Colors.white.withOpacity(0.7)
+      ? Colors.white.withValues(alpha: 0.7)
       : const Color(0xFF6B7280);
 
   /// Get icon secondary color based on brightness
   static Color iconSecondary(Brightness brightness) =>
       brightness == Brightness.dark
-      ? Colors.white.withOpacity(0.5)
+      ? Colors.white.withValues(alpha: 0.5)
       : const Color(0xFF9CA3AF);
 
   /// Get input fill color based on brightness
   static Color inputFill(Brightness brightness) => brightness == Brightness.dark
-      ? Colors.white.withOpacity(0.08)
+      ? Colors.white.withValues(alpha: 0.08)
       : lightSurface;
 
   /// Get sheet/modal background based on brightness

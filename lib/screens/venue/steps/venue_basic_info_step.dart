@@ -205,7 +205,7 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.crimson.withOpacity(0.15)
+                  ? AppColors.crimson.withValues(alpha: 0.15)
                   : AppColors.surface(brightness),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
@@ -332,7 +332,7 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.crimson.withOpacity(0.15)
+                  ? AppColors.crimson.withValues(alpha: 0.15)
                   : AppColors.surface(brightness),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
@@ -393,7 +393,7 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
           boxShadow: _isValid
               ? [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.3),
+                    color: AppColors.crimson.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),

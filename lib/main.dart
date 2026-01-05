@@ -1,7 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
 import 'core/theme/theme.dart';
+import 'core/providers/providers.dart';
+
+// Screens
 import 'screens/splash_screen_v2.dart';
+import 'screens/onboarding_screen_v2.dart';
+import 'screens/role_selection_screen_v2.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/discovery_screen.dart';
+import 'screens/matches_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/artist/artist_profile_setup_screen.dart';
+import 'screens/venue/venue_profile_setup_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,101 +44,71 @@ class GigMatchApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GigMatch',
-      debugShowCheckedModeBanner: false,
+    return MultiProvider(
+      providers: [
+        // Auth Provider - handles login, register, tokens
+        ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
 
-      // Apply both light and dark themes
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Follows device system setting
-      // Start with premium splash screen
-      home: const SplashScreenV2(),
-    );
-  }
-}
+        // Discovery Provider - swipe cards, profiles
+        ChangeNotifierProvider(create: (_) => DiscoveryProvider()),
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+        // Match Provider - matches list, unread counts
+        ChangeNotifierProvider(create: (_) => MatchProvider()),
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+        // Chat Provider - messages, real-time updates
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+      ],
+      child: MaterialApp(
+        title: 'GigMatch',
+        debugShowCheckedModeBanner: false,
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+        // Apply both light and dark themes with Material 3
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
 
-  final String title;
+        // Named routes for navigation
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const SplashScreenV2(),
+          '/onboarding': (context) => const OnboardingScreenV2(),
+          '/role-selection': (context) => const RoleSelectionScreenV2(),
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/discovery': (context) => const DiscoveryScreen(),
+          '/matches': (context) => const MatchesScreen(),
+          '/profile': (context) => const ProfileScreen(),
+          '/artist-setup': (context) => const ArtistProfileSetupScreen(),
+          '/venue-setup': (context) => const VenueProfileSetupScreen(),
+        },
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+        // Handle dynamic routes (e.g., chat with ID)
+        onGenerateRoute: (settings) {
+          // Chat screen with match ID
+          if (settings.name?.startsWith('/chat/') ?? false) {
+            final matchId = settings.name!.split('/').last;
+            return MaterialPageRoute(
+              builder: (context) => ChatScreen(matchId: matchId),
+            );
+          }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+          // Profile setup based on role
+          if (settings.name == '/profile-setup') {
+            return MaterialPageRoute(
+              builder: (context) {
+                final authProvider = context.read<AuthProvider>();
+                if (authProvider.isArtist) {
+                  return const ArtistProfileSetupScreen();
+                } else {
+                  return const VenueProfileSetupScreen();
+                }
+              },
+            );
+          }
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+          return null;
+        },
       ),
     );
   }

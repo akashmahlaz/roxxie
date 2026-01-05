@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
+import '../../core/providers/providers.dart';
+import '../../core/models/models.dart';
 import 'steps/venue_basic_info_step.dart';
 import 'steps/venue_media_step.dart';
 import 'steps/venue_details_step.dart';
@@ -76,52 +79,136 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     }
   }
 
-  void _completeSetup() {
-    // TODO: Send profile data to backend
-    // TODO: Navigate to main app
+  void _completeSetup() async {
+    final brightness = Theme.of(context).brightness;
+    final authProvider = context.read<AuthProvider>();
+
+    // Show loading
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface(Theme.of(context).brightness),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.crimson.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.crimson,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('Profile Complete! 🎉'),
-          ],
-        ),
-        content: const Text(
-          'Your venue profile is ready! You can now start discovering amazing artists and bands.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // TODO: Navigate to main venue home
-            },
-            child: const Text(
-              'Start Discovering',
-              style: TextStyle(
-                color: AppColors.crimson,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground(brightness),
+            borderRadius: BorderRadius.circular(16),
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: AppColors.crimson),
+              const SizedBox(height: 16),
+              Text(
+                'Saving your venue profile...',
+                style: TextStyle(color: AppColors.text(brightness)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+
+    // Build the update request from profile data
+    final request = UpdateVenueRequest(
+      name: _profileData.venueName,
+      bio: _profileData.description,
+      venueType: VenueType.fromString(
+        _profileData.venueType.toLowerCase().replaceAll(' ', '_'),
+      ),
+      capacity: _profileData.capacity,
+      amenities: _profileData.amenities,
+      location: _profileData.city.isNotEmpty
+          ? Location(
+              type: 'Point',
+              coordinates: [_profileData.longitude, _profileData.latitude],
+              city: _profileData.city,
+              country: _profileData.country,
+              formattedAddress: _profileData.address,
+            )
+          : null,
+      gigPreferences: GigPreferences(
+        preferredGenres: _profileData.preferredGenres,
+        preferredDays: _profileData.typicalSlots,
+        typicalSetLength: '${_profileData.typicalSetLength} minutes',
+        providesEquipment: _profileData.providesEquipment,
+        providesMeals: _profileData.providesMeals,
+        providesAccommodation: _profileData.providesAccommodation,
+      ),
+      budgetRange: BudgetRange(
+        min: _profileData.minBudget,
+        max: _profileData.maxBudget,
+        currency: _profileData.currency,
+      ),
+      socialLinks: SocialLinks(
+        instagram: _profileData.instagram,
+        website: _profileData.website,
+      ),
+      contactEmail: _profileData.email,
+      contactPhone: _profileData.phone,
+      isActive: true,
+    );
+
+    final success = await authProvider.completeVenueSetup(request);
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // Close loading dialog
+
+    if (success) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.surface(brightness),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.crimson.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.crimson,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('Profile Complete! 🎉'),
+            ],
+          ),
+          content: const Text(
+            'Your venue profile is ready! You can now start discovering amazing artists and bands.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/home');
+              },
+              child: const Text(
+                'Start Discovering',
+                style: TextStyle(
+                  color: AppColors.crimson,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? 'Failed to save profile'),
+          backgroundColor: Colors.red.shade400,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -273,7 +360,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.crimson.withOpacity(0.1),
+                  color: AppColors.crimson.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(

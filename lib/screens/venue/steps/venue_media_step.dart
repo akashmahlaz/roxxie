@@ -202,7 +202,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.crimson.withOpacity(0.1),
+                      color: AppColors.crimson.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(
@@ -245,7 +245,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -265,7 +265,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -280,7 +280,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
                           Text(
                             'Change',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -400,7 +400,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
@@ -443,7 +443,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.crimson.withOpacity(0.1),
+                color: AppColors.crimson.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: AppColors.crimson, size: 22),
@@ -534,7 +534,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.3),
+                    color: AppColors.crimson.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import '../../core/theme/theme.dart';
+import '../core/theme/theme.dart';
 
 /// 🪟 GLASSMORPHIC CONTAINER
 ///

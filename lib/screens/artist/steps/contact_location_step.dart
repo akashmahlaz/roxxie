@@ -276,16 +276,16 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.crimson.withOpacity(0.08),
+        color: AppColors.crimson.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.crimson.withOpacity(0.2)),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.crimson.withOpacity(0.15),
+              color: AppColors.crimson.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -600,7 +600,7 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.crimson.withOpacity(0.1),
+                color: AppColors.crimson.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -620,7 +620,7 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
             activeTrackColor: AppColors.crimson,
             inactiveTrackColor: AppColors.border(brightness),
             thumbColor: AppColors.crimson,
-            overlayColor: AppColors.crimson.withOpacity(0.2),
+            overlayColor: AppColors.crimson.withValues(alpha: 0.2),
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
             trackHeight: 6,
           ),
@@ -699,7 +699,7 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.3),
+                    color: AppColors.crimson.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

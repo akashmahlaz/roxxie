@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
+import '../../core/providers/providers.dart';
+import '../../core/models/models.dart';
 import 'steps/basic_info_step.dart';
 import 'steps/media_upload_step.dart';
 import 'steps/contact_location_step.dart';
@@ -76,46 +79,119 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
     }
   }
 
-  void _completeSetup() {
-    // TODO: Save profile data to backend
-    // Navigate to artist home/dashboard
+  void _completeSetup() async {
+    final brightness = Theme.of(context).brightness;
+    final authProvider = context.read<AuthProvider>();
+
+    // Show loading
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBackground(Theme.of(context).brightness),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 28),
-            const SizedBox(width: 12),
-            Text(
-              'Profile Complete!',
-              style: TextStyle(
-                color: AppColors.text(Theme.of(context).brightness),
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground(brightness),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: AppColors.crimson),
+              const SizedBox(height: 16),
+              Text(
+                'Saving your profile...',
+                style: TextStyle(color: AppColors.text(brightness)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Build the update request from profile data
+    final request = UpdateArtistRequest(
+      stageName: _profileData.stageName ?? _profileData.displayName,
+      bio: _profileData.bio,
+      artistType: ArtistType.solo, // Default
+      genres: _profileData.genres,
+      experienceLevel: ExperienceLevel.intermediate, // Default
+      location: _profileData.city != null
+          ? Location(
+              type: 'Point',
+              coordinates: [
+                _profileData.longitude ?? 0,
+                _profileData.latitude ?? 0,
+              ],
+              city: _profileData.city,
+              country: _profileData.country,
+            )
+          : null,
+      maxTravelDistance: _profileData.travelRadius,
+      socialLinks: SocialLinks(
+        instagram: _profileData.instagram,
+        spotify: _profileData.spotify,
+        youtube: _profileData.youtube,
+        website: _profileData.website,
+      ),
+      priceRange: PriceRange(
+        min: _profileData.minPrice,
+        max: _profileData.maxPrice,
+        currency: _profileData.currency,
+      ),
+      isAvailable: true,
+    );
+
+    final success = await authProvider.completeArtistSetup(request);
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // Close loading dialog
+
+    if (success) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.cardBackground(brightness),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 28),
+              const SizedBox(width: 12),
+              Text(
+                'Profile Complete!',
+                style: TextStyle(color: AppColors.text(brightness)),
+              ),
+            ],
+          ),
+          content: Text(
+            'Your artist profile is ready. Venues can now discover you!',
+            style: TextStyle(color: AppColors.textSec(brightness)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/home');
+              },
+              child: Text(
+                'Go to Dashboard',
+                style: TextStyle(color: AppColors.crimson),
               ),
             ),
           ],
         ),
-        content: Text(
-          'Your artist profile is ready. Venues can now discover you!',
-          style: TextStyle(
-            color: AppColors.textSec(Theme.of(context).brightness),
-          ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? 'Failed to save profile'),
+          backgroundColor: Colors.red.shade400,
+          behavior: SnackBarBehavior.floating,
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // TODO: Navigate to ArtistHomeScreen
-            },
-            child: Text(
-              'Go to Dashboard',
-              style: TextStyle(color: AppColors.crimson),
-            ),
-          ),
-        ],
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -210,7 +286,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.crimson.withOpacity(0.1),
+              color: AppColors.crimson.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -280,7 +356,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.crimson.withOpacity(0.1),
+                  color: AppColors.crimson.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(

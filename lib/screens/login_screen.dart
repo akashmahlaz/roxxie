@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/providers/providers.dart';
 import 'artist_signup_screen.dart';
 import 'venue_signup_screen.dart';
 
@@ -46,19 +48,48 @@ class _LoginScreenState extends State<LoginScreen>
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final authProvider = context.read<AuthProvider>();
+        final success = await authProvider.login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
 
-      setState(() => _isLoading = false);
+        if (!mounted) return;
 
-      // TODO: Implement actual login logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login functionality coming soon!'),
-          backgroundColor: AppColors.crimson,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        if (success) {
+          // Navigate based on profile completion
+          if (authProvider.isProfileComplete) {
+            Navigator.pushReplacementNamed(context, '/home');
+          } else {
+            // Navigate to appropriate profile setup
+            if (authProvider.isArtist) {
+              Navigator.pushReplacementNamed(context, '/artist-setup');
+            } else {
+              Navigator.pushReplacementNamed(context, '/venue-setup');
+            }
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage ?? 'Login failed'),
+              backgroundColor: Colors.red.shade400,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -145,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceSecondary(brightness).withOpacity(0.5),
+          color: AppColors.surfaceSecondary(brightness).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border(brightness)),
         ),
@@ -155,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen>
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.crimson.withOpacity(0.2),
+                color: AppColors.crimson.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: AppColors.crimson, size: 22),
@@ -350,7 +381,7 @@ class _LoginScreenState extends State<LoginScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.crimson.withOpacity(0.4),
+                            color: AppColors.crimson.withValues(alpha: 0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -477,7 +508,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.crimson.withOpacity(0.3),
+            color: AppColors.crimson.withValues(alpha: 0.3),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),

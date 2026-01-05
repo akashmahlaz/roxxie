@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/providers/providers.dart';
+import '../core/models/models.dart';
 import 'login_screen.dart';
 
 /// 🎸 ARTIST SIGNUP SCREEN
@@ -82,19 +85,41 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
 
       setState(() => _isLoading = true);
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final authProvider = context.read<AuthProvider>();
+        final success = await authProvider.register(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          name: _nameController.text.trim(),
+          role: UserRole.artist,
+        );
 
-      setState(() => _isLoading = false);
+        if (!mounted) return;
 
-      // TODO: Implement actual signup logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Artist signup coming soon!'),
-          backgroundColor: AppColors.crimson,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        if (success) {
+          // Navigate to artist profile setup
+          Navigator.pushReplacementNamed(context, '/artist-setup');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage ?? 'Registration failed'),
+              backgroundColor: Colors.red.shade400,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -149,10 +174,10 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.crimson.withOpacity(0.2)
+                            ? AppColors.crimson.withValues(alpha: 0.2)
                             : AppColors.surfaceSecondary(
                                 brightness,
-                              ).withOpacity(0.5),
+                              ).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
@@ -267,7 +292,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.crimson.withOpacity(0.4),
+                            color: AppColors.crimson.withValues(alpha: 0.4),
                             blurRadius: 24,
                             offset: const Offset(0, 8),
                           ),
@@ -426,7 +451,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.crimson.withOpacity(0.4),
+                            color: AppColors.crimson.withValues(alpha: 0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -649,12 +674,12 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isSpotify
-              ? const Color(0xFF1DB954).withOpacity(0.15)
-              : AppColors.surfaceSecondary(brightness).withOpacity(0.5),
+              ? const Color(0xFF1DB954).withValues(alpha: 0.15)
+              : AppColors.surfaceSecondary(brightness).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSpotify
-                ? const Color(0xFF1DB954).withOpacity(0.4)
+                ? const Color(0xFF1DB954).withValues(alpha: 0.4)
                 : AppColors.border(brightness),
           ),
         ),

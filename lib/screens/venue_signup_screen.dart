@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/providers/providers.dart';
+import '../core/models/models.dart';
 import 'login_screen.dart';
 import 'artist_signup_screen.dart';
 
@@ -52,19 +55,41 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final authProvider = context.read<AuthProvider>();
+        final success = await authProvider.register(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          name: _nameController.text.trim(),
+          role: UserRole.venue,
+        );
 
-      setState(() => _isLoading = false);
+        if (!mounted) return;
 
-      // TODO: Implement actual signup logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Venue signup coming soon!'),
-          backgroundColor: AppColors.crimson,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        if (success) {
+          // Navigate to venue profile setup
+          Navigator.pushReplacementNamed(context, '/venue-setup');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage ?? 'Registration failed'),
+              backgroundColor: Colors.red.shade400,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -163,7 +188,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.crimson.withOpacity(0.4),
+                            color: AppColors.crimson.withValues(alpha: 0.4),
                             blurRadius: 24,
                             offset: const Offset(0, 8),
                           ),
@@ -254,7 +279,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                           child: Container(
                             width: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.crimson.withOpacity(0.2),
+                              color: AppColors.crimson.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Center(
@@ -343,7 +368,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.crimson.withOpacity(0.4),
+                            color: AppColors.crimson.withValues(alpha: 0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -414,7 +439,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                     decoration: BoxDecoration(
                       color: AppColors.surfaceSecondary(
                         brightness,
-                      ).withOpacity(0.5),
+                      ).withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.border(brightness)),
                     ),
@@ -426,7 +451,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                           decoration: BoxDecoration(
                             color: AppColors.iconSecondary(
                               brightness,
-                            ).withOpacity(0.15),
+                            ).withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(

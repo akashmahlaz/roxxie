@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/theme.dart';
+import '../core/theme/theme.dart';
 
 /// 📝 PREMIUM TEXT FIELD
 ///
@@ -193,7 +193,78 @@ class _PremiumTextFieldState extends State<PremiumTextField>
   }
 }
 
-/// 🔍 SEARCH FIELD
+/// � GLASS TEXT FIELD (Alias for PremiumTextField with legacy parameter names)
+///
+/// Glass-morphism styled input field
+///
+/// Usage:
+/// ```dart
+/// GlassTextField(
+///   labelText: 'Email',
+///   hintText: 'Enter your email',
+///   prefixIcon: Icons.email,
+/// )
+/// ```
+
+class GlassTextField extends StatelessWidget {
+  final String? labelText;
+  final String? hintText;
+  final IconData? prefixIcon;
+  final IconData? suffixIcon;
+  final VoidCallback? onSuffixTap;
+  final bool obscureText;
+  final TextEditingController? controller;
+  final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+  final TextInputType keyboardType;
+  final int maxLines;
+  final bool enabled;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
+  final void Function(String)? onSubmitted;
+
+  const GlassTextField({
+    super.key,
+    this.labelText,
+    this.hintText,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.onSuffixTap,
+    this.obscureText = false,
+    this.controller,
+    this.validator,
+    this.onChanged,
+    this.keyboardType = TextInputType.text,
+    this.maxLines = 1,
+    this.enabled = true,
+    this.focusNode,
+    this.textInputAction,
+    this.onSubmitted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumTextField(
+      label: labelText,
+      hint: hintText,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      onSuffixTap: onSuffixTap,
+      obscureText: obscureText,
+      controller: controller,
+      validator: validator,
+      onChanged: onChanged,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      enabled: enabled,
+      focusNode: focusNode,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
+    );
+  }
+}
+
+/// �🔍 SEARCH FIELD
 ///
 /// Premium search input with animations
 

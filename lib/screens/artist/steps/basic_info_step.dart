@@ -356,7 +356,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.crimson.withOpacity(0.3),
+                        color: AppColors.crimson.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -481,7 +481,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.crimson.withOpacity(0.3),
+              color: AppColors.crimson.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

@@ -66,19 +66,19 @@ class ProfilePreviewStep extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.crimson.withOpacity(0.1),
-            AppColors.rose.withOpacity(0.05),
+            AppColors.crimson.withValues(alpha: 0.1),
+            AppColors.rose.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.crimson.withOpacity(0.2)),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.crimson.withOpacity(0.15),
+              color: AppColors.crimson.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -125,7 +125,7 @@ class ProfilePreviewStep extends StatelessWidget {
         border: Border.all(color: AppColors.border(brightness)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -193,7 +193,7 @@ class ProfilePreviewStep extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -450,7 +450,7 @@ class ProfilePreviewStep extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.crimson.withOpacity(0.1),
+                      color: AppColors.crimson.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -540,7 +540,7 @@ class ProfilePreviewStep extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -694,7 +694,7 @@ class ProfilePreviewStep extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.crimson.withOpacity(0.4),
+                  color: AppColors.crimson.withValues(alpha: 0.4),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
