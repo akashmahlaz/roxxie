@@ -1,5 +1,6 @@
 /// 💬 GIGMATCH Chat Provider
 /// State management for messaging and real-time chat
+library;
 
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';

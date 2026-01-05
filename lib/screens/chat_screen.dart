@@ -1,5 +1,6 @@
 /// 💬 GIGMATCH Chat Screen
 /// Real-time messaging with matches
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

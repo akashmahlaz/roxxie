@@ -1,5 +1,6 @@
 /// 🔧 GIGMATCH Services Export
 /// Central export file for all services
+library;
 
 export 'auth_service.dart';
 export 'artist_service.dart';

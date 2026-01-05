@@ -1,5 +1,6 @@
 /// 🎯 GIGMATCH Discovery Provider
 /// State management for swiping and discovery
+library;
 
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';

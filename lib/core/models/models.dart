@@ -1,5 +1,6 @@
 /// 📦 GIGMATCH Models Export
 /// Central export file for all data models
+library;
 
 export 'user_models.dart';
 export 'auth_models.dart';

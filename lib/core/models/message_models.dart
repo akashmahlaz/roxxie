@@ -1,5 +1,6 @@
 /// 💬 GIGMATCH Message & Chat Models
 /// Models for real-time messaging
+library;
 
 /// Message Type
 enum MessageType {

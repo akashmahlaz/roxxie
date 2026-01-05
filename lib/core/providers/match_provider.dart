@@ -1,5 +1,6 @@
 /// 💕 GIGMATCH Match Provider
 /// State management for matches
+library;
 
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';

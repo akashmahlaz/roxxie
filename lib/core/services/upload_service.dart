@@ -1,5 +1,6 @@
 /// 📤 GIGMATCH Upload Service
 /// Handles file uploads to Cloudinary
+library;
 
 import 'dart:io';
 import 'package:dio/dio.dart';

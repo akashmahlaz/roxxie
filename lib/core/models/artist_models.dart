@@ -1,5 +1,6 @@
 /// 🎸 GIGMATCH Artist Models
 /// Models for artist profiles and related data
+library;
 
 import 'user_models.dart';
 
@@ -313,11 +314,13 @@ class ArtistSearchParams {
     if (latitude != null) params['latitude'] = latitude.toString();
     if (longitude != null) params['longitude'] = longitude.toString();
     if (maxDistance != null) params['maxDistance'] = maxDistance.toString();
-    if (genres != null && genres!.isNotEmpty)
+    if (genres != null && genres!.isNotEmpty) {
       params['genres'] = genres!.join(',');
+    }
     if (artistType != null) params['artistType'] = artistType!.value;
-    if (experienceLevel != null)
+    if (experienceLevel != null) {
       params['experienceLevel'] = experienceLevel!.value;
+    }
     if (minPrice != null) params['minPrice'] = minPrice.toString();
     if (maxPrice != null) params['maxPrice'] = maxPrice.toString();
     if (isAvailable != null) params['isAvailable'] = isAvailable.toString();
@@ -365,13 +368,16 @@ class UpdateArtistRequest {
     if (bio != null) json['bio'] = bio;
     if (artistType != null) json['artistType'] = artistType!.value;
     if (genres != null) json['genres'] = genres;
-    if (experienceLevel != null)
+    if (experienceLevel != null) {
       json['experienceLevel'] = experienceLevel!.value;
-    if (yearsOfExperience != null)
+    }
+    if (yearsOfExperience != null) {
       json['yearsOfExperience'] = yearsOfExperience;
+    }
     if (location != null) json['location'] = location!.toJson();
-    if (maxTravelDistance != null)
+    if (maxTravelDistance != null) {
       json['maxTravelDistance'] = maxTravelDistance;
+    }
     if (galleryUrls != null) json['galleryUrls'] = galleryUrls;
     if (socialLinks != null) json['socialLinks'] = socialLinks!.toJson();
     if (priceRange != null) json['priceRange'] = priceRange!.toJson();

@@ -1,5 +1,6 @@
 ///  GIGMATCH API Client
 /// Dio-based HTTP client with interceptors for auth, refresh, and error handling
+library;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';

@@ -1,5 +1,6 @@
 /// 🔐 GIGMATCH Auth Provider
 /// State management for authentication
+library;
 
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';

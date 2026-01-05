@@ -1,5 +1,6 @@
 /// 💕 GIGMATCH Matches Screen
 /// Shows all matched artists/venues
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

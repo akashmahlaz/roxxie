@@ -1,5 +1,6 @@
 /// 🎸 GIGMATCH API Configuration
 /// Central configuration for API endpoints and settings
+library;
 
 class ApiConfig {
   // 🌐 Base URLs

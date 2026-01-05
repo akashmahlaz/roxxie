@@ -1,5 +1,6 @@
 /// 🎯 GIGMATCH Match & Swipe Models
 /// Models for swiping, matching, and discovery
+library;
 
 import 'artist_models.dart';
 import 'venue_models.dart';

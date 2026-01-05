@@ -1,5 +1,6 @@
 /// 🎸 GIGMATCH Artist Service
 /// Handles artist profile operations
+library;
 
 import 'package:flutter/foundation.dart';
 import '../api/api.dart';

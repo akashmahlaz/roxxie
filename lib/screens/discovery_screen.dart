@@ -1,5 +1,6 @@
 /// 🎯 GIGMATCH Discovery Screen
 /// Tinder-like swipe cards for finding gigs
+library;
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -897,7 +898,7 @@ class _FiltersSheet extends StatefulWidget {
 
 class _FiltersSheetState extends State<_FiltersSheet> {
   double _maxDistance = 50;
-  List<String> _selectedGenres = [];
+  final List<String> _selectedGenres = [];
 
   final List<String> _genres = [
     'Rock',

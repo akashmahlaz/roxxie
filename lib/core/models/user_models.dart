@@ -1,5 +1,6 @@
 /// 👤 GIGMATCH User Models
 /// Core user data models
+library;
 
 /// User Role Enum
 enum UserRole {

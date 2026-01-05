@@ -1,5 +1,6 @@
 /// 🎯 GIGMATCH Swipe & Discovery Service
 /// Handles swiping, discovery, and match operations
+library;
 
 import 'package:flutter/foundation.dart';
 import '../api/api.dart';
@@ -25,10 +26,12 @@ class SwipeService {
 
       if (latitude != null) queryParams['latitude'] = latitude.toString();
       if (longitude != null) queryParams['longitude'] = longitude.toString();
-      if (maxDistance != null)
+      if (maxDistance != null) {
         queryParams['maxDistance'] = maxDistance.toString();
-      if (genres != null && genres.isNotEmpty)
+      }
+      if (genres != null && genres.isNotEmpty) {
         queryParams['genres'] = genres.join(',');
+      }
 
       final response = await _client.get(
         Endpoints.discover,

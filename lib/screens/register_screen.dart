@@ -1,5 +1,6 @@
 /// 📝 GIGMATCH Register Screen
 /// User registration with role selection
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

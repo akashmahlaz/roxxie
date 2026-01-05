@@ -1,5 +1,6 @@
 /// 🔐 GIGMATCH Auth Service
 /// Handles authentication, registration, and token management
+library;
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';

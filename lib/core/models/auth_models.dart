@@ -1,5 +1,6 @@
 /// 🔐 GIGMATCH Auth Models
 /// Models for authentication, tokens, and user data
+library;
 
 import 'user_models.dart';
 
@@ -59,7 +60,7 @@ class RegisterRequest {
   Map<String, dynamic> toJson() => {
     'email': email,
     'password': password,
-    'name': name,
+    'fullName': name,
     'role': role.value,
     if (phone != null) 'phone': phone,
   };

@@ -1,5 +1,6 @@
 /// 💬 GIGMATCH Message Service
 /// Handles messaging operations and WebSocket chat
+library;
 
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;

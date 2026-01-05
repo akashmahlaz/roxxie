@@ -1,5 +1,6 @@
 /// 🏠 GIGMATCH Home Screen
 /// Main app shell with bottom navigation
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

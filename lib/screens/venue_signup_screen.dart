@@ -350,8 +350,36 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                       if (value.length < 8) {
                         return 'Password must be at least 8 characters';
                       }
+                      // Check for uppercase
+                      if (!value.contains(RegExp(r'[A-Z]'))) {
+                        return 'Password must contain at least one uppercase letter';
+                      }
+                      // Check for lowercase
+                      if (!value.contains(RegExp(r'[a-z]'))) {
+                        return 'Password must contain at least one lowercase letter';
+                      }
+                      // Check for number
+                      if (!value.contains(RegExp(r'[0-9]'))) {
+                        return 'Password must contain at least one number';
+                      }
+                      // Check for special character
+                      if (!value.contains(RegExp(r'[@$!%*?&]'))) {
+                        return 'Password must contain a special character (@\$!%*?&)';
+                      }
                       return null;
                     },
+                  ),
+
+                  // Password hint
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, left: 4),
+                    child: Text(
+                      'Min 8 chars: uppercase, lowercase, number & special (@\$!%*?&)',
+                      style: TextStyle(
+                        color: AppColors.textTert(brightness),
+                        fontSize: 11,
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 28),

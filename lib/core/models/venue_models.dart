@@ -1,5 +1,6 @@
 /// 🏢 GIGMATCH Venue Models
 /// Models for venue profiles and related data
+library;
 
 import 'user_models.dart';
 
@@ -333,8 +334,9 @@ class VenueSearchParams {
     if (maxCapacity != null) params['maxCapacity'] = maxCapacity.toString();
     if (minBudget != null) params['minBudget'] = minBudget.toString();
     if (maxBudget != null) params['maxBudget'] = maxBudget.toString();
-    if (providesEquipment != null)
+    if (providesEquipment != null) {
       params['providesEquipment'] = providesEquipment.toString();
+    }
     return params;
   }
 }
@@ -385,8 +387,9 @@ class UpdateVenueRequest {
     if (operatingHours != null) {
       json['operatingHours'] = operatingHours!.map((e) => e.toJson()).toList();
     }
-    if (gigPreferences != null)
+    if (gigPreferences != null) {
       json['gigPreferences'] = gigPreferences!.toJson();
+    }
     if (budgetRange != null) json['budgetRange'] = budgetRange!.toJson();
     if (socialLinks != null) json['socialLinks'] = socialLinks!.toJson();
     if (contactEmail != null) json['contactEmail'] = contactEmail;
