@@ -334,7 +334,7 @@ class AuthProvider extends ChangeNotifier {
   /// 📧 Resend verification email
   Future<bool> resendVerificationEmail() async {
     if (_user?.email == null) return false;
-    
+
     _setLoading(true);
     _clearError();
 
