@@ -126,6 +126,26 @@ class AuthService {
     }
   }
 
+  /// ✅ Verify email with token
+  Future<void> verifyEmail(String token) async {
+    try {
+      await _client.post(Endpoints.verifyEmail, data: {'token': token});
+    } catch (e) {
+      debugPrint('Verify email error: $e');
+      rethrow;
+    }
+  }
+
+  /// 📧 Resend verification email
+  Future<void> resendVerificationEmail(String email) async {
+    try {
+      await _client.post(Endpoints.resendVerification, data: {'email': email});
+    } catch (e) {
+      debugPrint('Resend verification error: $e');
+      rethrow;
+    }
+  }
+
   /// ✅ Check if user is logged in
   Future<bool> isLoggedIn() async {
     final token = await _client.getAccessToken();

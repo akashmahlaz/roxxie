@@ -394,12 +394,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 style: TextStyle(color: AppColors.offWhite),
               ),
               onTap: () async {
-                Navigator.pop(context);
+                final navigator = Navigator.of(context);
+                navigator.pop();
                 final success = await context
                     .read<MatchProvider>()
                     .archiveMatch(widget.matchId);
                 if (success && mounted) {
-                  Navigator.pop(context);
+                  navigator.pop();
                 }
               },
             ),
@@ -443,12 +444,13 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              final navigator = Navigator.of(context);
+              navigator.pop();
               final success = await context.read<MatchProvider>().blockMatch(
                 widget.matchId,
               );
               if (success && mounted) {
-                Navigator.pop(context);
+                navigator.pop();
               }
             },
             child: const Text(

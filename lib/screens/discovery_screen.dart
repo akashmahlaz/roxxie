@@ -23,7 +23,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   late AnimationController _matchController;
   Offset _dragOffset = Offset.zero;
   double _dragAngle = 0;
-  bool _isDragging = false;
 
   @override
   void initState() {
@@ -51,7 +50,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   void _onPanStart(DragStartDetails details) {
-    _isDragging = true;
+    // Drag started
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
@@ -62,7 +61,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   void _onPanEnd(DragEndDetails details) {
-    _isDragging = false;
     final velocity = details.velocity.pixelsPerSecond;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -83,6 +81,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final targetX = isLike ? screenWidth * 1.5 : -screenWidth * 1.5;
 
+    // Capture provider before async gap
+    final provider = context.read<DiscoveryProvider>();
+
     final startOffset = _dragOffset;
     final startAngle = _dragAngle;
 
@@ -101,7 +102,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     await _cardController.forward();
 
     // Perform swipe action
-    final provider = context.read<DiscoveryProvider>();
     bool isMatch = false;
 
     if (isLike) {
@@ -368,7 +368,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               Image.network(
                 card.primaryPhotoUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, e, s) => Container(
                   color: AppColors.charcoal,
                   child: const Icon(
                     Icons.person,

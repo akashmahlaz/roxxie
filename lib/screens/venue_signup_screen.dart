@@ -96,6 +96,9 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
   void _getCurrentLocation() async {
     setState(() => _isGettingLocation = true);
 
+    // Capture ScaffoldMessenger before async gap
+    final messenger = ScaffoldMessenger.of(context);
+
     // Simulate getting location
     await Future.delayed(const Duration(seconds: 1));
 
@@ -104,7 +107,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
 
     setState(() => _isGettingLocation = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text('Location detection coming soon!'),
         backgroundColor: AppColors.crimson,

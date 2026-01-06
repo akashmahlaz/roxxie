@@ -310,6 +310,45 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// ✅ Verify email with token
+  Future<bool> verifyEmail(String token) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _authService.verifyEmail(token);
+      // Update local user state
+      if (_user != null) {
+        _user = _user!.copyWith(isEmailVerified: true);
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      _setError('Verification failed');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// 📧 Resend verification email
+  Future<bool> resendVerificationEmail() async {
+    if (_user?.email == null) return false;
+    
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _authService.resendVerificationEmail(_user!.email);
+      return true;
+    } catch (e) {
+      _setError('Failed to resend verification email');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Helper methods
   void _setLoading(bool loading) {
     _isLoading = loading;

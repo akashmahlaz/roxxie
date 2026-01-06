@@ -251,7 +251,10 @@ class _MatchCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 10,
+            ),
           ],
         ),
         child: ClipRRect(
@@ -264,7 +267,7 @@ class _MatchCard extends StatelessWidget {
                 Image.network(
                   photo,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, e, s) => Container(
                     color: AppColors.charcoal,
                     child: const Icon(
                       Icons.person,
@@ -289,7 +292,10 @@ class _MatchCard extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.8),
+                    ],
                     stops: const [0.5, 1.0],
                   ),
                 ),

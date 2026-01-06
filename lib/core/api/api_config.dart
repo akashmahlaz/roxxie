@@ -41,6 +41,8 @@ class Endpoints {
   static const String forgotPassword = '${ApiConfig.auth}/forgot-password';
   static const String resetPassword = '${ApiConfig.auth}/reset-password';
   static const String changePassword = '${ApiConfig.auth}/change-password';
+  static const String verifyEmail = '${ApiConfig.auth}/verify-email';
+  static const String resendVerification = '${ApiConfig.auth}/resend-verification';
   static const String profile = '${ApiConfig.auth}/profile';
   static const String me = '${ApiConfig.auth}/me';
 

@@ -3,7 +3,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../api/api.dart';
 import '../models/models.dart';
 
@@ -80,7 +80,7 @@ class MessageService {
 /// 🔌 WebSocket Chat Service
 class ChatSocketService {
   static ChatSocketService? _instance;
-  IO.Socket? _socket;
+  io.Socket? _socket;
   final ApiClient _client = ApiClient();
 
   // Callbacks
@@ -111,9 +111,9 @@ class ChatSocketService {
     }
 
     try {
-      _socket = IO.io(
+      _socket = io.io(
         ApiConfig.wsUrl,
-        IO.OptionBuilder()
+        io.OptionBuilder()
             .setTransports(['websocket'])
             .setAuth({'token': token})
             .enableAutoConnect()
