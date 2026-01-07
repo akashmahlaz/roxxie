@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- Location permission (needed for Geolocator prompt) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We use your location to match you with nearby artists/venues and show relevant gigs in your area.</string>
 </dict>
 </plist>

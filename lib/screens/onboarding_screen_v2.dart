@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../core/theme/theme.dart';
 import 'role_selection_screen_v2.dart';
+import 'login_screen.dart';
 
 /// 🎠 PREMIUM ONBOARDING SCREEN V2
 ///
@@ -1039,7 +1040,12 @@ class _OnboardingScreenV2State extends State<OnboardingScreenV2>
                       children: [
                         TextButton(
                           onPressed: () {
-                            // TODO: Navigate to login
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
                           },
                           child: Text(
                             'Login',

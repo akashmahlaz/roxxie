@@ -93,6 +93,141 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController();
+    final brightness = Theme.of(context).brightness;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        bool isSending = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            backgroundColor: AppColors.surface(brightness),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              'Reset Password',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Enter your email address and we\'ll send you a link to reset your password.',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    hintText: 'Email address',
+                    hintStyle: TextStyle(color: AppColors.textSec(brightness)),
+                    filled: true,
+                    fillColor: AppColors.surfaceSecondary(brightness),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                  style: TextStyle(color: AppColors.text(brightness)),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColors.textSec(brightness)),
+                ),
+              ),
+              TextButton(
+                onPressed: isSending
+                    ? null
+                    : () async {
+                        final email = emailController.text.trim();
+                        if (email.isEmpty || !email.contains('@')) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter a valid email'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        setDialogState(() => isSending = true);
+
+                        try {
+                          final authProvider = context.read<AuthProvider>();
+                          final success = await authProvider.forgotPassword(
+                            email,
+                          );
+
+                          if (!dialogContext.mounted) return;
+                          Navigator.pop(dialogContext);
+
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                success
+                                    ? 'Password reset link sent to $email'
+                                    : 'Failed to send reset link. Please try again.',
+                              ),
+                              backgroundColor: success
+                                  ? Colors.green
+                                  : Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        } catch (e) {
+                          setDialogState(() => isSending = false);
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                child: isSending
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        'Send Link',
+                        style: TextStyle(
+                          color: AppColors.crimson,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _navigateToSignup() {
     // Navigate back to role selection or show a bottom sheet
     showModalBottomSheet(
@@ -346,16 +481,7 @@ class _LoginScreenState extends State<LoginScreen>
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () {
-                        // TODO: Implement forgot password
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Forgot password coming soon!'),
-                            backgroundColor: AppColors.crimson,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
+                      onTap: _showForgotPasswordDialog,
                       child: Text(
                         'Forgot Password?',
                         style: TextStyle(

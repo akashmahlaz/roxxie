@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/services/services.dart';
 import '../venue_profile_setup_screen.dart';
 
 /// 📍 STEP 3: VENUE DETAILS
@@ -35,6 +36,8 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   late TextEditingController _emailController;
   late TextEditingController _websiteController;
   late TextEditingController _instagramController;
+  bool _isGettingLocation = false;
+  final LocationService _locationService = LocationService();
 
   final List<String> _weekDays = [
     'Monday',
@@ -178,6 +181,26 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   Widget _buildLocationSection(Brightness brightness) {
     return Column(
       children: [
+        // Use current location
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _isGettingLocation ? null : () => _fillFromCurrentLocation(brightness),
+            icon: _isGettingLocation
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.crimson,
+                    ),
+                  )
+                : const Icon(Icons.my_location_rounded, size: 18),
+            label: const Text('Use current location'),
+            style: TextButton.styleFrom(foregroundColor: AppColors.crimson),
+          ),
+        ),
+
         // Address
         _buildTextField(
           controller: _addressController,
@@ -243,6 +266,75 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
         ),
       ],
     );
+  }
+
+  Future<void> _fillFromCurrentLocation(Brightness brightness) async {
+    setState(() => _isGettingLocation = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final result = await _locationService.getCurrentLocationWithAddress();
+      if (result == null) {
+        final state = await _locationService.getPermissionState();
+        final isPermissionIssue = state == LocationPermissionState.deniedPreviously ||
+            state == LocationPermissionState.deniedForever ||
+            state == LocationPermissionState.denied;
+
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              isPermissionIssue
+                  ? 'Location permission is turned off. Enable it in Settings to auto-fill your venue location.'
+                  : 'Location services are off. Turn on Location to auto-fill your venue location.',
+            ),
+            backgroundColor: AppColors.crimson,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Settings',
+              textColor: Colors.white,
+              onPressed: () => isPermissionIssue
+                  ? _locationService.openLocationSettings()
+                  : _locationService.openDeviceLocationSettings(),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Update controllers + model
+      _addressController.text = result.address;
+      widget.profileData.address = result.address;
+
+      if (result.city?.isNotEmpty == true) {
+        _cityController.text = result.city!;
+        widget.profileData.city = result.city!;
+      }
+      if (result.country?.isNotEmpty == true) {
+        widget.profileData.country = result.country!;
+      }
+      widget.profileData.latitude = result.latitude;
+      widget.profileData.longitude = result.longitude;
+
+      widget.onDataChanged();
+
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Location detected!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error getting location: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isGettingLocation = false);
+    }
   }
 
   Widget _buildContactSection(Brightness brightness) {

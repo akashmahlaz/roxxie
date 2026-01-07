@@ -241,6 +241,9 @@ class _LoggingInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     debugPrint('❌ ${err.response?.statusCode} ${err.requestOptions.uri}');
     debugPrint('   ${err.message}');
+    if (err.response?.data != null) {
+      debugPrint('   Response: ${err.response?.data}');
+    }
     handler.next(err);
   }
 }

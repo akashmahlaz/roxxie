@@ -8,3 +8,4 @@ export 'venue_service.dart';
 export 'swipe_service.dart';
 export 'message_service.dart';
 export 'upload_service.dart';
+export 'location_service.dart';

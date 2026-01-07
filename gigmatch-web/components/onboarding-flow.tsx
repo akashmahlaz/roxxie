@@ -12,7 +12,7 @@ interface OnboardingSlide {
   icon: React.ReactNode;
   title: string;
   description: string;
-  gradient: string;
+  linear: string;
 }
 
 const slides: OnboardingSlide[] = [
@@ -20,19 +20,19 @@ const slides: OnboardingSlide[] = [
     icon: <Search className="w-16 h-16" />,
     title: "Discover Local Gigs",
     description: "Find the perfect venues and events that match your style. Swipe through opportunities near you.",
-    gradient: "from-red-600/30 to-rose-600/10",
+    linear: "from-red-600/30 to-rose-600/10",
   },
   {
     icon: <Heart className="w-16 h-16" />,
     title: "Match with Venues",
     description: "Connect with venues that love your music. When it's mutual, the conversation begins.",
-    gradient: "from-rose-600/30 to-pink-600/10",
+    linear: "from-rose-600/30 to-pink-600/10",
   },
   {
     icon: <Calendar className="w-16 h-16" />,
     title: "Book & Perform",
     description: "Manage your gigs seamlessly. Accept bookings, track payments, and build your reputation.",
-    gradient: "from-pink-600/30 to-cyan-600/10",
+    linear: "from-pink-600/30 to-cyan-600/10",
   },
 ];
 
@@ -136,7 +136,7 @@ export function OnboardingFlow() {
                   {/* Icon */}
                   <div className="flex justify-center mb-8">
                     <div
-                      className={`w-32 h-32 rounded-full bg-gradient-to-br ${slide.gradient} flex items-center justify-center shadow-lg`}
+                      className={`w-32 h-32 rounded-full bg-linear-to-br ${slide.linear} flex items-center justify-center shadow-lg`}
                     >
                       <div className="text-foreground">
                         {slide.icon}
@@ -191,7 +191,7 @@ export function OnboardingFlow() {
                 )}
                 <Button
                   onClick={nextSlide}
-                  className={`flex-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 ${
+                  className={`flex-1 bg-linear-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 ${
                     currentSlide === 0 ? "w-full" : ""
                   }`}
                 >
@@ -211,8 +211,8 @@ export function OnboardingFlow() {
             </div>
 
             {/* Decorative elements */}
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-red-500/20 to-transparent rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-rose-500/20 to-transparent rounded-full blur-3xl" />
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-linear-to-br from-red-500/20 to-transparent rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-linear-to-br from-rose-500/20 to-transparent rounded-full blur-3xl" />
           </motion.div>
         </motion.div>
       )}

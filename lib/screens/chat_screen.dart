@@ -3,11 +3,14 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
+import '../core/services/services.dart';
 
 class ChatScreen extends StatefulWidget {
   final String matchId;
@@ -22,8 +25,11 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
+  final ImagePicker _imagePicker = ImagePicker();
+  final UploadService _uploadService = UploadService();
   Timer? _typingTimer;
   bool _isTyping = false;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -293,71 +299,102 @@ class _ChatScreenState extends State<ChatScreen> {
         color: AppColors.charcoal,
         border: Border(top: BorderSide(color: AppColors.slate)),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Attachment button
-          IconButton(
-            icon: const Icon(
-              Icons.add_circle_outline,
-              color: AppColors.mediumGray,
-            ),
-            onPressed: _showAttachmentOptions,
-          ),
-
-          // Text input
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.graphite,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: TextField(
-                controller: _messageController,
-                focusNode: _focusNode,
-                onChanged: _onTextChanged,
-                style: const TextStyle(color: AppColors.offWhite),
-                decoration: const InputDecoration(
-                  hintText: 'Type a message...',
-                  hintStyle: TextStyle(color: AppColors.mediumGray),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+          // Upload indicator
+          if (_isUploading)
+            Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: const Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.crimson,
+                    ),
                   ),
-                ),
-                maxLines: 4,
-                minLines: 1,
-                textCapitalization: TextCapitalization.sentences,
+                  SizedBox(width: 8),
+                  Text(
+                    'Uploading photo...',
+                    style: TextStyle(color: AppColors.mediumGray, fontSize: 12),
+                  ),
+                ],
               ),
             ),
-          ),
+          Row(
+            children: [
+              // Attachment button
+              IconButton(
+                icon: const Icon(
+                  Icons.add_circle_outline,
+                  color: AppColors.mediumGray,
+                ),
+                onPressed: _isUploading ? null : _showAttachmentOptions,
+              ),
 
-          const SizedBox(width: 8),
-
-          // Send button
-          Consumer<ChatProvider>(
-            builder: (context, chatProvider, _) {
-              return GestureDetector(
-                onTap: chatProvider.isSending ? null : _sendMessage,
+              // Text input
+              Expanded(
                 child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    shape: BoxShape.circle,
+                  decoration: BoxDecoration(
+                    color: AppColors.graphite,
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  child: chatProvider.isSending
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.send, color: Colors.white, size: 20),
+                  child: TextField(
+                    controller: _messageController,
+                    focusNode: _focusNode,
+                    onChanged: _onTextChanged,
+                    style: const TextStyle(color: AppColors.offWhite),
+                    decoration: const InputDecoration(
+                      hintText: 'Type a message...',
+                      hintStyle: TextStyle(color: AppColors.mediumGray),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    maxLines: 4,
+                    minLines: 1,
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
                 ),
-              );
-            },
+              ),
+
+              const SizedBox(width: 8),
+
+              // Send button
+              Consumer<ChatProvider>(
+                builder: (context, chatProvider, _) {
+                  return GestureDetector(
+                    onTap: chatProvider.isSending ? null : _sendMessage,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        shape: BoxShape.circle,
+                      ),
+                      child: chatProvider.isSending
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -483,7 +520,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement photo upload
+                _pickAndSendPhoto();
               },
             ),
             ListTile(
@@ -494,13 +531,85 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement audio upload
+                _pickAndSendAudio();
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Pick photo from gallery and send as message
+  Future<void> _pickAndSendPhoto() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1080,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image == null) return;
+
+      setState(() => _isUploading = true);
+
+      final file = File(image.path);
+      final uploadResult = await _uploadService.uploadGalleryImage(file);
+
+      if (mounted) {
+        await context.read<ChatProvider>().sendMessage(
+          'Photo',
+          type: MessageType.image,
+          mediaUrl: uploadResult.url,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
+  /// Pick audio file and send as message
+  Future<void> _pickAndSendAudio() async {
+    try {
+      // For audio, we can use camera option to show file picker behavior
+      // Or we could integrate a file picker package for audio files
+      // For now, let's show a message that this feature requires additional setup
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Audio recording coming soon! Use voice notes from keyboard.',
+          ),
+          backgroundColor: AppColors.crimson,
+        ),
+      );
+
+      // NOTE: To fully implement audio upload, you would:
+      // 1. Use file_picker package to select audio files
+      // 2. Or use record package to record audio
+      // 3. Then upload using _uploadService.uploadAudio(file)
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -546,10 +655,12 @@ class _MessageBubble extends StatelessWidget {
                   : CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
+                  padding: message.type == MessageType.image
+                      ? const EdgeInsets.all(4)
+                      : const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                   decoration: BoxDecoration(
                     color: isMe ? AppColors.crimson : AppColors.charcoal,
                     borderRadius: BorderRadius.only(
@@ -559,13 +670,7 @@ class _MessageBubble extends StatelessWidget {
                       bottomRight: Radius.circular(isMe ? 4 : 18),
                     ),
                   ),
-                  child: Text(
-                    message.content,
-                    style: TextStyle(
-                      color: isMe ? Colors.white : AppColors.offWhite,
-                      fontSize: 15,
-                    ),
-                  ),
+                  child: _buildMessageContent(),
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -615,6 +720,124 @@ class _MessageBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildMessageContent() {
+    switch (message.type) {
+      case MessageType.image:
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: message.mediaUrl != null
+              ? Image.network(
+                  message.mediaUrl!,
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: 200,
+                      height: 200,
+                      color: AppColors.charcoal,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                          strokeWidth: 2,
+                          color: AppColors.crimson,
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 200,
+                      height: 200,
+                      color: AppColors.charcoal,
+                      child: const Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: AppColors.mediumGray,
+                          size: 48,
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : Container(
+                  width: 200,
+                  height: 200,
+                  color: AppColors.charcoal,
+                  child: const Center(
+                    child: Icon(
+                      Icons.image,
+                      color: AppColors.mediumGray,
+                      size: 48,
+                    ),
+                  ),
+                ),
+        );
+
+      case MessageType.audio:
+        return Container(
+          width: 200,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Icon(
+                Icons.play_circle_filled,
+                color: isMe ? Colors.white : AppColors.crimson,
+                size: 32,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Voice message',
+                      style: TextStyle(
+                        color: isMe ? Colors.white : AppColors.offWhite,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: (isMe ? Colors.white : AppColors.crimson)
+                            .withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case MessageType.systemNotice:
+        return Text(
+          message.content,
+          style: const TextStyle(
+            color: AppColors.mediumGray,
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+          ),
+        );
+
+      case MessageType.text:
+        return Text(
+          message.content,
+          style: TextStyle(
+            color: isMe ? Colors.white : AppColors.offWhite,
+            fontSize: 15,
+          ),
+        );
+    }
   }
 
   String _formatTime(DateTime time) {

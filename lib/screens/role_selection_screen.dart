@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/theme/theme.dart';
 import '../widgets/widgets.dart';
+import 'artist_signup_screen.dart';
+import 'venue_signup_screen.dart';
 
 /// 🎭 ROLE SELECTION SCREEN
 ///
@@ -63,13 +65,18 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
   void _continue() {
     if (_selectedRole == null) return;
 
-    // TODO: Navigate to signup based on role
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Selected: $_selectedRole - Next screen coming soon!'),
-        backgroundColor: AppColors.charcoal,
-      ),
-    );
+    // Navigate to signup based on role
+    if (_selectedRole == 'artist') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ArtistSignupScreen()),
+      );
+    } else if (_selectedRole == 'venue') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const VenueSignupScreen()),
+      );
+    }
   }
 
   @override

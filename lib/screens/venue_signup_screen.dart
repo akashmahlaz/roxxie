@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
+import '../core/services/services.dart';
 import 'login_screen.dart';
 import 'artist_signup_screen.dart';
 
@@ -23,12 +24,17 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
     with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _locationController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _countryController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _locationService = LocationService();
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isGettingLocation = false;
+  double? _latitude;
+  double? _longitude;
 
   late AnimationController _fadeController;
 
@@ -45,6 +51,8 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
   void dispose() {
     _nameController.dispose();
     _locationController.dispose();
+    _cityController.dispose();
+    _countryController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _fadeController.dispose();
@@ -62,6 +70,10 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
           password: _passwordController.text,
           name: _nameController.text.trim(),
           role: UserRole.venue,
+          city: _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
+          country: _countryController.text.trim().isEmpty ? null : _countryController.text.trim(),
+          latitude: _latitude,
+          longitude: _longitude,
         );
 
         if (!mounted) return;
@@ -99,21 +111,57 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
     // Capture ScaffoldMessenger before async gap
     final messenger = ScaffoldMessenger.of(context);
 
-    // Simulate getting location
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // Get actual location using location service
+      final locationResult = await _locationService
+          .getCurrentLocationWithAddress();
 
-    // TODO: Implement actual location fetching
-    _locationController.text = 'New York, NY';
+      if (locationResult != null) {
+        setState(() {
+          _locationController.text = locationResult.address;
+          _cityController.text = locationResult.city ?? '';
+          _countryController.text = locationResult.country ?? '';
+          _latitude = locationResult.latitude;
+          _longitude = locationResult.longitude;
+        });
 
-    setState(() => _isGettingLocation = false);
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('Location detection coming soon!'),
-        backgroundColor: AppColors.crimson,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Location detected!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        // Permission denied or location unavailable
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Could not get location. Please enable location services.',
+            ),
+            backgroundColor: AppColors.crimson,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Settings',
+              textColor: Colors.white,
+              onPressed: () => _locationService.openLocationSettings(),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error getting location: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isGettingLocation = false);
+      }
+    }
   }
 
   @override
@@ -305,6 +353,36 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         ),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // City field
+                  _buildTextField(
+                    controller: _cityController,
+                    hintText: 'City',
+                    prefixIcon: Icons.location_city_outlined,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter city';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Country field
+                  _buildTextField(
+                    controller: _countryController,
+                    hintText: 'Country',
+                    prefixIcon: Icons.public_outlined,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter country';
+                      }
+                      return null;
+                    },
                   ),
 
                   const SizedBox(height: 14),

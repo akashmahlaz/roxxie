@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/services/services.dart';
 import '../artist_profile_setup_screen.dart';
 
 /// Step 3: Contact & Location
@@ -37,6 +38,8 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
   final _countryController = TextEditingController();
 
   bool _showPhoneInProfile = true;
+  bool _isGettingLocation = false;
+  final LocationService _locationService = LocationService();
 
   @override
   void initState() {
@@ -232,6 +235,28 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
             ),
             const SizedBox(height: 12),
 
+            // Use current location
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _isGettingLocation ? null : _fillFromCurrentLocation,
+                icon: _isGettingLocation
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.crimson,
+                        ),
+                      )
+                    : const Icon(Icons.my_location_rounded, size: 18),
+                label: const Text('Use current location'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.crimson,
+                ),
+              ),
+            ),
+
             // City & Country
             Row(
               children: [
@@ -270,6 +295,73 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
         ),
       ),
     );
+  }
+
+  Future<void> _fillFromCurrentLocation() async {
+    setState(() => _isGettingLocation = true);
+
+    // Capture messenger before async gap
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final result = await _locationService.getCurrentLocationWithAddress();
+      if (result == null) {
+        final state = await _locationService.getPermissionState();
+        final isPermissionIssue = state == LocationPermissionState.deniedPreviously ||
+            state == LocationPermissionState.deniedForever ||
+            state == LocationPermissionState.denied;
+
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              isPermissionIssue
+                  ? 'Location permission is turned off. Enable it in Settings to auto-fill your city/country.'
+                  : 'Location services are off. Turn on Location to auto-fill your city/country.',
+            ),
+            backgroundColor: AppColors.crimson,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Settings',
+              textColor: Colors.white,
+              onPressed: () => isPermissionIssue
+                  ? _locationService.openLocationSettings()
+                  : _locationService.openDeviceLocationSettings(),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Update controllers + data model
+      if (result.city?.isNotEmpty == true) {
+        _cityController.text = result.city!;
+        widget.profileData.city = result.city;
+      }
+      if (result.country?.isNotEmpty == true) {
+        _countryController.text = result.country!;
+        widget.profileData.country = result.country;
+      }
+      widget.profileData.latitude = result.latitude;
+      widget.profileData.longitude = result.longitude;
+
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Location detected!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error getting location: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isGettingLocation = false);
+    }
   }
 
   Widget _buildPhoneNotice(Brightness brightness) {

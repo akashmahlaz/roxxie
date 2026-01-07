@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
+import '../core/services/services.dart';
 import 'login_screen.dart';
 
 /// 🎸 ARTIST SIGNUP SCREEN
@@ -24,10 +25,16 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
   final _genreController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _countryController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _locationService = LocationService();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isGettingLocation = false;
   String? _selectedGenre;
+  double? _latitude;
+  double? _longitude;
 
   late AnimationController _fadeController;
 
@@ -66,8 +73,67 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
     _genreController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _cityController.dispose();
+    _countryController.dispose();
     _fadeController.dispose();
     super.dispose();
+  }
+
+  void _getCurrentLocation() async {
+    setState(() => _isGettingLocation = true);
+
+    // Capture ScaffoldMessenger before async gap
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      // Get actual location using location service
+      final locationResult = await _locationService.getCurrentLocationWithAddress();
+
+      if (locationResult != null) {
+        setState(() {
+          _cityController.text = locationResult.city ?? '';
+          _countryController.text = locationResult.country ?? '';
+          _latitude = locationResult.latitude;
+          _longitude = locationResult.longitude;
+        });
+
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Location detected!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        // Permission denied or location unavailable
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Could not get location. Please enable location services.',
+            ),
+            backgroundColor: AppColors.crimson,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Settings',
+              textColor: Colors.white,
+              onPressed: () => _locationService.openLocationSettings(),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error getting location: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isGettingLocation = false);
+      }
+    }
   }
 
   void _handleSignup() async {
@@ -92,6 +158,10 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
           password: _passwordController.text,
           name: _nameController.text.trim(),
           role: UserRole.artist,
+          city: _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
+          country: _countryController.text.trim().isEmpty ? null : _countryController.text.trim(),
+          latitude: _latitude,
+          longitude: _longitude,
         );
 
         if (!mounted) return;
@@ -385,6 +455,73 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                         ],
                       ),
                     ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Location section with GPS button
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          controller: _cityController,
+                          hintText: 'City',
+                          prefixIcon: Icons.location_city_outlined,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your city';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _isGettingLocation ? null : _getCurrentLocation,
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: AppColors.crimson.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColors.crimson.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Center(
+                            child: _isGettingLocation
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.crimson,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.my_location_rounded,
+                                    color: AppColors.crimson,
+                                    size: 24,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Country field
+                  _buildTextField(
+                    controller: _countryController,
+                    hintText: 'Country',
+                    prefixIcon: Icons.public_outlined,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your country';
+                      }
+                      return null;
+                    },
                   ),
 
                   const SizedBox(height: 14),

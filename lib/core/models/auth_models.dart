@@ -48,6 +48,10 @@ class RegisterRequest {
   final String name;
   final UserRole role;
   final String? phone;
+  final String? city;
+  final String? country;
+  final double? latitude;
+  final double? longitude;
 
   RegisterRequest({
     required this.email,
@@ -55,6 +59,10 @@ class RegisterRequest {
     required this.name,
     required this.role,
     this.phone,
+    this.city,
+    this.country,
+    this.latitude,
+    this.longitude,
   });
 
   Map<String, dynamic> toJson() => {
@@ -63,6 +71,10 @@ class RegisterRequest {
     'fullName': name,
     'role': role.value,
     if (phone != null) 'phone': phone,
+    if (city != null) 'city': city,
+    if (country != null) 'country': country,
+    if (latitude != null) 'latitude': latitude,
+    if (longitude != null) 'longitude': longitude,
   };
 }
 
