@@ -64,6 +64,20 @@ class ArtistService {
     }
   }
 
+  /// ✅ Complete artist profile setup with raw data
+  Future<Artist> completeSetupWithData(Map<String, dynamic> data) async {
+    try {
+      final response = await _client.post(
+        Endpoints.artistsCompleteSetup,
+        data: data,
+      );
+      return Artist.fromJson(response.data);
+    } catch (e) {
+      debugPrint('Complete artist setup error: $e');
+      rethrow;
+    }
+  }
+
   /// 🚀 Boost artist profile
   Future<Artist> boostProfile() async {
     try {

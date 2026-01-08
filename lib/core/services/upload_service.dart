@@ -1,7 +1,8 @@
 /// 📤 GIGMATCH Upload Service
-/// Handles file uploads to Cloudinary
+/// Handles file uploads to Cloudinary via backend
 library;
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -27,7 +28,7 @@ class UploadResponse {
 
   factory UploadResponse.fromJson(Map<String, dynamic> json) {
     return UploadResponse(
-      url: json['url'] ?? json['secure_url'] ?? '',
+      url: json['url'] ?? json['secureUrl'] ?? json['secure_url'] ?? '',
       publicId: json['publicId'] ?? json['public_id'] ?? '',
       resourceType: json['resourceType'] ?? json['resource_type'] ?? 'image',
       width: json['width'],
@@ -35,6 +36,77 @@ class UploadResponse {
       bytes: json['bytes'] ?? 0,
     );
   }
+}
+
+/// Helper to convert file to base64 data URI
+Future<String> fileToBase64DataUri(String filePath) async {
+  final file = File(filePath);
+  final bytes = await file.readAsBytes();
+  final base64String = base64Encode(bytes);
+
+  // Determine MIME type from extension
+  final extension = filePath.split('.').last.toLowerCase();
+  String mimeType;
+
+  switch (extension) {
+    case 'jpg':
+    case 'jpeg':
+      mimeType = 'image/jpeg';
+      break;
+    case 'png':
+      mimeType = 'image/png';
+      break;
+    case 'gif':
+      mimeType = 'image/gif';
+      break;
+    case 'webp':
+      mimeType = 'image/webp';
+      break;
+    case 'heic':
+    case 'heif':
+      mimeType = 'image/heic';
+      break;
+    case 'mp3':
+      mimeType = 'audio/mpeg';
+      break;
+    case 'wav':
+      mimeType = 'audio/wav';
+      break;
+    case 'aac':
+      mimeType = 'audio/aac';
+      break;
+    case 'm4a':
+      mimeType = 'audio/mp4';
+      break;
+    case 'ogg':
+      mimeType = 'audio/ogg';
+      break;
+    case 'flac':
+      mimeType = 'audio/flac';
+      break;
+    case 'mp4':
+      mimeType = 'video/mp4';
+      break;
+    case 'mov':
+      mimeType = 'video/quicktime';
+      break;
+    case 'avi':
+      mimeType = 'video/x-msvideo';
+      break;
+    case 'webm':
+      mimeType = 'video/webm';
+      break;
+    case 'mkv':
+      mimeType = 'video/x-matroska';
+      break;
+    case '3gp':
+      mimeType = 'video/3gpp';
+      break;
+    default:
+      mimeType = 'application/octet-stream';
+  }
+
+  return 'data:$mimeType;base64,$base64String';
 }
 
 /// Signed Upload Params
@@ -70,17 +142,16 @@ class SignedUploadParams {
 class UploadService {
   final ApiClient _client = ApiClient();
 
-  /// 📝 Get signed upload parameters
+  /// 📝 Get signed upload parameters for direct Cloudinary upload
   Future<SignedUploadParams> getSignedParams({
-    required String resourceType, // 'image', 'video', 'audio'
+    required String resourceType, // 'image', 'video', 'raw'
     String? folder,
   }) async {
     try {
-      final response = await _client.get(
+      final response = await _client.post(
         Endpoints.uploadSignedParams,
-        queryParameters: {
+        data: {
           'resourceType': resourceType,
-          if (folder != null) 'folder': folder,
         },
       );
       return SignedUploadParams.fromJson(response.data);
@@ -90,90 +161,103 @@ class UploadService {
     }
   }
 
-  /// 🖼️ Upload profile photo
-  Future<UploadResponse> uploadProfilePhoto(
-    File file, {
-    Function(int, int)? onProgress,
-  }) async {
-    return _uploadFile(
-      file: file,
-      endpoint: Endpoints.uploadProfilePhoto,
-      resourceType: 'image',
-      onProgress: onProgress,
-    );
-  }
-
-  /// 🖼️ Upload gallery image
-  Future<UploadResponse> uploadGalleryImage(
-    File file, {
-    Function(int, int)? onProgress,
-  }) async {
-    return _uploadFile(
-      file: file,
-      endpoint: Endpoints.uploadGallery,
-      resourceType: 'image',
-      onProgress: onProgress,
-    );
-  }
-
-  /// 🎵 Upload audio sample
-  Future<UploadResponse> uploadAudio(
-    File file, {
-    Function(int, int)? onProgress,
-  }) async {
-    return _uploadFile(
-      file: file,
-      endpoint: Endpoints.uploadAudio,
-      resourceType: 'audio',
-      onProgress: onProgress,
-    );
-  }
-
-  /// 🎬 Upload video sample
-  Future<UploadResponse> uploadVideo(
-    File file, {
-    Function(int, int)? onProgress,
-  }) async {
-    return _uploadFile(
-      file: file,
-      endpoint: Endpoints.uploadVideo,
-      resourceType: 'video',
-      onProgress: onProgress,
-    );
-  }
-
-  /// 📤 Internal upload method
-  Future<UploadResponse> _uploadFile({
-    required File file,
-    required String endpoint,
-    required String resourceType,
-    Function(int, int)? onProgress,
-  }) async {
+  /// 🖼️ Upload profile photo (base64)
+  Future<UploadResponse> uploadProfilePhoto(String filePath) async {
     try {
-      final fileName = file.path.split('/').last;
-
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path, filename: fileName),
-        'resourceType': resourceType,
-      });
+      debugPrint('Uploading profile photo: $filePath');
+      final base64Data = await fileToBase64DataUri(filePath);
 
       final response = await _client.post(
-        endpoint,
-        data: formData,
-        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+        Endpoints.uploadProfilePhoto,
+        data: {'file': base64Data},
       );
 
+      debugPrint('Profile photo uploaded: ${response.data}');
       return UploadResponse.fromJson(response.data);
     } catch (e) {
-      debugPrint('Upload error: $e');
+      debugPrint('Profile photo upload error: $e');
       rethrow;
     }
   }
 
-  /// 🔗 Direct upload to Cloudinary (for large files)
+  /// 🖼️ Upload gallery image (base64)
+  Future<UploadResponse> uploadGalleryImage(String filePath, {int index = 0}) async {
+    try {
+      debugPrint('Uploading gallery image: $filePath');
+      final base64Data = await fileToBase64DataUri(filePath);
+
+      final response = await _client.post(
+        Endpoints.uploadGallery,
+        data: {
+          'file': base64Data,
+          'index': index,
+        },
+      );
+
+      debugPrint('Gallery image uploaded: ${response.data}');
+      return UploadResponse.fromJson(response.data);
+    } catch (e) {
+      debugPrint('Gallery image upload error: $e');
+      rethrow;
+    }
+  }
+
+  /// 🖼️ Upload multiple gallery images
+  Future<List<UploadResponse>> uploadGalleryImages(List<String> filePaths) async {
+    final results = <UploadResponse>[];
+    for (var i = 0; i < filePaths.length; i++) {
+      try {
+        final result = await uploadGalleryImage(filePaths[i], index: i);
+        results.add(result);
+      } catch (e) {
+        debugPrint('Failed to upload gallery image $i: $e');
+      }
+    }
+    return results;
+  }
+
+  /// 🎵 Upload audio sample (base64)
+  Future<UploadResponse> uploadAudio(String filePath) async {
+    try {
+      debugPrint('Uploading audio: $filePath');
+      final base64Data = await fileToBase64DataUri(filePath);
+
+      final response = await _client.post(
+        Endpoints.uploadAudio,
+        data: {'file': base64Data},
+      );
+
+      debugPrint('Audio uploaded: ${response.data}');
+      return UploadResponse.fromJson(response.data);
+    } catch (e) {
+      debugPrint('Audio upload error: $e');
+      rethrow;
+    }
+  }
+
+  /// 🎬 Upload video sample (base64)
+  Future<UploadResponse> uploadVideo(String filePath) async {
+    try {
+      debugPrint('Uploading video: $filePath');
+      final base64Data = await fileToBase64DataUri(filePath);
+
+      final response = await _client.post(
+        Endpoints.uploadVideo,
+        data: {'file': base64Data},
+      );
+
+      debugPrint('Video uploaded: ${response.data}');
+      return UploadResponse.fromJson(response.data);
+    } catch (e) {
+      debugPrint('Video upload error: $e');
+      rethrow;
+    }
+  }
+
+  /// 🔗 Direct upload to Cloudinary (for large files - uses signed params)
   Future<UploadResponse> uploadDirectToCloudinary({
-    required File file,
-    required String resourceType,
+    required String filePath,
+    required String resourceType, // 'image', 'video', 'raw'
     Function(int, int)? onProgress,
   }) async {
     try {
@@ -182,7 +266,8 @@ class UploadService {
 
       // Upload directly to Cloudinary
       final dio = Dio();
-      final fileName = file.path.split('/').last;
+      final file = File(filePath);
+      final fileName = filePath.split('/').last;
 
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(file.path, filename: fileName),
@@ -203,5 +288,19 @@ class UploadService {
       debugPrint('Direct Cloudinary upload error: $e');
       rethrow;
     }
+  }
+
+  /// Check file size (returns size in MB)
+  Future<double> getFileSizeMB(String filePath) async {
+    final file = File(filePath);
+    final bytes = await file.length();
+    return bytes / (1024 * 1024);
+  }
+
+  /// Check if file is too large (50MB for video, 10MB for others)
+  Future<bool> isFileTooLarge(String filePath, {bool isVideo = false}) async {
+    final sizeMB = await getFileSizeMB(filePath);
+    final maxSize = isVideo ? 50.0 : 10.0;
+    return sizeMB > maxSize;
   }
 }

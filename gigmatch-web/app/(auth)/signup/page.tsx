@@ -34,13 +34,14 @@ export default function SignupPage() {
     { label: "One uppercase letter", valid: /[A-Z]/.test(formData.password) },
     { label: "One lowercase letter", valid: /[a-z]/.test(formData.password) },
     { label: "One number", valid: /\d/.test(formData.password) },
+    { label: "One special character (@$!%*?&)", valid: /[@$!%*?&]/.test(formData.password) },
   ];
 
   const isPasswordValid = passwordRequirements.every((r) => r.valid);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isPasswordValid) {
       toast.error("Password requirements not met", {
         description: "Please make sure your password meets all requirements.",
@@ -54,9 +55,13 @@ export default function SignupPage() {
         description: "Please check your email to verify your account.",
       });
       router.push("/onboarding");
-    } catch {
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "An account with this email may already exist.";
       toast.error("Registration failed", {
-        description: "An account with this email may already exist.",
+        description: errorMessage,
       });
     }
   };
@@ -185,7 +190,7 @@ export default function SignupPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  
+
                   {/* Password requirements */}
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {passwordRequirements.map((req, i) => (

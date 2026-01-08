@@ -230,7 +230,46 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       _artistProfile = await _artistService.completeSetup(request);
-      _user = _user?.copyWith(isProfileComplete: true);
+      
+      // Fetch fresh user data from backend to get updated hasCompletedSetup flag
+      try {
+        final updatedUser = await _authService.getProfile();
+        _user = updatedUser;
+      } catch (e) {
+        // If fetching updated user fails, still update local state
+        debugPrint('Warning: Failed to fetch updated user profile: $e');
+        _user = _user?.copyWith(isProfileComplete: true);
+      }
+      
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('Setup failed: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// ✅ Complete artist setup with raw data (bypasses model)
+  Future<bool> completeArtistSetupWithData(Map<String, dynamic> data) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      _artistProfile = await _artistService.completeSetupWithData(data);
+      
+      // Fetch fresh user data from backend to get updated hasCompletedSetup flag
+      try {
+        final updatedUser = await _authService.getProfile();
+        _user = updatedUser;
+      } catch (e) {
+        // If fetching updated user fails, still update local state
+        debugPrint('Warning: Failed to fetch updated user profile: $e');
+        _user = _user?.copyWith(isProfileComplete: true);
+      }
+      
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
@@ -266,7 +305,17 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       _venueProfile = await _venueService.completeSetup(request);
-      _user = _user?.copyWith(isProfileComplete: true);
+      
+      // Fetch fresh user data from backend to get updated hasCompletedSetup flag
+      try {
+        final updatedUser = await _authService.getProfile();
+        _user = updatedUser;
+      } catch (e) {
+        // If fetching updated user fails, still update local state
+        debugPrint('Warning: Failed to fetch updated user profile: $e');
+        _user = _user?.copyWith(isProfileComplete: true);
+      }
+      
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;

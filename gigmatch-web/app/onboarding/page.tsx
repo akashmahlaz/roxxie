@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Music2, Users, Calendar, Star, ArrowRight, ArrowLeft, 
-  Check, Upload, MapPin, Mic2, Guitar 
+import {
+  Music2, Users, Calendar, Star, ArrowRight, ArrowLeft,
+  Check, Upload, MapPin, Mic2, Guitar
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,7 +60,7 @@ export default function OnboardingPage() {
   const { user } = useAuthStore();
   const role = user?.role || "artist";
   const steps = ONBOARDING_STEPS[role as keyof typeof ONBOARDING_STEPS];
-  
+
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<OnboardingData>({
@@ -86,14 +86,70 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
     try {
       const endpoint = role === "artist" ? endpoints.artists.setup : endpoints.venues.setup;
-      await api.post(endpoint, data);
-      toast.success("Profile setup complete!", {
-        description: "You're all set to start using GigMatch.",
-      });
-      router.push("/dashboard");
-    } catch {
-      toast.error("Failed to save profile", {
-        description: "Please try again.",
+
+      // Validate required fields before submission
+      if (role === "artist") {
+        if (!data.stageName || !data.bio || !data.genres || data.genres.length === 0) {
+          toast.error("Please complete all required fields", {
+            description: "Stage name, bio, and at least one genre are required.",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        if (!data.location || !data.venueType || !data.description) {
+          toast.error("Please complete all required fields", {
+            description: "Location, venue type, and description are required.",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Prepare data - map stageName to displayName for backend
+      const submitData = role === "artist"
+        ? {
+          displayName: data.stageName,
+          bio: data.bio,
+          genres: data.genres,
+          performerType: data.performerType,
+          yearsExperience: data.yearsExperience,
+        }
+        : {
+          venueName: data.location,
+          venueType: data.venueType,
+          description: data.description,
+          capacity: data.capacity,
+        };
+
+      const response = await api.post(endpoint, submitData);
+
+      // Validate response
+      if (response.status === 200 || response.status === 201) {
+        // Refresh user state to update hasCompletedSetup flag
+        try {
+          const profileResponse = await api.get(endpoints.auth.me);
+          if (profileResponse.data) {
+            useAuthStore.getState().setUser(profileResponse.data);
+          }
+        } catch (refreshError) {
+          console.error("Failed to refresh user state:", refreshError);
+        }
+
+        toast.success("Profile setup complete!", {
+          description: "You're all set to start using GigMatch.",
+        });
+        router.push("/dashboard");
+      } else {
+        throw new Error("Unexpected response status");
+      }
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to save profile. Please try again.";
+      toast.error("Setup failed", {
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
@@ -213,15 +269,15 @@ interface WelcomeStepProps {
 function WelcomeStep({ role, onNext }: WelcomeStepProps) {
   const features = role === "artist"
     ? [
-        { icon: Users, text: "Connect with venues looking for talent" },
-        { icon: Calendar, text: "Book gigs that match your style" },
-        { icon: Star, text: "Build your reputation with reviews" },
-      ]
+      { icon: Users, text: "Connect with venues looking for talent" },
+      { icon: Calendar, text: "Book gigs that match your style" },
+      { icon: Star, text: "Build your reputation with reviews" },
+    ]
     : [
-        { icon: Mic2, text: "Discover talented artists" },
-        { icon: Calendar, text: "Manage bookings easily" },
-        { icon: Star, text: "Find the perfect fit for your venue" },
-      ];
+      { icon: Mic2, text: "Discover talented artists" },
+      { icon: Calendar, text: "Manage bookings easily" },
+      { icon: Star, text: "Find the perfect fit for your venue" },
+    ];
 
   return (
     <div className="text-center space-y-8">
@@ -533,20 +589,23 @@ function PhotosStep({ onNext, onPrev }: PhotosStepProps) {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">Add Photos</h2>
+        <h2 className="text-2xl font-bold">Add Photos (Optional)</h2>
         <p className="text-muted-foreground">
-          Show off your best moments
+          Photo upload coming soon! You can skip this step for now.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          You can add photos later from your profile page
         </p>
       </div>
 
       <div className="max-w-md mx-auto">
-        <div className="border-2 border-dashed border-border rounded-xl p-12 text-center hover:border-primary/50 transition-colors cursor-pointer">
+        <div className="border-2 border-dashed border-border rounded-xl p-12 text-center opacity-50 cursor-not-allowed">
           <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">
-            Drag and drop photos here, or click to browse
+            Photo upload will be enabled soon
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            PNG, JPG up to 10MB each
+            Coming in next update
           </p>
         </div>
       </div>
@@ -557,7 +616,7 @@ function PhotosStep({ onNext, onPrev }: PhotosStepProps) {
           Back
         </Button>
         <Button onClick={onNext}>
-          Continue
+          Skip for Now
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </div>

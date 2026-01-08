@@ -138,16 +138,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
 
   void _handleSignup() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedGenre == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please select your main genre'),
-            backgroundColor: Colors.red.shade400,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
+      // Genre selection removed - will be collected during profile setup
 
       setState(() => _isLoading = true);
 
@@ -416,48 +407,8 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                     },
                   ),
 
-                  const SizedBox(height: 14),
-
-                  // Genre selector
-                  GestureDetector(
-                    onTap: _showGenrePicker,
-                    child: Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.inputFill(brightness),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border(brightness)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.music_note_rounded,
-                            color: AppColors.textTert(brightness),
-                            size: 22,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _selectedGenre ?? 'Main Genre',
-                            style: TextStyle(
-                              color: _selectedGenre != null
-                                  ? AppColors.text(brightness)
-                                  : AppColors.textTert(brightness),
-                              fontSize: 16,
-                            ),
-                          ),
-                          const Spacer(),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: AppColors.textTert(brightness),
-                            size: 24,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
+                  // Genre selector removed - will be collected during profile setup
+                  // const SizedBox(height: 14),
 
                   // Location section with GPS button
                   Row(

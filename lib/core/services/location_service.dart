@@ -1,9 +1,8 @@
 /// 📍 GIGMATCH Location Service
-/// Handles GPS location and geocoding
+/// Handles GPS location and geocoding - RELIABLE FIRST-TIME FETCH
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
@@ -11,7 +10,6 @@ enum LocationPermissionState {
   granted,
   serviceDisabled,
   denied,
-  deniedPreviously,
   deniedForever,
 }
 
@@ -19,18 +17,6 @@ class LocationService {
   static final LocationService _instance = LocationService._internal();
   factory LocationService() => _instance;
   LocationService._internal();
-
-  static const String _permissionRequestedKey = 'location_permission_requested';
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
-  Future<bool> _hasRequestedPermissionBefore() async {
-    final v = await _storage.read(key: _permissionRequestedKey);
-    return v == 'true';
-  }
-
-  Future<void> _markPermissionRequested() async {
-    await _storage.write(key: _permissionRequestedKey, value: 'true');
-  }
 
   /// Get the current permission/service state (no prompts)
   Future<LocationPermissionState> getPermissionState() async {
@@ -44,68 +30,103 @@ class LocationService {
     }
 
     if (permission == LocationPermission.denied) {
-      final requestedBefore = await _hasRequestedPermissionBefore();
-      return requestedBefore
-          ? LocationPermissionState.deniedPreviously
-          : LocationPermissionState.denied;
+      return LocationPermissionState.denied;
     }
 
     return LocationPermissionState.granted;
   }
 
-  /// Check if location services are enabled and permissions granted
-  Future<bool> checkPermissions() async {
-    final state = await getPermissionState();
-
-    if (state == LocationPermissionState.serviceDisabled) {
+  /// Request location permission - ALWAYS requests if not granted
+  Future<bool> requestPermission() async {
+    // Check if service is enabled first
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
       debugPrint('Location services are disabled');
       return false;
     }
 
-    if (state == LocationPermissionState.deniedForever) {
+    // Check current permission status
+    var permission = await Geolocator.checkPermission();
+
+    // If already granted, return true
+    if (permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always) {
+      return true;
+    }
+
+    // If permanently denied, can't request again
+    if (permission == LocationPermission.deniedForever) {
       debugPrint('Location permissions are permanently denied');
-      await _markPermissionRequested();
       return false;
     }
 
-    if (state == LocationPermissionState.deniedPreviously) {
-      debugPrint('Location permission was previously denied; not requesting again');
+    // Request permission (will show dialog)
+    permission = await Geolocator.requestPermission();
+
+    if (permission == LocationPermission.denied) {
+      debugPrint('Location permissions are denied');
       return false;
     }
 
-    if (state == LocationPermissionState.denied) {
-      final permission = await Geolocator.requestPermission();
-      await _markPermissionRequested();
-
-      if (permission == LocationPermission.denied) {
-        debugPrint('Location permissions are denied');
-        return false;
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        debugPrint('Location permissions are permanently denied');
-        return false;
-      }
+    if (permission == LocationPermission.deniedForever) {
+      debugPrint('Location permissions are permanently denied');
+      return false;
     }
 
     return true;
   }
 
-  /// Get current position
+  /// Get current position - tries last known first for speed, then current
   Future<Position?> getCurrentPosition() async {
     try {
-      final hasPermission = await checkPermissions();
+      final hasPermission = await requestPermission();
       if (!hasPermission) return null;
 
-      return await Geolocator.getCurrentPosition(
+      // Try to get last known position first (instant)
+      Position? position = await Geolocator.getLastKnownPosition();
+
+      // If we have a recent position (less than 5 mins old), use it
+      if (position != null &&
+          DateTime.now().difference(position.timestamp).inMinutes < 5) {
+        debugPrint('Using cached position: ${position.latitude}, ${position.longitude}');
+        return position;
+      }
+
+      // Get fresh position with medium accuracy (faster than high)
+      debugPrint('Fetching fresh GPS position...');
+      position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 20),
         ),
       );
+
+      debugPrint('Got position: ${position.latitude}, ${position.longitude}');
+      return position;
     } catch (e) {
       debugPrint('Error getting position: $e');
-      return null;
+
+      // Fallback: try with lower accuracy (faster)
+      try {
+        debugPrint('Trying low accuracy fallback...');
+        return await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.low,
+            timeLimit: Duration(seconds: 15),
+          ),
+        );
+      } catch (e2) {
+        debugPrint('Fallback position also failed: $e2');
+
+        // Last resort: try last known again
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) {
+          debugPrint('Using stale last known position as final fallback');
+          return lastKnown;
+        }
+
+        return null;
+      }
     }
   }
 
@@ -152,24 +173,34 @@ class LocationService {
     }
   }
 
-  /// Get current location as formatted address
+  /// Get current location as formatted address - RELIABLE VERSION
   Future<LocationResult?> getCurrentLocationWithAddress() async {
     try {
       final position = await getCurrentPosition();
-      if (position == null) return null;
+      if (position == null) {
+        debugPrint('getCurrentLocationWithAddress: No position available');
+        return null;
+      }
 
       String? address;
       String? city;
       String? country;
 
       try {
+        debugPrint('Geocoding position: ${position.latitude}, ${position.longitude}');
         final placemarks = await placemarkFromCoordinates(
           position.latitude,
           position.longitude,
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => <Placemark>[],
         );
+
         if (placemarks.isNotEmpty) {
           final place = placemarks.first;
-          city = place.locality?.isNotEmpty == true ? place.locality : null;
+          city = place.locality?.isNotEmpty == true
+              ? place.locality
+              : place.subAdministrativeArea;
           country = place.country?.isNotEmpty == true ? place.country : null;
 
           final parts = <String>[];
@@ -180,19 +211,18 @@ class LocationService {
           }
           if (place.country?.isNotEmpty == true) parts.add(place.country!);
           address = parts.isNotEmpty ? parts.join(', ') : null;
+
+          debugPrint('Geocoded: city=$city, country=$country');
         }
       } catch (e) {
-        // Fallback to simpler formatter
-        address = await getAddressFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
+        debugPrint('Geocoding failed: $e');
+        // Continue with coordinates only
       }
 
       return LocationResult(
         latitude: position.latitude,
         longitude: position.longitude,
-        address: address ?? 'Unknown location',
+        address: address ?? '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}',
         city: city,
         country: country,
       );

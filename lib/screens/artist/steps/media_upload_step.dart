@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/services/upload_service.dart';
 import '../artist_profile_setup_screen.dart';
 
 /// Step 2: Media Upload
@@ -28,6 +30,9 @@ class MediaUploadStep extends StatefulWidget {
 
 class _MediaUploadStepState extends State<MediaUploadStep> {
   final ImagePicker _picker = ImagePicker();
+  final UploadService _uploadService = UploadService();
+  bool _isUploading = false;
+  String? _uploadingItem;
 
   Future<void> _pickProfilePhoto() async {
     final XFile? image = await _picker.pickImage(
@@ -66,17 +71,39 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
   }
 
   Future<void> _addAudioSample() async {
-    // For MVP, show a dialog to enter sample info
-    // In production, integrate with file_picker for audio files
-    final result = await showDialog<AudioSample>(
-      context: context,
-      builder: (context) => _AudioSampleDialog(),
+    // Use file_picker for audio files
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+      allowMultiple: false,
     );
 
-    if (result != null) {
-      setState(() {
-        widget.profileData.audioSamples.add(result);
-      });
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      if (file.path == null) return;
+
+      // Check file size (max 10MB)
+      if (await _uploadService.isFileTooLarge(file.path!)) {
+        _showSnackBar('Audio file too large (max 10MB)');
+        return;
+      }
+
+      // Get title from user
+      if (!mounted) return;
+      final title = await showDialog<String>(
+        context: context,
+        builder: (context) => _AudioTitleDialog(fileName: file.name),
+      );
+
+      if (title != null && title.isNotEmpty) {
+        setState(() {
+          widget.profileData.audioSamples.add(
+            AudioSample(
+              title: title,
+              filePath: file.path!,
+            ),
+          );
+        });
+      }
     }
   }
 
@@ -679,14 +706,28 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
   }
 }
 
-// Dialog for adding audio sample (MVP placeholder)
-class _AudioSampleDialog extends StatefulWidget {
+// Dialog for audio title (after file is picked)
+class _AudioTitleDialog extends StatefulWidget {
+  final String fileName;
+
+  const _AudioTitleDialog({required this.fileName});
+
   @override
-  State<_AudioSampleDialog> createState() => _AudioSampleDialogState();
+  State<_AudioTitleDialog> createState() => _AudioTitleDialogState();
 }
 
-class _AudioSampleDialogState extends State<_AudioSampleDialog> {
-  final _titleController = TextEditingController();
+class _AudioTitleDialogState extends State<_AudioTitleDialog> {
+  late final TextEditingController _titleController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill with filename (without extension)
+    final nameWithoutExt = widget.fileName.contains('.')
+        ? widget.fileName.substring(0, widget.fileName.lastIndexOf('.'))
+        : widget.fileName;
+    _titleController = TextEditingController(text: nameWithoutExt);
+  }
 
   @override
   void dispose() {
@@ -702,14 +743,14 @@ class _AudioSampleDialogState extends State<_AudioSampleDialog> {
       backgroundColor: AppColors.cardBackground(brightness),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
-        'Add Audio Sample',
+        'Name Your Audio',
         style: TextStyle(color: AppColors.text(brightness)),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'In the full version, you\'ll be able to upload audio files. For now, add a title placeholder.',
+            'Give your audio sample a title that venues will see.',
             style: TextStyle(
               color: AppColors.textSec(brightness),
               fontSize: 13,
@@ -718,9 +759,10 @@ class _AudioSampleDialogState extends State<_AudioSampleDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: _titleController,
+            autofocus: true,
             style: TextStyle(color: AppColors.text(brightness)),
             decoration: InputDecoration(
-              hintText: 'Sample title (e.g., "Live Jazz Set")',
+              hintText: 'e.g., "Live Jazz Set"',
               hintStyle: TextStyle(color: AppColors.textTert(brightness)),
               filled: true,
               fillColor: AppColors.inputFill(brightness),
@@ -751,15 +793,7 @@ class _AudioSampleDialogState extends State<_AudioSampleDialog> {
         TextButton(
           onPressed: () {
             if (_titleController.text.isNotEmpty) {
-              Navigator.pop(
-                context,
-                AudioSample(
-                  title: _titleController.text.trim(),
-                  filePath:
-                      'placeholder_${DateTime.now().millisecondsSinceEpoch}',
-                  duration: const Duration(minutes: 3, seconds: 30),
-                ),
-              );
+              Navigator.pop(context, _titleController.text.trim());
             }
           },
           child: Text('Add', style: TextStyle(color: AppColors.crimson)),

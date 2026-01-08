@@ -67,6 +67,9 @@ dependencies:
   
   # Image/Video picker for media upload
   image_picker: ^1.1.2
+
+  # File picker for audio and other files
+  file_picker: ^8.1.7
   
   # 🌐 NETWORKING & STATE MANAGEMENT
   

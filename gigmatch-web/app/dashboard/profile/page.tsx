@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Camera, MapPin, Calendar, Star, Edit2, 
+import { useRouter } from "next/navigation";
+import {
+  Camera, MapPin, Calendar, Star, Edit2,
   Plus, X, Loader2, Save, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ interface Profile {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,16 +57,27 @@ export default function ProfilePage() {
   const [editedProfile, setEditedProfile] = useState<Partial<Profile>>({});
 
   useEffect(() => {
+    // Check if user has completed setup before loading profile
+    if (user && !user.hasCompletedSetup) {
+      router.push('/onboarding');
+      return;
+    }
     loadProfile();
-  }, []);
+  }, [user]);
 
   const loadProfile = async () => {
     try {
       const response = await api.get(endpoints.auth.profile);
       setProfile(response.data.profile);
       setEditedProfile(response.data.profile || {});
-    } catch {
-      toast.error("Failed to load profile");
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "Failed to load profile";
+      toast.error(errorMessage);
+
+      // If profile not found, redirect to onboarding
+      if (error?.response?.status === 404) {
+        router.push('/onboarding');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +89,7 @@ export default function ProfilePage() {
       const endpoint = user?.role === "artist"
         ? endpoints.artists.update(profile?.id || "")
         : endpoints.venues.update(profile?.id || "");
-      
+
       await api.patch(endpoint, editedProfile);
       setProfile({ ...profile, ...editedProfile } as Profile);
       setIsEditing(false);

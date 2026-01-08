@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
-import '../../core/models/models.dart';
 import 'steps/basic_info_step.dart';
 import 'steps/media_upload_step.dart';
 import 'steps/contact_location_step.dart';
@@ -59,6 +59,33 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
     Icons.preview_rounded,
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Pre-populate location data from artist profile if available
+    _loadExistingProfile();
+  }
+
+  Future<void> _loadExistingProfile() async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final artistProfile = authProvider.artistProfile;
+
+      if (artistProfile != null) {
+        // Pre-fill location data from existing profile
+        if (artistProfile.location != null) {
+          _profileData.city = artistProfile.location!.city;
+          _profileData.country = artistProfile.location!.country;
+          _profileData.latitude = artistProfile.location!.latitude;
+          _profileData.longitude = artistProfile.location!.longitude;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading existing profile: $e');
+      // Continue with empty profile data
+    }
+  }
+
   void _nextStep() {
     if (_currentStep < _totalSteps - 1) {
       _pageController.nextPage(
@@ -109,40 +136,66 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
       ),
     );
 
-    // Build the update request from profile data
-    final request = UpdateArtistRequest(
-      stageName: _profileData.stageName ?? _profileData.displayName,
-      bio: _profileData.bio,
-      artistType: ArtistType.solo, // Default
-      genres: _profileData.genres,
-      experienceLevel: ExperienceLevel.intermediate, // Default
-      location: _profileData.city != null
-          ? Location(
-              type: 'Point',
-              coordinates: [
-                _profileData.longitude ?? 0,
-                _profileData.latitude ?? 0,
-              ],
-              city: _profileData.city,
-              country: _profileData.country,
-            )
-          : null,
-      maxTravelDistance: _profileData.travelRadius,
-      socialLinks: SocialLinks(
-        instagram: _profileData.instagram,
-        spotify: _profileData.spotify,
-        youtube: _profileData.youtube,
-        website: _profileData.website,
-      ),
-      priceRange: PriceRange(
-        min: _profileData.minPrice,
-        max: _profileData.maxPrice,
-        currency: _profileData.currency,
-      ),
-      isAvailable: true,
-    );
+    //Build the update request - Match backend DTO format exactly
+    final Map<String, dynamic> requestData = {
+      'displayName': _profileData.stageName ?? _profileData.displayName,
+      if (_profileData.bio != null && _profileData.bio!.isNotEmpty)
+        'bio': _profileData.bio,
+      if (_profileData.genres.isNotEmpty)
+        'genres': _profileData.genres,
+      'artistType': 'solo', // Default, could be made dynamic
+      'experienceLevel': 'intermediate', // Default, could be made dynamic
+      'maxTravelDistance': _profileData.travelRadius,
+    };
 
-    final success = await authProvider.completeArtistSetup(request);
+    // Add location if available (from signup OR profile setup)
+    if (_profileData.city != null && _profileData.city!.isNotEmpty) {
+      requestData['location'] = {
+        'city': _profileData.city!,
+        'country': _profileData.country ?? 'Not Set',
+        'coordinates': [
+          _profileData.longitude ?? 0,
+          _profileData.latitude ?? 0,
+        ],
+        'travelRadius': _profileData.travelRadius,
+      };
+    }
+
+    // Add pricing - backend expects minPrice/maxPrice directly, NOT priceRange
+    requestData['minPrice'] = _profileData.minPrice;
+    requestData['maxPrice'] = _profileData.maxPrice;
+    requestData['currency'] = _profileData.currency;
+
+    // Add social links only if they are valid URLs
+    final socialLinks = <String, String>{};
+    
+    String normalizeUrl(String input, String domain) {
+      if (input.startsWith('http://') || input.startsWith('https://')) return input;
+      if (input.startsWith('www.')) return 'https://$input';
+      if (input.contains(domain)) return 'https://$input'; // e.g. instagram.com/user
+      return 'https://$domain/$input'; // e.g. user -> https://instagram.com/user
+    }
+
+    if (_profileData.instagram != null && _profileData.instagram!.isNotEmpty) {
+      socialLinks['instagram'] = normalizeUrl(_profileData.instagram!, 'instagram.com');
+    }
+    if (_profileData.spotify != null && _profileData.spotify!.isNotEmpty) {
+      socialLinks['spotify'] = normalizeUrl(_profileData.spotify!, 'open.spotify.com/artist');
+    }
+    if (_profileData.youtube != null && _profileData.youtube!.isNotEmpty) {
+      socialLinks['youtube'] = normalizeUrl(_profileData.youtube!, 'youtube.com/@');
+    }
+    if (_profileData.website != null && _profileData.website!.isNotEmpty) {
+      socialLinks['website'] = normalizeUrl(_profileData.website!, '');
+    }
+    
+    if (socialLinks.isNotEmpty) {
+      requestData['socialLinks'] = socialLinks;
+    }
+
+    requestData['hasCompletedSetup'] = true;
+
+    final success = await authProvider.completeArtistSetupWithData(requestData);
 
     if (!mounted) return;
     Navigator.of(context).pop(); // Close loading dialog
