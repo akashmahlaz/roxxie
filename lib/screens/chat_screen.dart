@@ -3,7 +3,7 @@
 library;
 
 import 'dart:async';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -554,8 +554,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
       setState(() => _isUploading = true);
 
-      final file = File(image.path);
-      final uploadResult = await _uploadService.uploadGalleryImage(file);
+      final filePath = image.path;
+      final uploadResult = await _uploadService.uploadGalleryImage(filePath);
 
       if (mounted) {
         await context.read<ChatProvider>().sendMessage(

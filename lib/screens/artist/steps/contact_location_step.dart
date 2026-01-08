@@ -307,9 +307,9 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
       final result = await _locationService.getCurrentLocationWithAddress();
       if (result == null) {
         final state = await _locationService.getPermissionState();
-        final isPermissionIssue = state == LocationPermissionState.deniedPreviously ||
+        final isPermissionIssue =
             state == LocationPermissionState.deniedForever ||
-            state == LocationPermissionState.denied;
+                state == LocationPermissionState.denied;
 
         messenger.showSnackBar(
           SnackBar(

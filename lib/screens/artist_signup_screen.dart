@@ -416,14 +416,8 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                       Expanded(
                         child: _buildTextField(
                           controller: _cityController,
-                          hintText: 'City',
+                          hintText: 'City (optional)',
                           prefixIcon: Icons.location_city_outlined,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your city';
-                            }
-                            return null;
-                          },
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -449,10 +443,23 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                                       strokeWidth: 2.5,
                                     ),
                                   )
-                                : Icon(
-                                    Icons.my_location_rounded,
-                                    color: AppColors.crimson,
-                                    size: 24,
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.my_location_rounded,
+                                        color: AppColors.crimson,
+                                        size: 20,
+                                      ),
+                                      Text(
+                                        'GPS',
+                                        style: TextStyle(
+                                          color: AppColors.crimson,
+                                          fontSize: 8,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                           ),
                         ),
@@ -465,14 +472,8 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
                   // Country field
                   _buildTextField(
                     controller: _countryController,
-                    hintText: 'Country',
+                    hintText: 'Country (optional)',
                     prefixIcon: Icons.public_outlined,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your country';
-                      }
-                      return null;
-                    },
                   ),
 
                   const SizedBox(height: 14),

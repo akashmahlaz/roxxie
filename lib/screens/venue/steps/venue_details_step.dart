@@ -276,8 +276,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       final result = await _locationService.getCurrentLocationWithAddress();
       if (result == null) {
         final state = await _locationService.getPermissionState();
-        final isPermissionIssue = state == LocationPermissionState.deniedPreviously ||
-            state == LocationPermissionState.deniedForever ||
+        final isPermissionIssue = state == LocationPermissionState.deniedForever ||
             state == LocationPermissionState.denied;
 
         messenger.showSnackBar(

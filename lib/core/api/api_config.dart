@@ -26,6 +26,7 @@ class ApiConfig {
   static const String artists = '/artists';
   static const String venues = '/venues';
   static const String swipes = '/swipes';
+  static const String gigs = '/gigs';
   static const String matches = '/matches';
   static const String messages = '/messages';
   static const String upload = '/upload';
@@ -67,6 +68,11 @@ class Endpoints {
   static const String discover = '${ApiConfig.swipes}/discover';
   static const String whoLikedMe = '${ApiConfig.swipes}/who-liked-me';
   static const String undoSwipe = '${ApiConfig.swipes}/undo';
+
+  // Gigs
+  static const String gigsCreate = ApiConfig.gigs; // POST /gigs
+  static const String gigsMine = '${ApiConfig.gigs}/mine'; // GET /gigs/mine
+  static const String gigsDiscover = '${ApiConfig.gigs}/discover'; // GET /gigs/discover
 
   // Matches
   static const String matchesList = ApiConfig.matches;
