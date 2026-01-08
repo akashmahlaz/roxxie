@@ -34,6 +34,9 @@ class _SplashScreenV2State extends State<SplashScreenV2>
   late AnimationController _taglineController;
   late AnimationController _loadingController;
 
+  // Track delayed navigation so tests don't fail with pending timers on dispose
+  bool _disposed = false;
+
   // Animations
   late Animation<double> _logoScale;
   late Animation<double> _logoOpacity;
@@ -166,28 +169,34 @@ class _SplashScreenV2State extends State<SplashScreenV2>
     // Phase 1: Background fades in
     _backgroundController.forward();
     await Future.delayed(const Duration(milliseconds: 400));
+    if (_disposed) return;
 
     // Phase 2: Logo appears with bounce
     _logoController.forward();
     await Future.delayed(const Duration(milliseconds: 800));
+    if (_disposed) return;
 
     // Phase 3: Start pulse loop
     _pulseController.repeat(reverse: true);
 
     // Phase 4: Brand name appears
     await Future.delayed(const Duration(milliseconds: 300));
+    if (_disposed) return;
     _textController.forward();
 
     // Phase 5: Tagline slides in
     await Future.delayed(const Duration(milliseconds: 400));
+    if (_disposed) return;
     _taglineController.forward();
 
     // Phase 6: Loading starts
     await Future.delayed(const Duration(milliseconds: 200));
+    if (_disposed) return;
     _loadingController.repeat();
 
     // Wait for auth check and navigate based on state
     await Future.delayed(const Duration(milliseconds: 2200));
+    if (_disposed) return;
     if (mounted) {
       _navigateBasedOnAuthState();
     }
@@ -239,6 +248,7 @@ class _SplashScreenV2State extends State<SplashScreenV2>
 
   @override
   void dispose() {
+    _disposed = true;
     _backgroundController.dispose();
     _logoController.dispose();
     _pulseController.dispose();

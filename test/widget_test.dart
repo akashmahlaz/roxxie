@@ -1,30 +1,34 @@
-// This is a basic Flutter widget test.
+// ✅ Smoke test for current GigMatch app
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// The splash screen runs looping animations (pulse/loading) and uses delayed
+// timers for its animation sequence. In widget tests, `pumpAndSettle()` can
+// hang forever because the widget tree never becomes fully "settled" due to
+// those infinite animations.
+//
+// This test avoids `pumpAndSettle()` and instead pumps a fixed amount of time
+// to ensure the app can build frames without throwing.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:gigmatch/main.dart';
 
 void main() {
-  testWidgets('GigMatch app loads successfully', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('GigMatch app boots (smoke test)', (WidgetTester tester) async {
+    // Build the app.
     await tester.pumpWidget(const GigMatchApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // Render initial frame.
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // SplashScreenV2 delayed sequence totals ~4300ms:
+    // 400ms + 800ms + 300ms + 400ms + 200ms + 2200ms = 4300ms
+    // Pump a bit more to advance beyond the delayed navigation trigger.
+    await tester.pump(const Duration(milliseconds: 5000));
+
+    // Pump one more frame to ensure rendering continues without throwing.
+    await tester.pump(const Duration(milliseconds: 16));
+
+    // No strict UI assertions: routing can change (splash/onboarding/auth).
+    // If the app throws during build/layout, the test will fail automatically.
+    expect(tester.binding.renderViewElement, isNotNull);
   });
 }
