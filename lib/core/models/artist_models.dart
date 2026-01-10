@@ -4,6 +4,256 @@ library;
 
 import 'user_models.dart';
 
+/// Artist Profile Data Model for Onboarding
+/// Used during the multi-step profile setup process
+class ArtistProfileData {
+  // Basic Info
+  String? displayName;
+  String? stageName;
+  String? bio;
+  List<String> genres = [];
+  List<String> influences = [];
+
+  // Media
+  String? profilePhoto;
+  List<String> photoGallery = [];
+  List<Map<String, dynamic>> audioSamples = [];
+  List<Map<String, dynamic>> videoSamples = [];
+
+  // Contact
+  String? phone;
+  String? email;
+  bool showPhoneOnProfile = false;
+
+  // Social Links
+  String? instagram;
+  String? spotify;
+  String? youtube;
+  String? website;
+  String? soundcloud;
+  String? tiktok;
+
+  // Location
+  String? city;
+  String? country;
+  double? latitude;
+  double? longitude;
+  int travelRadius = 50;
+
+  // Availability
+  List<Map<String, dynamic>> availability = [];
+
+  // Pricing
+  double minPrice = 100.0;
+  double maxPrice = 1000.0;
+  String currency = 'USD';
+
+  // Equipment
+  List<String> equipment = [];
+
+  // Band Info
+  int? bandSize;
+
+  // Reset all data
+  void reset() {
+    displayName = null;
+    stageName = null;
+    bio = null;
+    genres.clear();
+    influences.clear();
+    profilePhoto = null;
+    photoGallery.clear();
+    audioSamples.clear();
+    videoSamples.clear();
+    phone = null;
+    email = null;
+    showPhoneOnProfile = false;
+    instagram = null;
+    spotify = null;
+    youtube = null;
+    website = null;
+    soundcloud = null;
+    tiktok = null;
+    city = null;
+    country = null;
+    latitude = null;
+    longitude = null;
+    travelRadius = 50;
+    availability.clear();
+    minPrice = 100.0;
+    maxPrice = 1000.0;
+    currency = 'USD';
+    equipment.clear();
+    bandSize = null;
+  }
+
+  /// Validate required fields for profile completion
+  List<String> validate() {
+    final errors = <String>[];
+
+    if (displayName == null || displayName!.trim().isEmpty) {
+      errors.add('Display name is required');
+    }
+
+    if (genres.isEmpty) {
+      errors.add('At least one genre must be selected');
+    }
+
+    if (genres.length > 5) {
+      errors.add('Maximum 5 genres allowed');
+    }
+
+    if (city == null || city!.trim().isEmpty) {
+      errors.add('City is required');
+    }
+
+    if (country == null || country!.trim().isEmpty) {
+      errors.add('Country is required');
+    }
+
+    if (latitude == null || longitude == null) {
+      errors.add('Location coordinates are required');
+    } else if (latitude!.abs() < 0.000001 || longitude!.abs() < 0.000001) {
+      errors.add('Valid location coordinates are required');
+    }
+
+    if (minPrice <= 0) {
+      errors.add('Minimum price must be greater than 0');
+    }
+
+    if (maxPrice <= 0) {
+      errors.add('Maximum price must be greater than 0');
+    }
+
+    if (minPrice > maxPrice) {
+      errors.add('Minimum price cannot be greater than maximum price');
+    }
+
+    return errors;
+  }
+
+  /// Convert to backend DTO format
+  Map<String, dynamic> toBackendDto() {
+    final dto = <String, dynamic>{};
+
+    // Basic info
+    if (displayName != null && displayName!.isNotEmpty) {
+      dto['displayName'] = displayName!;
+    }
+    if (stageName != null && stageName!.isNotEmpty) {
+      dto['stageName'] = stageName!;
+    }
+    if (bio != null && bio!.isNotEmpty) {
+      dto['bio'] = bio!;
+    }
+    if (genres.isNotEmpty) {
+      dto['genres'] = genres;
+    }
+
+    // Location (required for completion)
+    if (city != null && country != null && latitude != null && longitude != null) {
+      dto['location'] = {
+        'city': city!,
+        'country': country!,
+        'coordinates': [longitude!, latitude!], // [longitude, latitude]
+        'travelRadius': travelRadius,
+      };
+    }
+
+    // Pricing
+    dto['minPrice'] = minPrice;
+    dto['maxPrice'] = maxPrice;
+    dto['currency'] = currency;
+
+    // Social links
+    final socialLinks = <String, String>{};
+    if (instagram != null && instagram!.isNotEmpty) {
+      socialLinks['instagram'] = _normalizeUrl(instagram!, 'instagram.com');
+    }
+    if (spotify != null && spotify!.isNotEmpty) {
+      socialLinks['spotify'] = _normalizeUrl(spotify!, 'open.spotify.com/artist');
+    }
+    if (youtube != null && youtube!.isNotEmpty) {
+      socialLinks['youtube'] = _normalizeUrl(youtube!, 'youtube.com/@');
+    }
+    if (website != null && website!.isNotEmpty) {
+      socialLinks['website'] = _normalizeUrl(website!, '');
+    }
+    if (soundcloud != null && soundcloud!.isNotEmpty) {
+      socialLinks['soundcloud'] = _normalizeUrl(soundcloud!, 'soundcloud.com');
+    }
+    if (tiktok != null && tiktok!.isNotEmpty) {
+      socialLinks['tiktok'] = _normalizeUrl(tiktok!, 'tiktok.com/@');
+    }
+
+    if (socialLinks.isNotEmpty) {
+      dto['socialLinks'] = socialLinks;
+    }
+
+    // Contact
+    if (phone != null && phone!.isNotEmpty) {
+      dto['phone'] = phone!;
+    }
+    dto['showPhoneOnProfile'] = showPhoneOnProfile;
+
+    // Equipment
+    if (equipment.isNotEmpty) {
+      dto['equipment'] = equipment;
+    }
+
+    // Band size
+    if (bandSize != null) {
+      dto['bandSize'] = bandSize!;
+    }
+
+    return dto;
+  }
+
+  /// Normalize social media URLs
+  String _normalizeUrl(String input, String domain) {
+    if (input.startsWith('http://') || input.startsWith('https://')) {
+      return input;
+    }
+    if (input.startsWith('www.')) {
+      return 'https://$input';
+    }
+    if (domain.isNotEmpty && input.contains(domain)) {
+      return 'https://$input';
+    }
+    if (domain.isEmpty) {
+      return input;
+    }
+    return 'https://$domain/$input';
+  }
+
+  /// Get profile completion percentage
+  int getCompletionPercentage() {
+    int score = 0;
+    const totalFields = 12;
+
+    if (displayName != null && displayName!.isNotEmpty) score++;
+    if (bio != null && bio!.length > 20) score++;
+    if (genres.isNotEmpty) score++;
+    if (profilePhoto != null) score++;
+    if (photoGallery.isNotEmpty) score++;
+    if (audioSamples.isNotEmpty) score++;
+    if (videoSamples.isNotEmpty) score++;
+    if (city != null && country != null) score++;
+    if (latitude != null && longitude != null) score++;
+    if (minPrice > 0 && maxPrice > 0) score++;
+    if (socialLinks.isNotEmpty) score++;
+    if (availability.isNotEmpty) score++;
+
+    return ((score / totalFields) * 100).round();
+  }
+
+  /// Check if profile is complete enough for setup
+  bool get isSetupReady {
+    final errors = validate();
+    return errors.isEmpty;
+  }
+}
+
 /// Artist Type Enum
 enum ArtistType {
   solo('solo'),

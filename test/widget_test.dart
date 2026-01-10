@@ -29,6 +29,6 @@ void main() {
 
     // No strict UI assertions: routing can change (splash/onboarding/auth).
     // If the app throws during build/layout, the test will fail automatically.
-    expect(tester.binding.renderViewElement, isNotNull);
+    expect(tester.binding.rootElement, isNotNull);
   });
 }

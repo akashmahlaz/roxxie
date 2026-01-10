@@ -109,24 +109,74 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       ),
     );
 
-    // Build the update request from profile data
+    // Require valid location before completing venue setup (marketplace quality).
+    // Avoid sending invalid 0,0 coordinates which breaks geo discovery and causes server-side errors.
+    final hasCity = _profileData.city.trim().isNotEmpty;
+    final hasCountry = _profileData.country.trim().isNotEmpty;
+    final lat = _profileData.latitude;
+    final lng = _profileData.longitude;
+
+    // VenueProfileData.latitude/longitude are non-nullable doubles (default 0).
+    // Treat near-zero as "not set" to avoid sending invalid 0,0 coordinates.
+    final hasValidCoords =
+        lat.abs() > 0.000001 && lng.abs() > 0.000001;
+
+    if (!hasCity || !hasCountry || !hasValidCoords) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      final message = !hasCity || !hasCountry
+          ? 'Please set your venue city and country to continue.'
+          : 'Please enable location and select your venue location to continue.';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.crimson,
+        ),
+      );
+      return;
+    }
+
+    // Build the update request from profile data (DTO-safe payload)
+    //
+    // Backend expects (UpdateVenueDto):
+    // - venueName, venueType, description
+    // - preferredGenres
+    // - location { city, country, coordinates:[lng,lat], ... }
+    // - contactEmail, phone, showPhoneOnProfile
+    // - capacity
+    // - minBudget, maxBudget, currency
+    //
+    // NOTE:
+    // - Do NOT send legacy keys like `name`, `bio`, `contactPhone`, `isActive` (not whitelisted).
+    // - Keep coordinates ordering: [longitude, latitude].
     final request = UpdateVenueRequest(
-      name: _profileData.venueName,
-      bio: _profileData.description,
+      venueName: _profileData.venueName,
+      description: _profileData.description,
       venueType: VenueType.fromString(
         _profileData.venueType.toLowerCase().replaceAll(' ', '_'),
       ),
       capacity: _profileData.capacity,
+      preferredGenres: _profileData.preferredGenres,
+      location: Location(
+        type: 'Point',
+        coordinates: [lng, lat], // [longitude, latitude]
+        city: _profileData.city.trim(),
+        country: _profileData.country.trim(),
+        formattedAddress: _profileData.address,
+      ),
+      // Contact
+      phone: _profileData.phone,
+      showPhoneOnProfile: _profileData.showPhone,
+      contactEmail: _profileData.email,
+      // Budget
+      minBudget: _profileData.minBudget,
+      maxBudget: _profileData.maxBudget,
+      currency: _profileData.currency,
+      // Allowed extras (kept for forward compatibility)
       amenities: _profileData.amenities,
-      location: _profileData.city.isNotEmpty
-          ? Location(
-              type: 'Point',
-              coordinates: [_profileData.longitude, _profileData.latitude],
-              city: _profileData.city,
-              country: _profileData.country,
-              formattedAddress: _profileData.address,
-            )
-          : null,
       gigPreferences: GigPreferences(
         preferredGenres: _profileData.preferredGenres,
         preferredDays: _profileData.typicalSlots,
@@ -144,9 +194,6 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
         instagram: _profileData.instagram,
         website: _profileData.website,
       ),
-      contactEmail: _profileData.email,
-      contactPhone: _profileData.phone,
-      isActive: true,
     );
 
     final success = await authProvider.completeVenueSetup(request);

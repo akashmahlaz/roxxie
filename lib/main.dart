@@ -11,13 +11,15 @@ import 'screens/onboarding_screen_v2.dart';
 import 'screens/role_selection_screen_v2.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/home_screen.dart';
 import 'screens/discovery_screen.dart';
 import 'screens/matches_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/artist/artist_profile_setup_screen.dart';
 import 'screens/venue/venue_profile_setup_screen.dart';
+
+// App Shell (5-tab navigation)
+import 'screens/app_shell.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,7 +77,7 @@ class GigMatchApp extends StatelessWidget {
           '/role-selection': (context) => const RoleSelectionScreenV2(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const HomeScreen(),
+          '/home': (context) => const AppShell(),
           '/discovery': (context) => const DiscoveryScreen(),
           '/matches': (context) => const MatchesScreen(),
           '/profile': (context) => const ProfileScreen(),
