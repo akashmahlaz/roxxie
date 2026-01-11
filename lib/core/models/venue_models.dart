@@ -1099,7 +1099,7 @@ class Venue {
   final List<String>? galleryUrls;
   final VenueLocation? location;
   final String? displayLocation;
-  final Map<String, dynamic>? gigPreferences;
+  final GigPreferences? gigPreferences;
   final double? reviewStatsAverageRating;
   final int? totalGigsHosted;
   final int? reviewCount;
@@ -1159,7 +1159,9 @@ class Venue {
           : null,
       location: location,
       displayLocation: json['displayLocation'],
-      gigPreferences: json['gigPreferences'],
+      gigPreferences: json['gigPreferences'] != null
+          ? GigPreferences.fromJson(json['gigPreferences'])
+          : null,
       reviewStatsAverageRating: json['reviewStats']?['averageRating']?.toDouble(),
       totalGigsHosted: json['totalGigsHosted'],
       reviewCount: json['reviewCount'],

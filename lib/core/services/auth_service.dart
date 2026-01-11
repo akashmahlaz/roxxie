@@ -14,7 +14,7 @@ class AuthService {
   Future<LoginResponse> register(RegisterRequest request) async {
     try {
       final response = await _client.post(
-        Endpoints.register,
+        Endpoints.authRegister,
         data: request.toJson(),
       );
 
@@ -35,7 +35,7 @@ class AuthService {
   Future<LoginResponse> login(LoginRequest request) async {
     try {
       final response = await _client.post(
-        Endpoints.login,
+        Endpoints.authLogin,
         data: request.toJson(),
       );
 
@@ -55,7 +55,7 @@ class AuthService {
   /// 🚪 Logout
   Future<void> logout() async {
     try {
-      await _client.post(Endpoints.logout);
+      await _client.post(Endpoints.authLogout);
     } catch (e) {
       debugPrint('Logout error (non-critical): $e');
     } finally {
@@ -71,7 +71,7 @@ class AuthService {
   /// 👤 Get current user profile
   Future<User> getProfile() async {
     try {
-      final response = await _client.get(Endpoints.me);
+      final response = await _client.get(Endpoints.authMe);
       return User.fromJson(response.data);
     } catch (e) {
       debugPrint('Get profile error: $e');
@@ -82,7 +82,7 @@ class AuthService {
   /// ✏️ Update user profile
   Future<User> updateProfile(Map<String, dynamic> updates) async {
     try {
-      final response = await _client.patch(Endpoints.profile, data: updates);
+      final response = await _client.patch(Endpoints.authUpdateProfile, data: updates);
 
       final user = User.fromJson(response.data);
       await _client.saveUser(jsonEncode(user.toJson()));
@@ -96,7 +96,7 @@ class AuthService {
   /// 🔒 Change password
   Future<void> changePassword(ChangePasswordRequest request) async {
     try {
-      await _client.post(Endpoints.changePassword, data: request.toJson());
+      await _client.post(Endpoints.authChangePassword, data: request.toJson());
     } catch (e) {
       debugPrint('Change password error: $e');
       rethrow;
@@ -107,7 +107,7 @@ class AuthService {
   Future<void> forgotPassword(String email) async {
     try {
       await _client.post(
-        Endpoints.forgotPassword,
+        Endpoints.authForgotPassword,
         data: ForgotPasswordRequest(email: email).toJson(),
       );
     } catch (e) {
@@ -119,7 +119,7 @@ class AuthService {
   /// 🔑 Reset password with token
   Future<void> resetPassword(ResetPasswordRequest request) async {
     try {
-      await _client.post(Endpoints.resetPassword, data: request.toJson());
+      await _client.post(Endpoints.authResetPassword, data: request.toJson());
     } catch (e) {
       debugPrint('Reset password error: $e');
       rethrow;
@@ -129,7 +129,7 @@ class AuthService {
   /// ✅ Verify email with token
   Future<void> verifyEmail(String token) async {
     try {
-      await _client.post(Endpoints.verifyEmail, data: {'token': token});
+      await _client.post(Endpoints.authVerifyEmail, data: {'token': token});
     } catch (e) {
       debugPrint('Verify email error: $e');
       rethrow;
@@ -139,7 +139,7 @@ class AuthService {
   /// 📧 Resend verification email
   Future<void> resendVerificationEmail(String email) async {
     try {
-      await _client.post(Endpoints.resendVerification, data: {'email': email});
+      await _client.post(Endpoints.authResendVerification, data: {'email': email});
     } catch (e) {
       debugPrint('Resend verification error: $e');
       rethrow;

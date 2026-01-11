@@ -14,7 +14,7 @@ library;
 
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:dio/dio.dart';
+
 import '../api/api.dart';
 import '../providers/auth_provider.dart';
 
@@ -616,7 +616,7 @@ class AnalyticsService {
         getDiscoveryAnalytics(),
         getEngagementAnalytics(),
         getGigAnalytics(),
-        if (_authProvider?.currentUser?.role == 'artist') getEarningsSummary(),
+        if (_authProvider?.user?.role == 'artist') getEarningsSummary(),
       ]);
 
       debugPrint('📊 [AnalyticsService] All analytics refreshed');

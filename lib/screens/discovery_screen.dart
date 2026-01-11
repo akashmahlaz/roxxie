@@ -22,9 +22,9 @@ import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import '../../core/services/services.dart';
-import '../chat_screen.dart';
-import '../profile_screen.dart';
-import '../matches_screen.dart';
+import 'chat_screen.dart';
+import 'profile_screen.dart';
+import 'matches_screen.dart';
 import '../../widgets/widgets.dart';
 
 /// 🎯 Discovery Screen - Main Widget

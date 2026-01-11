@@ -113,9 +113,18 @@ class Endpoints {
   /// Get artist statistics
   static String artistStats(String id) => '/artists/$id/stats';
 
-  // ═══════════════════════════════════════════════════════════════════════
+  /// Get current artist profile
+  static const String artistsMe = '/artists/me';
+
+  /// Complete artist setup
+  static const String artistsCompleteSetup = '/artists/me/complete-setup';
+
+  /// Boost artist profile
+  static const String artistsBoost = '/artists/me/boost';
+
+  // ════════════════════════════════════════════════════════════════════════
   // VENUES
-  // ═══════════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════════
 
   /// Get all venues (with pagination)
   static const String venues = '/venues';
@@ -166,7 +175,11 @@ class Endpoints {
   // ═══════════════════════════════════════════════════════════════════════
 
   /// Get discovery feed
+  static const String discover = '/swipes/feed';
   static const String discoveryFeed = '/swipes/feed';
+
+  /// Swipe on profile
+  static const String swipe = '/swipes';
 
   /// Swipe right on profile
   static const String swipeRight = '/swipes/right';
@@ -195,6 +208,7 @@ class Endpoints {
 
   /// Get all matches
   static const String matches = '/matches';
+  static const String matchesList = '/matches';
 
   /// Get match by ID
   static String matchById(String id) => '/matches/$id';

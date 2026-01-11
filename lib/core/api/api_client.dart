@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_config.dart';
+import 'endpoints.dart';
 import '../models/auth_models.dart';
 
 class ApiClient {
@@ -80,7 +81,7 @@ class ApiClient {
       if (refreshToken == null) return false;
 
       final response = await Dio().post(
-        '${ApiConfig.baseUrl}${Endpoints.refresh}',
+        '${ApiConfig.baseUrl}${Endpoints.authRefresh}',
         data: {'refreshToken': refreshToken},
       );
 
@@ -179,11 +180,11 @@ class _AuthInterceptor extends Interceptor {
   ) async {
     // Skip auth for public endpoints
     final publicEndpoints = [
-      Endpoints.register,
-      Endpoints.login,
-      Endpoints.refresh,
-      Endpoints.forgotPassword,
-      Endpoints.resetPassword,
+      Endpoints.authRegister,
+      Endpoints.authLogin,
+      Endpoints.authRefresh,
+      Endpoints.authForgotPassword,
+      Endpoints.authResetPassword,
     ];
 
     if (!publicEndpoints.any((e) => options.path.contains(e))) {

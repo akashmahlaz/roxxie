@@ -4,3 +4,4 @@ library;
 
 export 'api_config.dart';
 export 'api_client.dart';
+export 'endpoints.dart';
