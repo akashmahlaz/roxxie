@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+import '../models/venue_models.dart';
 
 enum AuthStatus {
   initial,
@@ -230,7 +231,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       _artistProfile = await _artistService.completeSetup(request);
-      
+
       // Fetch fresh user data from backend to get updated hasCompletedSetup flag
       try {
         final updatedUser = await _authService.getProfile();
@@ -240,7 +241,7 @@ class AuthProvider extends ChangeNotifier {
         debugPrint('Warning: Failed to fetch updated user profile: $e');
         _user = _user?.copyWith(isProfileComplete: true);
       }
-      
+
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
@@ -259,7 +260,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       _artistProfile = await _artistService.completeSetupWithData(data);
-      
+
       // Fetch fresh user data from backend to get updated hasCompletedSetup flag
       try {
         final updatedUser = await _authService.getProfile();
@@ -269,7 +270,7 @@ class AuthProvider extends ChangeNotifier {
         debugPrint('Warning: Failed to fetch updated user profile: $e');
         _user = _user?.copyWith(isProfileComplete: true);
       }
-      
+
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
@@ -299,13 +300,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// ✅ Complete venue setup
-  Future<bool> completeVenueSetup(UpdateVenueRequest request) async {
+  Future<bool> completeVenueSetup(VenueProfileData profileData) async {
     _setLoading(true);
     _clearError();
 
     try {
-      _venueProfile = await _venueService.completeSetup(request);
-      
+      _venueProfile = await _venueService.completeSetup(profileData);
+
       // Fetch fresh user data from backend to get updated hasCompletedSetup flag
       try {
         final updatedUser = await _authService.getProfile();
@@ -315,7 +316,7 @@ class AuthProvider extends ChangeNotifier {
         debugPrint('Warning: Failed to fetch updated user profile: $e');
         _user = _user?.copyWith(isProfileComplete: true);
       }
-      
+
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;

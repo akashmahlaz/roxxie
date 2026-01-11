@@ -241,10 +241,20 @@ class ArtistProfileData {
     if (city != null && country != null) score++;
     if (latitude != null && longitude != null) score++;
     if (minPrice > 0 && maxPrice > 0) score++;
-    if (socialLinks.isNotEmpty) score++;
+    if (_hasSocialLinks()) score++;
     if (availability.isNotEmpty) score++;
 
     return ((score / totalFields) * 100).round();
+  }
+
+  /// Check if profile has any social links
+  bool _hasSocialLinks() {
+    return (instagram?.isNotEmpty ?? false) ||
+           (spotify?.isNotEmpty ?? false) ||
+           (youtube?.isNotEmpty ?? false) ||
+           (website?.isNotEmpty ?? false) ||
+           (soundcloud?.isNotEmpty ?? false) ||
+           (tiktok?.isNotEmpty ?? false);
   }
 
   /// Check if profile is complete enough for setup
@@ -396,6 +406,9 @@ class Artist {
   final String id;
   final String userId;
   final String stageName;
+
+  // Compatibility getter for displayName
+  String get displayName => stageName;
   final String? bio;
   final ArtistType artistType;
   final List<String> genres;
@@ -594,6 +607,8 @@ class UpdateArtistRequest {
   final List<String>? equipment;
   final int? bandSize;
   final bool? isAvailable;
+  final double? minPrice;
+  final double? maxPrice;
 
   UpdateArtistRequest({
     this.stageName,
@@ -610,6 +625,8 @@ class UpdateArtistRequest {
     this.equipment,
     this.bandSize,
     this.isAvailable,
+    this.minPrice,
+    this.maxPrice,
   });
 
   Map<String, dynamic> toJson() {

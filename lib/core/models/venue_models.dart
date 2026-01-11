@@ -13,84 +13,138 @@ library;
 
 import 'user_models.dart';
 
-/// Venue Types (matches backend VenueType enum)
-class VenueTypes {
-  static const List<String> types = [
-    'Bar',
-    'Restaurant',
-    'Club',
-    'Concert Hall',
-    'Hotel',
-    'Lounge',
-    'Cafe',
-    'Brewery',
-    'Winery',
-    'Theater',
-    'Jazz Club',
-    'Rock Venue',
-    'Outdoor Venue',
-    'Corporate Event Space',
-    'Wedding Venue',
-    'Community Center',
-    'Festival Grounds',
-    'Private Event Space',
-    'Recording Studio',
-    'Rehearsal Space',
-    'Other',
-  ];
+/// Venue Type Enum (matches backend VenueType enum)
+enum VenueType {
+  bar('bar', 'Bar'),
+  restaurant('restaurant', 'Restaurant'),
+  club('club', 'Club'),
+  concertHall('concert_hall', 'Concert Hall'),
+  hotel('hotel', 'Hotel'),
+  lounge('lounge', 'Lounge'),
+  cafe('cafe', 'Cafe'),
+  brewery('brewery', 'Brewery'),
+  winery('winery', 'Winery'),
+  theater('theater', 'Theater'),
+  jazzClub('jazz_club', 'Jazz Club'),
+  rockVenue('rock_venue', 'Rock Venue'),
+  outdoorVenue('outdoor_venue', 'Outdoor Venue'),
+  corporateEventSpace('corporate_event_space', 'Corporate Event Space'),
+  weddingVenue('wedding_venue', 'Wedding Venue'),
+  communityCenter('community_center', 'Community Center'),
+  festivalGrounds('festival_grounds', 'Festival Grounds'),
+  privateEventSpace('private_event_space', 'Private Event Space'),
+  recordingStudio('recording_studio', 'Recording Studio'),
+  rehearsalSpace('rehearsal_space', 'Rehearsal Space'),
+  other('other', 'Other');
 
-  static String toBackendValue(String displayName) {
-    final mapping = {
-      'Bar': 'bar',
-      'Restaurant': 'restaurant',
-      'Club': 'club',
-      'Concert Hall': 'concert_hall',
-      'Hotel': 'hotel',
-      'Lounge': 'lounge',
-      'Cafe': 'cafe',
-      'Brewery': 'brewery',
-      'Winery': 'winery',
-      'Theater': 'theater',
-      'Jazz Club': 'jazz_club',
-      'Rock Venue': 'rock_venue',
-      'Outdoor Venue': 'outdoor_venue',
-      'Corporate Event Space': 'corporate_event_space',
-      'Wedding Venue': 'wedding_venue',
-      'Community Center': 'community_center',
-      'Festival Grounds': 'festival_grounds',
-      'Private Event Space': 'private_event_space',
-      'Recording Studio': 'recording_studio',
-      'Rehearsal Space': 'rehearsal_space',
-      'Other': 'other',
-    };
-    return mapping[displayName] ?? 'other';
+  const VenueType(this.value, this.displayName);
+
+  final String value;
+  final String displayName;
+
+  static VenueType fromString(String value) {
+    return VenueType.values.firstWhere(
+      (e) => e.value == value.toLowerCase(),
+      orElse: () => VenueType.other,
+    );
   }
 
   static String fromBackendValue(String backendValue) {
-    final mapping = {
-      'bar': 'Bar',
-      'restaurant': 'Restaurant',
-      'club': 'Club',
-      'concert_hall': 'Concert Hall',
-      'hotel': 'Hotel',
-      'lounge': 'Lounge',
-      'cafe': 'Cafe',
-      'brewery': 'Brewery',
-      'winery': 'Winery',
-      'theater': 'Theater',
-      'jazz_club': 'Jazz Club',
-      'rock_venue': 'Rock Venue',
-      'outdoor_venue': 'Outdoor Venue',
-      'corporate_event_space': 'Corporate Event Space',
-      'wedding_venue': 'Wedding Venue',
-      'community_center': 'Community Center',
-      'festival_grounds': 'Festival Grounds',
-      'private_event_space': 'Private Event Space',
-      'recording_studio': 'Recording Studio',
-      'rehearsal_space': 'Rehearsal Space',
-      'other': 'Other',
-    };
-    return mapping[backendValue] ?? 'Other';
+    return VenueType.fromString(backendValue).displayName;
+  }
+}
+
+/// Social Links Model for compatibility
+class VenueSocialLinksCompat {
+  String? instagram;
+  String? website;
+  String? facebook;
+  String? twitter;
+  String? tiktok;
+  String? soundcloud;
+  String? spotify;
+  String? youtube;
+  String? linkedin;
+
+  VenueSocialLinksCompat({
+    this.instagram,
+    this.website,
+    this.facebook,
+    this.twitter,
+    this.tiktok,
+    this.soundcloud,
+    this.spotify,
+    this.youtube,
+    this.linkedin,
+  });
+
+  Map<String, dynamic> toJson() => {
+    if (instagram != null) 'instagram': instagram,
+    if (website != null) 'website': website,
+    if (facebook != null) 'facebook': facebook,
+    if (twitter != null) 'twitter': twitter,
+    if (tiktok != null) 'tiktok': tiktok,
+    if (soundcloud != null) 'soundcloud': soundcloud,
+    if (spotify != null) 'spotify': spotify,
+    if (youtube != null) 'youtube': youtube,
+    if (linkedin != null) 'linkedin': linkedin,
+  };
+}
+
+/// Budget Range Model for compatibility
+class BudgetRange {
+  final double? min;
+  final double? max;
+  final String? currency;
+
+  BudgetRange({
+    this.min,
+    this.max,
+    this.currency,
+  });
+
+  Map<String, dynamic> toJson() => {
+    if (min != null) 'min': min,
+    if (max != null) 'max': max,
+    if (currency != null) 'currency': currency,
+  };
+}
+
+/// Venue Types Helper Class
+class VenueTypes {
+  static List<String> get types => VenueType.values.map((e) => e.displayName).toList();
+
+  static String toBackendValue(String displayName) {
+    try {
+      final type = VenueType.values.firstWhere(
+        (e) => e.displayName == displayName,
+      );
+      return type.value;
+    } catch (e) {
+      return 'other';
+    }
+  }
+
+  static String fromBackendValue(String backendValue) {
+    try {
+      final type = VenueType.values.firstWhere(
+        (e) => e.value == backendValue,
+      );
+      return type.displayName;
+    } catch (e) {
+      return 'Other';
+    }
+  }
+
+  static VenueType fromDisplayName(String displayName) {
+    return VenueType.values.firstWhere(
+      (e) => e.displayName == displayName,
+      orElse: () => VenueType.other,
+    );
+  }
+
+  static String toDisplayName(VenueType type) {
+    return type.displayName;
   }
 }
 
@@ -289,6 +343,9 @@ class VenueEquipment {
   List<String> additionalEquipment = [];
   String? equipmentNotes;
 
+  /// Default constructor
+  VenueEquipment();
+
   Map<String, dynamic> toJson() => {
     'hasSoundSystem': hasSoundSystem,
     if (soundSystemDetails != null) 'soundSystemDetails': soundSystemDetails,
@@ -359,6 +416,9 @@ class VenueSocialLinks {
   String? yelp;
   String? googleMaps;
   String? tiktok;
+
+  /// Default constructor
+  VenueSocialLinks();
 
   Map<String, dynamic> toJson() => {
     if (instagram != null) 'instagram': _normalizeSocialHandle(instagram!),
@@ -445,6 +505,9 @@ class VirtualTour {
   String? videoUrl;
   String? googleMapsUrl;
 
+  /// Default constructor
+  VirtualTour();
+
   Map<String, dynamic> toJson() => {
     if (tourUrl != null) 'tourUrl': tourUrl,
     if (videoUrl != null) 'videoUrl': videoUrl,
@@ -490,8 +553,21 @@ class VenueLocation {
   double get latitude => coordinates.length > 1 ? coordinates[1] : 0.0;
 
   /// Set coordinates from lat/lng (converts to GeoJSON [lng, lat])
-  set latLng(double lat, double lng) {
-    coordinates = [lng, lat];
+  set lat(double lat) {
+    if (coordinates.isNotEmpty) {
+      coordinates[1] = lat;
+    } else {
+      coordinates = [0.0, lat];
+    }
+  }
+
+  /// Set longitude coordinate
+  set lng(double lng) {
+    if (coordinates.isNotEmpty) {
+      coordinates[0] = lng;
+    } else {
+      coordinates = [lng, 0.0];
+    }
   }
 
   /// Check if coordinates are valid (not [0,0])
@@ -550,6 +626,9 @@ class GigPreferences {
   bool acceptsDemos = false;
   String? demoSubmissionEmail;
 
+  /// Default constructor
+  GigPreferences();
+
   Map<String, dynamic> toJson() => {
     'preferredGenres': preferredGenres,
     'gigTypes': gigTypes.map((e) => GigTypes.toBackendValue(e)).toList(),
@@ -599,9 +678,42 @@ class VenueProfileData {
   String? description;
   int capacity = 100;
   List<String> amenities = [];
+
   String? contactPerson;
   String? contactRole;
   int? yearEstablished;
+
+  // Additional convenience properties for backward compatibility
+  String? get city => location.city;
+  set city(String? value) => location.city = value;
+  String? get country => location.country;
+  set country(String? value) => location.country = value;
+  String? get address => location.formattedAddress;
+  set address(String? value) => location.formattedAddress = value;
+  double? get minBudget => gigPreferences.minBudget;
+  set minBudget(double? value) => gigPreferences.minBudget = value ?? 0;
+  double? get maxBudget => gigPreferences.maxBudget;
+  set maxBudget(double? value) => gigPreferences.maxBudget = value ?? 0;
+  String? get currency => gigPreferences.currency;
+  set currency(String? value) => gigPreferences.currency = value ?? 'USD';
+  String? get instagram => socialLinks.instagram;
+  set instagram(String? value) => socialLinks.instagram = value;
+  String? get website => socialLinks.website;
+  set website(String? value) => socialLinks.website = value;
+  bool? get showPhone => showPhoneOnProfile;
+  set showPhone(bool? value) => showPhoneOnProfile = value ?? false;
+  String? get email => bookingEmail;
+  set email(String? value) => bookingEmail = value;
+  List<String> get typicalSlots => [];
+  set typicalSlots(List<String> value) { /* no-op for now */ }
+  int get typicalSetLength => 180; // 3 hours default
+  set typicalSetLength(int value) { /* no-op for now */ }
+  bool get providesEquipment => false;
+  set providesEquipment(bool value) { /* no-op for now */ }
+  bool get providesMeals => gigPreferences.providesMusicianMeals;
+  set providesMeals(bool value) => gigPreferences.providesMusicianMeals = value;
+  bool get providesAccommodation => false;
+  set providesAccommodation(bool value) { /* no-op for now */ }
 
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 2: MEDIA
@@ -623,6 +735,11 @@ class VenueProfileData {
   VenueSocialLinks socialLinks = VenueSocialLinks();
   String? directions;
   String? loadInInstructions;
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STEP 4: GIG PREFERENCES (Direct Properties for Convenience)
+  // ═══════════════════════════════════════════════════════════════════════
+  List<String> preferredGenres = [];
 
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 4: GIG PREFERENCES
@@ -973,36 +1090,53 @@ class VenueProfileData {
 class Venue {
   final String id;
   final String userId;
-  final String venueName;
-  final String? venueType;
+  final String name;
+  final String? bio;
   final String? description;
+  final String? venueType;
   final int? capacity;
   final String? profilePhotoUrl;
+  final List<String>? galleryUrls;
   final VenueLocation? location;
+  final String? displayLocation;
+  final Map<String, dynamic>? gigPreferences;
   final double? reviewStatsAverageRating;
   final int? totalGigsHosted;
+  final int? reviewCount;
+  final double? rating;
   final bool isVerified;
   final bool isOpenForBookings;
   final int profileCompleteness;
   final bool hasCompletedSetup;
   final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  // Additional properties for compatibility
+  String get primaryPhoto => profilePhotoUrl ?? '';
 
   Venue({
     required this.id,
     required this.userId,
-    required this.venueName,
-    this.venueType,
+    required this.name,
+    this.bio,
     this.description,
+    this.venueType,
     this.capacity,
     this.profilePhotoUrl,
+    this.galleryUrls,
     this.location,
+    this.displayLocation,
+    this.gigPreferences,
     this.reviewStatsAverageRating,
     this.totalGigsHosted,
+    this.reviewCount,
+    this.rating,
     this.isVerified = false,
     this.isOpenForBookings = true,
     this.profileCompleteness = 0,
     this.hasCompletedSetup = false,
     this.createdAt,
+    this.updatedAt,
   });
 
   factory Venue.fromJson(Map<String, dynamic> json) {
@@ -1014,14 +1148,22 @@ class Venue {
     return Venue(
       id: json['_id'] ?? json['id'] ?? '',
       userId: json['userId'] ?? json['user'] ?? '',
-      venueName: json['venueName'] ?? '',
-      venueType: json['venueType'],
+      name: json['name'] ?? json['venueName'] ?? '',
+      bio: json['bio'],
       description: json['description'],
+      venueType: json['venueType'],
       capacity: json['capacity'],
       profilePhotoUrl: json['profilePhotoUrl'],
+      galleryUrls: json['galleryUrls'] != null
+          ? List<String>.from(json['galleryUrls'])
+          : null,
       location: location,
-      reviewStatsAverageRating = json['reviewStats']?['averageRating']?.toDouble(),
-      totalGigsHosted = json['totalGigsHosted'],
+      displayLocation: json['displayLocation'],
+      gigPreferences: json['gigPreferences'],
+      reviewStatsAverageRating: json['reviewStats']?['averageRating']?.toDouble(),
+      totalGigsHosted: json['totalGigsHosted'],
+      reviewCount: json['reviewCount'],
+      rating: json['rating']?.toDouble(),
       isVerified: json['isVerified'] ?? false,
       isOpenForBookings: json['isOpenForBookings'] ?? true,
       profileCompleteness: json['profileCompleteness'] ?? 0,
@@ -1029,22 +1171,30 @@ class Venue {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'])
           : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'userId': userId,
-    'venueName': venueName,
-    'venueType': venueType,
+    'name': name,
+    if (bio != null) 'bio': bio,
     if (description != null) 'description': description,
+    'venueType': venueType,
     if (capacity != null) 'capacity': capacity,
     if (profilePhotoUrl != null) 'profilePhotoUrl': profilePhotoUrl,
+    if (galleryUrls != null) 'galleryUrls': galleryUrls,
     if (location != null) 'location': location!.toJson(),
+    if (displayLocation != null) 'displayLocation': displayLocation,
+    if (gigPreferences != null) 'gigPreferences': gigPreferences,
     'isVerified': isVerified,
     'isOpenForBookings': isOpenForBookings,
     'profileCompleteness': profileCompleteness,
     'hasCompletedSetup': hasCompletedSetup,
     if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+    if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
   };
 }
