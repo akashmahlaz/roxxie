@@ -1,5 +1,16 @@
 /// 🏢 GIGMATCH Venue Service - BULLETPROOF VERSION
+///
 /// Handles venue profile operations with comprehensive error handling
+/// Syncs with NestJS backend DTOs and schemas
+///
+/// Features:
+/// - Comprehensive error handling with user-friendly messages
+/// - Retry logic for critical operations
+/// - Network connectivity checks
+/// - Validation at each step
+/// - Full sync with backend venue schema (877 lines)
+/// - GeoJSON coordinate format [lng, lat] validation
+
 library;
 
 import 'dart:io';
@@ -8,44 +19,88 @@ import 'package:dio/dio.dart';
 import '../api/api.dart';
 import '../models/models.dart';
 
-/// Custom exception classes for better error handling
+/// ═══════════════════════════════════════════════════════════════════════
+/// CUSTOM EXCEPTION CLASSES
+/// ═══════════════════════════════════════════════════════════════════════
+
 class VenueServiceException implements Exception {
   final String message;
   final String? code;
   final dynamic originalError;
 
-  const VenueServiceException(this.message, {this.code, this.originalError});
+  const VenueServiceException(
+    this.message, {
+    this.code,
+    this.originalError,
+  });
 
   @override
   String toString() => 'VenueServiceException: $message';
 }
 
 class NetworkException extends VenueServiceException {
-  const NetworkException(String message, {dynamic originalError})
-      : super(message, code: 'NETWORK_ERROR', originalError: originalError);
+  const NetworkException(
+    String message, {
+    dynamic originalError,
+  }) : super(
+          message,
+          code: 'NETWORK_ERROR',
+          originalError: originalError,
+        );
 }
 
 class ValidationException extends VenueServiceException {
-  const ValidationException(String message, {dynamic originalError})
-      : super(message, code: 'VALIDATION_ERROR', originalError: originalError);
+  const ValidationException(
+    String message, {
+    dynamic originalError,
+  }) : super(
+          message,
+          code: 'VALIDATION_ERROR',
+          originalError: originalError,
+        );
 }
 
 class AuthenticationException extends VenueServiceException {
-  const AuthenticationException(String message, {dynamic originalError})
-      : super(message, code: 'AUTH_ERROR', originalError: originalError);
+  const AuthenticationException(
+    String message, {
+    dynamic originalError,
+  }) : super(
+          message,
+          code: 'AUTH_ERROR',
+          originalError: originalError,
+        );
 }
+
+class NotFoundException extends VenueServiceException {
+  const NotFoundException(
+    String message, {
+    dynamic originalError,
+  }) : super(
+          message,
+          code: 'NOT_FOUND',
+          originalError: originalError,
+        );
+}
+
+/// ═══════════════════════════════════════════════════════════════════════
+/// VENUE SERVICE
+/// ═══════════════════════════════════════════════════════════════════════
 
 class VenueService {
   final ApiClient _client = ApiClient();
   static const int _maxRetries = 3;
   static const Duration _retryDelay = Duration(seconds: 1);
 
-  /// 🔍 Search venues with filters - BULLETPROOF VERSION
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// SEARCH & DISCOVERY
+  /// ═══════════════════════════════════════════════════════════════════════
+
+  /// 🔍 Search venues with filters
   Future<List<Venue>> searchVenues(VenueSearchParams params) async {
     final stopwatch = Stopwatch()..start();
 
     try {
-      debugPrint('🏢 [VenueService] Searching venues with params: ${params.toQueryParams()}');
+      debugPrint('🏢 [VenueService] Searching venues with params');
 
       // Validate input parameters
       _validateSearchParams(params);
@@ -58,7 +113,9 @@ class VenueService {
         queryParameters: params.toQueryParams(),
       );
 
-      debugPrint('🏢 [VenueService] Search completed in ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+        '🏢 [VenueService] Search completed in ${stopwatch.elapsedMilliseconds}ms',
+      );
 
       // Validate response structure
       if (response.data == null) {
@@ -82,13 +139,14 @@ class VenueService {
 
       debugPrint('🏢 [VenueService] Found ${venues.length} venues');
       return venues;
-
     } on DioException catch (e) {
       final error = _handleDioError(e, 'search venues');
       debugPrint('❌ [VenueService] Search failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException('Unexpected error during search: $e');
+      final error = VenueServiceException(
+        'Unexpected error during search: $e',
+      );
       debugPrint('❌ [VenueService] Search failed: ${error.message}');
       throw error;
     } finally {
@@ -96,7 +154,40 @@ class VenueService {
     }
   }
 
-  /// 🏢 Get my venue profile - BULLETPROOF VERSION
+  /// 🏢 Get venue by ID
+  Future<Venue> getVenueById(String venueId) async {
+    try {
+      debugPrint('🏢 [VenueService] Fetching venue: $venueId');
+
+      final response = await _client.get(
+        Endpoints.venueById(venueId),
+      );
+
+      if (response.data == null) {
+        throw NotFoundException('Venue not found');
+      }
+
+      final venue = Venue.fromJson(response.data);
+      debugPrint('🏢 [VenueService] Venue loaded: ${venue.venueName}');
+      return venue;
+    } on DioException catch (e) {
+      final error = _handleDioError(e, 'get venue');
+      debugPrint('❌ [VenueService] Get venue failed: ${error.message}');
+      throw error;
+    } catch (e) {
+      final error = VenueServiceException(
+        'Unexpected error getting venue: $e',
+      );
+      debugPrint('❌ [VenueService] Get venue failed: ${error.message}');
+      throw error;
+    }
+  }
+
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// PROFILE OPERATIONS
+  /// ═══════════════════════════════════════════════════════════════════════
+
+  /// 🏢 Get my venue profile
   Future<Venue> getMyProfile() async {
     final stopwatch = Stopwatch()..start();
 
@@ -108,7 +199,9 @@ class VenueService {
 
       final response = await _client.get(Endpoints.venuesMe);
 
-      debugPrint('🏢 [VenueService] Profile fetched in ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+        '🏢 [VenueService] Profile fetched in ${stopwatch.elapsedMilliseconds}ms',
+      );
 
       // Validate response
       if (response.data == null) {
@@ -117,15 +210,18 @@ class VenueService {
 
       final venue = Venue.fromJson(response.data);
 
-      debugPrint('🏢 [VenueService] Profile loaded: ${venue.venueName} (${venue.id})');
+      debugPrint(
+        '🏢 [VenueService] Profile loaded: ${venue.venueName} (${venue.id})',
+      );
       return venue;
-
     } on DioException catch (e) {
       final error = _handleDioError(e, 'get my profile');
       debugPrint('❌ [VenueService] Get profile failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException('Unexpected error getting profile: $e');
+      final error = VenueServiceException(
+        'Unexpected error getting profile: $e',
+      );
       debugPrint('❌ [VenueService] Get profile failed: ${error.message}');
       throw error;
     } finally {
@@ -133,7 +229,7 @@ class VenueService {
     }
   }
 
-  /// ✏️ Update my venue profile - BULLETPROOF VERSION
+  /// ✏️ Update my venue profile
   Future<Venue> updateMyProfile(UpdateVenueRequest request) async {
     final stopwatch = Stopwatch()..start();
 
@@ -157,7 +253,9 @@ class VenueService {
         data: requestData,
       );
 
-      debugPrint('🏢 [VenueService] Profile updated in ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+        '🏢 [VenueService] Profile updated in ${stopwatch.elapsedMilliseconds}ms',
+      );
 
       // Validate response
       if (response.data == null) {
@@ -166,15 +264,18 @@ class VenueService {
 
       final venue = Venue.fromJson(response.data);
 
-      debugPrint('🏢 [VenueService] Profile updated successfully: ${venue.venueName}');
+      debugPrint(
+        '🏢 [VenueService] Profile updated successfully: ${venue.venueName}',
+      );
       return venue;
-
     } on DioException catch (e) {
       final error = _handleDioError(e, 'update profile');
       debugPrint('❌ [VenueService] Update failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException('Unexpected error updating profile: $e');
+      final error = VenueServiceException(
+        'Unexpected error updating profile: $e',
+      );
       debugPrint('❌ [VenueService] Update failed: ${error.message}');
       throw error;
     } finally {
@@ -182,15 +283,18 @@ class VenueService {
     }
   }
 
-  /// ✅ Complete venue profile setup - BULLETPROOF VERSION
-  Future<Venue> completeSetup(UpdateVenueRequest request) async {
+  /// ✅ Complete venue profile setup
+  Future<Venue> completeSetup(VenueProfileData profileData) async {
     final stopwatch = Stopwatch()..start();
 
     try {
       debugPrint('🏢 [VenueService] Completing venue profile setup');
 
-      // Validate request
-      _validateCompleteSetupRequest(request);
+      // Validate profile data
+      final errors = profileData.validate();
+      if (errors.isNotEmpty) {
+        throw ValidationException('Validation failed: ${errors.join(", ")}');
+      }
 
       // Check authentication
       await _checkAuthentication();
@@ -198,8 +302,11 @@ class VenueService {
       // Check network connectivity
       await _checkConnectivity();
 
-      final requestData = request.toJson();
-      debugPrint('🏢 [VenueService] Setup data keys: ${requestData.keys.toList()}');
+      // Convert to backend DTO format
+      final requestData = profileData.toBackendDto();
+      debugPrint(
+        '🏢 [VenueService] Setup data keys: ${requestData.keys.toList()}',
+      );
 
       // Retry logic for setup completion (critical operation)
       Venue? result;
@@ -214,7 +321,9 @@ class VenueService {
             data: requestData,
           );
 
-          debugPrint('🏢 [VenueService] Setup completed in ${stopwatch.elapsedMilliseconds}ms (attempt $attempt)');
+          debugPrint(
+            '🏢 [VenueService] Setup completed in ${stopwatch.elapsedMilliseconds}ms (attempt $attempt)',
+          );
 
           // Validate response
           if (response.data == null) {
@@ -223,12 +332,13 @@ class VenueService {
 
           result = Venue.fromJson(response.data);
           break; // Success, exit retry loop
-
         } on DioException catch (e) {
           lastError = e;
           if (attempt < _maxRetries) {
             final delay = _retryDelay * attempt;
-            debugPrint('⚠️ [VenueService] Setup attempt $attempt failed, retrying in ${delay.inSeconds}s...');
+            debugPrint(
+              '⚠️ [VenueService] Setup attempt $attempt failed, retrying in ${delay.inSeconds}s...',
+            );
             await Future.delayed(delay);
           }
         }
@@ -237,16 +347,21 @@ class VenueService {
       if (result == null) {
         throw lastError != null
             ? _handleDioError(lastError as DioException, 'complete setup')
-            : VenueServiceException('Setup failed after $_maxRetries attempts');
+            : VenueServiceException(
+                'Setup failed after $_maxRetries attempts',
+              );
       }
 
-      debugPrint('🏢 [VenueService] Setup completed successfully: ${result.venueName}');
+      debugPrint(
+        '🏢 [VenueService] Setup completed successfully: ${result.venueName}',
+      );
       return result;
-
     } catch (e) {
       final error = e is VenueServiceException
           ? e
-          : VenueServiceException('Unexpected error during setup: $e');
+          : VenueServiceException(
+              'Unexpected error during setup: $e',
+            );
       debugPrint('❌ [VenueService] Setup failed: ${error.message}');
       throw error;
     } finally {
@@ -254,198 +369,562 @@ class VenueService {
     }
   }
 
-  /// 🔍 Get venue by ID - BULLETPROOF VERSION
-  Future<Venue> getVenueById(String id) async {
+  /// 💰 Boost venue visibility
+  Future<Venue> boostVisibility({int days = 7}) async {
+    try {
+      debugPrint('🏢 [VenueService] Boosting visibility for $days days');
+
+      await _checkAuthentication();
+
+      final response = await _client.post(
+        '${Endpoints.venuesMe}/boost',
+        data: {'days': days},
+      );
+
+      if (response.data == null) {
+        throw ValidationException('Empty boost response');
+      }
+
+      return Venue.fromJson(response.data);
+    } on DioException catch (e) {
+      final error = _handleDioError(e, 'boost visibility');
+      debugPrint('❌ [VenueService] Boost failed: ${error.message}');
+      throw error;
+    } catch (e) {
+      final error = VenueServiceException(
+        'Unexpected error boosting visibility: $e',
+      );
+      debugPrint('❌ [VenueService] Boost failed: ${error.message}');
+      throw error;
+    }
+  }
+
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// GIGS MANAGEMENT
+  /// ═══════════════════════════════════════════════════════════════════════
+
+  /// 📝 Create a new gig
+  Future<dynamic> createGig(CreateGigRequest request) async {
     final stopwatch = Stopwatch()..start();
 
     try {
-      debugPrint('🏢 [VenueService] Fetching venue by ID: $id');
+      debugPrint('🏢 [VenueService] Creating new gig');
 
-      // Validate ID
-      if (id.isEmpty) {
-        throw ValidationException('Venue ID cannot be empty');
-      }
+      await _checkAuthentication();
+      await _checkConnectivity();
 
-      final response = await _client.get(Endpoints.venueById(id));
+      final response = await _client.post(
+        Endpoints.gigsCreate,
+        data: request.toJson(),
+      );
 
-      debugPrint('🏢 [VenueService] Venue fetched in ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+        '🏢 [VenueService] Gig created in ${stopwatch.elapsedMilliseconds}ms',
+      );
 
-      // Validate response
       if (response.data == null) {
-        throw ValidationException('Empty venue response for ID: $id');
+        throw ValidationException('Empty create gig response');
       }
 
-      final venue = Venue.fromJson(response.data);
-
-      debugPrint('🏢 [VenueService] Venue loaded: ${venue.venueName} (${venue.id})');
-      return venue;
-
+      return response.data;
     } on DioException catch (e) {
-      final error = _handleDioError(e, 'get venue by ID');
-      debugPrint('❌ [VenueService] Get venue failed: ${error.message}');
+      final error = _handleDioError(e, 'create gig');
+      debugPrint('❌ [VenueService] Create gig failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException('Unexpected error getting venue: $e');
-      debugPrint('❌ [VenueService] Get venue failed: ${error.message}');
+      final error = VenueServiceException(
+        'Unexpected error creating gig: $e',
+      );
+      debugPrint('❌ [VenueService] Create gig failed: ${error.message}');
       throw error;
     } finally {
       stopwatch.stop();
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 🛡️ PRIVATE HELPER METHODS - BULLETPROOF ERROR HANDLING
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /// Check network connectivity
-  Future<void> _checkConnectivity() async {
+  /// 📋 Get my gigs
+  Future<List<dynamic>> getMyGigs() async {
     try {
-      if (!await _isConnected()) {
-        throw NetworkException('No internet connection. Please check your network and try again.');
+      debugPrint('🏢 [VenueService] Fetching my gigs');
+
+      await _checkAuthentication();
+
+      final response = await _client.get(Endpoints.gigsMine);
+
+      if (response.data == null) {
+        return [];
       }
+
+      final gigs = response.data['data'] ?? response.data['gigs'] ?? [];
+      return List<dynamic>.from(gigs);
+    } on DioException catch (e) {
+      final error = _handleDioError(e, 'get my gigs');
+      debugPrint('❌ [VenueService] Get gigs failed: ${error.message}');
+      throw error;
     } catch (e) {
-      throw NetworkException('Network connectivity check failed: $e');
+      final error = VenueServiceException(
+        'Unexpected error getting gigs: $e',
+      );
+      debugPrint('❌ [VenueService] Get gigs failed: ${error.message}');
+      throw error;
     }
   }
 
-  /// Check authentication status
-  Future<void> _checkAuthentication() async {
+  /// 📊 Discover gigs (for artists to find)
+  Future<List<dynamic>> discoverGigs(DiscoverGigsQuery query) async {
     try {
-      final token = await _client.getAccessToken();
-      if (token == null || token.isEmpty) {
-        throw AuthenticationException('Not authenticated. Please log in again.');
+      debugPrint('🏢 [VenueService] Discovering gigs');
+
+      await _checkAuthentication();
+      await _checkConnectivity();
+
+      final response = await _client.get(
+        Endpoints.gigsDiscover,
+        queryParameters: query.toQueryParams(),
+      );
+
+      if (response.data == null) {
+        return [];
       }
+
+      final gigs = response.data['data'] ?? response.data['gigs'] ?? [];
+      return List<dynamic>.from(gigs);
+    } on DioException catch (e) {
+      final error = _handleDioError(e, 'discover gigs');
+      debugPrint('❌ [VenueService] Discover gigs failed: ${error.message}');
+      throw error;
     } catch (e) {
-      throw AuthenticationException('Authentication check failed: $e');
+      final error = VenueServiceException(
+        'Unexpected error discovering gigs: $e',
+      );
+      debugPrint('❌ [VenueService] Discover gigs failed: ${error.message}');
+      throw error;
     }
   }
 
-  /// Check if device is connected to internet
-  Future<bool> _isConnected() async {
-    try {
-      final result = await InternetAddress.lookup('google.com');
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (e) {
-      return false;
-    }
-  }
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// PRIVATE HELPER METHODS
+  /// ═══════════════════════════════════════════════════════════════════════
 
-  /// Handle Dio errors with specific error types
-  VenueServiceException _handleDioError(DioException e, String operation) {
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return NetworkException('Connection timeout during $operation. Please try again.', originalError: e);
-
-      case DioExceptionType.connectionError:
-        return NetworkException('Connection error during $operation. Please check your internet connection.', originalError: e);
-
-      case DioExceptionType.badResponse:
-        final statusCode = e.response?.statusCode;
-        final responseData = e.response?.data;
-
-        if (statusCode == 401) {
-          return AuthenticationException('Authentication failed during $operation. Please log in again.', originalError: e);
-        } else if (statusCode == 403) {
-          return AuthenticationException('Access denied during $operation.', originalError: e);
-        } else if (statusCode == 404) {
-          return ValidationException('Resource not found during $operation.', originalError: e);
-        } else if (statusCode == 422) {
-          final message = responseData is Map ? (responseData['message'] ?? 'Validation failed') : 'Validation failed';
-          return ValidationException('$message during $operation.', originalError: e);
-        } else if (statusCode == 429) {
-          return NetworkException('Too many requests during $operation. Please wait and try again.', originalError: e);
-        } else if (statusCode != null && statusCode >= 500) {
-          return NetworkException('Server error during $operation. Please try again later.', originalError: e);
-        } else {
-          return NetworkException('HTTP error ${statusCode ?? 'unknown'} during $operation.', originalError: e);
-        }
-
-      case DioExceptionType.cancel:
-        return NetworkException('Request cancelled during $operation.', originalError: e);
-
-      default:
-        return NetworkException('Unknown network error during $operation: ${e.message}', originalError: e);
-    }
-  }
-
-  /// Validate search parameters
   void _validateSearchParams(VenueSearchParams params) {
-    if (params.limit <= 0 || params.limit > 100) {
-      throw ValidationException('Limit must be between 1 and 100');
-    }
-    if (params.page <= 0) {
-      throw ValidationException('Page must be greater than 0');
-    }
-    if (params.latitude != null && (params.latitude! < -90 || params.latitude! > 90)) {
+    if (params.latitude != null &&
+        (params.latitude! < -90 || params.latitude! > 90)) {
       throw ValidationException('Latitude must be between -90 and 90');
     }
-    if (params.longitude != null && (params.longitude! < -180 || params.longitude! > 180)) {
+    if (params.longitude != null &&
+        (params.longitude! < -180 || params.longitude! > 180)) {
       throw ValidationException('Longitude must be between -180 and 180');
     }
-    if (params.radius != null && params.radius! <= 0) {
+    if (params.radiusMiles != null && params.radiusMiles! <= 0) {
       throw ValidationException('Radius must be greater than 0');
     }
-    if (params.minBudget != null && params.minBudget! < 0) {
-      throw ValidationException('Minimum budget cannot be negative');
+    if (params.page != null && params.page! < 1) {
+      throw ValidationException('Page must be 1 or greater');
     }
-    if (params.maxBudget != null && params.maxBudget! < 0) {
-      throw ValidationException('Maximum budget cannot be negative');
-    }
-    if (params.minBudget != null && params.maxBudget != null && params.minBudget! > params.maxBudget!) {
-      throw ValidationException('Minimum budget cannot be greater than maximum budget');
+    if (params.limit != null &&
+        (params.limit! < 1 || params.limit! > 100)) {
+      throw ValidationException('Limit must be between 1 and 100');
     }
   }
 
-  /// Validate update request
   void _validateUpdateRequest(UpdateVenueRequest request) {
-    if (request.venueName != null && request.venueName!.length > 100) {
-      throw ValidationException('Venue name must be less than 100 characters');
+    // Validate location coordinates if provided
+    if (request.location != null) {
+      final coords = request.location!.coordinates;
+      if (coords.length >= 2) {
+        final lng = coords[0];
+        final lat = coords[1];
+        if (lng < -180 || lng > 180) {
+          throw ValidationException('Longitude must be between -180 and 180');
+        }
+        if (lat < -90 || lat > 90) {
+          throw ValidationException('Latitude must be between -90 and 90');
+        }
+        // Reject [0,0] coordinates
+        if (lng == 0.0 && lat == 0.0) {
+          throw ValidationException('Invalid coordinates [0,0]');
+        }
+      }
     }
-    if (request.description != null && request.description!.length > 1000) {
-      throw ValidationException('Description must be less than 1000 characters');
-    }
-    if (request.preferredGenres != null && request.preferredGenres!.length > 10) {
-      throw ValidationException('Maximum 10 preferred genres allowed');
-    }
-    if (request.capacity != null && request.capacity! <= 0) {
-      throw ValidationException('Capacity must be greater than 0');
-    }
+
+    // Validate budget
     if (request.minBudget != null && request.minBudget! < 0) {
       throw ValidationException('Minimum budget cannot be negative');
     }
     if (request.maxBudget != null && request.maxBudget! < 0) {
       throw ValidationException('Maximum budget cannot be negative');
     }
-    if (request.minBudget != null && request.maxBudget != null && request.minBudget! > request.maxBudget!) {
-      throw ValidationException('Minimum budget cannot be greater than maximum budget');
+    if (request.minBudget != null &&
+        request.maxBudget != null &&
+        request.minBudget! > request.maxBudget!) {
+      throw ValidationException(
+        'Minimum budget cannot be greater than maximum budget',
+      );
     }
   }
 
-  /// Validate complete setup request
-  void _validateCompleteSetupRequest(UpdateVenueRequest request) {
-    _validateUpdateRequest(request);
+  Future<void> _checkAuthentication() async {
+    final isLoggedIn = await ApiClient().getAccessToken();
+    if (isLoggedIn == null || isLoggedIn.isEmpty) {
+      throw AuthenticationException('Please log in to continue');
+    }
+  }
 
-    // Location is required for setup completion
-    if (request.location == null) {
-      throw ValidationException('Location is required to complete setup');
+  Future<void> _checkConnectivity() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isEmpty || result[0].rawAddress.isEmpty) {
+        throw NetworkException('No internet connection');
+      }
+    } on SocketException {
+      throw NetworkException('No internet connection. Please check your network.');
+    }
+  }
+
+  VenueServiceException _handleDioError(DioException e, String context) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+        return NetworkException(
+          'Connection timed out. Please try again.',
+          originalError: e,
+        );
+      case DioExceptionType.sendTimeout:
+        return NetworkException(
+          'Request timed out. Please try again.',
+          originalError: e,
+        );
+      case DioExceptionType.receiveTimeout:
+        return NetworkException(
+          'Response timed out. Please try again.',
+          originalError: e,
+        );
+      case DioExceptionType.badCertificate:
+        return NetworkException(
+          'Security error. Please contact support.',
+          originalError: e,
+        );
+      case DioExceptionType.badResponse:
+        final statusCode = e.response?.statusCode;
+        final data = e.response?.data;
+
+        if (statusCode == 400) {
+          final message = data?['message'] ?? 'Invalid request data';
+          return ValidationException(message, originalError: e);
+        }
+        if (statusCode == 401) {
+          return AuthenticationException(
+            'Session expired. Please log in again.',
+            originalError: e,
+          );
+        }
+        if (statusCode == 403) {
+          return AuthenticationException(
+            'You do not have permission to perform this action.',
+            originalError: e,
+          );
+        }
+        if (statusCode == 404) {
+          return NotFoundException(
+            'The requested resource was not found.',
+            originalError: e,
+          );
+        }
+        if (statusCode == 422) {
+          final message = data?['message'] ?? 'Validation error';
+          return ValidationException(message, originalError: e);
+        }
+        if (statusCode == 429) {
+          return NetworkException(
+            'Too many requests. Please wait before trying again.',
+            originalError: e,
+          );
+        }
+        if (statusCode != null && statusCode >= 500) {
+          return VenueServiceException(
+            'Server error. Please try again later.',
+            code: 'SERVER_ERROR',
+            originalError: e,
+          );
+        }
+        return VenueServiceException(
+          'Request failed: ${e.message}',
+          originalError: e,
+        );
+
+      case DioExceptionType.cancel:
+        return VenueServiceException(
+          'Request was cancelled',
+          originalError: e,
+        );
+
+      case DioExceptionType.unknown:
+        if (e.message?.contains('SocketException') ?? false) {
+          return NetworkException(
+            'No internet connection. Please check your network.',
+            originalError: e,
+          );
+        }
+        return VenueServiceException(
+          'An unexpected error occurred. Please try again.',
+          originalError: e,
+        );
+    }
+  }
+}
+
+/// ═══════════════════════════════════════════════════════════════════════
+/// REQUEST/RESPONSE CLASSES
+/// ═══════════════════════════════════════════════════════════════════════
+
+/// Venue Search Parameters (matches backend VenueSearchQueryDto)
+class VenueSearchParams {
+  final String? venueType;
+  final List<String>? genres;
+  final double? latitude;
+  final double? longitude;
+  final int? radiusMiles;
+  final int? minCapacity;
+  final int? maxCapacity;
+  final double? maxBudget;
+  final bool? hasSoundSystem;
+  final bool? hasStage;
+  final int page;
+  final int limit;
+  final String sortBy;
+  final String sortOrder;
+
+  VenueSearchParams({
+    this.venueType,
+    this.genres,
+    this.latitude,
+    this.longitude,
+    this.radiusMiles,
+    this.minCapacity,
+    this.maxCapacity,
+    this.maxBudget,
+    this.hasSoundSystem,
+    this.hasStage,
+    this.page = 1,
+    this.limit = 20,
+    this.sortBy = 'createdAt',
+    this.sortOrder = 'desc',
+  });
+
+  Map<String, dynamic> toQueryParams() {
+    final params = <String, dynamic>{};
+
+    if (venueType != null) params['venueType'] = venueType;
+    if (genres != null && genres!.isNotEmpty) {
+      params['genres'] = genres!.join(',');
+    }
+    if (latitude != null) params['latitude'] = latitude.toString();
+    if (longitude != null) params['longitude'] = longitude.toString();
+    if (radiusMiles != null) params['radiusMiles'] = radiusMiles.toString();
+    if (minCapacity != null) params['minCapacity'] = minCapacity.toString();
+    if (maxCapacity != null) params['maxCapacity'] = maxCapacity.toString();
+    if (maxBudget != null) params['maxBudget'] = maxBudget.toString();
+    if (hasSoundSystem != null) {
+      params['hasSoundSystem'] = hasSoundSystem.toString();
+    }
+    if (hasStage != null) params['hasStage'] = hasStage.toString();
+    params['page'] = page.toString();
+    params['limit'] = limit.toString();
+    params['sortBy'] = sortBy;
+    params['sortOrder'] = sortOrder;
+
+    return params;
+  }
+}
+
+/// Update Venue Request (matches backend UpdateVenueDto)
+class UpdateVenueRequest {
+  final String? venueName;
+  final String? description;
+  final String? venueType;
+  final VenueLocation? location;
+  final List<String>? preferredGenres;
+  final String? phone;
+  final bool? showPhoneOnProfile;
+  final String? bookingEmail;
+  final int? capacity;
+  final double? minBudget;
+  final double? maxBudget;
+  final String? currency;
+  final VenueEquipment? equipment;
+  final VenueSocialLinks? socialLinks;
+  final GigPreferences? gigPreferences;
+  final bool? isActive;
+  final bool? isVisible;
+
+  UpdateVenueRequest({
+    this.venueName,
+    this.description,
+    this.venueType,
+    this.location,
+    this.preferredGenres,
+    this.phone,
+    this.showPhoneOnProfile,
+    this.bookingEmail,
+    this.capacity,
+    this.minBudget,
+    this.maxBudget,
+    this.currency,
+    this.equipment,
+    this.socialLinks,
+    this.gigPreferences,
+    this.isActive,
+    this.isVisible,
+  });
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+
+    // Basic info
+    if (venueName != null) json['venueName'] = venueName;
+    if (description != null) json['description'] = description;
+    if (venueType != null) json['venueType'] = venueType;
+
+    // Location: only send if valid and not [0,0]
+    if (location != null &&
+        location!.coordinates.length >= 2 &&
+        location!.longitude != 0.0 &&
+        location!.latitude != 0.0) {
+      json['location'] = location!.toJson();
     }
 
-    if (request.location!.city == null || request.location!.city!.isEmpty) {
-      throw ValidationException('City is required to complete setup');
+    // Preferences
+    if (preferredGenres != null) json['preferredGenres'] = preferredGenres;
+    if (gigPreferences != null) json['gigPreferences'] = gigPreferences!.toJson();
+
+    // Contact
+    if (phone != null) json['phone'] = phone;
+    if (showPhoneOnProfile != null) {
+      json['showPhoneOnProfile'] = showPhoneOnProfile;
+    }
+    if (bookingEmail != null) json['bookingEmail'] = bookingEmail;
+
+    // Details
+    if (capacity != null) json['capacity'] = capacity;
+
+    // Budget
+    if (minBudget != null) json['minBudget'] = minBudget;
+    if (maxBudget != null) json['maxBudget'] = maxBudget;
+    if (currency != null) json['currency'] = currency;
+
+    // Equipment
+    if (equipment != null) json['equipment'] = equipment!.toJson();
+
+    // Social
+    if (socialLinks != null) {
+      final socialJson = socialLinks!.toJson();
+      if (socialJson.isNotEmpty) json['socialLinks'] = socialJson;
     }
 
-    if (request.location!.country == null || request.location!.country!.isEmpty) {
-      throw ValidationException('Country is required to complete setup');
-    }
+    // Status
+    if (isActive != null) json['isActive'] = isActive;
+    if (isVisible != null) json['isVisible'] = isVisible;
 
-    if (request.location!.coordinates == null || request.location!.coordinates!.length != 2) {
-      throw ValidationException('Valid coordinates [longitude, latitude] are required to complete setup');
-    }
+    return json;
+  }
+}
 
-    if (request.venueName == null || request.venueName!.isEmpty) {
-      throw ValidationException('Venue name is required to complete setup');
+/// Create Gig Request
+class CreateGigRequest {
+  final String title;
+  final String? description;
+  final DateTime date;
+  final String? startTime;
+  final String? endTime;
+  final List<String> genres;
+  final String? paymentType;
+  final double? budgetMin;
+  final double? budgetMax;
+  final String currency;
+  final int setDurationMinutes;
+  final List<String> equipmentProvided;
+  final List<String> equipmentNeeded;
+  final int slotsAvailable;
+
+  CreateGigRequest({
+    required this.title,
+    this.description,
+    required this.date,
+    this.startTime,
+    this.endTime,
+    this.genres = const [],
+    this.paymentType,
+    this.budgetMin,
+    this.budgetMax,
+    this.currency = 'USD',
+    this.setDurationMinutes = 60,
+    this.equipmentProvided = const [],
+    this.equipmentNeeded = const [],
+    this.slotsAvailable = 1,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      if (description != null) 'description': description,
+      'date': date.toIso8601String().split('T')[0],
+      if (startTime != null) 'startTime': startTime,
+      if (endTime != null) 'endTime': endTime,
+      'genres': genres,
+      if (paymentType != null) 'paymentType': paymentType,
+      if (budgetMin != null) 'budgetMin': budgetMin,
+      if (budgetMax != null) 'budgetMax': budgetMax,
+      'currency': currency,
+      'setDurationMinutes': setDurationMinutes,
+      'equipmentProvided': equipmentProvided,
+      'equipmentNeeded': equipmentNeeded,
+      'slotsAvailable': slotsAvailable,
+    };
+  }
+}
+
+/// Discover Gigs Query
+class DiscoverGigsQuery {
+  final List<String>? genres;
+  final double? latitude;
+  final double? longitude;
+  final int? radiusMiles;
+  final DateTime? dateFrom;
+  final DateTime? dateTo;
+  final double? maxBudget;
+  final int page;
+  final int limit;
+
+  DiscoverGigsQuery({
+    this.genres,
+    this.latitude,
+    this.longitude,
+    this.radiusMiles,
+    this.dateFrom,
+    this.dateTo,
+    this.maxBudget,
+    this.page = 1,
+    this.limit = 20,
+  });
+
+  Map<String, dynamic> toQueryParams() {
+    final params = <String, dynamic>{};
+
+    if (genres != null && genres!.isNotEmpty) {
+      params['genres'] = genres!.join(',');
     }
+    if (latitude != null) params['latitude'] = latitude.toString();
+    if (longitude != null) params['longitude'] = longitude.toString();
+    if (radiusMiles != null) params['radiusMiles'] = radiusMiles.toString();
+    if (dateFrom != null) {
+      params['dateFrom'] = dateFrom!.toIso8601String().split('T')[0];
+    }
+    if (dateTo != null) {
+      params['dateTo'] = dateTo!.toIso8601String().split('T')[0];
+    }
+    if (maxBudget != null) params['maxBudget'] = maxBudget.toString();
+    params['page'] = page.toString();
+    params['limit'] = limit.toString();
+
+    return params;
   }
 }

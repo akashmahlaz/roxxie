@@ -1,850 +1,1050 @@
-/// 🏢 GIGMATCH Venue Models
-/// Models for venue profiles and related data
+/// 🏢 GIGMATCH Venue Models - BULLETPROOF VERSION
+///
+/// Updated to sync with NestJS backend DTOs:
+/// - venue.schema.ts (877 lines)
+/// - complete-venue-setup.dto.ts (1063 lines)
+///
+/// Features:
+/// - Complete field mapping to backend DTOs
+/// - GeoJSON coordinate format [lng, lat]
+/// - Validation aligned with backend
+/// - Profile completeness scoring
 library;
 
 import 'user_models.dart';
 
-/// Venue Profile Data Model for Onboarding
-/// Used during the multi-step profile setup process
-class VenueProfileData {
-  // Basic Info
-  String? venueName;
-  String? description;
-  String? venueType;
+/// Venue Types (matches backend VenueType enum)
+class VenueTypes {
+  static const List<String> types = [
+    'Bar',
+    'Restaurant',
+    'Club',
+    'Concert Hall',
+    'Hotel',
+    'Lounge',
+    'Cafe',
+    'Brewery',
+    'Winery',
+    'Theater',
+    'Jazz Club',
+    'Rock Venue',
+    'Outdoor Venue',
+    'Corporate Event Space',
+    'Wedding Venue',
+    'Community Center',
+    'Festival Grounds',
+    'Private Event Space',
+    'Recording Studio',
+    'Rehearsal Space',
+    'Other',
+  ];
 
-  // Location
-  String? city;
-  String? country;
-  String? streetAddress;
-  String? state;
-  String? postalCode;
-  double? latitude;
-  double? longitude;
+  static String toBackendValue(String displayName) {
+    final mapping = {
+      'Bar': 'bar',
+      'Restaurant': 'restaurant',
+      'Club': 'club',
+      'Concert Hall': 'concert_hall',
+      'Hotel': 'hotel',
+      'Lounge': 'lounge',
+      'Cafe': 'cafe',
+      'Brewery': 'brewery',
+      'Winery': 'winery',
+      'Theater': 'theater',
+      'Jazz Club': 'jazz_club',
+      'Rock Venue': 'rock_venue',
+      'Outdoor Venue': 'outdoor_venue',
+      'Corporate Event Space': 'corporate_event_space',
+      'Wedding Venue': 'wedding_venue',
+      'Community Center': 'community_center',
+      'Festival Grounds': 'festival_grounds',
+      'Private Event Space': 'private_event_space',
+      'Recording Studio': 'recording_studio',
+      'Rehearsal Space': 'rehearsal_space',
+      'Other': 'other',
+    };
+    return mapping[displayName] ?? 'other';
+  }
 
-  // Contact
-  String? phone;
-  String? contactEmail;
-  bool showPhoneOnProfile = false;
+  static String fromBackendValue(String backendValue) {
+    final mapping = {
+      'bar': 'Bar',
+      'restaurant': 'Restaurant',
+      'club': 'Club',
+      'concert_hall': 'Concert Hall',
+      'hotel': 'Hotel',
+      'lounge': 'Lounge',
+      'cafe': 'Cafe',
+      'brewery': 'Brewery',
+      'winery': 'Winery',
+      'theater': 'Theater',
+      'jazz_club': 'Jazz Club',
+      'rock_venue': 'Rock Venue',
+      'outdoor_venue': 'Outdoor Venue',
+      'corporate_event_space': 'Corporate Event Space',
+      'wedding_venue': 'Wedding Venue',
+      'community_center': 'Community Center',
+      'festival_grounds': 'Festival Grounds',
+      'private_event_space': 'Private Event Space',
+      'recording_studio': 'Recording Studio',
+      'rehearsal_space': 'Rehearsal Space',
+      'other': 'Other',
+    };
+    return mapping[backendValue] ?? 'Other';
+  }
+}
 
-  // Social Links
+/// Venue Amenities (matches backend COMMON_AMENITIES)
+class VenueAmenities {
+  static const List<String> amenities = [
+    'Professional Stage',
+    'Sound System',
+    'Stage Monitors',
+    'Lighting System',
+    'DJ Equipment',
+    'Projector',
+    'Microphones',
+    'Backline',
+    'Piano',
+    'Drums',
+    'Green Room',
+    'Dressing Room',
+    'Loading Dock',
+    'Parking',
+    'Valet Parking',
+    'Wheelchair Accessible',
+    'Outdoor Seating',
+    'VIP Area',
+    'Catering',
+    'Full Bar',
+    'Kitchen',
+    'WiFi',
+    'Air Conditioning',
+    'Heating',
+  ];
+}
+
+/// Gig Types (matches backend GigType enum)
+class GigTypes {
+  static const List<String> types = [
+    'Open Mic',
+    'Cover Band',
+    'Original Music',
+    'DJ Set',
+    'Live Band',
+    'Acoustic',
+    'Private Event',
+    'Corporate Event',
+    'Wedding',
+    'Fundraiser',
+    'Festival',
+    'Residency',
+  ];
+
+  static String toBackendValue(String displayName) {
+    final mapping = {
+      'Open Mic': 'open_mic',
+      'Cover Band': 'cover_band',
+      'Original Music': 'original_music',
+      'DJ Set': 'dj_set',
+      'Live Band': 'live_band',
+      'Acoustic': 'acoustic',
+      'Private Event': 'private_event',
+      'Corporate Event': 'corporate_event',
+      'Wedding': 'wedding',
+      'Fundraiser': 'fundraiser',
+      'Festival': 'festival',
+      'Residency': 'residency',
+    };
+    return mapping[displayName] ?? 'original_music';
+  }
+}
+
+/// Valid genres for venue preferences (matches backend VALID_VENUE_GENRES)
+class ValidVenueGenres {
+  static const List<String> genres = [
+    'Rock',
+    'Pop',
+    'Jazz',
+    'Hip-Hop',
+    'Electronic',
+    'R&B',
+    'Country',
+    'Classical',
+    'Folk',
+    'Metal',
+    'Indie',
+    'Blues',
+    'Reggae',
+    'Latin',
+    'Soul',
+    'Funk',
+    'Alternative',
+    'Punk',
+    'Gospel',
+    'World',
+    'K-Pop',
+    'EDM',
+    'House',
+    'Techno',
+    'Ambient',
+    'Musical Theatre',
+    'Acoustic',
+    'Bluegrass',
+    'Celtic',
+    'Afrobeat',
+    'All Genres',
+  ];
+}
+
+/// Payment Types (matches backend PaymentType enum)
+class PaymentTypes {
+  static const List<String> types = [
+    'Fixed Fee',
+    'Door Split',
+    'Hourly Rate',
+    'Negotiable',
+    'No Pay',
+    'Tip Based',
+  ];
+
+  static String toBackendValue(String displayName) {
+    final mapping = {
+      'Fixed Fee': 'fixed_fee',
+      'Door Split': 'door_split',
+      'Hourly Rate': 'hourly_rate',
+      'Negotiable': 'negotiable',
+      'No Pay': 'no_pay',
+      'Tip Based': 'tip_based',
+    };
+    return mapping[displayName] ?? 'negotiable';
+  }
+}
+
+/// Currencies (matches backend Currency enum)
+class Currencies {
+  static const List<String> codes = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY'];
+}
+
+/// Operating Hours Model
+class OperatingHours {
+  String? dayOfWeek;
+  String? openTime;
+  String? closeTime;
+  bool isOpen = true;
+  String? notes;
+
+  OperatingHours({
+    this.dayOfWeek,
+    this.openTime,
+    this.closeTime,
+    this.isOpen = true,
+    this.notes,
+  });
+
+  Map<String, dynamic> toJson() => {
+    if (dayOfWeek != null) 'dayOfWeek': dayOfWeek,
+    if (openTime != null) 'openTime': openTime,
+    if (closeTime != null) 'closeTime': closeTime,
+    'isOpen': isOpen,
+    if (notes != null) 'notes': notes,
+  };
+
+  factory OperatingHours.fromJson(Map<String, dynamic> json) {
+    return OperatingHours(
+      dayOfWeek: json['dayOfWeek'],
+      openTime: json['openTime'],
+      closeTime: json['closeTime'],
+      isOpen: json['isOpen'] ?? true,
+      notes: json['notes'],
+    );
+  }
+}
+
+/// Equipment Model (matches backend VenueEquipment)
+class VenueEquipment {
+  bool hasSoundSystem = false;
+  String? soundSystemDetails;
+  bool hasLighting = false;
+  String? lightingDetails;
+  bool hasStage = false;
+  bool hasBackline = false;
+  String? backlineDetails;
+  bool hasDressingRoom = false;
+  bool hasGreenRoom = false;
+  bool hasParking = false;
+  String? parkingDetails;
+  bool hasValet = false;
+  bool hasCatering = false;
+  bool hasBar = false;
+  bool hasKitchen = false;
+  bool hasOutdoorSpace = false;
+  bool hasAirConditioning = false;
+  bool hasHeating = false;
+  bool isWheelchairAccessible = false;
+  bool hasWifi = false;
+  String? wifiDetails;
+  bool hasProjector = false;
+  bool hasMicrophones = false;
+  List<String> additionalEquipment = [];
+  String? equipmentNotes;
+
+  Map<String, dynamic> toJson() => {
+    'hasSoundSystem': hasSoundSystem,
+    if (soundSystemDetails != null) 'soundSystemDetails': soundSystemDetails,
+    'hasLighting': hasLighting,
+    if (lightingDetails != null) 'lightingDetails': lightingDetails,
+    'hasStage': hasStage,
+    'hasBackline': hasBackline,
+    if (backlineDetails != null) 'backlineDetails': backlineDetails,
+    'hasDressingRoom': hasDressingRoom,
+    'hasGreenRoom': hasGreenRoom,
+    'hasParking': hasParking,
+    if (parkingDetails != null) 'parkingDetails': parkingDetails,
+    'hasValet': hasValet,
+    'hasCatering': hasCatering,
+    'hasBar': hasBar,
+    'hasKitchen': hasKitchen,
+    'hasOutdoorSpace': hasOutdoorSpace,
+    'hasAirConditioning': hasAirConditioning,
+    'hasHeating': hasHeating,
+    'isWheelchairAccessible': isWheelchairAccessible,
+    'hasWifi': hasWifi,
+    if (wifiDetails != null) 'wifiDetails': wifiDetails,
+    'hasProjector': hasProjector,
+    'hasMicrophones': hasMicrophones,
+    if (additionalEquipment.isNotEmpty) 'additionalEquipment': additionalEquipment,
+    if (equipmentNotes != null) 'equipmentNotes': equipmentNotes,
+  };
+
+  factory VenueEquipment.fromJson(Map<String, dynamic> json) {
+    final equipment = VenueEquipment();
+    equipment.hasSoundSystem = json['hasSoundSystem'] ?? false;
+    equipment.soundSystemDetails = json['soundSystemDetails'];
+    equipment.hasLighting = json['hasLighting'] ?? false;
+    equipment.lightingDetails = json['lightingDetails'];
+    equipment.hasStage = json['hasStage'] ?? false;
+    equipment.hasBackline = json['hasBackline'] ?? false;
+    equipment.backlineDetails = json['backlineDetails'];
+    equipment.hasDressingRoom = json['hasDressingRoom'] ?? false;
+    equipment.hasGreenRoom = json['hasGreenRoom'] ?? false;
+    equipment.hasParking = json['hasParking'] ?? false;
+    equipment.parkingDetails = json['parkingDetails'];
+    equipment.hasValet = json['hasValet'] ?? false;
+    equipment.hasCatering = json['hasCatering'] ?? false;
+    equipment.hasBar = json['hasBar'] ?? false;
+    equipment.hasKitchen = json['hasKitchen'] ?? false;
+    equipment.hasOutdoorSpace = json['hasOutdoorSpace'] ?? false;
+    equipment.hasAirConditioning = json['hasAirConditioning'] ?? false;
+    equipment.hasHeating = json['hasHeating'] ?? false;
+    equipment.isWheelchairAccessible = json['isWheelchairAccessible'] ?? false;
+    equipment.hasWifi = json['hasWifi'] ?? false;
+    equipment.wifiDetails = json['wifiDetails'];
+    equipment.hasProjector = json['hasProjector'] ?? false;
+    equipment.hasMicrophones = json['hasMicrophones'] ?? false;
+    if (json['additionalEquipment'] != null) {
+      equipment.additionalEquipment = List<String>.from(json['additionalEquipment']);
+    }
+    equipment.equipmentNotes = json['equipmentNotes'];
+    return equipment;
+  }
+}
+
+/// Social Links Model
+class VenueSocialLinks {
   String? instagram;
   String? facebook;
   String? twitter;
   String? website;
   String? yelp;
   String? googleMaps;
+  String? tiktok;
 
-  // Venue Details
-  int capacity = 100;
-  String currency = 'USD';
+  Map<String, dynamic> toJson() => {
+    if (instagram != null) 'instagram': _normalizeSocialHandle(instagram!),
+    if (facebook != null) 'facebook': _normalizeUrl(facebook!),
+    if (twitter != null) 'twitter': _normalizeSocialHandle(twitter!),
+    if (website != null) 'website': _normalizeUrl(website!),
+    if (yelp != null) 'yelp': _normalizeUrl(yelp!),
+    if (googleMaps != null) 'googleMaps': _normalizeUrl(googleMaps!),
+    if (tiktok != null) 'tiktok': _normalizeSocialHandle(tiktok!),
+  };
 
-  // Equipment & Amenities
-  bool hasSoundSystem = false;
-  bool hasLighting = false;
-  bool hasStage = false;
-  bool hasDressingRoom = false;
-  bool hasParking = false;
-  bool hasBackline = false;
-  List<String> additionalEquipment = [];
-
-  // Operating Hours
-  Map<String, Map<String, String>> operatingHours = {};
-
-  // Budget & Preferences
-  double minBudget = 0;
-  double maxBudget = 5000;
-  List<String> preferredGenres = [];
-
-  // Media
-  String? coverPhoto;
-  String? logo;
-  List<String> photoGallery = [];
-  List<Map<String, String>> videos = [];
-
-  // Reset all data
-  void reset() {
-    venueName = null;
-    description = null;
-    venueType = null;
-    city = null;
-    country = null;
-    streetAddress = null;
-    state = null;
-    postalCode = null;
-    latitude = null;
-    longitude = null;
-    phone = null;
-    contactEmail = null;
-    showPhoneOnProfile = false;
-    instagram = null;
-    facebook = null;
-    twitter = null;
-    website = null;
-    yelp = null;
-    googleMaps = null;
-    capacity = 100;
-    currency = 'USD';
-    hasSoundSystem = false;
-    hasLighting = false;
-    hasStage = false;
-    hasDressingRoom = false;
-    hasParking = false;
-    hasBackline = false;
-    additionalEquipment.clear();
-    operatingHours.clear();
-    minBudget = 0;
-    maxBudget = 5000;
-    preferredGenres.clear();
-    coverPhoto = null;
-    logo = null;
-    photoGallery.clear();
-    videos.clear();
+  factory VenueSocialLinks.fromJson(Map<String, dynamic> json) {
+    return VenueSocialLinks()
+      ..instagram = json['instagram']
+      ..facebook = json['facebook']
+      ..twitter = json['twitter']
+      ..website = json['website']
+      ..yelp = json['yelp']
+      ..googleMaps = json['googleMaps']
+      ..tiktok = json['tiktok'];
   }
 
-  /// Validate required fields for profile completion
-  List<String> validate() {
-    final errors = <String>[];
-
-    if (venueName == null || venueName!.trim().isEmpty) {
-      errors.add('Venue name is required');
-    }
-
-    if (venueType == null || venueType!.trim().isEmpty) {
-      errors.add('Venue type is required');
-    }
-
-    if (city == null || city!.trim().isEmpty) {
-      errors.add('City is required');
-    }
-
-    if (country == null || country!.trim().isEmpty) {
-      errors.add('Country is required');
-    }
-
-    if (latitude == null || longitude == null) {
-      errors.add('Location coordinates are required');
-    } else if (latitude!.abs() < 0.000001 || longitude!.abs() < 0.000001) {
-      errors.add('Valid location coordinates are required');
-    }
-
-    if (capacity <= 0) {
-      errors.add('Capacity must be greater than 0');
-    }
-
-    if (minBudget < 0) {
-      errors.add('Minimum budget cannot be negative');
-    }
-
-    if (maxBudget < 0) {
-      errors.add('Maximum budget cannot be negative');
-    }
-
-    if (minBudget > maxBudget) {
-      errors.add('Minimum budget cannot be greater than maximum budget');
-    }
-
-    return errors;
-  }
-
-  /// Convert to backend DTO format
-  Map<String, dynamic> toBackendDto() {
-    final dto = <String, dynamic>{};
-
-    // Basic info
-    if (venueName != null && venueName!.isNotEmpty) {
-      dto['venueName'] = venueName!;
-    }
-    if (description != null && description!.isNotEmpty) {
-      dto['description'] = description!;
-    }
-    if (venueType != null && venueType!.isNotEmpty) {
-      dto['venueType'] = venueType!;
-    }
-
-    // Location (required for completion)
-    if (city != null && country != null && latitude != null && longitude != null) {
-      dto['location'] = {
-        'city': city!,
-        'country': country!,
-        'streetAddress': streetAddress,
-        'state': state,
-        'postalCode': postalCode,
-        'coordinates': [longitude!, latitude!], // [longitude, latitude]
-      };
-    }
-
-    // Contact
-    if (phone != null && phone!.isNotEmpty) {
-      dto['phone'] = phone!;
-    }
-    if (contactEmail != null && contactEmail!.isNotEmpty) {
-      dto['contactEmail'] = contactEmail!;
-    }
-    dto['showPhoneOnProfile'] = showPhoneOnProfile;
-
-    // Social links
-    final socialLinks = <String, String>{};
-    if (instagram != null && instagram!.isNotEmpty) {
-      socialLinks['instagram'] = _normalizeUrl(instagram!, 'instagram.com');
-    }
-    if (facebook != null && facebook!.isNotEmpty) {
-      socialLinks['facebook'] = _normalizeUrl(facebook!, 'facebook.com');
-    }
-    if (twitter != null && twitter!.isNotEmpty) {
-      socialLinks['twitter'] = _normalizeUrl(twitter!, 'twitter.com');
-    }
-    if (website != null && website!.isNotEmpty) {
-      socialLinks['website'] = _normalizeUrl(website!, '');
-    }
-    if (yelp != null && yelp!.isNotEmpty) {
-      socialLinks['yelp'] = _normalizeUrl(yelp!, 'yelp.com');
-    }
-    if (googleMaps != null && googleMaps!.isNotEmpty) {
-      socialLinks['googleMaps'] = _normalizeUrl(googleMaps!, 'maps.google.com');
-    }
-
-    if (socialLinks.isNotEmpty) {
-      dto['socialLinks'] = socialLinks;
-    }
-
-    // Venue details
-    dto['capacity'] = capacity;
-    dto['currency'] = currency;
-
-    // Equipment
-    dto['equipment'] = {
-      'hasSoundSystem': hasSoundSystem,
-      'hasLighting': hasLighting,
-      'hasStage': hasStage,
-      'hasDressingRoom': hasDressingRoom,
-      'hasParking': hasParking,
-      'hasBackline': hasBackline,
-      'additionalEquipment': additionalEquipment,
-    };
-
-    // Operating hours
-    if (operatingHours.isNotEmpty) {
-      dto['operatingHours'] = operatingHours;
-    }
-
-    // Budget
-    dto['minBudget'] = minBudget;
-    dto['maxBudget'] = maxBudget;
-
-    // Preferences
-    if (preferredGenres.isNotEmpty) {
-      dto['preferredGenres'] = preferredGenres;
-    }
-
-    // Media
-    if (coverPhoto != null && coverPhoto!.isNotEmpty) {
-      dto['coverPhoto'] = coverPhoto!;
-    }
-    if (logo != null && logo!.isNotEmpty) {
-      dto['logo'] = logo!;
-    }
-    if (photoGallery.isNotEmpty) {
-      dto['photoGallery'] = photoGallery;
-    }
-    if (videos.isNotEmpty) {
-      dto['videos'] = videos;
-    }
-
-    return dto;
-  }
-
-  /// Normalize social media URLs
-  String _normalizeUrl(String input, String domain) {
+  static String _normalizeUrl(String input) {
     if (input.startsWith('http://') || input.startsWith('https://')) {
       return input;
     }
     if (input.startsWith('www.')) {
       return 'https://$input';
     }
-    if (domain.isNotEmpty && input.contains(domain)) {
-      return 'https://$input';
+    return 'https://$input';
+  }
+
+  static String _normalizeSocialHandle(String input) {
+    if (input.startsWith('@')) {
+      return input.substring(1);
     }
-    if (domain.isEmpty) {
+    if (input.startsWith('http')) {
       return input;
     }
-    return 'https://$domain/$input';
-  }
-
-  /// Get profile completion percentage
-  int getCompletionPercentage() {
-    int score = 0;
-    const totalFields = 15;
-
-    if (venueName != null && venueName!.isNotEmpty) score++;
-    if (description != null && description!.length > 20) score++;
-    if (venueType != null && venueType!.isNotEmpty) score++;
-    if (city != null && country != null) score++;
-    if (latitude != null && longitude != null) score++;
-    if (phone != null && phone!.isNotEmpty) score++;
-    if (contactEmail != null && contactEmail!.isNotEmpty) score++;
-    if (socialLinks.isNotEmpty) score++;
-    if (capacity > 0) score++;
-    if (hasSoundSystem || hasLighting || hasStage) score++;
-    if (operatingHours.isNotEmpty) score++;
-    if (minBudget >= 0 && maxBudget > 0) score++;
-    if (preferredGenres.isNotEmpty) score++;
-    if (coverPhoto != null || logo != null) score++;
-    if (photoGallery.isNotEmpty) score++;
-
-    return ((score / totalFields) * 100).round();
-  }
-
-  /// Check if profile is complete enough for setup
-  bool get isSetupReady {
-    final errors = validate();
-    return errors.isEmpty;
+    return input;
   }
 }
 
-/// Venue Type Enum
-enum VenueType {
-  bar('bar'),
-  club('club'),
-  restaurant('restaurant'),
-  lounge('lounge'),
-  concertHall('concert_hall'),
-  theater('theater'),
-  outdoorStage('outdoor_stage'),
-  privateEvent('private_event'),
-  hotel('hotel'),
-  weddingVenue('wedding_venue'),
-  corporateEvent('corporate_event'),
-  festival('festival'),
-  other('other');
+/// Photo Gallery Model
+class VenuePhoto {
+  String url;
+  String? caption;
+  int order = 0;
+  bool isPrimary = false;
+  DateTime? uploadedAt;
 
-  final String value;
-  const VenueType(this.value);
-
-  static VenueType fromString(String value) {
-    return VenueType.values.firstWhere(
-      (e) => e.value == value.toLowerCase(),
-      orElse: () => VenueType.bar,
-    );
-  }
-
-  String get displayName {
-    switch (this) {
-      case VenueType.bar:
-        return 'Bar';
-      case VenueType.club:
-        return 'Club';
-      case VenueType.restaurant:
-        return 'Restaurant';
-      case VenueType.lounge:
-        return 'Lounge';
-      case VenueType.concertHall:
-        return 'Concert Hall';
-      case VenueType.theater:
-        return 'Theater';
-      case VenueType.outdoorStage:
-        return 'Outdoor Stage';
-      case VenueType.privateEvent:
-        return 'Private Event';
-      case VenueType.hotel:
-        return 'Hotel';
-      case VenueType.weddingVenue:
-        return 'Wedding Venue';
-      case VenueType.corporateEvent:
-        return 'Corporate Event';
-      case VenueType.festival:
-        return 'Festival';
-      case VenueType.other:
-        return 'Other';
-    }
-  }
-}
-
-/// Operating Hours Model
-class OperatingHours {
-  final String day;
-  final String? openTime;
-  final String? closeTime;
-  final bool isClosed;
-
-  OperatingHours({
-    required this.day,
-    this.openTime,
-    this.closeTime,
-    this.isClosed = false,
+  VenuePhoto({
+    required this.url,
+    this.caption,
+    this.order = 0,
+    this.isPrimary = false,
+    this.uploadedAt,
   });
 
-  factory OperatingHours.fromJson(Map<String, dynamic> json) {
-    return OperatingHours(
-      day: json['day'] ?? '',
-      openTime: json['openTime'],
-      closeTime: json['closeTime'],
-      isClosed: json['isClosed'] ?? false,
+  Map<String, dynamic> toJson() => {
+    'url': url,
+    if (caption != null) 'caption': caption,
+    'order': order,
+    'isPrimary': isPrimary,
+    if (uploadedAt != null) 'uploadedAt': uploadedAt!.toIso8601String(),
+  };
+
+  factory VenuePhoto.fromJson(Map<String, dynamic> json) {
+    return VenuePhoto(
+      url: json['url'] ?? '',
+      caption: json['caption'],
+      order: json['order'] ?? 0,
+      isPrimary: json['isPrimary'] ?? false,
+      uploadedAt: json['uploadedAt'] != null
+          ? DateTime.tryParse(json['uploadedAt'])
+          : null,
     );
+  }
+}
+
+/// Virtual Tour Model
+class VirtualTour {
+  String? tourUrl;
+  String? videoUrl;
+  String? googleMapsUrl;
+
+  Map<String, dynamic> toJson() => {
+    if (tourUrl != null) 'tourUrl': tourUrl,
+    if (videoUrl != null) 'videoUrl': videoUrl,
+    if (googleMapsUrl != null) 'googleMapsUrl': googleMapsUrl,
+  };
+
+  factory VirtualTour.fromJson(Map<String, dynamic> json) {
+    return VirtualTour()
+      ..tourUrl = json['tourUrl']
+      ..videoUrl = json['videoUrl']
+      ..googleMapsUrl = json['googleMapsUrl'];
+  }
+}
+
+/// Location Model with GeoJSON format
+class VenueLocation {
+  String? type;
+  List<double> coordinates; // [longitude, latitude] - GeoJSON format
+  String? streetAddress;
+  String? city;
+  String? state;
+  String? country;
+  String? postalCode;
+  String? formattedAddress;
+  String? neighborhood;
+
+  VenueLocation({
+    this.type = 'Point',
+    List<double>? coordinates,
+    this.streetAddress,
+    this.city,
+    this.state,
+    this.country,
+    this.postalCode,
+    this.formattedAddress,
+    this.neighborhood,
+  }) : coordinates = coordinates ?? [0.0, 0.0];
+
+  /// Get longitude (GeoJSON format: [lng, lat])
+  double get longitude => coordinates.isNotEmpty ? coordinates[0] : 0.0;
+
+  /// Get latitude (GeoJSON format: [lng, lat])
+  double get latitude => coordinates.length > 1 ? coordinates[1] : 0.0;
+
+  /// Set coordinates from lat/lng (converts to GeoJSON [lng, lat])
+  set latLng(double lat, double lng) {
+    coordinates = [lng, lat];
+  }
+
+  /// Check if coordinates are valid (not [0,0])
+  bool get hasValidCoordinates {
+    return longitude != 0.0 && latitude != 0.0;
   }
 
   Map<String, dynamic> toJson() => {
-    'day': day,
-    if (openTime != null) 'openTime': openTime,
-    if (closeTime != null) 'closeTime': closeTime,
-    'isClosed': isClosed,
+    'type': type ?? 'Point',
+    'coordinates': coordinates,
+    if (streetAddress != null) 'streetAddress': streetAddress,
+    if (city != null) 'city': city,
+    if (state != null) 'state': state,
+    if (country != null) 'country': country,
+    if (postalCode != null) 'postalCode': postalCode,
+    if (formattedAddress != null) 'formattedAddress': formattedAddress,
+    if (neighborhood != null) 'neighborhood': neighborhood,
   };
 
-  String get formatted =>
-      isClosed ? 'Closed' : '${openTime ?? 'N/A'} - ${closeTime ?? 'N/A'}';
-}
-
-/// Gig Type Model (what kind of gigs venue is looking for)
-class GigPreferences {
-  final List<String> preferredGenres;
-  final List<String> preferredDays;
-  final String? typicalSetLength; // '1 hour', '2 hours', 'full night'
-  final bool providesEquipment;
-  final bool providesMeals;
-  final bool providesAccommodation;
-  final String? additionalRequirements;
-
-  GigPreferences({
-    this.preferredGenres = const [],
-    this.preferredDays = const [],
-    this.typicalSetLength,
-    this.providesEquipment = false,
-    this.providesMeals = false,
-    this.providesAccommodation = false,
-    this.additionalRequirements,
-  });
-
-  factory GigPreferences.fromJson(Map<String, dynamic> json) {
-    return GigPreferences(
-      preferredGenres: List<String>.from(json['preferredGenres'] ?? []),
-      preferredDays: List<String>.from(json['preferredDays'] ?? []),
-      typicalSetLength: json['typicalSetLength'],
-      providesEquipment: json['providesEquipment'] ?? false,
-      providesMeals: json['providesMeals'] ?? false,
-      providesAccommodation: json['providesAccommodation'] ?? false,
-      additionalRequirements: json['additionalRequirements'],
+  factory VenueLocation.fromJson(Map<String, dynamic> json) {
+    final coords = json['coordinates'];
+    List<double> coordinates = [0.0, 0.0];
+    if (coords is List && coords.length >= 2) {
+      coordinates = [
+        (coords[0] as num).toDouble(),
+        (coords[1] as num).toDouble(),
+      ];
+    }
+    return VenueLocation(
+      type: json['type'] ?? 'Point',
+      coordinates: coordinates,
+      streetAddress: json['streetAddress'],
+      city: json['city'],
+      state: json['state'],
+      country: json['country'],
+      postalCode: json['postalCode'],
+      formattedAddress: json['formattedAddress'],
+      neighborhood: json['neighborhood'],
     );
   }
+}
+
+/// Gig Preferences Model (matches backend GigPreferencesDto)
+class GigPreferences {
+  List<String> preferredGenres = [];
+  List<String> gigTypes = [];
+  String? paymentType;
+  double minBudget = 0;
+  double maxBudget = 0;
+  String currency = 'USD';
+  double avgGigDuration = 3;
+  bool providesMusicianMeals = false;
+  bool providesGreenRoomRefreshments = false;
+  String? notesForArtists;
+  bool openToNewArtists = true;
+  bool acceptsDemos = false;
+  String? demoSubmissionEmail;
 
   Map<String, dynamic> toJson() => {
     'preferredGenres': preferredGenres,
-    'preferredDays': preferredDays,
-    if (typicalSetLength != null) 'typicalSetLength': typicalSetLength,
-    'providesEquipment': providesEquipment,
-    'providesMeals': providesMeals,
-    'providesAccommodation': providesAccommodation,
-    if (additionalRequirements != null)
-      'additionalRequirements': additionalRequirements,
+    'gigTypes': gigTypes.map((e) => GigTypes.toBackendValue(e)).toList(),
+    if (paymentType != null) 'paymentType': PaymentTypes.toBackendValue(paymentType!),
+    'minBudget': minBudget,
+    'maxBudget': maxBudget,
+    'currency': currency,
+    'avgGigDuration': avgGigDuration,
+    'providesMusicianMeals': providesMusicianMeals,
+    'providesGreenRoomRefreshments': providesGreenRoomRefreshments,
+    if (notesForArtists != null) 'notesForArtists': notesForArtists,
+    'openToNewArtists': openToNewArtists,
+    'acceptsDemos': acceptsDemos,
+    if (demoSubmissionEmail != null) 'demoSubmissionEmail': demoSubmissionEmail,
   };
+
+  factory GigPreferences.fromJson(Map<String, dynamic> json) {
+    final prefs = GigPreferences();
+    if (json['preferredGenres'] != null) {
+      prefs.preferredGenres = List<String>.from(json['preferredGenres']);
+    }
+    if (json['gigTypes'] != null) {
+      prefs.gigTypes = List<String>.from(json['gigTypes']);
+    }
+    prefs.paymentType = json['paymentType'];
+    prefs.minBudget = (json['minBudget'] ?? 0).toDouble();
+    prefs.maxBudget = (json['maxBudget'] ?? 0).toDouble();
+    prefs.currency = json['currency'] ?? 'USD';
+    prefs.avgGigDuration = (json['avgGigDuration'] ?? 3).toDouble();
+    prefs.providesMusicianMeals = json['providesMusicianMeals'] ?? false;
+    prefs.providesGreenRoomRefreshments = json['providesGreenRoomRefreshments'] ?? false;
+    prefs.notesForArtists = json['notesForArtists'];
+    prefs.openToNewArtists = json['openToNewArtists'] ?? true;
+    prefs.acceptsDemos = json['acceptsDemos'] ?? false;
+    prefs.demoSubmissionEmail = json['demoSubmissionEmail'];
+    return prefs;
+  }
 }
 
-/// Venue Budget Range
-class BudgetRange {
-  final double min;
-  final double max;
-  final String currency;
-  final String per; // 'night', 'event', 'hour'
+/// Venue Profile Data Model for Onboarding (matches backend CompleteVenueSetupDto)
+class VenueProfileData {
+  // ═══════════════════════════════════════════════════════════════════════
+  // STEP 1: BASIC INFO
+  // ═══════════════════════════════════════════════════════════════════════
+  String? venueName;
+  String? venueType; // Display name (e.g., 'Jazz Club')
+  String? description;
+  int capacity = 100;
+  List<String> amenities = [];
+  String? contactPerson;
+  String? contactRole;
+  int? yearEstablished;
 
-  BudgetRange({
-    required this.min,
-    required this.max,
-    this.currency = 'USD',
-    this.per = 'night',
-  });
+  // ═══════════════════════════════════════════════════════════════════════
+  // STEP 2: MEDIA
+  // ═══════════════════════════════════════════════════════════════════════
+  String? profilePhotoUrl;
+  List<VenuePhoto> photoGallery = [];
+  VirtualTour? virtualTour;
 
-  factory BudgetRange.fromJson(Map<String, dynamic> json) {
-    return BudgetRange(
-      min: (json['min'] as num?)?.toDouble() ?? 0.0,
-      max: (json['max'] as num?)?.toDouble() ?? 0.0,
-      currency: json['currency'] ?? 'USD',
-      per: json['per'] ?? 'night',
-    );
+  // ═══════════════════════════════════════════════════════════════════════
+  // STEP 3: DETAILS & LOCATION
+  // ═══════════════════════════════════════════════════════════════════════
+  String? phone;
+  bool showPhoneOnProfile = false;
+  String? bookingEmail;
+  String? eventsEmail;
+  VenueLocation location = VenueLocation();
+  List<OperatingHours> operatingHours = [];
+  VenueEquipment equipment = VenueEquipment();
+  VenueSocialLinks socialLinks = VenueSocialLinks();
+  String? directions;
+  String? loadInInstructions;
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STEP 4: GIG PREFERENCES
+  // ═══════════════════════════════════════════════════════════════════════
+  GigPreferences gigPreferences = GigPreferences();
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // PREFERENCES & DISCOVERY
+  // ═══════════════════════════════════════════════════════════════════════
+  bool isActive = true;
+  bool isVisible = true;
+  String? houseRules;
+  bool hasPromotedActs = false;
+  List<String> notablePastActs = [];
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // COMPUTED PROPERTIES
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get backend venue type value
+  String? get backendVenueType {
+    if (venueType == null) return null;
+    return VenueTypes.toBackendValue(venueType!);
   }
 
-  Map<String, dynamic> toJson() => {
-    'min': min,
-    'max': max,
-    'currency': currency,
-    'per': per,
-  };
+  /// Convert location to backend format with [lng, lat]
+  Map<String, dynamic>? get locationPayload {
+    if (location.city == null || location.country == null) {
+      return null;
+    }
 
-  String get formatted => '\$$min - \$$max / $per';
+    final payload = <String, dynamic>{
+      'city': location.city,
+      'country': location.country,
+    };
+
+    if (location.streetAddress != null) {
+      payload['streetAddress'] = location.streetAddress;
+    }
+    if (location.state != null) {
+      payload['state'] = location.state;
+    }
+    if (location.postalCode != null) {
+      payload['postalCode'] = location.postalCode;
+    }
+    if (location.neighborhood != null) {
+      payload['neighborhood'] = location.neighborhood;
+    }
+
+    // Only include coordinates if valid (not [0,0])
+    if (location.hasValidCoordinates) {
+      payload['coordinates'] = location.coordinates; // [lng, lat]
+    }
+
+    return payload;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // METHODS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Reset all data
+  void reset() {
+    venueName = null;
+    venueType = null;
+    description = null;
+    capacity = 100;
+    amenities.clear();
+    contactPerson = null;
+    contactRole = null;
+    yearEstablished = null;
+    profilePhotoUrl = null;
+    photoGallery.clear();
+    virtualTour = null;
+    phone = null;
+    showPhoneOnProfile = false;
+    bookingEmail = null;
+    eventsEmail = null;
+    location = VenueLocation();
+    operatingHours.clear();
+    equipment = VenueEquipment();
+    socialLinks = VenueSocialLinks();
+    directions = null;
+    loadInInstructions = null;
+    gigPreferences = GigPreferences();
+    isActive = true;
+    isVisible = true;
+    houseRules = null;
+    hasPromotedActs = false;
+    notablePastActs.clear();
+  }
+
+  /// Validate required fields for profile completion
+  List<String> validate() {
+    final errors = <String>[];
+
+    // Step 1: Basic Info
+    if (venueName == null || venueName!.trim().isEmpty) {
+      errors.add('Venue name is required');
+    }
+    if (venueName != null && venueName!.trim().length < 2) {
+      errors.add('Venue name must be at least 2 characters');
+    }
+    if (venueType == null || venueType!.trim().isEmpty) {
+      errors.add('Venue type is required');
+    }
+
+    // Step 3: Location
+    if (location.city == null || location.city!.trim().isEmpty) {
+      errors.add('City is required');
+    }
+    if (location.country == null || location.country!.trim().isEmpty) {
+      errors.add('Country is required');
+    }
+
+    // Step 4: Gig Preferences
+    if (gigPreferences.preferredGenres.isEmpty) {
+      errors.add('Select at least one preferred genre');
+    }
+
+    return errors;
+  }
+
+  /// Convert to backend DTO format (matches CompleteVenueSetupDto)
+  Map<String, dynamic> toBackendDto() {
+    final dto = <String, dynamic>{};
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 1: BASIC INFO
+    // ═══════════════════════════════════════════════════════════════════
+    dto['venueName'] = venueName;
+    if (backendVenueType != null) {
+      dto['venueType'] = backendVenueType;
+    }
+    if (description != null && description!.isNotEmpty) {
+      dto['description'] = description;
+    }
+    if (capacity > 0) {
+      dto['capacity'] = capacity;
+    }
+    if (amenities.isNotEmpty) {
+      dto['amenities'] = amenities;
+    }
+    if (contactPerson != null) {
+      dto['contactPerson'] = contactPerson;
+    }
+    if (contactRole != null) {
+      dto['contactRole'] = contactRole;
+    }
+    if (yearEstablished != null) {
+      dto['yearEstablished'] = yearEstablished;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 2: MEDIA
+    // ═══════════════════════════════════════════════════════════════════
+    if (profilePhotoUrl != null) {
+      dto['profilePhotoUrl'] = profilePhotoUrl;
+    }
+    if (photoGallery.isNotEmpty) {
+      dto['photoGallery'] = photoGallery.map((p) => p.toJson()).toList();
+    }
+    if (virtualTour != null) {
+      dto['virtualTour'] = virtualTour!.toJson();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 3: DETAILS & LOCATION
+    // ═══════════════════════════════════════════════════════════════════
+    if (phone != null) {
+      dto['phone'] = phone;
+    }
+    dto['showPhoneOnProfile'] = showPhoneOnProfile;
+    if (bookingEmail != null) {
+      dto['bookingEmail'] = bookingEmail;
+    }
+    if (eventsEmail != null) {
+      dto['eventsEmail'] = eventsEmail;
+    }
+
+    // Location (required for completion)
+    final locPayload = locationPayload;
+    if (locPayload != null) {
+      dto['location'] = locPayload;
+    }
+
+    // Operating Hours
+    if (operatingHours.isNotEmpty) {
+      dto['operatingHours'] = {
+        'monday': operatingHours[0].toJson(),
+        'tuesday': operatingHours[1].toJson(),
+        'wednesday': operatingHours[2].toJson(),
+        'thursday': operatingHours[3].toJson(),
+        'friday': operatingHours[4].toJson(),
+        'saturday': operatingHours[5].toJson(),
+        'sunday': operatingHours[6].toJson(),
+      };
+    }
+
+    // Equipment
+    dto['equipment'] = equipment.toJson();
+
+    // Social Links
+    final socialJson = socialLinks.toJson();
+    if (socialJson.isNotEmpty) {
+      dto['socialLinks'] = socialJson;
+    }
+
+    if (directions != null) {
+      dto['directions'] = directions;
+    }
+    if (loadInInstructions != null) {
+      dto['loadInInstructions'] = loadInInstructions;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STEP 4: GIG PREFERENCES
+    // ═══════════════════════════════════════════════════════════════════
+    dto['gigPreferences'] = gigPreferences.toJson();
+
+    // ═══════════════════════════════════════════════════════════════════
+    // PREFERENCES & DISCOVERY
+    // ═══════════════════════════════════════════════════════════════════
+    dto['isActive'] = isActive;
+    dto['isVisible'] = isVisible;
+    if (houseRules != null) {
+      dto['houseRules'] = houseRules;
+    }
+    dto['hasPromotedActs'] = hasPromotedActs;
+    if (notablePastActs.isNotEmpty) {
+      dto['notablePastActs'] = notablePastActs;
+    }
+
+    return dto;
+  }
+
+  /// Get profile completion percentage (0-100)
+  int getCompletionPercentage() {
+    int score = 0;
+    const maxScore = 100;
+
+    // Basic Info (25 points)
+    if (venueName != null && venueName!.isNotEmpty) score += 5;
+    if (description != null && description!.length >= 50) score += 10;
+    if (venueType != null) score += 5;
+    if (capacity > 0) score += 5;
+
+    // Location (15 points)
+    if (location.city != null) score += 5;
+    if (location.streetAddress != null) score += 5;
+    if (location.hasValidCoordinates) score += 5;
+
+    // Contact (15 points)
+    if (phone != null) score += 5;
+    if (bookingEmail != null) score += 5;
+    if (socialLinks.website != null) score += 5;
+
+    // Media (20 points)
+    if (profilePhotoUrl != null) score += 10;
+    if (photoGallery.isNotEmpty) score += 5;
+    if (virtualTour?.googleMapsUrl != null) score += 5;
+
+    // Equipment (10 points)
+    if (equipment.hasSoundSystem) score += 5;
+    if (equipment.hasStage) score += 5;
+
+    // Preferences (10 points)
+    if (gigPreferences.preferredGenres.isNotEmpty) score += 5;
+    if (gigPreferences.minBudget > 0 || gigPreferences.maxBudget > 0) score += 5;
+
+    // Additional (5 points)
+    if (amenities.isNotEmpty) score += 5;
+
+    return (score * maxScore / 100).round();
+  }
+
+  /// Check if profile is complete enough for submission
+  bool get isSetupReady {
+    return getCompletionPercentage() >= 50;
+  }
+
+  /// Check if profile is fully complete
+  bool get isFullyComplete {
+    return getCompletionPercentage() >= 80;
+  }
+
+  /// Parse backend response to update local model
+  void updateFromBackendResponse(Map<String, dynamic> json) {
+    // Basic Info
+    venueName = json['venueName'];
+    venueType = json['venueType'] != null
+        ? VenueTypes.fromBackendValue(json['venueType'])
+        : null;
+    description = json['description'];
+    capacity = json['capacity'] ?? 100;
+    if (json['amenities'] != null) {
+      amenities = List<String>.from(json['amenities']);
+    }
+    contactPerson = json['contactPerson'];
+    contactRole = json['contactRole'];
+    yearEstablished = json['yearEstablished'];
+
+    // Media
+    profilePhotoUrl = json['profilePhotoUrl'];
+    if (json['photoGallery'] != null) {
+      photoGallery = (json['photoGallery'] as List)
+          .map((p) => VenuePhoto.fromJson(p))
+          .toList();
+    }
+    if (json['virtualTour'] != null) {
+      virtualTour = VirtualTour.fromJson(json['virtualTour']);
+    }
+
+    // Location & Contact
+    phone = json['phone'];
+    showPhoneOnProfile = json['showPhoneOnProfile'] ?? false;
+    bookingEmail = json['bookingEmail'];
+    eventsEmail = json['eventsEmail'];
+    if (json['location'] != null) {
+      location = VenueLocation.fromJson(json['location']);
+    }
+    if (json['equipment'] != null) {
+      equipment = VenueEquipment.fromJson(json['equipment']);
+    }
+    if (json['socialLinks'] != null) {
+      socialLinks = VenueSocialLinks.fromJson(json['socialLinks']);
+    }
+    directions = json['directions'];
+    loadInInstructions = json['loadInInstructions'];
+
+    // Gig Preferences
+    if (json['gigPreferences'] != null) {
+      gigPreferences = GigPreferences.fromJson(json['gigPreferences']);
+    }
+
+    // Other
+    isActive = json['isActive'] ?? true;
+    isVisible = json['isVisible'] ?? true;
+    houseRules = json['houseRules'];
+    hasPromotedActs = json['hasPromotedActs'] ?? false;
+    if (json['notablePastActs'] != null) {
+      notablePastActs = List<String>.from(json['notablePastActs']);
+    }
+  }
 }
 
-/// Venue Profile Model
-///
-/// Backend alignment (NestJS/Mongoose):
-/// - venueName, description, venueType
-/// - location { city, country, coordinates:[lng,lat], ... }
-/// - preferredGenres
-/// - coverPhoto/logo/photoGallery/videos
-/// - phone/showPhoneOnProfile/contactEmail
-/// - capacity/equipment/operatingHours
-/// - minBudget/maxBudget/currency
-///
-/// Backward compatibility:
-/// - Keep computed getters for legacy `name` and `bio` consumers.
+/// Venue model for API responses (matches backend Venue schema)
 class Venue {
   final String id;
   final String userId;
-
-  /// Backend: venueName
   final String venueName;
-
-  /// Backend: description
+  final String? venueType;
   final String? description;
-
-  final VenueType venueType;
-  final Location? location;
-
-  /// Backend: preferredGenres
-  final List<String> preferredGenres;
-
-  /// Backend media
-  final String? coverPhoto;
-  final String? logo;
-  final List<String> photoGallery;
-
-  /// Contact (backend)
-  final String? phone;
-  final bool showPhoneOnProfile;
-  final String? contactEmail;
-
-  /// Core details
-  final int capacity;
-
-  /// Backward-compatible "amenities" (allowed by UpdateVenueDto)
-  final List<String> amenities;
-
-  /// Operating hours (app model uses a list)
-  final List<OperatingHours> operatingHours;
-
-  /// Legacy app-side preferences (allowed by UpdateVenueDto as `gigPreferences`)
-  final GigPreferences? gigPreferences;
-
-  /// Budget (backend-native)
-  final double minBudget;
-  final double maxBudget;
-  final String currency;
-
-  /// Backward-compatible: keep `budgetRange` for UI
-  final BudgetRange? budgetRange;
-
-  final SocialLinks? socialLinks;
-
-  // Legacy getters (do not persist these to backend)
-  String get name => venueName;
-  String? get bio => description;
-  List<String> get galleryUrls => photoGallery;
-
+  final int? capacity;
+  final String? profilePhotoUrl;
+  final VenueLocation? location;
+  final double? reviewStatsAverageRating;
+  final int? totalGigsHosted;
   final bool isVerified;
-  final bool isActive;
-  final double rating;
-  final int reviewCount;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final bool isOpenForBookings;
+  final int profileCompleteness;
+  final bool hasCompletedSetup;
+  final DateTime? createdAt;
 
   Venue({
     required this.id,
     required this.userId,
     required this.venueName,
+    this.venueType,
     this.description,
-    required this.venueType,
+    this.capacity,
+    this.profilePhotoUrl,
     this.location,
-    this.preferredGenres = const [],
-    this.coverPhoto,
-    this.logo,
-    this.photoGallery = const [],
-    this.phone,
-    this.showPhoneOnProfile = false,
-    this.contactEmail,
-    this.capacity = 0,
-    this.amenities = const [],
-    this.operatingHours = const [],
-    this.gigPreferences,
-    this.minBudget = 0.0,
-    this.maxBudget = 0.0,
-    this.currency = 'USD',
-    this.budgetRange,
-    this.socialLinks,
+    this.reviewStatsAverageRating,
+    this.totalGigsHosted,
     this.isVerified = false,
-    this.isActive = true,
-    this.rating = 0.0,
-    this.reviewCount = 0,
-    required this.createdAt,
-    required this.updatedAt,
+    this.isOpenForBookings = true,
+    this.profileCompleteness = 0,
+    this.hasCompletedSetup = false,
+    this.createdAt,
   });
 
   factory Venue.fromJson(Map<String, dynamic> json) {
-    // Support both backend field names and older app field names.
-    final venueName = (json['venueName'] ?? json['name'] ?? '') as String;
-    final description = (json['description'] ?? json['bio']) as String?;
-    final preferredGenres = List<String>.from(json['preferredGenres'] ?? []);
-    final photoGallery = List<String>.from(
-      json['photoGallery'] ?? json['galleryUrls'] ?? [],
-    );
-
-    // Budget can come as minBudget/maxBudget OR legacy budgetRange
-    final minBudget = (json['minBudget'] as num?)?.toDouble();
-    final maxBudget = (json['maxBudget'] as num?)?.toDouble();
-    final currency = (json['currency'] ?? 'USD') as String;
-    final budgetRange =
-        json['budgetRange'] != null ? BudgetRange.fromJson(json['budgetRange']) : null;
+    VenueLocation? location;
+    if (json['location'] != null) {
+      location = VenueLocation.fromJson(json['location']);
+    }
 
     return Venue(
       id: json['_id'] ?? json['id'] ?? '',
-      userId: json['userId'] ?? '',
-      venueName: venueName,
-      description: description,
-      venueType: VenueType.fromString(json['venueType'] ?? 'bar'),
-      location: json['location'] != null ? Location.fromJson(json['location']) : null,
-      preferredGenres: preferredGenres,
-      coverPhoto: json['coverPhoto'],
-      logo: json['logo'],
-      photoGallery: photoGallery,
-      phone: json['phone'],
-      showPhoneOnProfile: json['showPhoneOnProfile'] ?? false,
-      contactEmail: json['contactEmail'] ?? json['email'],
-      capacity: json['capacity'] ?? 0,
-      amenities: List<String>.from(json['amenities'] ?? []),
-      operatingHours:
-          (json['operatingHours'] as List?)
-              ?.map((e) => OperatingHours.fromJson(e))
-              .toList() ??
-          [],
-      gigPreferences: json['gigPreferences'] != null
-          ? GigPreferences.fromJson(json['gigPreferences'])
-          : null,
-      minBudget: minBudget ?? budgetRange?.min ?? 0.0,
-      maxBudget: maxBudget ?? budgetRange?.max ?? 0.0,
-      currency: currency,
-      budgetRange: budgetRange,
-      socialLinks: json['socialLinks'] != null
-          ? SocialLinks.fromJson(json['socialLinks'])
-          : null,
+      userId: json['userId'] ?? json['user'] ?? '',
+      venueName: json['venueName'] ?? '',
+      venueType: json['venueType'],
+      description: json['description'],
+      capacity: json['capacity'],
+      profilePhotoUrl: json['profilePhotoUrl'],
+      location: location,
+      reviewStatsAverageRating = json['reviewStats']?['averageRating']?.toDouble(),
+      totalGigsHosted = json['totalGigsHosted'],
       isVerified: json['isVerified'] ?? false,
-      isActive: json['isActive'] ?? true,
-      rating: (json['averageRating'] as num?)?.toDouble() ??
-          (json['rating'] as num?)?.toDouble() ??
-          0.0,
-      reviewCount: json['totalReviews'] ?? json['reviewCount'] ?? 0,
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
+      isOpenForBookings: json['isOpenForBookings'] ?? true,
+      profileCompleteness: json['profileCompleteness'] ?? 0,
+      hasCompletedSetup: json['hasCompletedSetup'] ?? false,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'userId': userId,
-    // Keep legacy-friendly keys for existing UI usage,
-    // but do NOT reintroduce removed fields like contactPhone.
-    'name': name,
-    'bio': bio,
-    'venueType': venueType.value,
-    'location': location?.toJson(),
-    'capacity': capacity,
-    'galleryUrls': galleryUrls,
-    'amenities': amenities,
-    'operatingHours': operatingHours.map((e) => e.toJson()).toList(),
-    'gigPreferences': gigPreferences?.toJson(),
-    'budgetRange': budgetRange?.toJson(),
-    'socialLinks': socialLinks?.toJson(),
-    'contactEmail': contactEmail,
+    'venueName': venueName,
+    'venueType': venueType,
+    if (description != null) 'description': description,
+    if (capacity != null) 'capacity': capacity,
+    if (profilePhotoUrl != null) 'profilePhotoUrl': profilePhotoUrl,
+    if (location != null) 'location': location!.toJson(),
     'isVerified': isVerified,
-    'isActive': isActive,
-    'rating': rating,
-    'reviewCount': reviewCount,
-    'createdAt': createdAt.toIso8601String(),
-    'updatedAt': updatedAt.toIso8601String(),
+    'isOpenForBookings': isOpenForBookings,
+    'profileCompleteness': profileCompleteness,
+    'hasCompletedSetup': hasCompletedSetup,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
   };
-
-  String get primaryPhoto => galleryUrls.isNotEmpty ? galleryUrls.first : '';
-  String get displayLocation =>
-      location?.city ?? location?.formattedAddress ?? 'Location not set';
-}
-
-/// Venue Search/Filter Params
-class VenueSearchParams {
-  final double? latitude;
-  final double? longitude;
-  final int? maxDistance;
-  final VenueType? venueType;
-  final List<String>? preferredGenres;
-  final int? minCapacity;
-  final int? maxCapacity;
-  final double? minBudget;
-  final double? maxBudget;
-  final bool? providesEquipment;
-  final int page;
-  final int limit;
-
-  VenueSearchParams({
-    this.latitude,
-    this.longitude,
-    this.maxDistance,
-    this.venueType,
-    this.preferredGenres,
-    this.minCapacity,
-    this.maxCapacity,
-    this.minBudget,
-    this.maxBudget,
-    this.providesEquipment,
-    this.page = 1,
-    this.limit = 20,
-  });
-
-  Map<String, dynamic> toQueryParams() {
-    final params = <String, dynamic>{
-      'page': page.toString(),
-      'limit': limit.toString(),
-    };
-    if (latitude != null) params['latitude'] = latitude.toString();
-    if (longitude != null) params['longitude'] = longitude.toString();
-    if (maxDistance != null) params['maxDistance'] = maxDistance.toString();
-    if (venueType != null) params['venueType'] = venueType!.value;
-    if (preferredGenres != null && preferredGenres!.isNotEmpty) {
-      params['preferredGenres'] = preferredGenres!.join(',');
-    }
-    if (minCapacity != null) params['minCapacity'] = minCapacity.toString();
-    if (maxCapacity != null) params['maxCapacity'] = maxCapacity.toString();
-    if (minBudget != null) params['minBudget'] = minBudget.toString();
-    if (maxBudget != null) params['maxBudget'] = maxBudget.toString();
-    if (providesEquipment != null) {
-      params['providesEquipment'] = providesEquipment.toString();
-    }
-    return params;
-  }
-}
-
-/// Update Venue Profile Request
-///
-/// Bulletproof DTO-safe mapping for backend `UpdateVenueDto` (NestJS ValidationPipe with whitelist+forbidNonWhitelisted).
-///
-/// Backend expects:
-/// - venueName, venueType, description
-/// - location { streetAddress?, city, state?, postalCode?, country, coordinates:[lng,lat] }
-/// - preferredGenres
-/// - phone, showPhoneOnProfile, contactEmail
-/// - capacity, equipment, operatingHours
-/// - minBudget, maxBudget, currency
-///
-/// UpdateVenueDto additionally allows:
-/// - amenities
-/// - budgetRange { min, max }
-/// - gigPreferences { ... }
-///
-/// IMPORTANT:
-/// - Never send unknown keys like `name`/`bio`/`galleryUrls` to backend.
-/// - Keep coordinates ordering: [longitude, latitude].
-/// - Do not send invalid coordinates [0,0].
-class UpdateVenueRequest {
-  // ✅ Backend DTO fields
-  final String? venueName;
-  final String? description;
-  final VenueType? venueType;
-  final Location? location;
-
-  final List<String>? preferredGenres;
-
-  final String? phone;
-  final bool? showPhoneOnProfile;
-  final String? contactEmail;
-
-  final int? capacity;
-
-  // Budget (preferred)
-  final double? minBudget;
-  final double? maxBudget;
-  final String? currency;
-
-  // Optional media (only if backend DTO supports them)
-  final String? coverPhoto;
-  final String? logo;
-  final List<String>? photoGallery;
-
-  // Allowed by UpdateVenueDto
-  final List<String>? amenities;
-  final BudgetRange? budgetRange;
-  final GigPreferences? gigPreferences;
-  final SocialLinks? socialLinks;
-
-  // Legacy fields retained for UI/backward-compat, but NOT sent directly
-  final String? name; // legacy -> venueName
-  final String? bio; // legacy -> description
-  final List<String>? galleryUrls; // legacy -> photoGallery
-
-  UpdateVenueRequest({
-    this.venueName,
-    this.description,
-    this.venueType,
-    this.location,
-    this.preferredGenres,
-    this.phone,
-    this.showPhoneOnProfile,
-    this.contactEmail,
-    this.capacity,
-    this.minBudget,
-    this.maxBudget,
-    this.currency,
-    this.coverPhoto,
-    this.logo,
-    this.photoGallery,
-    this.amenities,
-    this.budgetRange,
-    this.gigPreferences,
-    this.socialLinks,
-
-    // legacy
-    this.name,
-    this.bio,
-    this.galleryUrls,
-  });
-
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{};
-
-    // Map legacy -> DTO-safe fields
-    final resolvedVenueName = venueName ?? name;
-    final resolvedDescription = description ?? bio;
-    final resolvedPhotoGallery = photoGallery ?? galleryUrls;
-
-    if (resolvedVenueName != null) json['venueName'] = resolvedVenueName;
-    if (resolvedDescription != null) json['description'] = resolvedDescription;
-    if (venueType != null) json['venueType'] = venueType!.value;
-
-    if (preferredGenres != null) json['preferredGenres'] = preferredGenres;
-
-    // Location: only send if valid and not [0,0]
-    if (location != null &&
-        location!.coordinates.length >= 2 &&
-        location!.longitude.abs() > 0.000001 &&
-        location!.latitude.abs() > 0.000001) {
-      json['location'] = location!.toJson();
-    }
-
-    if (phone != null) json['phone'] = phone;
-    if (showPhoneOnProfile != null) {
-      json['showPhoneOnProfile'] = showPhoneOnProfile;
-    }
-    if (contactEmail != null) json['contactEmail'] = contactEmail;
-
-    if (capacity != null) json['capacity'] = capacity;
-
-    // Budget: prefer direct schema keys (works with CreateVenueDto too)
-    if (minBudget != null) json['minBudget'] = minBudget;
-    if (maxBudget != null) json['maxBudget'] = maxBudget;
-    if (currency != null) json['currency'] = currency;
-
-    // Optional media
-    if (coverPhoto != null) json['coverPhoto'] = coverPhoto;
-    if (logo != null) json['logo'] = logo;
-    if (resolvedPhotoGallery != null) json['photoGallery'] = resolvedPhotoGallery;
-
-    // Allowed extras by UpdateVenueDto
-    if (amenities != null) json['amenities'] = amenities;
-    if (budgetRange != null) json['budgetRange'] = budgetRange!.toJson();
-    if (gigPreferences != null) json['gigPreferences'] = gigPreferences!.toJson();
-    if (socialLinks != null) json['socialLinks'] = socialLinks!.toJson();
-
-    return json;
-  }
 }
