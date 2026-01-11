@@ -29,6 +29,7 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
@@ -180,19 +181,19 @@ class DiscoveryItem {
       type: 'artist',
       title: artist.displayName,
       subtitle: artist.genres.isNotEmpty ? artist.genres.take(3).join(', ') : null,
-      imageUrl: artist.profilePhotoUrl,
-      rating: artist.reviewStats?.averageRating,
-      reviewCount: artist.reviewStats?.totalReviews,
+      imageUrl: artist.primaryPhoto,
+      rating: artist.rating,
+      reviewCount: artist.reviewCount,
       city: artist.location?.city,
       country: artist.location?.country,
       genres: artist.genres,
-      priceMin: artist.minPrice,
-      priceMax: artist.maxPrice,
-      currency: artist.currency,
+      priceMin: artist.priceRange?.min,
+      priceMax: artist.priceRange?.max,
+      currency: artist.priceRange?.currency,
       distanceMiles: distance ?? 0,
       recommendationScore: 0,
       isVerified: artist.isVerified,
-      isBoosted: artist.isBoosted ?? false,
+      isBoosted: artist.isBoosted,
       rawData: artist.toJson(),
     );
   }
@@ -201,16 +202,16 @@ class DiscoveryItem {
     return DiscoveryItem(
       id: venue.id,
       type: 'venue',
-      title: venue.venueName,
-      subtitle: venue.preferredGenres.isNotEmpty
-          ? venue.preferredGenres.take(3).join(', ')
+      title: venue.name,
+      subtitle: venue.gigPreferences?.preferredGenres.isNotEmpty == true
+          ? venue.gigPreferences!.preferredGenres.take(3).join(', ')
           : null,
-      imageUrl: venue.profilePhotoUrl,
-      rating: venue.reviewStatsAverageRating,
-      reviewCount: null,
+      imageUrl: venue.primaryPhoto,
+      rating: venue.rating ?? 0.0,
+      reviewCount: venue.reviewCount ?? 0,
       city: venue.location?.city,
       country: venue.location?.country,
-      genres: venue.preferredGenres,
+      genres: venue.gigPreferences?.preferredGenres ?? [],
       priceMin: null,
       priceMax: null,
       currency: null,
@@ -421,69 +422,7 @@ class SwipeRecord {
 }
 
 /// ═══════════════════════════════════════════════════════════════════════
-/// MATCH MODEL
-/// ═══════════════════════════════════════════════════════════════════════
 
-class Match {
-  final String id;
-  final String participantId;
-  final String participantName;
-  final String? participantPhoto;
-  final String participantType; // 'artist' or 'venue'
-  final String? lastMessage;
-  final DateTime? lastMessageAt;
-  final int unreadCount;
-  final DateTime createdAt;
-  final bool isActive;
-
-  Match({
-    required this.id,
-    required this.participantId,
-    required this.participantName,
-    this.participantPhoto,
-    required this.participantType,
-    this.lastMessage,
-    this.lastMessageAt,
-    this.unreadCount = 0,
-    required this.createdAt,
-    this.isActive = true,
-  });
-
-  factory Match.fromJson(Map<String, dynamic> json) {
-    return Match(
-      id: json['id'] ?? json['_id'] ?? '',
-      participantId: json['participantId'] ?? json['participant']?['id'] ?? '',
-      participantName: json['participantName'] ??
-          json['participant']?['displayName'] ??
-          json['participant']?['venueName'] ??
-          '',
-      participantPhoto: json['participantPhoto'] ?? json['participant']?['profilePhotoUrl'],
-      participantType: json['participantType'] ?? json['participant']?['type'] ?? 'artist',
-      lastMessage: json['lastMessage'],
-      lastMessageAt: json['lastMessageAt'] != null
-          ? DateTime.tryParse(json['lastMessageAt'])
-          : null,
-      unreadCount: json['unreadCount'] ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'])
-          : DateTime.now(),
-      isActive: json['isActive'] ?? true,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'participantId': participantId,
-        'participantName': participantName,
-        'participantPhoto': participantPhoto,
-        'participantType': participantType,
-        'lastMessage': lastMessage,
-        'lastMessageAt': lastMessageAt?.toIso8601String(),
-        'unreadCount': unreadCount,
-        'createdAt': createdAt.toIso8601String(),
-        'isActive': isActive,
-      };
-}
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// DISCOVERY FILTERS

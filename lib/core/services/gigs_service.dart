@@ -11,8 +11,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 
-import '../api/api_client.dart';
-import '../api/api_config.dart';
+import '../api/api.dart';
 import '../models/gig_models.dart';
 
 class GigsService {

@@ -96,29 +96,8 @@ class PermissionException extends ChatServiceException {
 }
 
 /// ═══════════════════════════════════════════════════════════════════════
-/// MESSAGE TYPES & ENUMS
+/// FILTER OPTIONS
 /// ═══════════════════════════════════════════════════════════════════════
-
-/// Type of message content
-enum MessageType {
-  text,
-  image,
-  audio,
-  file,
-  bookingRequest,
-  bookingConfirmation,
-  gigReminder,
-  system,
-}
-
-/// Status of message delivery
-enum MessageStatus {
-  sending,
-  sent,
-  delivered,
-  read,
-  failed,
-}
 
 /// Filter options for conversations
 enum ConversationFilter {
@@ -138,19 +117,13 @@ extension MessageTypeExtension on MessageType {
         return 'image';
       case MessageType.audio:
         return 'audio';
-      case MessageType.file:
-        return 'file';
-      case MessageType.bookingRequest:
-        return 'booking_request';
-      case MessageType.bookingConfirmation:
-        return 'booking_confirmation';
-      case MessageType.gigReminder:
-        return 'gig_reminder';
-      case MessageType.system:
+      case MessageType.systemNotice:
         return 'system';
     }
   }
+}
 
+class MessageTypeHelper {
   static MessageType fromBackendValue(String value) {
     switch (value.toLowerCase()) {
       case 'text':
@@ -159,16 +132,8 @@ extension MessageTypeExtension on MessageType {
         return MessageType.image;
       case 'audio':
         return MessageType.audio;
-      case 'file':
-        return MessageType.file;
-      case 'booking_request':
-        return MessageType.bookingRequest;
-      case 'booking_confirmation':
-        return MessageType.bookingConfirmation;
-      case 'gig_reminder':
-        return MessageType.gigReminder;
       case 'system':
-        return MessageType.system;
+        return MessageType.systemNotice;
       default:
         return MessageType.text;
     }

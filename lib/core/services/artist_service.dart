@@ -3,37 +3,12 @@
 library;
 
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../api/api.dart';
+import '../exceptions.dart';
 import '../models/models.dart';
-
-/// Custom exception classes for better error handling
-class ArtistServiceException implements Exception {
-  final String message;
-  final String? code;
-  final dynamic originalError;
-
-  const ArtistServiceException(this.message, {this.code, this.originalError});
-
-  @override
-  String toString() => 'ArtistServiceException: $message';
-}
-
-class NetworkException extends ArtistServiceException {
-  const NetworkException(String message, {dynamic originalError})
-      : super(message, code: 'NETWORK_ERROR', originalError: originalError);
-}
-
-class ValidationException extends ArtistServiceException {
-  const ValidationException(String message, {dynamic originalError})
-      : super(message, code: 'VALIDATION_ERROR', originalError: originalError);
-}
-
-class AuthenticationException extends ArtistServiceException {
-  const AuthenticationException(String message, {dynamic originalError})
-      : super(message, code: 'AUTH_ERROR', originalError: originalError);
-}
+import '../providers/auth_provider.dart';
 
 class ArtistService {
   final ApiClient _client = ApiClient();
@@ -88,7 +63,7 @@ class ArtistService {
       debugPrint('❌ [ArtistService] Search failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = ArtistServiceException('Unexpected error during search: $e');
+      final error = ArtistServiceError('Unexpected error during search: $e');
       debugPrint('❌ [ArtistService] Search failed: ${error.message}');
       throw error;
     } finally {
@@ -125,7 +100,7 @@ class ArtistService {
       debugPrint('❌ [ArtistService] Get profile failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = ArtistServiceException('Unexpected error getting profile: $e');
+      final error = ArtistServiceError('Unexpected error getting profile: $e');
       debugPrint('❌ [ArtistService] Get profile failed: ${error.message}');
       throw error;
     } finally {
@@ -174,7 +149,7 @@ class ArtistService {
       debugPrint('❌ [ArtistService] Update failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = ArtistServiceException('Unexpected error updating profile: $e');
+      final error = ArtistServiceError('Unexpected error updating profile: $e');
       debugPrint('❌ [ArtistService] Update failed: ${error.message}');
       throw error;
     } finally {
@@ -237,7 +212,7 @@ class ArtistService {
       if (result == null) {
         throw lastError != null
             ? _handleDioError(lastError as DioException, 'complete setup')
-            : ArtistServiceException('Setup failed after $_maxRetries attempts');
+            : ArtistServiceError('Setup failed after $_maxRetries attempts');
       }
 
       debugPrint('🎸 [ArtistService] Setup completed successfully: ${result.displayName}');
@@ -246,7 +221,7 @@ class ArtistService {
     } catch (e) {
       final error = e is ArtistServiceException
           ? e
-          : ArtistServiceException('Unexpected error during setup: $e');
+          : ArtistServiceError('Unexpected error during setup: $e');
       debugPrint('❌ [ArtistService] Setup failed: ${error.message}');
       throw error;
     } finally {
@@ -308,7 +283,7 @@ class ArtistService {
       if (result == null) {
         throw lastError != null
             ? _handleDioError(lastError as DioException, 'complete setup with data')
-            : ArtistServiceException('Raw setup failed after $_maxRetries attempts');
+            : ArtistServiceError('Raw setup failed after $_maxRetries attempts');
       }
 
       debugPrint('🎸 [ArtistService] Raw setup completed successfully: ${result.displayName}');
@@ -317,7 +292,7 @@ class ArtistService {
     } catch (e) {
       final error = e is ArtistServiceException
           ? e
-          : ArtistServiceException('Unexpected error during raw setup: $e');
+          : ArtistServiceError('Unexpected error during raw setup: $e');
       debugPrint('❌ [ArtistService] Raw setup failed: ${error.message}');
       throw error;
     } finally {
@@ -357,7 +332,7 @@ class ArtistService {
       debugPrint('❌ [ArtistService] Boost failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = ArtistServiceException('Unexpected error boosting profile: $e');
+      final error = ArtistServiceError('Unexpected error boosting profile: $e');
       debugPrint('❌ [ArtistService] Boost failed: ${error.message}');
       throw error;
     } finally {
@@ -396,7 +371,7 @@ class ArtistService {
       debugPrint('❌ [ArtistService] Get artist failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = ArtistServiceException('Unexpected error getting artist: $e');
+      final error = ArtistServiceError('Unexpected error getting artist: $e');
       debugPrint('❌ [ArtistService] Get artist failed: ${error.message}');
       throw error;
     } finally {
@@ -442,7 +417,7 @@ class ArtistService {
   }
 
   /// Handle Dio errors with specific error types
-  ArtistServiceException _handleDioError(DioException e, String operation) {
+  ServiceException _handleDioError(DioException e, String operation) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -578,3 +553,4 @@ class ArtistService {
     }
   }
 }
+

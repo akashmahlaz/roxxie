@@ -155,6 +155,12 @@ class Endpoints {
   static String venueDeleteGig(String venueId, String gigId) =>
       '/venues/$venueId/gigs/$gigId';
 
+  /// Get venues me
+  static const String venuesMe = '/venues/me';
+
+  /// Complete venue setup
+  static const String venuesCompleteSetup = '/venues/complete-setup';
+
   /// Get venue bookings
   static String venueBookings(String id) => '/venues/$id/bookings';
 
@@ -188,7 +194,11 @@ class Endpoints {
   static const String swipeLeft = '/swipes/left';
 
   /// Undo last swipe
+  static const String undoSwipe = '/swipes/undo';
   static const String swipeUndo = '/swipes/undo';
+
+  /// Get who liked me
+  static const String whoLikedMe = '/swipes/who-liked-me';
 
   /// Get swipe history
   static const String swipeHistory = '/swipes/history';
@@ -216,6 +226,9 @@ class Endpoints {
   /// Get match details (including conversation)
   static String matchDetails(String id) => '/matches/$id';
 
+  /// View match
+  static String matchView(String id) => '/matches/$id/view';
+
   /// Unmatch with user
   static String unmatch(String id) => '/matches/$id/unmatch';
 
@@ -227,6 +240,9 @@ class Endpoints {
 
   /// Get new matches count
   static const String newMatchesCount = '/matches/new/count';
+
+  /// Get matches unread count
+  static const String matchesUnreadCount = '/matches/unread/count';
 
   // ═══════════════════════════════════════════════════════════════════════
   // MESSAGES / CHAT
@@ -307,6 +323,15 @@ class Endpoints {
 
   /// Get gig categories
   static const String gigCategories = '/gigs/categories';
+
+  /// Create gig (venue only)
+  static const String gigsCreate = '/gigs/create';
+
+  /// Get my gigs
+  static const String gigsMine = '/gigs/mine';
+
+  /// Discover gigs
+  static const String gigsDiscover = '/gigs/discover';
 
   /// Create gig request/application
   static const String gigApply = '/gigs/apply';
@@ -537,6 +562,41 @@ class Endpoints {
 
   /// Get networking events
   static const String networkingEvents = '/community/events';
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // MESSAGES
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get messages
+  static const String messagesGet = '/messages';
+
+  /// Send message
+  static const String messagesSend = '/messages/send';
+
+  /// Mark messages as read
+  static const String messagesRead = '/messages/read';
+
+  /// Delete message
+  static const String messageDelete = '/messages/delete';
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // UPLOADS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get upload signed params
+  static const String uploadSignedParams = '/uploads/signed-params';
+
+  /// Upload profile photo
+  static const String uploadProfilePhoto = '/uploads/profile-photo';
+
+  /// Upload gallery images
+  static const String uploadGallery = '/uploads/gallery';
+
+  /// Upload audio
+  static const String uploadAudio = '/uploads/audio';
+
+  /// Upload video
+  static const String uploadVideo = '/uploads/video';
 
   // ═══════════════════════════════════════════════════════════════════════
   // SEARCH & DISCOVERY
