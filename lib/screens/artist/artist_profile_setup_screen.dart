@@ -122,8 +122,8 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
         _profileData.stageName = artistProfile.stageName;
         _profileData.bio = artistProfile.bio;
         _profileData.genres = List<String>.from(artistProfile.genres);
-        _profileData.minPrice = artistProfile.minPrice ?? 100.0;
-        _profileData.maxPrice = artistProfile.maxPrice ?? 1000.0;
+        _profileData.minPrice = artistProfile.minPrice;
+        _profileData.maxPrice = artistProfile.maxPrice;
         _profileData.currency = artistProfile.currency;
 
         // Pre-fill location data from existing profile
@@ -594,7 +594,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
                     Text(
                       'Step ${_currentStep + 1} of $_totalSteps',
                       style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textSecondary(brightness),
+                        color: AppColors.textSec(brightness),
                       ),
                     ),
                   ],
@@ -637,7 +637,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
                     Text(
                       _stepSubtitles[_currentStep],
                       style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textSecondary(brightness),
+                        color: AppColors.textSec(brightness),
                       ),
                     ),
                   ],

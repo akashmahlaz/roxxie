@@ -433,9 +433,12 @@ class Artist {
   final DateTime updatedAt;
 
   // Price range getters for compatibility with UI
-  double? get minPrice => priceRange?.min;
-  double? get maxPrice => priceRange?.max;
+  double get minPrice => priceRange?.min ?? 100.0;
+  double get maxPrice => priceRange?.max ?? 1000.0;
   String get currency => priceRange?.currency ?? 'USD';
+
+  // Compatibility getter for travel radius
+  int get travelRadius => maxTravelDistance;
 
   Artist({
     required this.id,
