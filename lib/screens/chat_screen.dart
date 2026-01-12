@@ -93,8 +93,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_conversationId == null) return;
     try {
       final chatProvider = context.read<ChatProvider>();
-      final messages = await chatProvider.getMessages(_conversationId!);
-      setState(() => _messages = messages);
+      await chatProvider.loadMessages();
+      // Messages are managed by the provider, no need to set state
       _scrollToBottom();
     } catch (e) {
       debugPrint('Failed to load messages: $e');

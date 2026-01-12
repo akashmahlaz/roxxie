@@ -45,7 +45,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
 
     if (image != null) {
       setState(() {
-        widget.profileData.profilePhotoPath = image.path;
+        widget.profileData.profilePhoto = image.path;
       });
     }
   }
@@ -59,13 +59,13 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
     if (images.isNotEmpty) {
       setState(() {
         // Limit to 6 additional photos
-        final remaining = 6 - widget.profileData.photoPaths.length;
+        final remaining = 6 - widget.profileData.photoGallery.length;
         final toAdd = images.take(remaining).map((e) => e.path).toList();
-        widget.profileData.photoPaths.addAll(toAdd);
+        widget.profileData.photoGallery.addAll(toAdd);
       });
 
       if (images.length >
-          6 - widget.profileData.photoPaths.length + images.length) {
+          6 - widget.profileData.photoGallery.length + images.length) {
         _showSnackBar('Maximum 6 photos allowed');
       }
     }
@@ -97,12 +97,12 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
 
       if (title != null && title.isNotEmpty) {
         setState(() {
-          widget.profileData.audioSamples.add(
-            AudioSample(
-              title: title,
-              filePath: file.path!,
-            ),
-          );
+          widget.profileData.audioSamples.add({
+            'title': title,
+            'url': file.path!,
+            'durationSeconds': null,
+            'cloudinaryPublicId': null,
+          });
         });
       }
     }
@@ -124,9 +124,12 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
 
       if (title != null && title.isNotEmpty) {
         setState(() {
-          widget.profileData.videoSamples.add(
-            VideoSample(title: title, filePath: video.path),
-          );
+          widget.profileData.videoSamples.add({
+            'title': title,
+            'url': video.path,
+            'durationSeconds': null,
+            'thumbnailUrl': null,
+          });
         });
       }
     }
@@ -134,7 +137,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
 
   void _removePhoto(int index) {
     setState(() {
-      widget.profileData.photoPaths.removeAt(index);
+      widget.profileData.photoGallery.removeAt(index);
     });
   }
 
@@ -162,7 +165,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
   }
 
   void _validateAndContinue() {
-    if (widget.profileData.profilePhotoPath == null) {
+    if (widget.profileData.profilePhoto == null) {
       _showSnackBar('Please add a profile photo');
       return;
     }
@@ -198,7 +201,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
           _buildSectionTitle(
             'Photo Gallery',
             brightness,
-            subtitle: '${widget.profileData.photoPaths.length}/6 photos',
+            subtitle: '${widget.profileData.photoGallery.length}/6 photos',
           ),
           const SizedBox(height: 12),
           _buildPhotoGallery(brightness),
@@ -267,7 +270,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
   }
 
   Widget _buildProfilePhotoUpload(Brightness brightness) {
-    final hasPhoto = widget.profileData.profilePhotoPath != null;
+    final hasPhoto = widget.profileData.profilePhoto != null;
 
     return GestureDetector(
       onTap: _pickProfilePhoto,
@@ -297,7 +300,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(17),
                     child: Image.file(
-                      File(widget.profileData.profilePhotoPath!),
+                      File(widget.profileData.profilePhoto!),
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -356,12 +359,12 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: widget.profileData.photoPaths.length + 1,
+        itemCount: widget.profileData.photoGallery.length + 1,
         itemBuilder: (context, index) {
-          if (index == widget.profileData.photoPaths.length) {
+          if (index == widget.profileData.photoGallery.length) {
             // Add button
             return GestureDetector(
-              onTap: widget.profileData.photoPaths.length < 6
+              onTap: widget.profileData.photoGallery.length < 6
                   ? _pickAdditionalPhotos
                   : null,
               child: Container(
@@ -407,7 +410,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(13),
                   child: Image.file(
-                    File(widget.profileData.photoPaths[index]),
+                    File(widget.profileData.photoGallery[index]),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -473,16 +476,16 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        sample.title,
+                        sample["title"],
                         style: TextStyle(
                           color: AppColors.text(brightness),
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (sample.duration != null)
+                      if (sample["durationSeconds"] != null)
                         Text(
-                          _formatDuration(sample.duration!),
+                          _formatDuration(sample["durationSeconds"]!),
                           style: TextStyle(
                             color: AppColors.textTert(brightness),
                             fontSize: 12,
@@ -570,7 +573,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    video.title,
+                    video["title"],
                     style: TextStyle(
                       color: AppColors.text(brightness),
                       fontSize: 14,

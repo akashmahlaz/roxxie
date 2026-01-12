@@ -141,9 +141,9 @@ class ProfilePreviewStep extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(19),
                 ),
-                child: profileData.profilePhotoPath != null
+                child: profileData.profilePhoto != null
                     ? Image.file(
-                        File(profileData.profilePhotoPath!),
+                        File(profileData.profilePhoto!),
                         height: 220,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -466,16 +466,16 @@ class ProfilePreviewStep extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          sample.title,
+                          sample["title"],
                           style: TextStyle(
                             color: AppColors.text(brightness),
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        if (sample.duration != null)
+                        if (sample["durationSeconds"] != null)
                           Text(
-                            _formatDuration(sample.duration!),
+                            _formatDuration(sample["durationSeconds"]!),
                             style: TextStyle(
                               color: AppColors.textTert(brightness),
                               fontSize: 12,
@@ -527,7 +527,7 @@ class ProfilePreviewStep extends StatelessWidget {
                         left: 8,
                         right: 8,
                         child: Text(
-                          video.title,
+                          video["title"],
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
