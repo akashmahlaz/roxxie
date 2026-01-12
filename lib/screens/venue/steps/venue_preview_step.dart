@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
-import '../venue_profile_setup_screen.dart';
+import '../../../core/models/venue_models.dart';
+
 
 /// 👁️ STEP 5: VENUE PREVIEW
 ///

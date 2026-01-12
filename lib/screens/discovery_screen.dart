@@ -1524,7 +1524,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'You and ${_pendingMatch?.participantName} liked each other',
+                    "You and ${_pendingMatch != null ? _deriveMatchParticipantName(_pendingMatch!) : 'your match'} liked each other",
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 18,
@@ -1605,34 +1605,121 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
+
+
   Widget _buildMatchAvatar() {
+
+    final match = _pendingMatch;
+    final photoUrl = match != null ? _deriveMatchParticipantPhoto(match) : null;
+
     return Container(
+
       width: 80,
+
       height: 80,
+
       decoration: BoxDecoration(
+
         shape: BoxShape.circle,
+
         border: Border.all(color: Colors.white, width: 3),
-        image: _pendingMatch?.participantPhoto != null
+
+        image: photoUrl != null
+
             ? DecorationImage(
-                image: NetworkImage(_pendingMatch!.participantPhoto!),
+
+                image: NetworkImage(photoUrl),
+
                 fit: BoxFit.cover,
+
               )
+
             : null,
+
         color: AppColors.crimson.withValues(alpha: 0.3),
+
       ),
-      child: _pendingMatch?.participantPhoto == null
-          ? Icon(
+
+      child: photoUrl == null
+
+          ? const Icon(
+
               Icons.person_rounded,
+
               color: Colors.white,
+
               size: 40,
+
             )
+
           : null,
+
     );
+
   }
 
+
+
+  String _deriveMatchParticipantName(Match match) {
+
+    final artistName = match.artist?.stageName?.trim();
+
+    if (artistName != null && artistName.isNotEmpty) {
+
+      return artistName;
+
+    }
+
+
+
+    final venueName = match.venue?.venueName;
+    if (venueName != null && venueName.trim().isNotEmpty) {
+
+      return venueName.trim();
+
+    }
+
+
+
+    return 'your match';
+
+  }
+
+
+
+  String? _deriveMatchParticipantPhoto(Match match) {
+
+    final artistPhoto = match.artist?.primaryPhoto;
+
+    if (artistPhoto != null && artistPhoto.isNotEmpty) {
+
+      return artistPhoto;
+
+    }
+
+
+
+    final venuePhoto = match.venue?.primaryPhoto;
+
+    if (venuePhoto != null && venuePhoto.isNotEmpty) {
+
+      return venuePhoto;
+
+    }
+
+
+
+    return null;
+
+  }
+
+
   // ═══════════════════════════════════════════════════════
+
   // HELPER METHODS
+
   // ═══════════════════════════════════════════════════════
+
 
 
   void _onLocationFilterChanged(bool enabled) {
