@@ -36,7 +36,7 @@ class DiscoveryScreen extends StatefulWidget {
 }
 
 class _DiscoveryScreenState extends State<DiscoveryScreen>
-    with TickerProviderStateMixin, TickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Controllers
   late AnimationController _cardController;
   late AnimationController _matchController;

@@ -65,23 +65,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       if (widget.matchId != null) {
-        final match = await chatProvider.getMatchById(widget.matchId!);
+        await chatProvider.enterChat(widget.matchId!);
         setState(() {
-          _conversationId = match.id;
-          _participantName = match.participantName;
-          _participantPhoto = match.participantPhoto;
-          _participantOnline = match.isOnline;
+          _conversationId = widget.matchId!;
+          _participantName = widget.participantName ?? 'Unknown';
+          _participantPhoto = widget.participantPhoto;
+          _participantOnline = false; // Default value
         });
       } else if (widget.participantId != null) {
-        final conversation = await chatProvider.getOrCreateConversation(
-          participantId: widget.participantId!,
-          participantType: 'user',
-        );
+        // For now, use participantId as matchId - this should be handled by the backend
+        await chatProvider.enterChat(widget.participantId!);
         setState(() {
-          _conversationId = conversation.id;
-          _participantName = widget.participantName;
+          _conversationId = widget.participantId!;
+          _participantName = widget.participantName ?? 'Unknown';
           _participantPhoto = widget.participantPhoto;
-          _participantOnline = conversation.isOnline;
+          _participantOnline = false; // Default value
         });
       }
 
@@ -125,10 +123,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final chatProvider = context.read<ChatProvider>();
-      await chatProvider.sendMessage(
-        conversationId: _conversationId!,
-        content: content,
-      );
+      await chatProvider.sendMessage(content);
       await _loadMessages();
     } catch (e) {
       _showError('Failed to send message');
@@ -161,9 +156,9 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       if (image != null) {
         final chatProvider = context.read<ChatProvider>();
-        await chatProvider.sendImageMessage(
-          conversationId: _conversationId!,
-          imageUrl: image.path,
+        await chatProvider.sendMessage(
+          image.path,
+          type: MessageType.image,
         );
         await _loadMessages();
       }
@@ -346,10 +341,10 @@ class _ChatScreenState extends State<ChatScreen> {
               ? AppColors.crimson
               : AppColors.surface(brightness).withValues(alpha: 0.95),
           borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(isOwnMessage ? 16 : 4),
-            bottomRight: Radius.circular(isOwnMessage ? 4 : 16),
-            topLeft: 16,
-            topRight: 16,
+            bottomLeft: Radius.circular(isOwnMessage ? 16.0 : 4.0),
+            bottomRight: Radius.circular(isOwnMessage ? 4.0 : 16.0),
+            topLeft: const Radius.circular(16.0),
+            topRight: const Radius.circular(16.0),
           ),
         ),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),

@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../api/api.dart';
 import '../models/models.dart';
+import '../exceptions.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// CUSTOM EXCEPTION CLASSES
@@ -38,27 +39,8 @@ class VenueServiceException implements Exception {
   String toString() => 'VenueServiceException: $message';
 }
 
-class NetworkException extends VenueServiceException {
-  const NetworkException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'NETWORK_ERROR',
-          originalError: originalError,
-        );
-}
-
-class ValidationException extends VenueServiceException {
-  const ValidationException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'VALIDATION_ERROR',
-          originalError: originalError,
-        );
-}
+// NetworkException and ValidationException are now defined in core/exceptions.dart
+// to avoid duplicate definitions
 
 class AuthenticationException extends VenueServiceException {
   const AuthenticationException(
@@ -654,6 +636,12 @@ class VenueService {
       case DioExceptionType.cancel:
         return VenueServiceException(
           'Request was cancelled',
+          originalError: e,
+        );
+
+      case DioExceptionType.connectionError:
+        return NetworkException(
+          'Connection error. Please check your network.',
           originalError: e,
         );
 

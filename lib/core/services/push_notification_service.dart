@@ -393,9 +393,6 @@ class PushNotificationService {
       debugPrint('⚠️ [PushNotificationService] Permission check failed: $e');
       return const NotificationSettings(
         authorizationStatus: AuthorizationStatus.notDetermined,
-        alert: Setting.notSupported,
-        badge: Setting.notSupported,
-        sound: Setting.notSupported,
       );
     }
   }
@@ -403,7 +400,7 @@ class PushNotificationService {
   /// Open system notification settings
   Future<void> openSettings() async {
     try {
-      await _firebaseMessaging.openSettingsForNotifications();
+      await FirebaseMessaging.instance.openNotificationSettings();
     } catch (e) {
       debugPrint('⚠️ [PushNotificationService] Cannot open settings: $e');
     }

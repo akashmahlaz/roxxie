@@ -1113,6 +1113,7 @@ class Venue {
 
   // Additional properties for compatibility
   String get primaryPhoto => profilePhotoUrl ?? '';
+  String get venueName => name;
 
   Venue({
     required this.id,

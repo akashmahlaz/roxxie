@@ -28,72 +28,7 @@ import 'package:dio/dio.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../api/api.dart';
 import '../models/models.dart';
-
-/// ═══════════════════════════════════════════════════════════════════════
-/// CUSTOM EXCEPTION CLASSES
-/// ═══════════════════════════════════════════════════════════════════════
-
-class ChatServiceException implements Exception {
-  final String message;
-  final String code;
-  final dynamic originalError;
-
-  const ChatServiceException(
-    this.message, {
-    this.code = 'CHAT_ERROR',
-    this.originalError,
-  });
-
-  @override
-  String toString() => 'ChatServiceException[$code]: $message';
-}
-
-class NetworkException extends ChatServiceException {
-  const NetworkException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'NETWORK_ERROR',
-          originalError: originalError,
-        );
-}
-
-class ValidationException extends ChatServiceException {
-  const ValidationException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'VALIDATION_ERROR',
-          originalError: originalError,
-        );
-}
-
-class AuthenticationException extends ChatServiceException {
-  const AuthenticationException([String message = 'Authentication required'])
-      : super(
-          message,
-          code: 'AUTH_ERROR',
-        );
-}
-
-class NotFoundException extends ChatServiceException {
-  const NotFoundException([String message = 'Resource not found'])
-      : super(
-          message,
-          code: 'NOT_FOUND',
-        );
-}
-
-class PermissionException extends ChatServiceException {
-  const PermissionException([
-    String message = 'You do not have permission to perform this action',
-  ]) : super(
-          message,
-          code: 'PERMISSION_DENIED',
-        );
-}
+import '../exceptions.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// FILTER OPTIONS
@@ -119,6 +54,21 @@ extension MessageTypeExtension on MessageType {
         return 'audio';
       case MessageType.systemNotice:
         return 'system';
+    }
+  }
+
+  static MessageType fromBackendValue(String value) {
+    switch (value.toLowerCase()) {
+      case 'text':
+        return MessageType.text;
+      case 'image':
+        return MessageType.image;
+      case 'audio':
+        return MessageType.audio;
+      case 'system':
+        return MessageType.systemNotice;
+      default:
+        return MessageType.text;
     }
   }
 }
@@ -257,24 +207,30 @@ class ChatMessage {
     final now = DateTime.now();
     final diff = now.difference(createdAt);
 
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return createdAt.hour.toString().padLeft(2, '0') +
-        ':' +
-        createdAt.minute.toString().padLeft(2, '0');
-    if (diff.inDays < 7) return createdAt.weekday == DateTime.monday
-        ? 'Mon'
-        : createdAt.weekday == DateTime.tuesday
-            ? 'Tue'
-            : createdAt.weekday == DateTime.wednesday
-                ? 'Wed'
-                : createdAt.weekday == DateTime.thursday
-                    ? 'Thu'
-                    : createdAt.weekday == DateTime.friday
-                        ? 'Fri'
-                        : createdAt.weekday == DateTime.saturday
-                            ? 'Sat'
-                            : 'Sun';
+    if (diff.inMinutes < 1) {
+      return 'Just now';
+    }
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    }
+    if (diff.inHours < 24) {
+      return '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
+    }
+    if (diff.inDays < 7) {
+      return createdAt.weekday == DateTime.monday
+          ? 'Mon'
+          : createdAt.weekday == DateTime.tuesday
+              ? 'Tue'
+              : createdAt.weekday == DateTime.wednesday
+                  ? 'Wed'
+                  : createdAt.weekday == DateTime.thursday
+                      ? 'Thu'
+                      : createdAt.weekday == DateTime.friday
+                          ? 'Fri'
+                          : createdAt.weekday == DateTime.saturday
+                              ? 'Sat'
+                              : 'Sun';
+    }
     return '${createdAt.month}/${createdAt.day}/${createdAt.year}';
   }
 }
@@ -540,7 +496,7 @@ class ChatService {
       debugPrint('❌ [ChatService] Failed to get conversations: ${error.message}');
       throw error;
     } catch (e) {
-      final error = ChatServiceException(
+      final error = ChatServiceError(
         'Unexpected error getting conversations: $e',
       );
       debugPrint('❌ [ChatService] Failed to get conversations: ${error.message}');
@@ -600,7 +556,7 @@ class ChatService {
       );
 
       if (response.data == null) {
-        throw ChatServiceException('Failed to create conversation');
+        throw ChatServiceError('Failed to create conversation');
       }
 
       final conversation =
@@ -639,7 +595,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to archive conversation: $e');
-      throw ChatServiceException('Failed to archive conversation: $e');
+      throw ChatServiceError('Failed to archive conversation: $e');
     }
   }
 
@@ -665,7 +621,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to unarchive conversation: $e');
-      throw ChatServiceException('Failed to unarchive conversation: $e');
+      throw ChatServiceError('Failed to unarchive conversation: $e');
     }
   }
 
@@ -691,7 +647,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to pin conversation: $e');
-      throw ChatServiceException('Failed to pin conversation: $e');
+      throw ChatServiceError('Failed to pin conversation: $e');
     }
   }
 
@@ -717,7 +673,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to unpin conversation: $e');
-      throw ChatServiceException('Failed to unpin conversation: $e');
+      throw ChatServiceError('Failed to unpin conversation: $e');
     }
   }
 
@@ -743,7 +699,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to mute conversation: $e');
-      throw ChatServiceException('Failed to mute conversation: $e');
+      throw ChatServiceError('Failed to mute conversation: $e');
     }
   }
 
@@ -769,7 +725,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to unmute conversation: $e');
-      throw ChatServiceException('Failed to unmute conversation: $e');
+      throw ChatServiceError('Failed to unmute conversation: $e');
     }
   }
 
@@ -792,7 +748,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to delete conversation: $e');
-      throw ChatServiceException('Failed to delete conversation: $e');
+      throw ChatServiceError('Failed to delete conversation: $e');
     }
   }
 
@@ -816,7 +772,7 @@ class ChatService {
       await _checkConnectivity();
 
       // Check cache first
-      final cacheKey = '$conversationId\_$page';
+      final cacheKey = '${conversationId}_$page';
       if (_messageCache.containsKey(cacheKey) && page == 1) {
         return _messageCache[cacheKey]!;
       }
@@ -877,7 +833,7 @@ class ChatService {
       debugPrint('❌ [ChatService] Failed to get messages: ${error.message}');
       throw error;
     } catch (e) {
-      final error = ChatServiceException(
+      final error = ChatServiceError(
         'Unexpected error getting messages: $e',
       );
       debugPrint('❌ [ChatService] Failed to get messages: ${error.message}');
@@ -967,11 +923,11 @@ class ChatService {
         _updateMessageStatus(conversationId, tempId, MessageStatus.failed);
 
         throw lastError != null
-            ? ChatServiceException(
+            ? ChatServiceError(
                 'Failed to send message: ${lastError.toString()}',
                 originalError: lastError,
               )
-            : ChatServiceException('Failed to send message');
+            : ChatServiceError('Failed to send message');
       }
 
       // Replace optimistic message with actual
@@ -1021,7 +977,7 @@ class ChatService {
       );
 
       if (response.data == null) {
-        throw ChatServiceException('Failed to send image');
+        throw ChatServiceError('Failed to send image');
       }
 
       final message =
@@ -1037,7 +993,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to send image: $e');
-      throw ChatServiceException('Failed to send image: $e');
+      throw ChatServiceError('Failed to send image: $e');
     }
   }
 
@@ -1092,7 +1048,7 @@ class ChatService {
       );
 
       if (response.data == null) {
-        throw ChatServiceException('Failed to edit message');
+        throw ChatServiceError('Failed to edit message');
       }
 
       final message =
@@ -1105,7 +1061,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to edit message: $e');
-      throw ChatServiceException('Failed to edit message: $e');
+      throw ChatServiceError('Failed to edit message: $e');
     }
   }
 
@@ -1134,7 +1090,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to delete message: $e');
-      throw ChatServiceException('Failed to delete message: $e');
+      throw ChatServiceError('Failed to delete message: $e');
     }
   }
 
@@ -1178,7 +1134,7 @@ class ChatService {
 
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to search messages: $e');
-      throw ChatServiceException('Failed to search messages: $e');
+      throw ChatServiceError('Failed to search messages: $e');
     }
   }
 
@@ -1223,7 +1179,10 @@ class ChatService {
       final token = await _client.getAccessToken();
 
       if (token == null) {
-        throw AuthenticationException();
+        throw AuthenticationException(
+          'Authentication required',
+          originalError: null,
+        );
       }
 
       final wsUrl = '${ApiConfig.wsUrl}/chat?token=$token';
@@ -1499,7 +1458,10 @@ class ChatService {
   Future<void> _checkAuthentication() async {
     final isLoggedIn = await _client.getAccessToken();
     if (isLoggedIn == null || isLoggedIn.isEmpty) {
-      throw AuthenticationException();
+      throw AuthenticationException(
+        'Authentication required',
+        originalError: null,
+      );
     }
     _currentUserId ??= isLoggedIn; // Decode token to get user ID
   }
@@ -1515,7 +1477,7 @@ class ChatService {
     }
   }
 
-  ChatServiceException _handleDioError(DioException e, String context) {
+  GigMatchException _handleDioError(DioException e, String context) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
         return NetworkException(
@@ -1534,7 +1496,6 @@ class ChatService {
         );
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
-        final data = e.response?.data;
 
         if (statusCode == 401) {
           return AuthenticationException(
@@ -1543,10 +1504,16 @@ class ChatService {
           );
         }
         if (statusCode == 403) {
-          return PermissionException();
+          return PermissionException(
+            'You do not have permission to perform this action',
+            originalError: e,
+          );
         }
         if (statusCode == 404) {
-          return NotFoundException('Resource not found');
+          return NotFoundException(
+            'Resource not found',
+            code: 'NOT_FOUND',
+          );
         }
         if (statusCode == 429) {
           return NetworkException(
@@ -1555,20 +1522,32 @@ class ChatService {
           );
         }
         if (statusCode != null && statusCode >= 500) {
-          return ChatServiceException(
+          return ChatServiceError(
             'Server error during $context. Please try again later.',
             code: 'SERVER_ERROR',
             originalError: e,
           );
         }
-        return ChatServiceException(
+        return ChatServiceError(
           'Request failed: ${e.message}',
           originalError: e,
         );
 
       case DioExceptionType.cancel:
-        return ChatServiceException(
+        return ChatServiceError(
           'Request was cancelled during $context',
+          originalError: e,
+        );
+
+      case DioExceptionType.badCertificate:
+        return ChatServiceError(
+          'Certificate verification failed during $context',
+          originalError: e,
+        );
+
+      case DioExceptionType.connectionError:
+        return NetworkException(
+          'Connection error during $context. Please check your network.',
           originalError: e,
         );
 
@@ -1579,7 +1558,7 @@ class ChatService {
             originalError: e,
           );
         }
-        return ChatServiceException(
+        return ChatServiceError(
           'An unexpected error occurred during $context. Please try again.',
           originalError: e,
         );

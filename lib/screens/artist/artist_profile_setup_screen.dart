@@ -690,24 +690,3 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
     );
   }
 }
-
-class AvailabilitySlot {
-  final DateTime date;
-  final TimeOfDay startTime;
-  final TimeOfDay endTime;
-  bool isBooked;
-
-  AvailabilitySlot({
-    required this.date,
-    required this.startTime,
-    required this.endTime,
-    this.isBooked = false,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'date': date.toIso8601String(),
-    'startTime': '${startTime.hour}:${startTime.minute}',
-    'endTime': '${endTime.hour}:${endTime.minute}',
-    'isBooked': isBooked,
-  };
-}

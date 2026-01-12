@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
-import '../../core/models/models.dart';
+import '../../core/models/venue_models.dart';
 import 'steps/venue_basic_info_step.dart';
 import 'steps/venue_media_step.dart';
 import 'steps/venue_details_step.dart';

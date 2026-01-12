@@ -3,37 +3,12 @@
 library;
 
 import 'dart:io';
+import 'dart:ui' show Locale;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
-
-/// Custom exception classes for location errors
-class LocationServiceException implements Exception {
-  final String message;
-  final String? code;
-  final dynamic originalError;
-
-  const LocationServiceException(this.message, {this.code, this.originalError});
-
-  @override
-  String toString() => 'LocationServiceException: $message';
-}
-
-class PermissionException extends LocationServiceException {
-  const PermissionException(String message, {dynamic originalError})
-      : super(message, code: 'PERMISSION_ERROR', originalError: originalError);
-}
-
-class ServiceDisabledException extends LocationServiceException {
-  const ServiceDisabledException(String message, {dynamic originalError})
-      : super(message, code: 'SERVICE_DISABLED', originalError: originalError);
-}
-
-class NetworkException extends LocationServiceException {
-  const NetworkException(String message, {dynamic originalError})
-      : super(message, code: 'NETWORK_ERROR', originalError: originalError);
-}
+import '../exceptions.dart';
 
 enum LocationPermissionState {
   granted,
@@ -65,8 +40,10 @@ class LocationService {
 
       // Get current position with timeout
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 15),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
+        ),
       );
 
       debugPrint('📍 [LocationService] Location obtained in ${stopwatch.elapsedMilliseconds}ms');
@@ -76,15 +53,11 @@ class LocationService {
 
     } on PermissionDeniedException {
       throw PermissionException('Location permission denied. Please enable location access in settings.');
-    } on PermissionDeniedForeverException {
-      throw PermissionException('Location permission permanently denied. Please enable in app settings.');
     } on LocationServiceDisabledException {
       throw ServiceDisabledException('Location service is disabled. Please enable location services.');
-    } on TimeoutException {
-      throw LocationServiceException('Location request timed out. Please try again.');
     } catch (e) {
       debugPrint('❌ [LocationService] Get location error: $e');
-      throw LocationServiceException('Failed to get location: $e');
+      throw LocationTimeoutException('Failed to get location: $e');
     } finally {
       stopwatch.stop();
     }
@@ -131,7 +104,6 @@ class LocationService {
           final placemarks = await placemarkFromCoordinates(
             latitude,
             longitude,
-            localeIdentifier: 'en_US',
           );
 
           if (placemarks.isNotEmpty) {
@@ -149,7 +121,7 @@ class LocationService {
             await Future.delayed(delay);
           }
         } catch (e) {
-          lastError = LocationServiceException('Geocoding error: $e');
+          lastError = LocationTimeoutException('Geocoding error: $e');
           if (attempt < _maxRetries) {
             final delay = _retryDelay * attempt;
             debugPrint('⚠️ [LocationService] Geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...');
@@ -159,7 +131,7 @@ class LocationService {
       }
 
       if (address == null) {
-        throw lastError ?? LocationServiceException('Failed to get address after $_maxRetries attempts');
+        throw lastError ?? LocationTimeoutException('Failed to get address after $_maxRetries attempts');
       }
 
       debugPrint('🌍 [LocationService] Address resolved in ${stopwatch.elapsedMilliseconds}ms');
@@ -167,7 +139,7 @@ class LocationService {
 
     } catch (e) {
       debugPrint('❌ [LocationService] Get address error: $e');
-      throw LocationServiceException('Failed to get address: $e');
+      throw LocationTimeoutException('Failed to get address: $e');
     } finally {
       stopwatch.stop();
     }
@@ -182,7 +154,7 @@ class LocationService {
 
       // Validate address
       if (address.trim().isEmpty) {
-        throw LocationServiceException('Address cannot be empty');
+        throw ValidationException('Address cannot be empty');
       }
 
       // Retry logic for geocoding
@@ -195,7 +167,6 @@ class LocationService {
 
           locations = await locationFromAddress(
             address,
-            localeIdentifier: 'en_US',
           );
 
           if (locations != null && locations.isNotEmpty) {
@@ -211,7 +182,7 @@ class LocationService {
             await Future.delayed(delay);
           }
         } catch (e) {
-          lastError = LocationServiceException('Address geocoding error: $e');
+          lastError = LocationTimeoutException('Address geocoding error: $e');
           if (attempt < _maxRetries) {
             final delay = _retryDelay * attempt;
             debugPrint('⚠️ [LocationService] Address geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...');
@@ -221,7 +192,7 @@ class LocationService {
       }
 
       if (locations == null || locations.isEmpty) {
-        throw lastError ?? LocationServiceException('Failed to find coordinates for address after $_maxRetries attempts');
+        throw lastError ?? LocationTimeoutException('Failed to find coordinates for address after $_maxRetries attempts');
       }
 
       debugPrint('📍 [LocationService] Address resolved in ${stopwatch.elapsedMilliseconds}ms');
@@ -229,7 +200,7 @@ class LocationService {
 
     } catch (e) {
       debugPrint('❌ [LocationService] Get coordinates error: $e');
-      throw LocationServiceException('Failed to get coordinates: $e');
+      throw LocationTimeoutException('Failed to get coordinates: $e');
     } finally {
       stopwatch.stop();
     }
@@ -300,7 +271,7 @@ class LocationService {
       debugPrint('🔍 [LocationService] Searching locations: $query');
 
       if (query.trim().isEmpty) {
-        throw LocationServiceException('Search query cannot be empty');
+        throw ValidationException('Search query cannot be empty');
       }
 
       final locations = await getCoordinatesFromAddress(query);
@@ -338,7 +309,7 @@ class LocationService {
 
     } catch (e) {
       debugPrint('❌ [LocationService] Search locations error: $e');
-      throw LocationServiceException('Failed to search locations: $e');
+      throw LocationTimeoutException('Failed to search locations: $e');
     } finally {
       stopwatch.stop();
     }
@@ -610,10 +581,10 @@ class LocationService {
   /// Validate coordinates
   void _validateCoordinates(double latitude, double longitude) {
     if (latitude < -90 || latitude > 90) {
-      throw LocationServiceException('Invalid latitude: $latitude (must be between -90 and 90)');
+      throw ValidationException('Invalid latitude: $latitude (must be between -90 and 90)');
     }
     if (longitude < -180 || longitude > 180) {
-      throw LocationServiceException('Invalid longitude: $longitude (must be between -180 and 180)');
+      throw ValidationException('Invalid longitude: $longitude (must be between -180 and 180)');
     }
   }
 

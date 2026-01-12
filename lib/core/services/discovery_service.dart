@@ -35,69 +35,9 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../api/api.dart';
 import '../models/models.dart';
+import '../exceptions.dart';
 
-/// ═══════════════════════════════════════════════════════════════════════
-/// CUSTOM EXCEPTION CLASSES
-/// ═══════════════════════════════════════════════════════════════════════
 
-class DiscoveryServiceException implements Exception {
-  final String message;
-  final String? code;
-  final dynamic originalError;
-
-  const DiscoveryServiceException(
-    this.message, {
-    this.code,
-    this.originalError,
-  });
-
-  @override
-  String toString() => 'DiscoveryServiceException: $message';
-}
-
-class NetworkException extends DiscoveryServiceException {
-  const NetworkException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'NETWORK_ERROR',
-          originalError: originalError,
-        );
-}
-
-class ValidationException extends DiscoveryServiceException {
-  const ValidationException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'VALIDATION_ERROR',
-          originalError: originalError,
-        );
-}
-
-class AuthenticationException extends DiscoveryServiceException {
-  const AuthenticationException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'AUTH_ERROR',
-          originalError: originalError,
-        );
-}
-
-class NotFoundException extends DiscoveryServiceException {
-  const NotFoundException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'NOT_FOUND',
-          originalError: originalError,
-        );
-}
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// SWIPE DIRECTION ENUM
@@ -598,8 +538,7 @@ class DiscoveryFilters {
 
 class DiscoveryService {
   final ApiClient _client = ApiClient();
-  static const int _maxRetries = 3;
-  static const Duration _retryDelay = Duration(seconds: 1);
+
 
   // Local cache for swipe queue (for undo functionality)
   final List<DiscoveryItem> _swipeQueue = [];
@@ -670,7 +609,7 @@ class DiscoveryService {
       debugPrint('❌ [DiscoveryService] Feed fetch failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = DiscoveryServiceException(
+      final error = DiscoveryServiceError(
         'Unexpected error getting discovery feed: $e',
       );
       debugPrint('❌ [DiscoveryService] Feed fetch failed: ${error.message}');
@@ -768,7 +707,7 @@ class DiscoveryService {
       _swipeQueue.removeWhere((i) => i.id == item.id);
 
       // Create swipe record
-      final swipeRecord = SwipeRecord(
+      var swipeRecord = SwipeRecord(
         id: '${DateTime.now().millisecondsSinceEpoch}_${item.id}',
         itemId: item.id,
         itemType: item.type,
@@ -801,8 +740,16 @@ class DiscoveryService {
       final matchResult = await _checkAndCreateMatch(item);
 
       if (matchResult.createdMatch) {
-        swipeRecord.createdMatch = true;
-        swipeRecord.matchId = matchResult.match?.id;
+        // Create new SwipeRecord with updated match info
+        swipeRecord = SwipeRecord(
+          id: swipeRecord.id,
+          itemId: swipeRecord.itemId,
+          itemType: swipeRecord.itemType,
+          direction: swipeRecord.direction,
+          createdAt: swipeRecord.createdAt,
+          createdMatch: true,
+          matchId: matchResult.match?.id,
+        );
 
         return SwipeResult(
           success: true,
@@ -826,7 +773,7 @@ class DiscoveryService {
       );
 
     } catch (e) {
-      final error = DiscoveryServiceException(
+      final error = DiscoveryServiceError(
         'Swipe failed: $e',
       );
       debugPrint('❌ [DiscoveryService] Swipe failed: ${error.message}');
@@ -944,7 +891,7 @@ class DiscoveryService {
 
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Failed to get matches: $e');
-      throw DiscoveryServiceException('Failed to get matches: $e');
+      throw DiscoveryServiceError('Failed to get matches: $e');
     }
   }
 
@@ -983,7 +930,7 @@ class DiscoveryService {
 
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Unmatch failed: $e');
-      throw DiscoveryServiceException('Failed to unmatch: $e');
+      throw DiscoveryServiceError('Failed to unmatch: $e');
     }
   }
 
@@ -1285,7 +1232,7 @@ class DiscoveryService {
     }
   }
 
-  DiscoveryServiceException _handleDioError(DioException e, String context) {
+  GigMatchException _handleDioError(DioException e, String context) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
         return NetworkException(
@@ -1323,19 +1270,31 @@ class DiscoveryService {
           return ValidationException(message, originalError: e);
         }
         if (statusCode != null && statusCode >= 500) {
-          return DiscoveryServiceException(
+          return DiscoveryServiceError(
             'Server error. Please try again later.',
             code: 'SERVER_ERROR',
             originalError: e,
           );
         }
-        return DiscoveryServiceException(
+        return DiscoveryServiceError(
           'Request failed: ${e.message}',
           originalError: e,
         );
 
+      case DioExceptionType.badCertificate:
+        return DiscoveryServiceError(
+          'Certificate verification failed. Please try again.',
+          originalError: e,
+        );
+
+      case DioExceptionType.connectionError:
+        return NetworkException(
+          'Connection error. Please check your network.',
+          originalError: e,
+        );
+
       case DioExceptionType.cancel:
-        return DiscoveryServiceException(
+        return DiscoveryServiceError(
           'Request was cancelled',
           originalError: e,
         );
@@ -1347,7 +1306,7 @@ class DiscoveryService {
             originalError: e,
           );
         }
-        return DiscoveryServiceException(
+        return DiscoveryServiceError(
           'An unexpected error occurred. Please try again.',
           originalError: e,
         );

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/models/artist_models.dart';
 import '../artist_profile_setup_screen.dart';
 
 /// Step 5: Profile Preview
