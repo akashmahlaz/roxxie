@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../core/models/venue_models.dart';
 import '../../../core/theme/theme.dart';
 import '../venue_profile_setup_screen.dart';
 

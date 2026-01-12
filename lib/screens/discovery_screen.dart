@@ -167,7 +167,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     if (cards.isEmpty) return;
 
     final currentCard = cards[_currentCardIndex];
-    final swipeType = isLike ? SwipeDirection.right : SwipeDirection.left;
+    final swipeType = isLike ? SwipeAction.like : SwipeAction.pass;
 
     // Animate card off screen
     _cardController.reset();
@@ -1524,7 +1524,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'You and ${_pendingMatch?.participantName} liked each other',
+                    'You and ${_pendingMatch?.getOtherPartyName(context.read<AuthProvider>().isArtist)} liked each other',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 18,
@@ -1612,15 +1612,15 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 3),
-        image: _pendingMatch?.participantPhoto != null
+        image: _pendingMatch?.getOtherPartyPhoto(context.read<AuthProvider>().isArtist) != null
             ? DecorationImage(
-                image: NetworkImage(_pendingMatch!.participantPhoto!),
+                image: NetworkImage(_pendingMatch!.getOtherPartyPhoto(context.read<AuthProvider>().isArtist)!),
                 fit: BoxFit.cover,
               )
             : null,
         color: AppColors.crimson.withValues(alpha: 0.3),
       ),
-      child: _pendingMatch?.participantPhoto == null
+      child: _pendingMatch?.getOtherPartyPhoto(context.read<AuthProvider>().isArtist) == null
           ? Icon(
               Icons.person_rounded,
               color: Colors.white,
