@@ -58,7 +58,7 @@ class MessageService {
   /// 🗑️ Delete a message
   Future<void> deleteMessage(String messageId) async {
     try {
-      await _client.delete(Endpoints.messageDelete(messageId));
+      await _client.delete(Endpoints.messageDelete);
     } catch (e) {
       debugPrint('Delete message error: $e');
       rethrow;

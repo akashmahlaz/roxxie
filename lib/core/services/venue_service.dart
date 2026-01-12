@@ -21,50 +21,6 @@ import '../models/models.dart';
 import '../exceptions.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
-/// CUSTOM EXCEPTION CLASSES
-/// ═══════════════════════════════════════════════════════════════════════
-
-class VenueServiceException implements Exception {
-  final String message;
-  final String? code;
-  final dynamic originalError;
-
-  const VenueServiceException(
-    this.message, {
-    this.code,
-    this.originalError,
-  });
-
-  @override
-  String toString() => 'VenueServiceException: $message';
-}
-
-// NetworkException and ValidationException are now defined in core/exceptions.dart
-// to avoid duplicate definitions
-
-class AuthenticationException extends VenueServiceException {
-  const AuthenticationException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'AUTH_ERROR',
-          originalError: originalError,
-        );
-}
-
-class NotFoundException extends VenueServiceException {
-  const NotFoundException(
-    String message, {
-    dynamic originalError,
-  }) : super(
-          message,
-          code: 'NOT_FOUND',
-          originalError: originalError,
-        );
-}
-
-/// ═══════════════════════════════════════════════════════════════════════
 /// VENUE SERVICE
 /// ═══════════════════════════════════════════════════════════════════════
 
@@ -126,7 +82,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Search failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException(
+      final error = VenueServiceError(
         'Unexpected error during search: $e',
       );
       debugPrint('❌ [VenueService] Search failed: ${error.message}');
@@ -157,7 +113,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Get venue failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException(
+      final error = VenueServiceError(
         'Unexpected error getting venue: $e',
       );
       debugPrint('❌ [VenueService] Get venue failed: ${error.message}');
@@ -201,7 +157,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Get profile failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException(
+      final error = VenueServiceError(
         'Unexpected error getting profile: $e',
       );
       debugPrint('❌ [VenueService] Get profile failed: ${error.message}');
@@ -255,7 +211,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Update failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException(
+      final error = VenueServiceError(
         'Unexpected error updating profile: $e',
       );
       debugPrint('❌ [VenueService] Update failed: ${error.message}');
@@ -329,7 +285,7 @@ class VenueService {
       if (result == null) {
         throw lastError != null
             ? _handleDioError(lastError as DioException, 'complete setup')
-            : VenueServiceException(
+            : VenueServiceError(
                 'Setup failed after $_maxRetries attempts',
               );
       }
@@ -339,9 +295,9 @@ class VenueService {
       );
       return result;
     } catch (e) {
-      final error = e is VenueServiceException
+      final error = e is VenueServiceError
           ? e
-          : VenueServiceException(
+          : VenueServiceError(
               'Unexpected error during setup: $e',
             );
       debugPrint('❌ [VenueService] Setup failed: ${error.message}');
@@ -373,7 +329,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Boost failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException(
+      final error = VenueServiceError(
         'Unexpected error boosting visibility: $e',
       );
       debugPrint('❌ [VenueService] Boost failed: ${error.message}');
@@ -414,7 +370,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Create gig failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException(
+      final error = VenueServiceError(
         'Unexpected error creating gig: $e',
       );
       debugPrint('❌ [VenueService] Create gig failed: ${error.message}');
@@ -444,7 +400,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Get gigs failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException(
+      final error = VenueServiceError(
         'Unexpected error getting gigs: $e',
       );
       debugPrint('❌ [VenueService] Get gigs failed: ${error.message}');
@@ -476,7 +432,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Discover gigs failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceException(
+      final error = VenueServiceError(
         'Unexpected error discovering gigs: $e',
       );
       debugPrint('❌ [VenueService] Discover gigs failed: ${error.message}');
@@ -563,25 +519,25 @@ class VenueService {
     }
   }
 
-  VenueServiceException _handleDioError(DioException e, String context) {
+  VenueServiceError _handleDioError(DioException e, String context) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
-        return NetworkException(
+        return VenueServiceError(
           'Connection timed out. Please try again.',
           originalError: e,
         );
       case DioExceptionType.sendTimeout:
-        return NetworkException(
+        return VenueServiceError(
           'Request timed out. Please try again.',
           originalError: e,
         );
       case DioExceptionType.receiveTimeout:
-        return NetworkException(
+        return VenueServiceError(
           'Response timed out. Please try again.',
           originalError: e,
         );
       case DioExceptionType.badCertificate:
-        return NetworkException(
+        return VenueServiceError(
           'Security error. Please contact support.',
           originalError: e,
         );
@@ -591,69 +547,69 @@ class VenueService {
 
         if (statusCode == 400) {
           final message = data?['message'] ?? 'Invalid request data';
-          return ValidationException(message, originalError: e);
+          return VenueServiceError(message, originalError: e);
         }
         if (statusCode == 401) {
-          return AuthenticationException(
+          return VenueServiceError(
             'Session expired. Please log in again.',
             originalError: e,
           );
         }
         if (statusCode == 403) {
-          return AuthenticationException(
+          return VenueServiceError(
             'You do not have permission to perform this action.',
             originalError: e,
           );
         }
         if (statusCode == 404) {
-          return NotFoundException(
+          return VenueServiceError(
             'The requested resource was not found.',
             originalError: e,
           );
         }
         if (statusCode == 422) {
           final message = data?['message'] ?? 'Validation error';
-          return ValidationException(message, originalError: e);
+          return VenueServiceError(message, originalError: e);
         }
         if (statusCode == 429) {
-          return NetworkException(
+          return VenueServiceError(
             'Too many requests. Please wait before trying again.',
             originalError: e,
           );
         }
         if (statusCode != null && statusCode >= 500) {
-          return VenueServiceException(
+          return VenueServiceError(
             'Server error. Please try again later.',
             code: 'SERVER_ERROR',
             originalError: e,
           );
         }
-        return VenueServiceException(
+        return VenueServiceError(
           'Request failed: ${e.message}',
           originalError: e,
         );
 
       case DioExceptionType.cancel:
-        return VenueServiceException(
+        return VenueServiceError(
           'Request was cancelled',
           originalError: e,
         );
 
       case DioExceptionType.connectionError:
-        return NetworkException(
-          'Connection error. Please check your network.',
-          originalError: e,
-        );
-
-      case DioExceptionType.unknown:
         if (e.message?.contains('SocketException') ?? false) {
-          return NetworkException(
+          return VenueServiceError(
             'No internet connection. Please check your network.',
             originalError: e,
           );
         }
-        return VenueServiceException(
+        return VenueServiceError(
           'An unexpected error occurred. Please try again.',
+          originalError: e,
+        );
+
+      case DioExceptionType.unknown:
+        return VenueServiceError(
+          'Unknown error during $context: ${e.message}',
           originalError: e,
         );
     }

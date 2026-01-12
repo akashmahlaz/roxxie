@@ -3,7 +3,6 @@
 library;
 
 import 'dart:io';
-import 'dart:ui' show Locale;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -169,7 +168,7 @@ class LocationService {
             address,
           );
 
-          if (locations != null && locations.isNotEmpty) {
+          if (locations.isNotEmpty) {
             debugPrint('📍 [LocationService] Found ${locations.length} locations');
             break;
           }
