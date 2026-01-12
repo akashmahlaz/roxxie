@@ -14,18 +14,17 @@
 library;
 
 import 'dart:math' as math;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import '../../core/theme/theme.dart';
-import '../../core/providers/providers.dart';
+
 import '../../core/models/models.dart';
-import '../../core/services/services.dart';
+import '../../core/providers/providers.dart';
+import '../../core/theme/theme.dart';
+
 import 'chat_screen.dart';
-import 'profile_screen.dart';
-import 'matches_screen.dart';
-import '../../widgets/widgets.dart';
+
 
 /// 🎯 Discovery Screen - Main Widget
 class DiscoveryScreen extends StatefulWidget {
@@ -47,6 +46,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Offset _dragOffset = Offset.zero;
   double _dragAngle = 0;
   bool _isDragging = false;
+
+  final Set<String> _selectedGenres = <String>{};
 
   // Match animation state
   bool _showMatchAnimation = false;
@@ -389,19 +390,20 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   : Icons.location_off_rounded,
               size: 18,
               color: hasLocationFilter
-                    ? Colors.white
-                    : AppColors.crimson,
-              ),
-              selectedColor: AppColors.crimson,
-              onSelected: _toggleLocationFilter,
+                  ? Colors.white
+                  : AppColors.crimson,
             ),
-            const SizedBox(width: 8),
+            selectedColor: AppColors.crimson,
+            onSelected: _toggleLocationFilter,
+          ),
+          const SizedBox(width: 8),
             // Genre chips
             ...genres.map((genre) {
+              final isSelected = _selectedGenres.contains(genre);
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: FilterChip(
-                  selected: false,
+                  selected: isSelected,
                   label: Text(genre),
                   selectedColor: AppColors.crimson,
                   checkmarkColor: Colors.white,
@@ -497,80 +499,156 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
+
+
+
   Widget _buildCard(DiscoveryCard card, Brightness brightness, {double opacity = 1}) {
+
+    final discoveryProvider = context.read<DiscoveryProvider>();
+
+    final item = DiscoveryItem.fromCard(card);
+
     final cardWidth = MediaQuery.of(context).size.width - 48;
+
     final cardHeight = MediaQuery.of(context).size.height * 0.65;
 
-    return VisibilityDetector(
-      key: Key('card_${card.id}'),
-      onVisibilityChanged: (info) {
-        if (info.visibleFraction < 0.5 && _currentCardIndex >= cards.length) {
-          _loadMoreCards();
-        }
-      },
-      child: GestureDetector(
-        onPanStart: _onPanStart,
-        onPanUpdate: _onPanUpdate,
-        onPanEnd: _onPanEnd,
-        child: Transform.rotate(
-          angle: _dragAngle,
-          child: Transform.translate(
-            offset: _dragOffset,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              width: cardWidth,
-              height: cardHeight,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Background image or gradient
-                    _buildCardBackground(item, brightness),
 
-                    // Gradient overlay
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.8),
-                            ],
-                          ),
-                        ),
-                      ),
+
+    return VisibilityDetector(
+
+      key: Key('card_${card.id}'),
+
+      onVisibilityChanged: (info) {
+
+
+        final lastIndex = discoveryProvider.cards.length - 1;
+        final shouldLoadMore =
+
+            info.visibleFraction < 0.3 && lastIndex >= 0 && _currentCardIndex >= lastIndex;
+        if (shouldLoadMore) {
+
+
+          _loadMoreCards();
+
+        }
+
+      },
+
+      child: GestureDetector(
+
+        onPanStart: _onPanStart,
+
+        onPanUpdate: _onPanUpdate,
+
+        onPanEnd: _onPanEnd,
+
+        child: Transform.rotate(
+
+          angle: _dragAngle,
+
+          child: Transform.translate(
+
+            offset: _dragOffset,
+
+            child: Opacity(
+
+              opacity: opacity,
+
+              child: Container(
+
+                margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+
+                width: cardWidth,
+
+                height: cardHeight,
+
+                decoration: BoxDecoration(
+
+                  borderRadius: BorderRadius.circular(24),
+
+                  boxShadow: [
+
+                    BoxShadow(
+
+                      color: Colors.black.withValues(alpha: 0.15),
+
+                      blurRadius: 20,
+
+                      offset: const Offset(0, 10),
+
                     ),
 
-                    // Verified/Boosted badges
-                    _buildBadges(item, brightness),
-
-                    // Content
-                    _buildCardContent(item, brightness),
-
-                    // Swipe indicators
-                    _buildSwipeIndicators(brightness),
                   ],
+
                 ),
+
+                child: ClipRRect(
+
+                  borderRadius: BorderRadius.circular(24),
+
+                  child: Stack(
+
+                    fit: StackFit.expand,
+
+                    children: [
+
+                      _buildCardBackground(item, brightness),
+
+                      Positioned.fill(
+
+                        child: Container(
+
+                          decoration: BoxDecoration(
+
+                            gradient: LinearGradient(
+
+                              begin: Alignment.topCenter,
+
+                              end: Alignment.bottomCenter,
+
+                              colors: [
+
+                                Colors.transparent,
+
+                                Colors.black.withValues(alpha: 0.8),
+
+                              ],
+
+                            ),
+
+                          ),
+
+                        ),
+
+                      ),
+
+                      _buildBadges(item, brightness),
+
+                      _buildCardContent(item, brightness),
+
+                      _buildSwipeIndicators(brightness),
+
+                    ],
+
+                  ),
+
+                ),
+
               ),
+
             ),
+
           ),
+
         ),
+
       ),
+
     );
+
   }
+
+
 
   Widget _buildCardBackground(DiscoveryItem item, Brightness brightness) {
     if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
@@ -593,72 +671,112 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           colors: [
             AppColors.crimson.withValues(alpha: 0.6),
             AppColors.rose.withValues(alpha: 0.4),
-            AppColors.purple.withValues(alpha: 0.3),
+            AppColors.electricViolet.withValues(alpha: 0.3),
           ],
         ),
       ),
     );
   }
 
+
   Widget _buildBadges(DiscoveryItem item, Brightness brightness) {
+
     final badges = <Widget>[];
 
+
+
     if (item.isBoosted) {
+
       badges.add(
+
         Positioned(
+
           top: 16,
+
           left: 16,
+
           child: Container(
+
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+
             decoration: BoxDecoration(
+
               color: Colors.amber.shade600,
+
               borderRadius: BorderRadius.circular(20),
+
             ),
+
             child: Row(
+
               mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
+
+              children: const [
+
+                Icon(
                   Icons.rocket_launch_rounded,
+
                   color: Colors.white,
+
                   size: 16,
+
                 ),
-                const SizedBox(width: 4),
-                const Text(
+
+                SizedBox(width: 4),
+
+                Text(
                   'BOOSTED',
+
                   style: TextStyle(
+
                     color: Colors.white,
+
                     fontSize: 11,
+
                     fontWeight: FontWeight.w700,
+
                   ),
+
                 ),
+
               ],
+
             ),
+
           ),
+
         ),
+
       );
+
     }
 
+
+
     if (item.isVerified) {
+
       badges.add(
+
         Positioned(
+
           top: 16,
+
           right: 16,
-          Container(
+
+          child: Container(
+
             padding: const EdgeInsets.all(6),
+
             decoration: const BoxDecoration(
+
               color: Colors.white,
+
               shape: BoxShape.circle,
-              child: Text(
-                'Swipe right to like, left to pass',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            child: Icon(
+
+            ),
+            child: const Icon(
               Icons.verified_rounded,
-              color: Colors.blue.shade400,
+              color: Colors.blue,
               size: 20,
             ),
           ),
@@ -666,10 +784,47 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       );
     }
 
+    if (badges.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Stack(children: badges);
   }
 
+
   Widget _buildCardContent(DiscoveryItem item, Brightness brightness) {
+    final infoChips = <Widget>[];
+
+    if (item.city != null && item.city!.isNotEmpty) {
+      infoChips.add(_buildInfoChip(
+        icon: Icons.location_on_rounded,
+        label: item.city!,
+      ));
+    }
+
+    if (item.distanceMiles > 0) {
+      infoChips.add(_buildInfoChip(
+        icon: Icons.directions_walk_rounded,
+        label: '${item.distanceMiles.toStringAsFixed(0)} mi',
+      ));
+    }
+
+    if (item.rating != null && item.rating! > 0) {
+      infoChips.add(_buildInfoChip(
+        icon: Icons.star_rounded,
+        iconColor: Colors.amber.shade400,
+        label: item.rating!.toStringAsFixed(1),
+      ));
+    }
+
+    if (item.priceMin != null) {
+      infoChips.add(_buildInfoChip(
+        icon: Icons.attach_money_rounded,
+        iconColor: Colors.white,
+        label: '${item.priceMin!.toStringAsFixed(0)}+',
+      ));
+    }
+
     return Positioned(
       bottom: 0,
       left: 0,
@@ -680,118 +835,41 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Title
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    item.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              item.title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                height: 1.1,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-
-            const SizedBox(height: 8),
-
-            // Subtitle/Genres
-            if (item.subtitle != null)
+            if (item.subtitle != null && item.subtitle!.isNotEmpty) ...[
+              const SizedBox(height: 8),
               Text(
                 item.subtitle!,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 16,
                 ),
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-
-            const SizedBox(height: 12),
-
-            // Info row
-            Row(
-              children: [
-                // Location
-                if (item.city != null) ...[
-                  const Icon(
-                    Icons.location_on_rounded,
-                    color: Colors.white70,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    item.city!,
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                ],
-
-                // Distance
-                if (item.distanceMiles > 0) ...[
-                  const Icon(
-                    Icons.directions_walk_rounded,
-                    color: Colors.white70,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${item.distanceMiles.toStringAsFixed(0)} mi',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                ],
-
-                // Rating
-                if (item.rating != null && item.rating! > 0) ...[
-                  const Icon(
-                    Icons.star_rounded,
-                    color: Colors.amber.shade400,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    item.rating!.toStringAsFixed(1),
-                    style: TextStyle(
-                      color: Colors.amber.shade400,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                ],
-
-                // Price
-                if (item.priceMin != null)
-                  Text(
-                    '\$${item.priceMin!.toStringAsFixed(0)}+',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Recommendation score
-            if (item.recommendationScore > 0)
+            ],
+            if (infoChips.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: infoChips,
+              ),
+            ],
+            if (item.recommendationScore > 0) ...[
+              const SizedBox(height: 16),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -816,8 +894,42 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   ],
                 ),
               ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    Color iconColor = Colors.white70,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: iconColor,
+            size: 16,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: iconColor,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -826,64 +938,61 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final likeThreshold = screenWidth * 0.35;
 
-    // LIKE indicator (right)
-    if (_dragOffset.dx > likeThreshold * 0.3) {
-      Positioned(
-        top: 40,
-        right: 24,
-        child: Transform.rotate(
-          angle: 0.3,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.green,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.white, width: 3),
-            ),
-            child: const Text(
-              'LIKE',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-              ),
-            ),
-          ),
-        ),
-      );
+    final showLike = _dragOffset.dx > likeThreshold * 0.3;
+    final showNope = _dragOffset.dx < -likeThreshold * 0.3;
+
+    if (!showLike && !showNope) {
+      return const SizedBox.shrink();
     }
 
-    // NOPE indicator (left)
-    if (_dragOffset.dx < -likeThreshold * 0.3) {
-      Positioned(
-        top: 40,
-        left: 24,
-        child: Transform.rotate(
-          angle: -0.3,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.crimson,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.white, width: 3),
-            ),
-            child: const Text(
-              'NOPE',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
+    return Stack(
+      children: [
+        if (showLike)
+          Positioned(
+            top: 40,
+            right: 24,
+            child: Transform.rotate(
+              angle: 0.3,
+              child: _buildSwipeLabel(
+                text: 'LIKE',
+                color: Colors.green,
               ),
             ),
           ),
-        ),
+        if (showNope)
+          Positioned(
+            top: 40,
+            left: 24,
+            child: Transform.rotate(
+              angle: -0.3,
+              child: _buildSwipeLabel(
+                text: 'NOPE',
+                color: AppColors.crimson,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSwipeLabel({required String text, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white, width: 3),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
         ),
       ),
-    }
-
-    return const SizedBox.shrink();
+    );
   }
 
   Widget _buildLoadingState(Brightness brightness) {
@@ -1152,15 +1261,23 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       );
     } else {
       provider.clearFilters();
+      setState(() {
+        _selectedGenres.clear();
+      });
     }
   }
 
   void _toggleGenre(String genre, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedGenres.add(genre);
+      } else {
+        _selectedGenres.remove(genre);
+      }
+    });
+
     final provider = context.read<DiscoveryProvider>();
-    // For now, just implement a simple toggle without storing state
-    // In a real app, you'd want to maintain selected genres in state
-    final currentGenres = <String>[genre];
-    provider.setGenreFilter(currentGenres);
+    provider.setGenreFilter(_selectedGenres.toList());
   }
 
   Widget _buildFilterPanel(Brightness brightness) {
@@ -1517,9 +1634,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   // HELPER METHODS
   // ═══════════════════════════════════════════════════════
 
+
   void _onLocationFilterChanged(bool enabled) {
     // Get current location and update filters
     final provider = context.read<DiscoveryProvider>();
+
     if (enabled) {
       provider.setLocationFilter(
         latitude: 40.7128,
@@ -1528,8 +1647,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       );
     } else {
       provider.clearFilters();
+      setState(() {
+        _selectedGenres.clear();
+      });
     }
   }
+
+
 
   Future<void> _undoLastSwipe() async {
     final provider = context.read<DiscoveryProvider>();
@@ -1635,10 +1759,76 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
+
   Color _getScoreColor(double score) {
+
     if (score >= 80) return Colors.green.shade400;
+
     if (score >= 60) return Colors.amber.shade400;
+
     if (score >= 40) return Colors.orange.shade400;
+
     return Colors.red.shade400;
+
+  }
+
+}
+
+class DiscoveryItem {
+  final String? imageUrl;
+  final bool isBoosted;
+  final bool isVerified;
+  final String title;
+  final String? subtitle;
+  final String? city;
+  final double distanceMiles;
+  final double? rating;
+  final double? priceMin;
+  final double recommendationScore;
+
+  const DiscoveryItem({
+    this.imageUrl,
+    required this.isBoosted,
+    required this.isVerified,
+    required this.title,
+    this.subtitle,
+    this.city,
+    required this.distanceMiles,
+    this.rating,
+    this.priceMin,
+    required this.recommendationScore,
+  });
+
+  factory DiscoveryItem.fromCard(DiscoveryCard card) {
+    final artist = card.artist;
+    final venue = card.venue;
+
+    final String? imageUrl = card.primaryPhotoUrl.isNotEmpty
+        ? card.primaryPhotoUrl
+        : (card.galleryUrls.isNotEmpty ? card.galleryUrls.first : null);
+
+    final double? priceMin =
+        artist?.minPrice ?? venue?.gigPreferences?.minBudget;
+
+    final String? subtitle = card.genres.isNotEmpty
+        ? card.genres.take(3).join(' • ')
+        : card.bio;
+
+    final double recommendationScore = card.isBoosted
+        ? 95
+        : (card.rating > 0 ? (card.rating / 5) * 100 : 0);
+
+    return DiscoveryItem(
+      imageUrl: imageUrl,
+      isBoosted: card.isBoosted,
+      isVerified: card.isVerified,
+      title: card.name,
+      subtitle: subtitle,
+      city: card.location,
+      distanceMiles: card.distance ?? 0,
+      rating: card.rating > 0 ? card.rating : null,
+      priceMin: priceMin,
+      recommendationScore: recommendationScore,
+    );
   }
 }

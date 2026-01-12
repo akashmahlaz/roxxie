@@ -42,6 +42,7 @@ class DiscoveryProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
   bool get hasCards => _cards.isNotEmpty && _currentIndex < _cards.length;
+  List<String>? get selectedGenres => _genres;
 
   /// 🔄 Load discovery cards
   Future<void> loadCards({bool refresh = false}) async {
@@ -186,7 +187,7 @@ class DiscoveryProvider extends ChangeNotifier {
 
   /// 🎵 Set genre filter
   void setGenreFilter(List<String> genres) {
-    _genres = genres;
+    _genres = List<String>.from(genres);
     loadCards(refresh: true);
   }
 
