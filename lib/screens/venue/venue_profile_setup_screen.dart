@@ -111,10 +111,10 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
     // Require valid location before completing venue setup (marketplace quality).
     // Avoid sending invalid 0,0 coordinates which breaks geo discovery and causes server-side errors.
-    final hasCity = _profileData.city.trim().isNotEmpty;
-    final hasCountry = _profileData.country.trim().isNotEmpty;
-    final lat = _profileData.latitude;
-    final lng = _profileData.longitude;
+    final hasCity = (_profileData.city ?? '').trim().isNotEmpty;
+    final hasCountry = (_profileData.country ?? '').trim().isNotEmpty;
+    final lat = _profileData.location.latitude;
+    final lng = _profileData.location.longitude;
 
     // VenueProfileData.latitude/longitude are non-nullable doubles (default 0).
     // Treat near-zero as "not set" to avoid sending invalid 0,0 coordinates.
@@ -153,26 +153,13 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     // - Do NOT send legacy keys like `name`, `bio`, `contactPhone`, `isActive` (not whitelisted).
     // - Keep coordinates ordering: [longitude, latitude].
 
-    // Use the gigPreferences object for budget and other preferences
-    final request = UpdateVenueRequest(
-      venueName: _profileData.venueName,
-      description: _profileData.description,
-      venueType: _profileData.venueType,
-      capacity: _profileData.capacity,
-      preferredGenres: _profileData.gigPreferences.preferredGenres,
-      location: _profileData.location,
-      phone: _profileData.phone,
-      showPhoneOnProfile: _profileData.showPhoneOnProfile,
-      bookingEmail: _profileData.bookingEmail,
-      minBudget: _profileData.gigPreferences.minBudget,
-      maxBudget: _profileData.gigPreferences.maxBudget,
-      currency: _profileData.gigPreferences.currency,
-      equipment: _profileData.equipment,
-      socialLinks: _profileData.socialLinks,
-      gigPreferences: _profileData.gigPreferences,
-      isActive: _profileData.isActive,
-      isVisible: _profileData.isVisible,
-    );
+    // Use the correct property access patterns
+    _profileData.preferredGenres = _profileData.gigPreferences.preferredGenres;
+    _profileData.showPhone = _profileData.showPhoneOnProfile;
+    _profileData.email = _profileData.bookingEmail;
+    _profileData.minBudget = _profileData.gigPreferences.minBudget;
+    _profileData.maxBudget = _profileData.gigPreferences.maxBudget;
+    _profileData.currency = _profileData.gigPreferences.currency;
 
     final success = await authProvider.completeVenueSetup(_profileData);
 
@@ -446,52 +433,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
   }
 }
 
-/// 📊 VENUE PROFILE DATA MODEL
-///
-/// Complete data structure for venue profile
-class VenueProfileData {
-  // Basic Info
-  String venueName = '';
-  String venueType = ''; // Bar, Club, Restaurant, Concert Hall, etc.
-  String description = '';
-  int capacity = 0;
-  List<String> amenities = []; // Stage, Sound System, Parking, etc.
 
-  // Media
-  String? coverPhoto;
-  List<String> venuePhotos = [];
-  List<String> pastEventPhotos = [];
-
-  // Contact & Location
-  String? phone;
-  bool showPhone = true; // For artists to call directly
-  String? email;
-  String? website;
-  String? instagram;
-  String address = '';
-  String city = '';
-  String country = '';
-  double latitude = 0;
-  double longitude = 0;
-
-  // Operating Hours
-  Map<String, OperatingHours> operatingHours = {};
-
-  // Gig Preferences
-  List<String> preferredGenres = [];
-  double minBudget = 100;
-  double maxBudget = 5000;
-  String currency = 'USD';
-  List<String> typicalSlots = []; // Evening, Night, Weekend, etc.
-  int typicalSetLength = 60; // in minutes
-  bool providesAccommodation = false;
-  bool providesMeals = false;
-  bool providesEquipment = false;
-
-  // Verification
-  bool isVerified = false;
-  String? verificationDocument;
-}
 
 /// ⏰ Operating Hours Model
 class OperatingHours {
