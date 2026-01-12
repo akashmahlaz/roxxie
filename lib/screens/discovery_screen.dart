@@ -116,7 +116,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   Future<void> _loadMoreCards() async {
     final provider = context.read<DiscoveryProvider>();
-    await provider.loadMore();
+    await provider.loadCards();
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -161,11 +161,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
     // Capture provider before async
     final provider = context.read<DiscoveryProvider>();
-    final items = provider.items;
+    final cards = provider.cards;
 
-    if (items.isEmpty) return;
+    if (cards.isEmpty) return;
 
-    final currentItem = items[_currentCardIndex];
+    final currentCard = cards[_currentCardIndex];
     final swipeType = isLike ? SwipeDirection.right : SwipeDirection.left;
 
     // Animate card off screen
@@ -186,11 +186,16 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
     // Perform swipe action
     try {
-      final result = await provider.swipe(currentItem, swipeType);
+      bool isMatch = false;
+      if (isLike) {
+        isMatch = await provider.like();
+      } else {
+        await provider.pass();
+      }
 
       // Check for match
-      if (result.createdMatch && result.match != null) {
-        _pendingMatch = result.match;
+      if (isMatch && provider.lastMatch != null) {
+        _pendingMatch = provider.lastMatch;
         _showMatchDialog();
       }
     } catch (e) {
@@ -207,7 +212,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     _cardController.reset();
 
     // Load more if running low on cards
-    if (items.length - _currentCardIndex <= 3) {
+    if (provider.remainingCards <= 3) {
       _loadMoreCards();
     }
   }
@@ -290,9 +295,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final provider = context.watch<DiscoveryProvider>();
-    final items = provider.items;
+    final cards = provider.cards;
     final isLoading = provider.isLoading;
-    final error = provider.error;
+    final error = provider.errorMessage;
 
     return Stack(
       children: [
@@ -310,7 +315,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
                 // Main content area
                 Expanded(
-                  child: _buildContent(items, isLoading, error, brightness),
+                  child: _buildContent(cards, isLoading, error, brightness),
                 ),
 
                 // Action buttons
@@ -364,7 +369,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   Widget _buildFilterChips(Brightness brightness) {
     final provider = context.watch<DiscoveryProvider>();
-    final filters = provider.filters;
+    final filters = <String>[]; // TODO: Implement filters if needed
     final genres = ['Rock', 'Jazz', 'Pop', 'Hip-Hop', 'Electronic', 'Blues'];
 
     return Container(
@@ -416,12 +421,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Widget _buildContent(
-    List<DiscoveryItem> items,
+    List<DiscoveryCard> cards,
     bool isLoading,
-    String? error,
+    String error,
     Brightness brightness,
   ) {
-    if (isLoading && items.isEmpty) {
+    if (isLoading && cards.isEmpty) {
       return _buildLoadingState(brightness);
     }
 
@@ -492,14 +497,14 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  Widget _buildCard(DiscoveryItem item, Brightness brightness, {double opacity = 1}) {
+  Widget _buildCard(DiscoveryCard card, Brightness brightness, {double opacity = 1}) {
     final cardWidth = MediaQuery.of(context).size.width - 48;
     final cardHeight = MediaQuery.of(context).size.height * 0.65;
 
     return VisibilityDetector(
-      key: Key('card_${item.id}'),
+      key: Key('card_${card.id}'),
       onVisibilityChanged: (info) {
-        if (info.visibleFraction < 0.5 && _currentCardIndex >= items.length) {
+        if (info.visibleFraction < 0.5 && _currentCardIndex >= provider.cards.length) {
           _loadMoreCards();
         }
       },
@@ -1110,7 +1115,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         child: Icon(
           icon,
           color: color,
-          size: size * 0.5,
+          size: size,
         ),
       ),
     );
@@ -1528,8 +1533,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Future<void> _superLike() async {
     // Premium feature - boost visibility
     final provider = context.read<DiscoveryProvider>();
-    if (provider.items.isNotEmpty) {
-      await provider.swipe(provider.items[_currentCardIndex], SwipeDirection.right);
+    if (provider.cards.isNotEmpty) {
+      await provider.superLike();
     }
   }
 
