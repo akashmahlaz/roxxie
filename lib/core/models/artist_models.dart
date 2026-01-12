@@ -432,6 +432,11 @@ class Artist {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  // Price range getters for compatibility with UI
+  double? get minPrice => priceRange?.min;
+  double? get maxPrice => priceRange?.max;
+  String get currency => priceRange?.currency ?? 'USD';
+
   Artist({
     required this.id,
     required this.userId,

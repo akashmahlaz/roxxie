@@ -1,5 +1,5 @@
-/// 🎸 ARTIST PROFILE SETUP WIZARD - BULLETPROOF VERSION
-///
+
+
 /// Multi-step onboarding flow for artists with comprehensive error handling:
 /// Step 1: Basic Info (name, stage name, bio, genres, influences)
 /// Step 2: Media Upload (photos, audio samples, videos)
@@ -122,8 +122,8 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
         _profileData.stageName = artistProfile.stageName;
         _profileData.bio = artistProfile.bio;
         _profileData.genres = List<String>.from(artistProfile.genres);
-        _profileData.minPrice = artistProfile.minPrice;
-        _profileData.maxPrice = artistProfile.maxPrice;
+        _profileData.minPrice = artistProfile.minPrice ?? 100.0;
+        _profileData.maxPrice = artistProfile.maxPrice ?? 1000.0;
         _profileData.currency = artistProfile.currency;
 
         // Pre-fill location data from existing profile
@@ -132,7 +132,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
           _profileData.country = artistProfile.location!.country;
           _profileData.latitude = artistProfile.location!.latitude;
           _profileData.longitude = artistProfile.location!.longitude;
-          _profileData.travelRadius = artistProfile.location!.travelRadius ?? 50;
+          _profileData.travelRadius = artistProfile.travelRadius;
         }
 
         debugPrint('🎸 [ArtistSetup] Profile data loaded successfully');
