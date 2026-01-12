@@ -40,8 +40,11 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
 
     // Pre-populate selected dates from existing availability
     for (var slot in widget.profileData.availability) {
+      final slotMap = slot as Map<String, dynamic>;
+      final dateString = slotMap['date'] as String;
+      final date = DateTime.parse(dateString);
       _selectedDates.add(
-        DateTime(slot.date.year, slot.date.month, slot.date.day),
+        DateTime(date.year, date.month, date.day),
       );
     }
   }
@@ -52,20 +55,23 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
       if (_selectedDates.contains(normalizedDate)) {
         _selectedDates.remove(normalizedDate);
         widget.profileData.availability.removeWhere(
-          (slot) =>
-              slot.date.year == date.year &&
-              slot.date.month == date.month &&
-              slot.date.day == date.day,
+          (slot) {
+            final slotMap = slot as Map<String, dynamic>;
+            final slotDateString = slotMap['date'] as String;
+            final slotDate = DateTime.parse(slotDateString);
+            return slotDate.year == date.year &&
+                slotDate.month == date.month &&
+                slotDate.day == date.day;
+          },
         );
       } else {
         _selectedDates.add(normalizedDate);
-        widget.profileData.availability.add(
-          AvailabilitySlot(
-            date: normalizedDate,
-            startTime: _defaultStartTime,
-            endTime: _defaultEndTime,
-          ),
-        );
+        widget.profileData.availability.add({
+          'date': normalizedDate.toIso8601String(),
+          'startTime': _defaultStartTime.format(context),
+          'endTime': _defaultEndTime.format(context),
+          'isBooked': false,
+        });
       }
     });
   }
@@ -123,13 +129,13 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
           _defaultEndTime = endTime;
 
           // Update all existing slots with new default times
-          for (var slot in widget.profileData.availability) {
-            slot = AvailabilitySlot(
-              date: slot.date,
-              startTime: startTime,
-              endTime: endTime,
-              isBooked: slot.isBooked,
-            );
+          for (var i = 0; i < widget.profileData.availability.length; i++) {
+            final slot = widget.profileData.availability[i];
+            widget.profileData.availability[i] = {
+              ...slot,
+              'startTime': startTime.format(context),
+              'endTime': endTime.format(context),
+            };
           }
         });
       }
