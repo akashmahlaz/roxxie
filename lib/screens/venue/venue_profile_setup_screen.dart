@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/venue_models.dart';
+import '../../core/services/upload_service.dart';
 import 'steps/venue_basic_info_step.dart';
 import 'steps/venue_media_step.dart';
 import 'steps/venue_details_step.dart';
@@ -82,6 +83,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
   void _completeSetup() async {
     final brightness = Theme.of(context).brightness;
     final authProvider = context.read<AuthProvider>();
+    final uploadService = UploadService();
 
     // Show loading
     showDialog(
@@ -100,7 +102,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
               CircularProgressIndicator(color: AppColors.crimson),
               const SizedBox(height: 16),
               Text(
-                'Saving your venue profile...',
+                'Uploading photos...',
                 style: TextStyle(color: AppColors.text(brightness)),
               ),
             ],
@@ -109,17 +111,54 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       ),
     );
 
-    // Require valid location before completing venue setup (marketplace quality).
-    // Avoid sending invalid 0,0 coordinates which breaks geo discovery and causes server-side errors.
+    try {
+      // Upload profile photo if it's a local file
+      if (_profileData.profilePhotoUrl != null && 
+          _profileData.profilePhotoUrl!.startsWith('/')) {
+        debugPrint('📤 Uploading profile photo...');
+        try {
+          final uploadResult = await uploadService.uploadProfilePhoto(
+            _profileData.profilePhotoUrl!,
+          );
+          _profileData.profilePhotoUrl = uploadResult.url;
+          debugPrint('✅ Profile photo uploaded: ${uploadResult.url}');
+        } catch (e) {
+          debugPrint('⚠️ Profile photo upload failed: $e');
+          // Continue without profile photo
+          _profileData.profilePhotoUrl = null;
+        }
+      }
+
+      // Upload gallery photos if they are local files
+      final galleryUrls = <String>[];
+      for (final photoPath in _profileData.venuePhotos) {
+        if (photoPath.startsWith('/')) {
+          try {
+            final uploadResult = await uploadService.uploadGalleryImage(
+              photoPath,
+              index: galleryUrls.length,
+            );
+            galleryUrls.add(uploadResult.url);
+            debugPrint('✅ Gallery photo uploaded: ${uploadResult.url}');
+          } catch (e) {
+            debugPrint('⚠️ Gallery photo upload failed: $e');
+          }
+        } else {
+          galleryUrls.add(photoPath);
+        }
+      }
+      _profileData.venuePhotos = galleryUrls;
+    } catch (e) {
+      debugPrint('❌ Photo upload error: $e');
+    }
+
+    // Require valid location before completing venue setup
     final hasCity = (_profileData.city ?? '').trim().isNotEmpty;
     final hasCountry = (_profileData.country ?? '').trim().isNotEmpty;
     final lat = _profileData.location.latitude;
     final lng = _profileData.location.longitude;
 
-    // VenueProfileData.latitude/longitude are non-nullable doubles (default 0).
-    // Treat near-zero as "not set" to avoid sending invalid 0,0 coordinates.
-    final hasValidCoords =
-        lat.abs() > 0.000001 && lng.abs() > 0.000001;
+    final hasValidCoords = lat.abs() > 0.000001 && lng.abs() > 0.000001;
 
     if (!hasCity || !hasCountry || !hasValidCoords) {
       if (!mounted) return;

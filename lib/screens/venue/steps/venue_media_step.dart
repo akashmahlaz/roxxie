@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/models/venue_models.dart';
@@ -30,6 +31,15 @@ class VenueMediaStep extends StatefulWidget {
 
 class _VenueMediaStepState extends State<VenueMediaStep> {
   final ImagePicker _picker = ImagePicker();
+
+  /// Helper to get correct ImageProvider based on path type
+  ImageProvider _getImageProvider(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    } else {
+      return FileImage(File(path));
+    }
+  }
 
   Future<void> _pickCoverPhoto() async {
     final XFile? image = await _picker.pickImage(
@@ -190,7 +200,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
           ),
           image: widget.profileData.coverPhoto != null
               ? DecorationImage(
-                  image: AssetImage(widget.profileData.coverPhoto!),
+                  image: _getImageProvider(widget.profileData.coverPhoto!),
                   fit: BoxFit.cover,
                 )
               : null,
@@ -388,9 +398,14 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Container(
-              color: AppColors.surface(brightness),
-              child: const Icon(Icons.image_rounded, color: AppColors.crimson),
+            // Use proper image provider based on path type
+            Image(
+              image: _getImageProvider(imagePath),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: AppColors.surface(brightness),
+                child: const Icon(Icons.broken_image_rounded, color: AppColors.crimson),
+              ),
             ),
             Positioned(
               top: 4,

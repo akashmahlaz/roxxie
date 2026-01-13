@@ -65,9 +65,18 @@ class SwipeService {
   /// 🔄 Swipe action
   Future<SwipeResponse> _swipe(SwipeRequest request) async {
     try {
+      // Backend expects POST /swipes/:targetId with body {direction: 'right'|'left'}
+      final direction = request.action == SwipeAction.like || 
+                       request.action == SwipeAction.superLike 
+                       ? 'right' 
+                       : 'left';
+      
       final response = await _client.post(
-        Endpoints.swipe,
-        data: request.toJson(),
+        '${Endpoints.swipe}/${request.targetId}',
+        data: {
+          'direction': direction,
+          'isSuperLike': request.action == SwipeAction.superLike,
+        },
       );
       return SwipeResponse.fromJson(response.data);
     } catch (e) {
@@ -77,9 +86,14 @@ class SwipeService {
   }
 
   /// ↩️ Undo last swipe (premium feature)
-  Future<bool> undoLastSwipe() async {
+  /// Note: Backend requires swipeId, this is a placeholder
+  Future<bool> undoLastSwipe([String? swipeId]) async {
     try {
-      await _client.post(Endpoints.undoSwipe);
+      if (swipeId == null) {
+        debugPrint('⚠️ Cannot undo without swipeId');
+        return false;
+      }
+      await _client.delete(Endpoints.undoSwipe(swipeId));
       return true;
     } catch (e) {
       debugPrint('Undo swipe error: $e');

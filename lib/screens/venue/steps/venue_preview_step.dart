@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/models/venue_models.dart';
@@ -38,6 +39,12 @@ class VenuePreviewStep extends StatelessWidget {
           // Venue Profile Card
           _buildVenueCard(brightness),
 
+          // Gallery Section
+          if (profileData.venuePhotos.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            _buildGallerySection(brightness),
+          ],
+
           const SizedBox(height: 24),
 
           // Details Summary
@@ -61,6 +68,74 @@ class VenuePreviewStep extends StatelessWidget {
           const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+
+  Widget _buildGallerySection(Brightness brightness) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.photo_library_rounded,
+              color: AppColors.crimson,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Gallery',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '${profileData.venuePhotos.length}',
+                style: const TextStyle(
+                  color: AppColors.crimson,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 100,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: profileData.venuePhotos.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final photo = profileData.venuePhotos[index];
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface(brightness),
+                    image: DecorationImage(
+                      image: _getImageProvider(photo),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -115,6 +190,15 @@ class VenuePreviewStep extends StatelessWidget {
     );
   }
 
+  /// Helper to get proper image provider for local or network images
+  ImageProvider _getImageProvider(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    } else {
+      return FileImage(File(path));
+    }
+  }
+
   Widget _buildVenueCard(Brightness brightness) {
     return Container(
       decoration: BoxDecoration(
@@ -134,27 +218,33 @@ class VenuePreviewStep extends StatelessWidget {
         children: [
           // Cover Photo
           Container(
-            height: 160,
+            height: 180,
             decoration: BoxDecoration(
               color: AppColors.crimson.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(19),
               ),
+              image: profileData.coverPhoto != null
+                  ? DecorationImage(
+                      image: _getImageProvider(profileData.coverPhoto!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
             child: Stack(
               children: [
-                // Placeholder
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.storefront_rounded,
-                        color: AppColors.crimson.withValues(alpha: 0.5),
-                        size: 48,
-                      ),
-                      const SizedBox(height: 8),
-                      if (profileData.coverPhoto == null)
+                // Placeholder only if no cover photo
+                if (profileData.coverPhoto == null)
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.storefront_rounded,
+                          color: AppColors.crimson.withValues(alpha: 0.5),
+                          size: 48,
+                        ),
+                        const SizedBox(height: 8),
                         Text(
                           'No cover photo',
                           style: TextStyle(
@@ -162,9 +252,30 @@ class VenuePreviewStep extends StatelessWidget {
                             fontSize: 13,
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+
+                // Gradient overlay for text readability
+                if (profileData.coverPhoto != null)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(19),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.3),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.4),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
 
                 // Venue Type Badge
                 Positioned(

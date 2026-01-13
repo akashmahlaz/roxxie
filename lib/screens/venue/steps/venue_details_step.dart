@@ -710,17 +710,33 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   }
 
   Widget _buildCountrySelector(Brightness brightness) {
-    final countries = [
-      'United States',
-      'United Kingdom',
-      'Canada',
-      'Australia',
-      'India',
-      'Germany',
-      'France',
-      'Spain',
-      'Other',
-    ];
+    // Map of display names to possible stored values
+    final countryMap = {
+      'United States': ['United States', 'US', 'USA', 'United States of America'],
+      'United Kingdom': ['United Kingdom', 'UK', 'GB', 'Great Britain', 'England'],
+      'Canada': ['Canada', 'CA'],
+      'Australia': ['Australia', 'AU'],
+      'India': ['India', 'IN'],
+      'Germany': ['Germany', 'DE', 'Deutschland'],
+      'France': ['France', 'FR'],
+      'Spain': ['Spain', 'ES'],
+    };
+
+    // Find the display name for current stored value
+    String? selectedDisplayName;
+    for (final entry in countryMap.entries) {
+      if (entry.value.any((v) => v.toLowerCase() == (widget.profileData.country ?? '').toLowerCase())) {
+        selectedDisplayName = entry.key;
+        break;
+      }
+    }
+
+    // If current country doesn't match any mapped value, check if it's a valid custom entry
+    if (selectedDisplayName == null && (widget.profileData.country?.isNotEmpty ?? false)) {
+      selectedDisplayName = 'Other';
+    }
+
+    final countries = countryMap.keys.toList()..add('Other');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,9 +759,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: (widget.profileData.country?.isEmpty ?? true)
-                  ? null
-                  : widget.profileData.country,
+              value: selectedDisplayName,
               hint: Text(
                 'Select country',
                 style: TextStyle(color: AppColors.textSec(brightness)),
@@ -767,6 +781,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
               }).toList(),
               onChanged: (value) {
                 setState(() {
+                  // Store the full country name
                   widget.profileData.country = value ?? '';
                 });
                 widget.onDataChanged();

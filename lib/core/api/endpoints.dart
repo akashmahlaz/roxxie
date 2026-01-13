@@ -159,7 +159,7 @@ class Endpoints {
   static const String venuesMe = '/venues/me';
 
   /// Complete venue setup
-  static const String venuesCompleteSetup = '/venues/complete-setup';
+  static const String venuesCompleteSetup = '/venues/me/complete-setup';
 
   /// Get venue bookings
   static String venueBookings(String id) => '/venues/$id/bookings';
@@ -181,21 +181,24 @@ class Endpoints {
   // ═══════════════════════════════════════════════════════════════════════
 
   /// Get discovery feed
-  static const String discover = '/swipes/feed';
-  static const String discoveryFeed = '/swipes/feed';
+  static const String discover = '/swipes/discover';
+  static const String discoveryFeed = '/swipes/discover';
 
-  /// Swipe on profile
+  /// Swipe on profile (POST /swipes/:targetId with {direction: 'right'|'left'})
   static const String swipe = '/swipes';
+  
+  /// Swipe on specific target
+  static String swipeTarget(String targetId) => '/swipes/$targetId';
 
-  /// Swipe right on profile
-  static const String swipeRight = '/swipes/right';
+  /// Swipe right on profile (use swipeTarget instead)
+  static const String swipeRight = '/swipes';
 
-  /// Swipe left on profile
-  static const String swipeLeft = '/swipes/left';
+  /// Swipe left on profile (use swipeTarget instead)
+  static const String swipeLeft = '/swipes';
 
-  /// Undo last swipe
-  static const String undoSwipe = '/swipes/undo';
-  static const String swipeUndo = '/swipes/undo';
+  /// Undo swipe (DELETE /swipes/:swipeId)
+  static String undoSwipe(String swipeId) => '/swipes/$swipeId';
+  static String swipeUndo(String swipeId) => '/swipes/$swipeId';
 
   /// Get who liked me
   static const String whoLikedMe = '/swipes/who-liked-me';
@@ -239,10 +242,10 @@ class Endpoints {
   static const String mutualMatches = '/matches/mutual';
 
   /// Get new matches count
-  static const String newMatchesCount = '/matches/new/count';
+  static const String newMatchesCount = '/matches/unread-count';
 
   /// Get matches unread count
-  static const String matchesUnreadCount = '/matches/unread/count';
+  static const String matchesUnreadCount = '/matches/unread-count';
 
   // ═══════════════════════════════════════════════════════════════════════
   // MESSAGES / CHAT
@@ -584,19 +587,19 @@ class Endpoints {
   // ═══════════════════════════════════════════════════════════════════════
 
   /// Get upload signed params
-  static const String uploadSignedParams = '/uploads/signed-params';
+  static const String uploadSignedParams = '/upload/signed-params';
 
   /// Upload profile photo
-  static const String uploadProfilePhoto = '/uploads/profile-photo';
+  static const String uploadProfilePhoto = '/upload/profile-photo';
 
   /// Upload gallery images
-  static const String uploadGallery = '/uploads/gallery';
+  static const String uploadGallery = '/upload/gallery';
 
   /// Upload audio
-  static const String uploadAudio = '/uploads/audio';
+  static const String uploadAudio = '/upload/audio';
 
   /// Upload video
-  static const String uploadVideo = '/uploads/video';
+  static const String uploadVideo = '/upload/video';
 
   // ═══════════════════════════════════════════════════════════════════════
   // SEARCH & DISCOVERY

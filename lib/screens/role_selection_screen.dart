@@ -177,6 +177,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
     required Gradient gradient,
     required bool isSelected,
   }) {
+    final brightness = Theme.of(context).brightness;
+    
     return GestureDetector(
       onTap: () => _selectRole(role),
       child: AnimatedContainer(
@@ -184,12 +186,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
         curve: Curves.easeOut,
         padding: AppSpacing.cardPaddingLarge,
         decoration: BoxDecoration(
-          color: AppColors.charcoal,
+          color: AppColors.surface(brightness),
           borderRadius: AppSpacing.borderRadiusXl,
           border: Border.all(
             color: isSelected
                 ? (role == 'artist' ? AppColors.crimson : AppColors.cyan)
-                : AppColors.slate,
+                : AppColors.border(brightness),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
@@ -253,7 +255,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                     ? (role == 'artist' ? AppColors.crimson : AppColors.cyan)
                     : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? Colors.transparent : AppColors.slate,
+                  color: isSelected ? Colors.transparent : AppColors.border(brightness),
                   width: 2,
                 ),
               ),

@@ -19,6 +19,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
+import '../../core/services/upload_service.dart';
 import 'steps/basic_info_step.dart';
 import 'steps/media_upload_step.dart';
 import 'steps/contact_location_step.dart';
@@ -285,6 +286,45 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
 
       // Check network connectivity
       await _checkNetworkConnectivity();
+
+      // Upload photos before completing setup
+      final uploadService = UploadService();
+      
+      // Upload profile photo if it's a local file
+      if (_profileData.profilePhoto != null && 
+          _profileData.profilePhoto!.startsWith('/')) {
+        debugPrint('📤 Uploading profile photo...');
+        try {
+          final uploadResult = await uploadService.uploadProfilePhoto(
+            _profileData.profilePhoto!,
+          );
+          _profileData.profilePhoto = uploadResult.url;
+          debugPrint('✅ Profile photo uploaded: ${uploadResult.url}');
+        } catch (e) {
+          debugPrint('⚠️ Profile photo upload failed: $e');
+          _profileData.profilePhoto = null;
+        }
+      }
+
+      // Upload gallery photos if they are local files
+      final uploadedGallery = <String>[];
+      for (final photoPath in _profileData.photoGallery) {
+        if (photoPath.startsWith('/')) {
+          try {
+            final uploadResult = await uploadService.uploadGalleryImage(
+              photoPath,
+              index: uploadedGallery.length,
+            );
+            uploadedGallery.add(uploadResult.url);
+            debugPrint('✅ Gallery photo uploaded: ${uploadResult.url}');
+          } catch (e) {
+            debugPrint('⚠️ Gallery photo upload failed: $e');
+          }
+        } else {
+          uploadedGallery.add(photoPath);
+        }
+      }
+      _profileData.photoGallery = uploadedGallery;
 
       // Build the request data using the model's toBackendDto method
       final requestData = _profileData.toBackendDto();

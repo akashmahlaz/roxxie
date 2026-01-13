@@ -294,20 +294,19 @@ class OperatingHours {
     this.notes,
   });
 
+  /// Convert to backend format (uses open/close instead of openTime/closeTime)
   Map<String, dynamic> toJson() => {
-    if (dayOfWeek != null) 'dayOfWeek': dayOfWeek,
-    if (openTime != null) 'openTime': openTime,
-    if (closeTime != null) 'closeTime': closeTime,
-    'isOpen': isOpen,
-    if (notes != null) 'notes': notes,
+    if (openTime != null) 'open': openTime,
+    if (closeTime != null) 'close': closeTime,
+    'isClosed': !isOpen,
   };
 
   factory OperatingHours.fromJson(Map<String, dynamic> json) {
     return OperatingHours(
       dayOfWeek: json['dayOfWeek'],
-      openTime: json['openTime'],
-      closeTime: json['closeTime'],
-      isOpen: json['isOpen'] ?? true,
+      openTime: json['openTime'] ?? json['open'],
+      closeTime: json['closeTime'] ?? json['close'],
+      isOpen: json['isOpen'] ?? !(json['isClosed'] ?? false),
       notes: json['notes'],
     );
   }

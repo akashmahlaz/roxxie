@@ -1,7 +1,8 @@
 /// 👤 GIGMATCH Profile Screen
-/// User profile and settings
+/// User profile and settings with dynamic theming
 library;
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
@@ -12,8 +13,10 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    
     return Scaffold(
-      backgroundColor: AppColors.obsidian,
+      backgroundColor: AppColors.background(brightness),
       body: SafeArea(
         child: Consumer<AuthProvider>(
           builder: (context, auth, _) {
@@ -34,33 +37,53 @@ class ProfileScreen extends StatelessWidget {
                     venueName: venue?.name,
                     isVerified:
                         artist?.isVerified ?? venue?.isVerified ?? false,
+                    brightness: brightness,
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+
+                  // Bio Section
+                  if (auth.isArtist && artist?.bio != null && artist!.bio!.isNotEmpty)
+                    _BioSection(bio: artist.bio!, brightness: brightness)
+                  else if (auth.isVenue && venue?.description != null && venue!.description!.isNotEmpty)
+                    _BioSection(bio: venue.description!, brightness: brightness),
+
+                  const SizedBox(height: 20),
 
                   // Stats
                   if (auth.isArtist && artist != null)
-                    _ArtistStats(artist: artist)
+                    _ArtistStats(artist: artist, brightness: brightness)
                   else if (auth.isVenue && venue != null)
-                    _VenueStats(venue: venue),
+                    _VenueStats(venue: venue, brightness: brightness),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+
+                  // Media Gallery Section
+                  if (auth.isArtist && artist != null)
+                    _ArtistMediaSection(artist: artist, brightness: brightness)
+                  else if (auth.isVenue && venue != null)
+                    _VenueGallerySection(venue: venue, brightness: brightness),
+
+                  const SizedBox(height: 24),
 
                   // Menu items
                   _MenuItem(
-                    icon: Icons.edit,
+                    icon: Icons.edit_rounded,
                     title: 'Edit Profile',
                     onTap: () => Navigator.pushNamed(context, '/edit-profile'),
+                    brightness: brightness,
                   ),
                   _MenuItem(
-                    icon: Icons.settings,
+                    icon: Icons.settings_rounded,
                     title: 'Settings',
                     onTap: () => Navigator.pushNamed(context, '/settings'),
+                    brightness: brightness,
                   ),
                   _MenuItem(
-                    icon: Icons.star,
+                    icon: Icons.workspace_premium_rounded,
                     title: 'Upgrade to Premium',
                     onTap: () => Navigator.pushNamed(context, '/premium'),
+                    brightness: brightness,
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -83,21 +106,25 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   _MenuItem(
-                    icon: Icons.help_outline,
+                    icon: Icons.help_outline_rounded,
                     title: 'Help & Support',
                     onTap: () => Navigator.pushNamed(context, '/support'),
+                    brightness: brightness,
                   ),
                   _MenuItem(
-                    icon: Icons.info_outline,
+                    icon: Icons.info_outline_rounded,
                     title: 'About',
                     onTap: () => Navigator.pushNamed(context, '/about'),
+                    brightness: brightness,
                   ),
 
                   const SizedBox(height: 24),
 
                   // Logout button
-                  OutlinedButton(
-                    onPressed: () => _showLogoutDialog(context),
+                  OutlinedButton.icon(
+                    onPressed: () => _showLogoutDialog(context, brightness),
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text('Sign Out'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.crimson,
                       side: const BorderSide(color: AppColors.crimson),
@@ -106,7 +133,6 @@ class ProfileScreen extends StatelessWidget {
                         vertical: 12,
                       ),
                     ),
-                    child: const Text('Sign Out'),
                   ),
 
                   const SizedBox(height: 24),
@@ -115,7 +141,7 @@ class ProfileScreen extends StatelessWidget {
                   Text(
                     'GigMatch v1.0.0',
                     style: TextStyle(
-                      color: AppColors.mediumGray.withValues(alpha: 0.5),
+                      color: AppColors.textTert(brightness),
                       fontSize: 12,
                     ),
                   ),
@@ -128,25 +154,25 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, Brightness brightness) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.charcoal,
-        title: const Text(
+        backgroundColor: AppColors.surface(brightness),
+        title: Text(
           'Sign Out?',
-          style: TextStyle(color: AppColors.offWhite),
+          style: TextStyle(color: AppColors.text(brightness)),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to sign out?',
-          style: TextStyle(color: AppColors.mediumGray),
+          style: TextStyle(color: AppColors.textSec(brightness)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: AppColors.mediumGray),
+              style: TextStyle(color: AppColors.textSec(brightness)),
             ),
           ),
           TextButton(
@@ -180,6 +206,7 @@ class _ProfileHeader extends StatelessWidget {
   final String? stageName;
   final String? venueName;
   final bool isVerified;
+  final Brightness brightness;
 
   const _ProfileHeader({
     required this.name,
@@ -188,6 +215,7 @@ class _ProfileHeader extends StatelessWidget {
     this.stageName,
     this.venueName,
     required this.isVerified,
+    required this.brightness,
   });
 
   @override
@@ -199,7 +227,7 @@ class _ProfileHeader extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 50,
-              backgroundColor: AppColors.charcoal,
+              backgroundColor: AppColors.surface(brightness),
               backgroundImage: photoUrl != null && photoUrl!.isNotEmpty
                   ? NetworkImage(photoUrl!)
                   : null,
@@ -207,7 +235,7 @@ class _ProfileHeader extends StatelessWidget {
                   ? Icon(
                       isArtist ? Icons.music_note : Icons.business,
                       size: 40,
-                      color: AppColors.mediumGray,
+                      color: AppColors.textSec(brightness),
                     )
                   : null,
             ),
@@ -233,7 +261,7 @@ class _ProfileHeader extends StatelessWidget {
         Text(
           isArtist ? (stageName ?? name) : (venueName ?? name),
           style: AppTypography.headlineSmall.copyWith(
-            color: AppColors.offWhite,
+            color: AppColors.text(brightness),
           ),
         ),
 
@@ -262,15 +290,16 @@ class _ProfileHeader extends StatelessWidget {
 /// Artist Stats
 class _ArtistStats extends StatelessWidget {
   final dynamic artist;
+  final Brightness brightness;
 
-  const _ArtistStats({required this.artist});
+  const _ArtistStats({required this.artist, required this.brightness});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.charcoal,
+        color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -280,16 +309,19 @@ class _ArtistStats extends StatelessWidget {
             value: '${artist.rating.toStringAsFixed(1)}',
             label: 'Rating',
             icon: Icons.star,
+            brightness: brightness,
           ),
           _StatItem(
             value: '${artist.reviewCount}',
             label: 'Reviews',
             icon: Icons.rate_review,
+            brightness: brightness,
           ),
           _StatItem(
             value: artist.genres.length.toString(),
             label: 'Genres',
             icon: Icons.music_note,
+            brightness: brightness,
           ),
         ],
       ),
@@ -300,15 +332,16 @@ class _ArtistStats extends StatelessWidget {
 /// Venue Stats
 class _VenueStats extends StatelessWidget {
   final dynamic venue;
+  final Brightness brightness;
 
-  const _VenueStats({required this.venue});
+  const _VenueStats({required this.venue, required this.brightness});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.charcoal,
+        color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -318,16 +351,19 @@ class _VenueStats extends StatelessWidget {
             value: '${venue.rating.toStringAsFixed(1)}',
             label: 'Rating',
             icon: Icons.star,
+            brightness: brightness,
           ),
           _StatItem(
             value: '${venue.capacity}',
             label: 'Capacity',
             icon: Icons.people,
+            brightness: brightness,
           ),
           _StatItem(
             value: '${venue.reviewCount}',
             label: 'Reviews',
             icon: Icons.rate_review,
+            brightness: brightness,
           ),
         ],
       ),
@@ -340,11 +376,13 @@ class _StatItem extends StatelessWidget {
   final String value;
   final String label;
   final IconData icon;
+  final Brightness brightness;
 
   const _StatItem({
     required this.value,
     required this.label,
     required this.icon,
+    required this.brightness,
   });
 
   @override
@@ -355,15 +393,15 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
-            color: AppColors.offWhite,
+          style: TextStyle(
+            color: AppColors.text(brightness),
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(color: AppColors.mediumGray, fontSize: 12),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12),
         ),
       ],
     );
@@ -376,12 +414,14 @@ class _MenuItem extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
   final Widget? trailing;
+  final Brightness brightness;
 
   const _MenuItem({
     required this.icon,
     required this.title,
     required this.onTap,
     this.trailing,
+    required this.brightness,
   });
 
   @override
@@ -389,17 +429,319 @@ class _MenuItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.charcoal,
+        color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(icon, color: AppColors.mediumGray),
-        title: Text(title, style: const TextStyle(color: AppColors.offWhite)),
+        leading: Icon(icon, color: AppColors.textSec(brightness)),
+        title: Text(title, style: TextStyle(color: AppColors.text(brightness))),
         trailing:
             trailing ??
-            const Icon(Icons.chevron_right, color: AppColors.mediumGray),
+            Icon(Icons.chevron_right, color: AppColors.textSec(brightness)),
       ),
+    );
+  }
+}
+
+/// Bio Section
+class _BioSection extends StatelessWidget {
+  final String bio;
+  final Brightness brightness;
+
+  const _BioSection({required this.bio, required this.brightness});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(brightness)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.format_quote_rounded,
+                color: AppColors.crimson,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'About',
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            bio,
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Artist Media Section
+class _ArtistMediaSection extends StatelessWidget {
+  final dynamic artist;
+  final Brightness brightness;
+
+  const _ArtistMediaSection({required this.artist, required this.brightness});
+
+  ImageProvider _getImageProvider(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    } else {
+      return FileImage(File(path));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasAudio = artist.audioSamples != null && (artist.audioSamples as List).isNotEmpty;
+    final hasPhotos = artist.galleryUrls != null && (artist.galleryUrls as List).isNotEmpty;
+    
+    if (!hasAudio && !hasPhotos) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Audio Samples
+        if (hasAudio) ...[
+          _SectionHeader(
+            icon: Icons.headphones_rounded,
+            title: 'Audio Samples',
+            count: (artist.audioSamples as List).length,
+            brightness: brightness,
+          ),
+          const SizedBox(height: 12),
+          ...(artist.audioSamples as List).take(3).map<Widget>((sample) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface(brightness),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border(brightness)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.crimson.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: AppColors.crimson,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          sample['title'] ?? 'Untitled Track',
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (sample['durationSeconds'] != null)
+                          Text(
+                            _formatDuration(sample['durationSeconds']),
+                            style: TextStyle(
+                              color: AppColors.textTert(brightness),
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.music_note_rounded,
+                    color: AppColors.textTert(brightness),
+                    size: 18,
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 16),
+        ],
+
+        // Gallery Photos
+        if (hasPhotos) ...[
+          _SectionHeader(
+            icon: Icons.photo_library_rounded,
+            title: 'Gallery',
+            count: (artist.galleryUrls as List).length,
+            brightness: brightness,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 100,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: (artist.galleryUrls as List).length > 5 ? 5 : (artist.galleryUrls as List).length,
+              separatorBuilder: (context, index) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final photo = (artist.galleryUrls as List)[index];
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface(brightness),
+                      image: DecorationImage(
+                        image: _getImageProvider(photo),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes}:${secs.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Venue Gallery Section
+class _VenueGallerySection extends StatelessWidget {
+  final dynamic venue;
+  final Brightness brightness;
+
+  const _VenueGallerySection({required this.venue, required this.brightness});
+
+  ImageProvider _getImageProvider(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    } else {
+      return FileImage(File(path));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhotos = venue.galleryUrls != null && (venue.galleryUrls as List).isNotEmpty;
+    
+    if (!hasPhotos) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          icon: Icons.photo_library_rounded,
+          title: 'Venue Gallery',
+          count: (venue.galleryUrls as List).length,
+          brightness: brightness,
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 120,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: (venue.galleryUrls as List).length > 5 ? 5 : (venue.galleryUrls as List).length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final photo = (venue.galleryUrls as List)[index];
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 160,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface(brightness),
+                    image: DecorationImage(
+                      image: _getImageProvider(photo),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Section Header
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final int count;
+  final Brightness brightness;
+
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    required this.count,
+    required this.brightness,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.crimson, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            color: AppColors.text(brightness),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.crimson.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '$count',
+            style: const TextStyle(
+              color: AppColors.crimson,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

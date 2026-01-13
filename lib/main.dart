@@ -16,6 +16,7 @@ import 'screens/discovery_screen.dart';
 import 'screens/matches_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/edit_profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/premium_screen.dart';
 import 'screens/about_screen.dart';
@@ -77,6 +78,11 @@ class GigMatchApp extends StatelessWidget {
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
 
+        // Custom page transition to prevent white flashes
+        builder: (context, child) {
+          return child ?? const SizedBox.shrink();
+        },
+
         // Named routes for navigation
         initialRoute: '/',
         routes: {
@@ -89,6 +95,7 @@ class GigMatchApp extends StatelessWidget {
           '/discovery': (context) => const DiscoveryScreen(),
           '/matches': (context) => const MatchesScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/edit-profile': (context) => const EditProfileScreen(),
           '/settings': (context) => const SettingsScreen(),
           '/premium': (context) => const PremiumScreen(),
           '/about': (context) => const AboutScreen(),
@@ -97,33 +104,55 @@ class GigMatchApp extends StatelessWidget {
           '/venue-setup': (context) => const VenueProfileSetupScreen(),
         },
 
-        // Handle dynamic routes (e.g., chat with ID)
+        // Handle dynamic routes with smooth transitions
         onGenerateRoute: (settings) {
           // Chat screen with match ID
           if (settings.name?.startsWith('/chat/') ?? false) {
             final matchId = settings.name!.split('/').last;
-            return MaterialPageRoute(
-              builder: (context) => ChatScreen(matchId: matchId),
+            return _createFadeRoute(
+              ChatScreen(matchId: matchId),
+              settings,
             );
           }
 
           // Profile setup based on role
           if (settings.name == '/profile-setup') {
-            return MaterialPageRoute(
-              builder: (context) {
-                final authProvider = context.read<AuthProvider>();
-                if (authProvider.isArtist) {
-                  return const ArtistProfileSetupScreen();
-                } else {
-                  return const VenueProfileSetupScreen();
-                }
-              },
+            return _createFadeRoute(
+              Builder(
+                builder: (context) {
+                  final authProvider = context.read<AuthProvider>();
+                  if (authProvider.isArtist) {
+                    return const ArtistProfileSetupScreen();
+                  } else {
+                    return const VenueProfileSetupScreen();
+                  }
+                },
+              ),
+              settings,
             );
           }
 
           return null;
         },
       ),
+    );
+  }
+
+  /// Create smooth fade transition to prevent white flashes
+  static Route<T> _createFadeRoute<T>(Widget page, RouteSettings settings) {
+    return PageRouteBuilder<T>(
+      settings: settings,
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOut,
+          ),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 300),
     );
   }
 }

@@ -1,5 +1,5 @@
 /// 💕 GIGMATCH Matches Screen
-/// Shows all matched artists/venues
+/// Shows all matched artists/venues with dynamic theming
 library;
 
 import 'package:flutter/material.dart';
@@ -39,22 +39,24 @@ class _MatchesScreenState extends State<MatchesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    
     return Scaffold(
-      backgroundColor: AppColors.obsidian,
+      backgroundColor: AppColors.background(brightness),
       appBar: AppBar(
-        backgroundColor: AppColors.obsidian,
+        backgroundColor: AppColors.background(brightness),
         elevation: 0,
         title: Text(
           'Matches',
           style: AppTypography.headlineSmall.copyWith(
-            color: AppColors.offWhite,
+            color: AppColors.text(brightness),
           ),
         ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.crimson,
           labelColor: AppColors.crimson,
-          unselectedLabelColor: AppColors.mediumGray,
+          unselectedLabelColor: AppColors.textSec(brightness),
           tabs: const [
             Tab(text: 'New Matches'),
             Tab(text: 'Messages'),
@@ -71,14 +73,14 @@ class _MatchesScreenState extends State<MatchesScreen>
           }
 
           if (provider.matches.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(brightness);
           }
 
           return TabBarView(
             controller: _tabController,
             children: [
-              _buildNewMatchesTab(provider),
-              _buildMessagesTab(provider),
+              _buildNewMatchesTab(provider, brightness),
+              _buildMessagesTab(provider, brightness),
             ],
           );
         },
@@ -86,7 +88,7 @@ class _MatchesScreenState extends State<MatchesScreen>
     );
   }
 
-  Widget _buildNewMatchesTab(MatchProvider provider) {
+  Widget _buildNewMatchesTab(MatchProvider provider, Brightness brightness) {
     final newMatches = provider.newMatches;
 
     if (newMatches.isEmpty) {
@@ -97,20 +99,20 @@ class _MatchesScreenState extends State<MatchesScreen>
             Icon(
               Icons.favorite_border,
               size: 60,
-              color: AppColors.mediumGray.withValues(alpha: 0.5),
+              color: AppColors.textTert(brightness),
             ),
             const SizedBox(height: 16),
             Text(
               'No new matches yet',
               style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.mediumGray,
+                color: AppColors.textSec(brightness),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Keep swiping to find your gig!',
               style: AppTypography.bodySmall.copyWith(
-                color: AppColors.mediumGray,
+                color: AppColors.textSec(brightness),
               ),
             ),
           ],
@@ -134,13 +136,14 @@ class _MatchesScreenState extends State<MatchesScreen>
           return _MatchCard(
             match: newMatches[index],
             onTap: () => _openChat(newMatches[index]),
+            brightness: brightness,
           );
         },
       ),
     );
   }
 
-  Widget _buildMessagesTab(MatchProvider provider) {
+  Widget _buildMessagesTab(MatchProvider provider, Brightness brightness) {
     final conversations = provider.conversationMatches;
 
     if (conversations.isEmpty) {
@@ -151,20 +154,20 @@ class _MatchesScreenState extends State<MatchesScreen>
             Icon(
               Icons.chat_bubble_outline,
               size: 60,
-              color: AppColors.mediumGray.withValues(alpha: 0.5),
+              color: AppColors.textTert(brightness),
             ),
             const SizedBox(height: 16),
             Text(
               'No conversations yet',
               style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.mediumGray,
+                color: AppColors.textSec(brightness),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Start chatting with your matches!',
               style: AppTypography.bodySmall.copyWith(
-                color: AppColors.mediumGray,
+                color: AppColors.textSec(brightness),
               ),
             ),
           ],
@@ -182,13 +185,14 @@ class _MatchesScreenState extends State<MatchesScreen>
           return _ConversationTile(
             match: conversations[index],
             onTap: () => _openChat(conversations[index]),
+            brightness: brightness,
           );
         },
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(Brightness brightness) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -196,20 +200,20 @@ class _MatchesScreenState extends State<MatchesScreen>
           Icon(
             Icons.people_outline,
             size: 80,
-            color: AppColors.mediumGray.withValues(alpha: 0.5),
+            color: AppColors.textTert(brightness),
           ),
           const SizedBox(height: 20),
           Text(
             'No matches yet',
             style: AppTypography.headlineSmall.copyWith(
-              color: AppColors.offWhite,
+              color: AppColors.text(brightness),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Start swiping to find gigs!',
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.mediumGray,
+              color: AppColors.textSec(brightness),
             ),
           ),
           const SizedBox(height: 24),
@@ -235,8 +239,13 @@ class _MatchesScreenState extends State<MatchesScreen>
 class _MatchCard extends StatelessWidget {
   final Match match;
   final VoidCallback onTap;
+  final Brightness brightness;
 
-  const _MatchCard({required this.match, required this.onTap});
+  const _MatchCard({
+    required this.match, 
+    required this.onTap,
+    required this.brightness,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -268,21 +277,21 @@ class _MatchCard extends StatelessWidget {
                   photo,
                   fit: BoxFit.cover,
                   errorBuilder: (_, e, s) => Container(
-                    color: AppColors.charcoal,
-                    child: const Icon(
+                    color: AppColors.surface(brightness),
+                    child: Icon(
                       Icons.person,
                       size: 40,
-                      color: AppColors.mediumGray,
+                      color: AppColors.textSec(brightness),
                     ),
                   ),
                 )
               else
                 Container(
-                  color: AppColors.charcoal,
-                  child: const Icon(
+                  color: AppColors.surface(brightness),
+                  child: Icon(
                     Icons.person,
                     size: 40,
-                    color: AppColors.mediumGray,
+                    color: AppColors.textSec(brightness),
                   ),
                 ),
 
@@ -353,8 +362,13 @@ class _MatchCard extends StatelessWidget {
 class _ConversationTile extends StatelessWidget {
   final Match match;
   final VoidCallback onTap;
+  final Brightness brightness;
 
-  const _ConversationTile({required this.match, required this.onTap});
+  const _ConversationTile({
+    required this.match, 
+    required this.onTap,
+    required this.brightness,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -370,10 +384,10 @@ class _ConversationTile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: AppColors.charcoal,
+            backgroundColor: AppColors.surface(brightness),
             backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
             child: photo.isEmpty
-                ? const Icon(Icons.person, color: AppColors.mediumGray)
+                ? Icon(Icons.person, color: AppColors.textSec(brightness))
                 : null,
           ),
           if (match.unreadCount > 0)
@@ -404,7 +418,7 @@ class _ConversationTile extends StatelessWidget {
       title: Text(
         name,
         style: TextStyle(
-          color: AppColors.offWhite,
+          color: AppColors.text(brightness),
           fontWeight: match.unreadCount > 0
               ? FontWeight.bold
               : FontWeight.normal,
@@ -414,8 +428,8 @@ class _ConversationTile extends StatelessWidget {
         match.lastMessagePreview ?? 'Start the conversation!',
         style: TextStyle(
           color: match.unreadCount > 0
-              ? AppColors.offWhite
-              : AppColors.mediumGray,
+              ? AppColors.text(brightness)
+              : AppColors.textSec(brightness),
           fontWeight: match.unreadCount > 0
               ? FontWeight.w500
               : FontWeight.normal,
@@ -433,7 +447,7 @@ class _ConversationTile extends StatelessWidget {
               style: TextStyle(
                 color: match.unreadCount > 0
                     ? AppColors.crimson
-                    : AppColors.mediumGray,
+                    : AppColors.textSec(brightness),
                 fontSize: 12,
               ),
             ),

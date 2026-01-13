@@ -1,5 +1,5 @@
 /// 📝 GIGMATCH Register Screen
-/// User registration with role selection
+/// User registration with role selection and dynamic theming
 library;
 
 import 'package:flutter/material.dart';
@@ -60,13 +60,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    
     return Scaffold(
-      backgroundColor: AppColors.obsidian,
+      backgroundColor: AppColors.background(brightness),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.offWhite),
+          icon: Icon(Icons.arrow_back, color: AppColors.text(brightness)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -80,14 +82,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Text(
                 'Create Account',
                 style: AppTypography.headlineLarge.copyWith(
-                  color: AppColors.offWhite,
+                  color: AppColors.text(brightness),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Join the community',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.mediumGray,
+                  color: AppColors.textSec(brightness),
                 ),
               ),
 
@@ -97,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Text(
                 'I am a...',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.offWhite,
+                  color: AppColors.text(brightness),
                 ),
               ),
               const SizedBox(height: 12),
@@ -111,6 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       isSelected: _selectedRole == UserRole.artist,
                       onTap: () =>
                           setState(() => _selectedRole = UserRole.artist),
+                      brightness: brightness,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -122,6 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       isSelected: _selectedRole == UserRole.venue,
                       onTap: () =>
                           setState(() => _selectedRole = UserRole.venue),
+                      brightness: brightness,
                     ),
                   ),
                 ],
@@ -251,7 +255,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     Text(
                       'Already have an account? ',
-                      style: TextStyle(color: AppColors.mediumGray),
+                      style: TextStyle(color: AppColors.textSec(brightness)),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
@@ -273,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Center(
                 child: Text(
                   'By signing up, you agree to our Terms of Service\nand Privacy Policy',
-                  style: TextStyle(color: AppColors.mediumGray, fontSize: 12),
+                  style: TextStyle(color: AppColors.textTert(brightness), fontSize: 12),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -292,6 +296,7 @@ class _RoleCard extends StatelessWidget {
   final String description;
   final bool isSelected;
   final VoidCallback onTap;
+  final Brightness brightness;
 
   const _RoleCard({
     required this.icon,
@@ -299,6 +304,7 @@ class _RoleCard extends StatelessWidget {
     required this.description,
     required this.isSelected,
     required this.onTap,
+    required this.brightness,
   });
 
   @override
@@ -311,10 +317,10 @@ class _RoleCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.crimson.withValues(alpha: 0.1)
-              : AppColors.charcoal,
+              : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.crimson : AppColors.slate,
+            color: isSelected ? AppColors.crimson : AppColors.border(brightness),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -324,12 +330,12 @@ class _RoleCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.crimson : AppColors.graphite,
+                color: isSelected ? AppColors.crimson : AppColors.surfaceSecondary(brightness),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                color: isSelected ? Colors.white : AppColors.mediumGray,
+                color: isSelected ? Colors.white : AppColors.textSec(brightness),
                 size: 24,
               ),
             ),
@@ -337,7 +343,7 @@ class _RoleCard extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? AppColors.crimson : AppColors.offWhite,
+                color: isSelected ? AppColors.crimson : AppColors.text(brightness),
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -345,7 +351,7 @@ class _RoleCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               description,
-              style: TextStyle(color: AppColors.mediumGray, fontSize: 12),
+              style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12),
             ),
           ],
         ),

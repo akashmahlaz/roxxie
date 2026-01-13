@@ -194,8 +194,41 @@ class _SplashScreenV2State extends State<SplashScreenV2>
     if (_disposed) return;
     _loadingController.repeat();
 
-    // Wait for auth check and navigate based on state
-    await Future.delayed(const Duration(milliseconds: 2200));
+    // CRITICAL FIX: Wait for auth to finish initializing, not just a fixed delay
+    // This ensures tokens are checked and user state is loaded before navigating
+    await _waitForAuthAndNavigate();
+  }
+
+  /// Properly waits for AuthProvider to finish initialization before navigating
+  Future<void> _waitForAuthAndNavigate() async {
+    final authProvider = context.read<AuthProvider>();
+    
+    // Minimum splash duration for branding (animations already ran ~1.9s)
+    const minSplashDuration = Duration(milliseconds: 800);
+    final startTime = DateTime.now();
+    
+    // Wait for auth to complete (max 10 seconds timeout)
+    int attempts = 0;
+    const maxAttempts = 100; // 100 * 100ms = 10 seconds max
+    
+    while (authProvider.status == AuthStatus.initial || 
+           authProvider.status == AuthStatus.loading) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (_disposed) return;
+      
+      attempts++;
+      if (attempts >= maxAttempts) {
+        debugPrint('Auth initialization timeout - proceeding with current state');
+        break;
+      }
+    }
+    
+    // Ensure minimum splash duration is met
+    final elapsed = DateTime.now().difference(startTime);
+    if (elapsed < minSplashDuration) {
+      await Future.delayed(minSplashDuration - elapsed);
+    }
+    
     if (_disposed) return;
     if (mounted) {
       _navigateBasedOnAuthState();
@@ -206,17 +239,24 @@ class _SplashScreenV2State extends State<SplashScreenV2>
     final authProvider = context.read<AuthProvider>();
 
     Widget destination;
+    
+    debugPrint('🚀 Splash navigating - Auth status: ${authProvider.status}');
+    debugPrint('   User: ${authProvider.user?.email ?? "null"}');
+    debugPrint('   Profile complete: ${authProvider.isProfileComplete}');
 
     switch (authProvider.status) {
       case AuthStatus.authenticated:
         // User is logged in and profile is complete
+        debugPrint('   → Going to HomeScreen');
         destination = const HomeScreen();
         break;
       case AuthStatus.profileIncomplete:
         // User is logged in but needs to complete profile
         if (authProvider.isArtist) {
+          debugPrint('   → Going to ArtistProfileSetupScreen');
           destination = const ArtistProfileSetupScreen();
         } else {
+          debugPrint('   → Going to VenueProfileSetupScreen');
           destination = const VenueProfileSetupScreen();
         }
         break;
@@ -225,6 +265,7 @@ class _SplashScreenV2State extends State<SplashScreenV2>
       case AuthStatus.loading:
       case AuthStatus.error:
         // Not logged in, show onboarding
+        debugPrint('   → Going to OnboardingScreenV2');
         destination = const OnboardingScreenV2();
         break;
     }
