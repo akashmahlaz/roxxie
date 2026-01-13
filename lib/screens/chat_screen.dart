@@ -1,7 +1,6 @@
 /// 💬 GIGMATCH Chat Screen
 ///
 /// Real-time chat screen for messaging between artists and venues
-library chat_screen;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
