@@ -111,7 +111,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
         messenger.showSnackBar(
           SnackBar(
             content: Text('📍 Location set: ${locationResult.city}, ${locationResult.country}'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -266,7 +266,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
         messenger.showSnackBar(
           SnackBar(
             content: const Text('✅ Account created! Complete your venue profile'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -295,7 +295,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
       messenger.showSnackBar(
         SnackBar(
           content: Text('❌ ${e.toString().replaceAll('Exception: ', '')}'),
-          backgroundColor: Colors.red.shade400,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
@@ -375,11 +375,11 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: AppColors.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
+              borderSide: const BorderSide(color: AppColors.error, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
@@ -421,12 +421,12 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
+              Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
               const SizedBox(width: 6),
               Text(
                 'GPS: ${_detectedCity}, ${_detectedCountry}',
                 style: TextStyle(
-                  color: Colors.green,
+                  color: AppColors.success,
                   fontSize: 12,
                 ),
               ),

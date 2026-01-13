@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../../core/models/venue_models.dart';
 import '../../../core/theme/theme.dart';
@@ -37,7 +39,10 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   late TextEditingController _websiteController;
   late TextEditingController _instagramController;
   bool _isGettingLocation = false;
+  bool _isResolvingAddress = false;
   final LocationService _locationService = LocationService();
+
+  static const int _mapZoom = 14;
 
   final List<String> _weekDays = [
     'Monday',
@@ -89,6 +94,10 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   bool get _isValid =>
       widget.profileData.address?.isNotEmpty == true &&
       widget.profileData.city?.isNotEmpty == true;
+
+    bool get _hasCoords =>
+      widget.profileData.location.latitude.abs() > 0.000001 &&
+      widget.profileData.location.longitude.abs() > 0.000001;
 
   @override
   Widget build(BuildContext context) {
@@ -237,37 +246,255 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
         _buildCountrySelector(brightness),
 
         const SizedBox(height: 16),
-
-        // Map Placeholder
-        Container(
-          width: double.infinity,
-          height: 120,
-          decoration: BoxDecoration(
-            color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border(brightness)),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.map_rounded,
-                color: AppColors.textSec(brightness),
-                size: 32,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Map preview coming soon',
-                style: TextStyle(
-                  color: AppColors.textSec(brightness),
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildMapPreview(brightness),
       ],
     );
+  }
+
+  Widget _buildMapPreview(Brightness brightness) {
+    final hasLocationText = (_cityController.text.trim().isNotEmpty ||
+        (widget.profileData.country?.trim().isNotEmpty ?? false));
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(brightness)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: SizedBox(
+              height: 170,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_hasCoords)
+                    Image.network(
+                      _buildOsmTileUrl(
+                        widget.profileData.location.latitude,
+                        widget.profileData.location.longitude,
+                        _mapZoom,
+                      ),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, _, __) => _buildMapPlaceholder(brightness),
+                    )
+                  else
+                    _buildMapPlaceholder(brightness),
+
+                  // Overlay gradient for readability
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withValues(alpha: 0.35),
+                          Colors.black.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                      ),
+                    ),
+                  ),
+
+                  // Location text
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 14,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _hasCoords ? Icons.location_on_rounded : Icons.map_rounded,
+                            color: AppColors.crimson,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                hasLocationText
+                                    ? '${_cityController.text.trim()}${widget.profileData.country != null && widget.profileData.country!.isNotEmpty ? ', ${widget.profileData.country}' : ''}'
+                                    : 'Set your venue location',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _hasCoords
+                                    ? '${widget.profileData.location.latitude.toStringAsFixed(5)}, ${widget.profileData.location.longitude.toStringAsFixed(5)}'
+                                    : 'Pin your address to preview the map',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Actions
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: _isResolvingAddress ? null : () => _resolveFromAddress(brightness),
+                    icon: _isResolvingAddress
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.crimson,
+                            ),
+                          )
+                        : const Icon(Icons.push_pin_rounded, size: 18),
+                    label: const Text('Pin from address'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.text(brightness),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isGettingLocation ? null : () => _fillFromCurrentLocation(brightness),
+                    icon: _isGettingLocation
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.my_location_rounded, size: 18),
+                    label: Text(_hasCoords ? 'Refresh location' : 'Use current location'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.crimson,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapPlaceholder(Brightness brightness) {
+    return Container(
+      color: AppColors.surface(brightness),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.map_outlined,
+        color: AppColors.textSec(brightness),
+        size: 36,
+      ),
+    );
+  }
+
+  String _buildOsmTileUrl(double lat, double lng, int zoom) {
+    final x = _lonToTileX(lng, zoom);
+    final y = _latToTileY(lat, zoom);
+    return 'https://tile.openstreetmap.org/$zoom/$x/$y.png';
+  }
+
+  int _lonToTileX(double lon, int zoom) {
+    return ((lon + 180.0) / 360.0 * (1 << zoom)).floor();
+  }
+
+  int _latToTileY(double lat, int zoom) {
+    final latRad = lat * math.pi / 180.0;
+    return ((1 - math.log(math.tan(latRad) + 1 / math.cos(latRad)) / math.pi) /
+            2 *
+            (1 << zoom))
+        .floor();
+  }
+
+  Future<void> _resolveFromAddress(Brightness brightness) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final addressParts = [
+      _addressController.text.trim(),
+      _cityController.text.trim(),
+      (widget.profileData.country ?? '').trim(),
+    ].where((p) => p.isNotEmpty).join(', ');
+
+    if (addressParts.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Add address and city to pin the map'),
+          backgroundColor: AppColors.crimson,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isResolvingAddress = true);
+    try {
+      final locations = await _locationService.getCoordinatesFromAddress(addressParts);
+      if (locations.isNotEmpty) {
+        final first = locations.first;
+        widget.profileData.location.lat = first.latitude;
+        widget.profileData.location.lng = first.longitude;
+        widget.onDataChanged();
+        setState(() {});
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Could not pin the map: $e'),
+          backgroundColor: AppColors.crimson,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isResolvingAddress = false);
+    }
   }
 
   Future<void> _fillFromCurrentLocation(Brightness brightness) async {

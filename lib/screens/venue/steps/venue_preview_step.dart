@@ -606,7 +606,7 @@ class VenuePreviewStep extends StatelessWidget {
           const SizedBox(height: 14),
 
           // Preferred Genres
-          if (profileData.preferredGenres.isNotEmpty) ...[
+          if (profileData.gigPreferences.preferredGenres.isNotEmpty) ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -620,7 +620,7 @@ class VenuePreviewStep extends StatelessWidget {
                   child: Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: profileData.preferredGenres.map((genre) {
+                    children: profileData.gigPreferences.preferredGenres.map((genre) {
                       return Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -705,23 +705,23 @@ class VenuePreviewStep extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
                       Icons.check_circle_rounded,
-                      color: Colors.green,
+                      color: AppColors.success,
                       size: 16,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       perk,
                       style: const TextStyle(
-                        color: Colors.green,
+                        color: AppColors.success,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),

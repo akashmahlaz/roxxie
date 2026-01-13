@@ -140,7 +140,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
     return Column(
       children: [
         // Selected count
-        if (widget.profileData.preferredGenres.isNotEmpty)
+        if (widget.profileData.gigPreferences.preferredGenres.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
@@ -152,7 +152,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${widget.profileData.preferredGenres.length} genres selected',
+                  '${widget.profileData.gigPreferences.preferredGenres.length} genres selected',
                   style: TextStyle(
                     color: AppColors.crimson,
                     fontSize: 13,
@@ -167,16 +167,17 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
           spacing: 10,
           runSpacing: 10,
           children: MusicGenres.genres.map((genre) {
-            final isSelected = widget.profileData.preferredGenres.contains(
+            final isSelected = widget.profileData.gigPreferences.preferredGenres.contains(
               genre,
             );
             return GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () {
                 setState(() {
                   if (isSelected) {
-                    widget.profileData.preferredGenres.remove(genre);
+                    widget.profileData.gigPreferences.preferredGenres.remove(genre);
                   } else {
-                    widget.profileData.preferredGenres.add(genre);
+                    widget.profileData.gigPreferences.preferredGenres.add(genre);
                   }
                 });
                 widget.onDataChanged();
@@ -247,7 +248,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: widget.profileData.currency,
+                    value: widget.profileData.gigPreferences.currency,
                     dropdownColor: AppColors.surface(brightness),
                     icon: Icon(
                       Icons.keyboard_arrow_down_rounded,
@@ -264,7 +265,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                     }).toList(),
                     onChanged: (value) {
                       setState(() {
-                        widget.profileData.currency = value ?? 'USD';
+                        widget.profileData.gigPreferences.currency = value ?? 'USD';
                       });
                       widget.onDataChanged();
                     },
@@ -282,7 +283,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
             children: [
               _buildBudgetLabel(
                 'Min',
-                widget.profileData.minBudget ?? 0.0,
+                widget.profileData.gigPreferences.minBudget,
                 brightness,
               ),
               Container(
@@ -295,7 +296,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${_getCurrencySymbol()}${(widget.profileData.minBudget ?? 0.0).toInt()} - ${_getCurrencySymbol()}${(widget.profileData.maxBudget ?? 0.0).toInt()}',
+                  '${_getCurrencySymbol()}${widget.profileData.gigPreferences.minBudget.toInt()} - ${_getCurrencySymbol()}${widget.profileData.gigPreferences.maxBudget.toInt()}',
                   style: const TextStyle(
                     color: AppColors.crimson,
                     fontSize: 15,
@@ -305,7 +306,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
               ),
               _buildBudgetLabel(
                 'Max',
-                widget.profileData.maxBudget ?? 0.0,
+                widget.profileData.gigPreferences.maxBudget,
                 brightness,
               ),
             ],
@@ -316,9 +317,9 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
           // Range Slider
           RangeSlider(
             values: RangeValues(
-              (widget.profileData.minBudget ?? 0.0).clamp(0.0, 10000.0),
-              (widget.profileData.maxBudget ?? 5000.0).clamp(
-                (widget.profileData.minBudget ?? 0.0).clamp(0.0, 10000.0),
+              widget.profileData.gigPreferences.minBudget.clamp(0.0, 10000.0),
+              widget.profileData.gigPreferences.maxBudget.clamp(
+                widget.profileData.gigPreferences.minBudget.clamp(0.0, 10000.0),
                 10000.0,
               ),
             ),
@@ -329,8 +330,8 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
             inactiveColor: AppColors.border(brightness),
             onChanged: (values) {
               setState(() {
-                widget.profileData.minBudget = values.start;
-                widget.profileData.maxBudget = values.end;
+                widget.profileData.gigPreferences.minBudget = values.start;
+                widget.profileData.gigPreferences.maxBudget = values.end;
               });
               widget.onDataChanged();
             },
@@ -381,7 +382,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
   }
 
   String _getCurrencySymbol() {
-    switch (widget.profileData.currency) {
+    switch (widget.profileData.gigPreferences.currency) {
       case 'USD':
       case 'CAD':
       case 'AUD':
@@ -404,6 +405,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
       children: PerformanceSlots.slots.map((slot) {
         final isSelected = widget.profileData.typicalSlots.contains(slot);
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             setState(() {
               if (isSelected) {
@@ -470,6 +472,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
             : '${length ~/ 60}${length % 60 > 0 ? '.5' : ''} hr${length >= 120 ? 's' : ''}';
 
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             setState(() {
               widget.profileData.typicalSetLength = length;
@@ -564,6 +567,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
     Brightness brightness,
   ) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -652,6 +656,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
         // Back Button
         Expanded(
           child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: widget.onBack,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -689,7 +694,20 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
         Expanded(
           flex: 2,
           child: GestureDetector(
-            onTap: widget.onNext,
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (widget.profileData.gigPreferences.preferredGenres.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Select at least one preferred genre'),
+                    backgroundColor: AppColors.crimson,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+              widget.onNext();
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(

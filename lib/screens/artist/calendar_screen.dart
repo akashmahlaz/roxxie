@@ -1,24 +1,65 @@
-/// 📅 Artist Calendar Screen (Placeholder)
+/// 📅 Artist Calendar Screen
 ///
 /// Purpose:
-/// - Dedicated tab for managing availability (enterprise UX requirement)
-/// - Shows upcoming gigs/bookings (later), and availability blocks
-/// - Provides modern empty states and clear CTAs
+/// - Manage availability blocks
+/// - View upcoming gigs (Bookings)
+/// - Sync with external calendars (future)
 ///
-/// This is a production-quality placeholder UI that we will later connect to:
-/// - Artist availability endpoints (to be implemented/verified in backend)
-/// - Booking state machine (requests → confirmed → completed)
-///
-/// Privacy:
-/// - Exact coordinates are stored on backend, but we only display city/country
-///   in UI (no lat/lng shown).
+/// Design:
+/// - Clean, modern calendar view
+/// - Agenda view below for selected day details
+/// - Full dark/light mode support using AppColors
 library;
 
 import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
 
-class ArtistCalendarScreen extends StatelessWidget {
+class ArtistCalendarScreen extends StatefulWidget {
   const ArtistCalendarScreen({super.key});
+
+  @override
+  State<ArtistCalendarScreen> createState() => _ArtistCalendarScreenState();
+}
+
+class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime _selectedDate = DateTime.now();
+  
+  // Use a map for O(1) lookups: Date string -> List of events
+  final Map<String, List<Map<String, dynamic>>> _events = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Force rebuild on init to get provider data
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadEvents());
+  }
+
+  void _loadEvents() {
+    // Calendar starts empty - availability is managed locally and synced later
+    // Future: Load from backend availability endpoint when implemented
+    _events.clear();
+    setState(() {});
+  }
+
+  String _formatDateKey(DateTime date) {
+    return '${date.year}-${date.month}-${date.day}';
+  }
+
+  // Custom date formatters (no intl dependency)
+  static const _weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  static const _months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  String _formatWeekday(DateTime date) => _weekdays[date.weekday % 7];
+  String _formatMonthDay(DateTime date) => '${_months[date.month - 1]} ${date.day}, ${date.year}';
+  String _formatMonthYear(DateTime date) => '${_months[date.month - 1]} ${date.year}';
+
+  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    setState(() {
+      _selectedDate = selectedDay;
+      _focusedDay = focusedDay;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,551 +82,541 @@ class ArtistCalendarScreen extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'Add availability',
-            onPressed: () => _showComingSoon(context, 'Add availability'),
+            onPressed: () => _showAddAvailabilitySheet(context, brightness),
             icon: Icon(
-              Icons.add_rounded,
-              color: AppColors.text(brightness),
+              Icons.add_circle_rounded,
+              color: AppColors.crimson,
+              size: 28,
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 16),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _HeaderCard(brightness: brightness),
-              const SizedBox(height: 16),
+      body: Column(
+        children: [
+          // Month View
+          _buildMonthView(brightness),
 
-              // Placeholder sections
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
+          const SizedBox(height: 16),
+
+          // Selected Date Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SectionTitle(
-                      brightness: brightness,
-                      title: 'Upcoming',
-                      subtitle: 'Confirmed gigs and booking requests will appear here.',
+                    Text(
+                      _isToday(_selectedDate)
+                          ? 'Today'
+                          : _formatWeekday(_selectedDate),
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    _EmptyStateCard(
-                      brightness: brightness,
-                      icon: Icons.event_available_rounded,
-                      title: 'No upcoming gigs yet',
-                      subtitle:
-                          'When venues book you, your confirmed gigs will show up here. Keep your availability updated to get booked faster.',
-                      primaryLabel: 'Set availability',
-                      onPrimary: () => _showComingSoon(context, 'Set availability'),
-                      secondaryLabel: 'How booking works',
-                      onSecondary: () => _showComingSoon(context, 'How booking works'),
+                    Text(
+                      _formatMonthDay(_selectedDate),
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const SizedBox(height: 18),
-                    _SectionTitle(
-                      brightness: brightness,
-                      title: 'Availability',
-                      subtitle: 'Your bookable time windows (visible to venues).',
-                    ),
-                    const SizedBox(height: 10),
-                    _AvailabilityPlaceholderList(brightness: brightness),
-                    const SizedBox(height: 12),
-                    _ProTipCard(brightness: brightness),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    final brightness = Theme.of(context).brightness;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature is coming next.'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.cardBackground(brightness),
-      ),
-    );
-  }
-}
-
-class _HeaderCard extends StatelessWidget {
-  final Brightness brightness;
-  const _HeaderCard({required this.brightness});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground(brightness),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.border(brightness).withValues(alpha: 0.6),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 44,
-            width: 44,
-            decoration: BoxDecoration(
-              color: AppColors.crimson.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              Icons.calendar_today_rounded,
-              color: AppColors.crimson,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Stay bookable. Stay organized.',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    letterSpacing: -0.1,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface(brightness),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border(brightness)),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Set your availability so venues can confidently send booking requests.',
-                  style: TextStyle(
-                    color: AppColors.textSec(brightness),
-                    fontSize: 12.5,
-                    height: 1.25,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _getEventsForDay(_selectedDate).isNotEmpty
+                              ? AppColors.success
+                              : AppColors.textDisabled,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${_getEventsForDay(_selectedDate).length} Events',
+                        style: TextStyle(
+                          color: AppColors.text(brightness),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
+
+          const SizedBox(height: 8),
+
+          // Agenda / Event List
+          Expanded(
+            child: _buildEventList(brightness),
+          ),
         ],
       ),
     );
   }
-}
 
-class _SectionTitle extends StatelessWidget {
-  final Brightness brightness;
-  final String title;
-  final String subtitle;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📅 CUSTOM CALENDAR WIDGETS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  const _SectionTitle({
-    required this.brightness,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
-            letterSpacing: -0.2,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 12.5,
-            height: 1.25,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EmptyStateCard extends StatelessWidget {
-  final Brightness brightness;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String primaryLabel;
-  final VoidCallback onPrimary;
-  final String secondaryLabel;
-  final VoidCallback onSecondary;
-
-  const _EmptyStateCard({
-    required this.brightness,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.primaryLabel,
-    required this.onPrimary,
-    required this.secondaryLabel,
-    required this.onSecondary,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildMonthView(Brightness brightness) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.border(brightness).withValues(alpha: 0.6),
-        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border(brightness)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Container(
-            height: 64,
-            width: 64,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.crimson.withValues(alpha: 0.20),
-                  AppColors.wine.withValues(alpha: 0.12),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // Header (Month Year + Nav)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
+                  });
+                },
+                icon: Icon(Icons.chevron_left_rounded, color: AppColors.text(brightness)),
+                tooltip: 'Previous month',
               ),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(icon, color: AppColors.crimson, size: 30),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.text(brightness),
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-              letterSpacing: -0.2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 13,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.crimson,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: onPrimary,
-              child: Text(
-                primaryLabel,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.1,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.text(brightness),
-                side: BorderSide(
-                  color: AppColors.border(brightness).withValues(alpha: 0.9),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: onSecondary,
-              child: Text(
-                secondaryLabel,
+              Text(
+                _formatMonthYear(_focusedDay),
                 style: TextStyle(
-                  fontWeight: FontWeight.w700,
                   color: AppColors.text(brightness),
-                  letterSpacing: -0.1,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
+                  });
+                },
+                icon: Icon(Icons.chevron_right_rounded, color: AppColors.text(brightness)),
+                tooltip: 'Next month',
+              ),
+            ],
           ),
+          
+          const SizedBox(height: 12),
+
+          // Weekday Headers
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) {
+              return SizedBox(
+                width: 32,
+                child: Text(
+                  day,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textTert(brightness),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Days Grid
+          _buildDaysGrid(brightness),
         ],
       ),
     );
   }
-}
 
-class _AvailabilityPlaceholderList extends StatelessWidget {
-  final Brightness brightness;
-  const _AvailabilityPlaceholderList({required this.brightness});
+  Widget _buildDaysGrid(Brightness brightness) {
+    final daysInMonth = DateUtils.getDaysInMonth(_focusedDay.year, _focusedDay.month);
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final weekdayOffset = firstDayOfMonth.weekday % 7; // Sunday is 7 in DateTime but 0 in our logic usually, adjusting...
+    // DateTime.weekday: Mon=1, Sun=7.
+    // If we want Sun to be first column (index 0), then offset = weekday % 7.
+    
+    final totalCells = daysInMonth + weekdayOffset;
+    final rowCount = (totalCells / 7).ceil();
 
-  @override
-  Widget build(BuildContext context) {
-    // Placeholder rows that demonstrate the intended layout:
-    // - Day chip
-    // - Time window
-    // - Status pill
     return Column(
-      children: const [
-        _AvailabilityRow(
-          dayLabel: 'Fri',
-          dateLabel: 'This week',
-          timeLabel: '7:00 PM – 11:00 PM',
-          statusLabel: 'Available',
-          statusType: _AvailabilityStatusType.available,
-        ),
-        SizedBox(height: 10),
-        _AvailabilityRow(
-          dayLabel: 'Sat',
-          dateLabel: 'This week',
-          timeLabel: '6:00 PM – 10:00 PM',
-          statusLabel: 'Available',
-          statusType: _AvailabilityStatusType.available,
-        ),
-        SizedBox(height: 10),
-        _AvailabilityRow(
-          dayLabel: 'Sun',
-          dateLabel: 'This week',
-          timeLabel: '—',
-          statusLabel: 'Not set',
-          statusType: _AvailabilityStatusType.unset,
-        ),
-      ],
-    );
-  }
-}
+      children: List.generate(rowCount, (rowIndex) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(7, (colIndex) {
+              final cellIndex = rowIndex * 7 + colIndex;
+              final dayNumber = cellIndex - weekdayOffset + 1;
 
-enum _AvailabilityStatusType { available, unavailable, unset }
+              if (dayNumber < 1 || dayNumber > daysInMonth) {
+                return const SizedBox(width: 32, height: 32);
+              }
 
-class _AvailabilityRow extends StatelessWidget {
-  final String dayLabel;
-  final String dateLabel;
-  final String timeLabel;
-  final String statusLabel;
-  final _AvailabilityStatusType statusType;
+              final currentDay = DateTime(_focusedDay.year, _focusedDay.month, dayNumber);
+              final isSelected = DateUtils.isSameDay(currentDay, _selectedDate);
+              final isToday = DateUtils.isSameDay(currentDay, DateTime.now());
+              final hasEvents = _getEventsForDay(currentDay).isNotEmpty;
 
-  const _AvailabilityRow({
-    required this.dayLabel,
-    required this.dateLabel,
-    required this.timeLabel,
-    required this.statusLabel,
-    required this.statusType,
-  });
-
-  Color _pillBg(Brightness b) {
-    switch (statusType) {
-      case _AvailabilityStatusType.available:
-        return AppColors.crimson.withValues(alpha: b == Brightness.dark ? 0.16 : 0.12);
-      case _AvailabilityStatusType.unavailable:
-        return Colors.red.withValues(alpha: 0.12);
-      case _AvailabilityStatusType.unset:
-        return AppColors.border(b).withValues(alpha: 0.25);
-    }
-  }
-
-  Color _pillFg(Brightness b) {
-    switch (statusType) {
-      case _AvailabilityStatusType.available:
-        return AppColors.crimson;
-      case _AvailabilityStatusType.unavailable:
-        return Colors.redAccent;
-      case _AvailabilityStatusType.unset:
-        return AppColors.textSec(b);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Edit availability is coming next.'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.cardBackground(brightness),
+              return GestureDetector(
+                onTap: () => _onDaySelected(currentDay, _focusedDay),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.crimson
+                        : isToday
+                            ? AppColors.crimson.withValues(alpha: 0.1)
+                            : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: isToday && !isSelected
+                        ? Border.all(color: AppColors.crimson)
+                        : null,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text(
+                        '$dayNumber',
+                        style: TextStyle(
+                          color: isSelected
+                              ? Colors.white
+                              : isToday
+                                  ? AppColors.crimson
+                                  : AppColors.text(brightness),
+                          fontWeight: isSelected || isToday
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (hasEvents && !isSelected)
+                        Positioned(
+                          bottom: 4,
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: isToday ? AppColors.crimson : AppColors.text(brightness),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ),
         );
-      },
-      child: Ink(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground(brightness),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.border(brightness).withValues(alpha: 0.6),
-          ),
-        ),
-        child: Row(
+      }),
+    );
+  }
+
+  Widget _buildEventList(Brightness brightness) {
+    final events = _getEventsForDay(_selectedDate);
+
+    if (events.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 54,
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.surface(brightness),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: AppColors.border(brightness).withValues(alpha: 0.6),
-                ),
+                shape: BoxShape.circle,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    dayLabel,
-                    style: TextStyle(
-                      color: AppColors.text(brightness),
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    dateLabel,
-                    style: TextStyle(
-                      color: AppColors.textSec(brightness),
-                      fontSize: 10.5,
-                      height: 1.1,
-                    ),
-                  ),
-                ],
+              child: Icon(
+                Icons.event_busy_rounded,
+                color: AppColors.textTert(brightness),
+                size: 40,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+            const SizedBox(height: 16),
+            Text(
+              'No events for this day',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap + to add availability',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      itemCount: events.length,
+      itemBuilder: (context, index) {
+        final event = events[index];
+        final isGig = event['type'] == 'gig';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface(brightness),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isGig 
+                  ? AppColors.crimson.withValues(alpha: 0.3) 
+                  : AppColors.border(brightness),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Time Column
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    timeLabel,
+                    event['startTime'],
                     style: TextStyle(
                       color: AppColors.text(brightness),
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.1,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
                   Text(
-                    'Tap to edit',
+                    event['endTime'],
                     style: TextStyle(
-                      color: AppColors.textSec(brightness),
+                      color: AppColors.textTert(brightness),
                       fontSize: 12,
                     ),
                   ),
                 ],
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: _pillBg(brightness),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                statusLabel,
-                style: TextStyle(
-                  color: _pillFg(brightness),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.1,
+              const SizedBox(width: 16),
+              
+              // Vertical Divider
+              Container(
+                width: 4,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isGig ? AppColors.crimson : AppColors.success,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
+              const SizedBox(width: 16),
+
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event['title'],
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (isGig && event['venue'] != null)
+                      Text(
+                        '@ ${event['venue']}',
+                        style: TextStyle(
+                          color: AppColors.crimson,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Action Icon
+              Icon(
+                isGig ? Icons.star_rounded : Icons.check_circle_outline_rounded,
+                color: isGig ? AppColors.crimson : AppColors.success,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⚙️ HELPERS & LOGIC
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  List<Map<String, dynamic>> _getEventsForDay(DateTime date) {
+    return _events[_formatDateKey(date)] ?? [];
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
+
+  void _showAddAvailabilitySheet(BuildContext context, Brightness brightness) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.sheetBackground(brightness),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20, 
+          20, 
+          20, 
+          MediaQuery.of(context).viewInsets.bottom + 20
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add Availability',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textTert(brightness),
+            const SizedBox(height: 8),
+            Text(
+              'For ${_formatMonthDay(_selectedDate)}',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Time Pickers (Placeholder)
+            Row(
+              children: [
+                 Expanded(child: _buildTimeInput('Start Time', '09:00 AM', brightness)),
+                 const SizedBox(width: 16),
+                 Expanded(child: _buildTimeInput('End Time', '11:00 PM', brightness)),
+              ],
+            ),
+            
+            const SizedBox(height: 32),
+            
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                   // Logic to add to state
+                   final key = _formatDateKey(_selectedDate);
+                   if (_events[key] == null) _events[key] = [];
+                   setState(() {
+                      _events[key]!.add({
+                        'type': 'availability',
+                        'title': 'Available',
+                        'startTime': '09:00 AM',
+                        'endTime': '11:00 PM',
+                        'venue': null,
+                      });
+                   });
+                   Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text('Add Slot', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _ProTipCard extends StatelessWidget {
-  final Brightness brightness;
-  const _ProTipCard({required this.brightness});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground(brightness),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.border(brightness).withValues(alpha: 0.6),
+  Widget _buildTimeInput(String label, String value, Brightness brightness) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label, 
+          style: TextStyle(
+            color: AppColors.textSec(brightness), 
+            fontSize: 12, 
+            fontWeight: FontWeight.w600
+          )
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 36,
-            width: 36,
-            decoration: BoxDecoration(
-              color: AppColors.wine.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.tips_and_updates_rounded,
-              color: AppColors.wine,
-              size: 20,
-            ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.inputFill(brightness),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border(brightness)),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Pro tip',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.15,
-                  ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Artists with updated availability get booked faster. Set recurring time windows for weekends.',
-                  style: TextStyle(
-                    color: AppColors.textSec(brightness),
-                    fontSize: 12.5,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              Icon(Icons.access_time_rounded, color: AppColors.textTert(brightness), size: 18),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

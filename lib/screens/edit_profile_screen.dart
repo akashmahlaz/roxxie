@@ -195,7 +195,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             Text(message),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

@@ -85,6 +85,49 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     final authProvider = context.read<AuthProvider>();
     final uploadService = UploadService();
 
+    bool isRemoteUrl(String? value) {
+      if (value == null) return false;
+      return value.startsWith('http://') || value.startsWith('https://');
+    }
+
+    // Validate before doing any long-running uploads.
+    final validationErrors = _profileData.validate();
+    if (validationErrors.isNotEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validationErrors.first),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.crimson,
+        ),
+      );
+      return;
+    }
+
+    // Require valid location before completing venue setup
+    final hasCity = (_profileData.city ?? '').trim().isNotEmpty;
+    final hasCountry = (_profileData.country ?? '').trim().isNotEmpty;
+    final lat = _profileData.location.latitude;
+    final lng = _profileData.location.longitude;
+    final hasValidCoords = lat.abs() > 0.000001 && lng.abs() > 0.000001;
+
+    if (!hasCity || !hasCountry || !hasValidCoords) {
+      if (!mounted) return;
+
+      final message = !hasCity || !hasCountry
+          ? 'Please set your venue city and country to continue.'
+          : 'Please enable location and select your venue location to continue.';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.crimson,
+        ),
+      );
+      return;
+    }
+
     // Show loading
     showDialog(
       context: context,
@@ -113,8 +156,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
     try {
       // Upload profile photo if it's a local file
-      if (_profileData.profilePhotoUrl != null && 
-          _profileData.profilePhotoUrl!.startsWith('/')) {
+      if (_profileData.profilePhotoUrl != null && !isRemoteUrl(_profileData.profilePhotoUrl)) {
         debugPrint('📤 Uploading profile photo...');
         try {
           final uploadResult = await uploadService.uploadProfilePhoto(
@@ -132,7 +174,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       // Upload gallery photos if they are local files
       final galleryUrls = <String>[];
       for (final photoPath in _profileData.venuePhotos) {
-        if (photoPath.startsWith('/')) {
+        if (!isRemoteUrl(photoPath)) {
           try {
             final uploadResult = await uploadService.uploadGalleryImage(
               photoPath,
@@ -152,53 +194,35 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       debugPrint('❌ Photo upload error: $e');
     }
 
-    // Require valid location before completing venue setup
-    final hasCity = (_profileData.city ?? '').trim().isNotEmpty;
-    final hasCountry = (_profileData.country ?? '').trim().isNotEmpty;
-    final lat = _profileData.location.latitude;
-    final lng = _profileData.location.longitude;
-
-    final hasValidCoords = lat.abs() > 0.000001 && lng.abs() > 0.000001;
-
-    if (!hasCity || !hasCountry || !hasValidCoords) {
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
-
-      final message = !hasCity || !hasCountry
-          ? 'Please set your venue city and country to continue.'
-          : 'Please enable location and select your venue location to continue.';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.crimson,
-        ),
-      );
-      return;
-    }
-
     // Build the update request from profile data (DTO-safe payload)
     //
     // Backend expects (UpdateVenueDto):
     // - venueName, venueType, description
-    // - preferredGenres
+    // - gigPreferences.preferredGenres (inside gigPreferences object)
     // - location { city, country, coordinates:[lng,lat], ... }
     // - contactEmail, phone, showPhoneOnProfile
     // - capacity
-    // - minBudget, maxBudget, currency
+    // - minBudget, maxBudget, currency (inside gigPreferences)
     //
     // NOTE:
     // - Do NOT send legacy keys like `name`, `bio`, `contactPhone`, `isActive` (not whitelisted).
     // - Keep coordinates ordering: [longitude, latitude].
 
-    // Use the correct property access patterns
-    _profileData.preferredGenres = _profileData.gigPreferences.preferredGenres;
+    // Sync convenience properties (for backward compatibility with UI)
     _profileData.showPhone = _profileData.showPhoneOnProfile;
     _profileData.email = _profileData.bookingEmail;
     _profileData.minBudget = _profileData.gigPreferences.minBudget;
     _profileData.maxBudget = _profileData.gigPreferences.maxBudget;
     _profileData.currency = _profileData.gigPreferences.currency;
+
+    assert(() {
+      final dto = _profileData.toBackendDto();
+      debugPrint('🏢 [VenueSetup] DTO keys: ${dto.keys.toList()}');
+      debugPrint(
+        '🏢 [VenueSetup] Genres: ${_profileData.gigPreferences.preferredGenres.length}, photos: ${_profileData.venuePhotos.length}',
+      );
+      return true;
+    }());
 
     final success = await authProvider.completeVenueSetup(_profileData);
 
@@ -206,56 +230,129 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     Navigator.of(context).pop(); // Close loading dialog
 
     if (success) {
+      // Reload the venue profile to show updated data
+      await authProvider.init();
+      
+      if (!mounted) return;
+      
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: AppColors.surface(brightness),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.crimson.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.crimson,
-                  size: 24,
-                ),
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.surface(brightness),
+                  AppColors.surface(brightness).withValues(alpha: 0.95),
+                ],
               ),
-              const SizedBox(width: 12),
-              const Text('Profile Complete! 🎉'),
-            ],
-          ),
-          content: const Text(
-            'Your venue profile is ready! You can now start discovering amazing artists and bands.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(context, '/home');
-              },
-              child: const Text(
-                'Start Discovering',
-                style: TextStyle(
-                  color: AppColors.crimson,
-                  fontWeight: FontWeight.w600,
-                ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: AppColors.crimson.withValues(alpha: 0.3),
+                width: 2,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.crimson.withValues(alpha: 0.3),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Success Icon
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.crimson.withValues(alpha: 0.4),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Title
+                Text(
+                  'Profile Complete! 🎉',
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                
+                // Message
+                Text(
+                  'Your venue profile is live! Start discovering talented artists and bands ready to perform.',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 15,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                
+                // Action Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.pushReplacementNamed(context, '/home');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.crimson,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Start Discovering Artists',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.errorMessage ?? 'Failed to save profile'),
-          backgroundColor: Colors.red.shade400,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
       );

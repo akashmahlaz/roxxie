@@ -351,7 +351,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.shade600,
+                                  color: AppColors.info,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Text(
@@ -394,7 +394,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         Text(
                           plan.savings!,
                           style: const TextStyle(
-                            color: Colors.green,
+                            color: AppColors.success,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -416,7 +416,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     vertical: 6,
                   ),
                   decoration: const BoxDecoration(
-                    color: Colors.green,
+                    color: AppColors.success,
                     borderRadius: BorderRadius.only(
                       topRight: Radius.circular(16),
                       bottomLeft: Radius.circular(16),

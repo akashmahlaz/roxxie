@@ -701,16 +701,27 @@ class VenueProfileData {
   set showPhone(bool? value) => showPhoneOnProfile = value ?? false;
   String? get email => bookingEmail;
   set email(String? value) => bookingEmail = value;
-  List<String> get typicalSlots => [];
-  set typicalSlots(List<String> value) { /* no-op for now */ }
-  int get typicalSetLength => 180; // 3 hours default
-  set typicalSetLength(int value) { /* no-op for now */ }
-  bool get providesEquipment => false;
-  set providesEquipment(bool value) { /* no-op for now */ }
+  final List<String> _typicalSlots = [];
+  List<String> get typicalSlots => _typicalSlots;
+  set typicalSlots(List<String> value) {
+    _typicalSlots
+      ..clear()
+      ..addAll(value);
+  }
+
+  /// Stored as minutes in the UI, mapped to backend `gigPreferences.avgGigDuration` (hours).
+  int get typicalSetLength => (gigPreferences.avgGigDuration * 60).round();
+  set typicalSetLength(int value) {
+    gigPreferences.avgGigDuration = (value / 60).clamp(0.5, 24.0);
+  }
+
+  /// Best-effort mapping: treat “provides equipment” as having backline.
+  bool get providesEquipment => equipment.hasBackline;
+  set providesEquipment(bool value) => equipment.hasBackline = value;
   bool get providesMeals => gigPreferences.providesMusicianMeals;
   set providesMeals(bool value) => gigPreferences.providesMusicianMeals = value;
-  bool get providesAccommodation => false;
-  set providesAccommodation(bool value) { /* no-op for now */ }
+
+  bool providesAccommodation = false;
 
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 2: MEDIA
@@ -745,11 +756,6 @@ class VenueProfileData {
   VenueSocialLinks socialLinks = VenueSocialLinks();
   String? directions;
   String? loadInInstructions;
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // STEP 4: GIG PREFERENCES (Direct Properties for Convenience)
-  // ═══════════════════════════════════════════════════════════════════════
-  List<String> preferredGenres = [];
 
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 4: GIG PREFERENCES

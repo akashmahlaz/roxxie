@@ -59,6 +59,9 @@ dependencies:
   # Cached network images with blur hash
   cached_network_image: ^3.4.1
 
+  # Date formatting
+  intl: ^0.20.0
+
   # Card swipe (core feature)
   flutter_card_swiper: ^7.0.1
 

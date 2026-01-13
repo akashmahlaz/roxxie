@@ -32,6 +32,17 @@ class VenueMediaStep extends StatefulWidget {
 class _VenueMediaStepState extends State<VenueMediaStep> {
   final ImagePicker _picker = ImagePicker();
 
+  void _showSnack(String message, {bool isError = false}) {
+    final brightness = Theme.of(context).brightness;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? AppColors.crimson : AppColors.surface(brightness),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   /// Helper to get correct ImageProvider based on path type
   ImageProvider _getImageProvider(String path) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -57,20 +68,28 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
   }
 
   Future<void> _pickVenuePhotos() async {
+    final current = List<String>.from(widget.profileData.venuePhotos);
+    final remaining = 8 - current.length;
+    if (remaining <= 0) {
+      _showSnack('You can add up to 8 venue photos.', isError: true);
+      return;
+    }
+
     final List<XFile> images = await _picker.pickMultiImage(
       maxWidth: 1920,
       maxHeight: 1080,
       imageQuality: 85,
     );
-    if (images.isNotEmpty) {
-      setState(() {
-        // Limit to 8 photos
-        final remaining = 8 - widget.profileData.venuePhotos.length;
-        widget.profileData.venuePhotos.addAll(
-          images.take(remaining).map((img) => img.path),
-        );
-      });
-      widget.onDataChanged();
+    if (!mounted || images.isEmpty) return;
+
+    final toAdd = images.take(remaining).map((img) => img.path).toList();
+    setState(() {
+      widget.profileData.venuePhotos = [...current, ...toAdd];
+    });
+    widget.onDataChanged();
+
+    if (images.length > remaining) {
+      _showSnack('Only $remaining photo(s) were added (limit 8).');
     }
   }
 
@@ -93,8 +112,11 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
   }
 
   void _removeVenuePhoto(int index) {
+    final current = List<String>.from(widget.profileData.venuePhotos);
+    if (index < 0 || index >= current.length) return;
+    current.removeAt(index);
     setState(() {
-      widget.profileData.venuePhotos.removeAt(index);
+      widget.profileData.venuePhotos = current;
     });
     widget.onDataChanged();
   }
@@ -269,33 +291,36 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
                   Positioned(
                     bottom: 10,
                     right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.edit_rounded,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Change',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                    child: GestureDetector(
+                      onTap: _pickCoverPhoto,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.edit_rounded,
+                              color: Colors.white,
+                              size: 14,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              'Change',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -335,7 +360,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
         if (widget.profileData.venuePhotos.length < 8)
           _buildAddPhotoButton(
             'Add Venue Photos',
-            '${widget.profileData.venuePhotos.length}/8 added',
+            '${widget.profileData.venuePhotos.length} of 8 added',
             Icons.business_rounded,
             _pickVenuePhotos,
             brightness,
@@ -374,7 +399,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
         if (widget.profileData.pastEventPhotos.length < 10)
           _buildAddPhotoButton(
             'Add Event Photos',
-            '${widget.profileData.pastEventPhotos.length}/10 added',
+            '${widget.profileData.pastEventPhotos.length} of 10 added',
             Icons.celebration_rounded,
             _pickEventPhotos,
             brightness,

@@ -194,6 +194,7 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
       children: VenueTypes.types.map((type) {
         final isSelected = widget.profileData.venueType == type;
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             setState(() {
               widget.profileData.venueType = type;
@@ -317,6 +318,7 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
       children: VenueAmenities.amenities.map((amenity) {
         final isSelected = widget.profileData.amenities.contains(amenity);
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             setState(() {
               if (isSelected) {
@@ -374,6 +376,7 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
 
   Widget _buildContinueButton(Brightness brightness) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _isValid ? widget.onNext : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
