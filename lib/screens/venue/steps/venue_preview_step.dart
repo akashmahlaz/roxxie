@@ -765,38 +765,46 @@ class VenuePreviewStep extends StatelessWidget {
     return Column(
       children: [
         // Complete Setup Button
-        GestureDetector(
-          onTap: onComplete,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.crimson.withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onComplete,
+            child: Ink(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.crimson, Color(0xFFFF4D6D)],
                 ),
-              ],
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
-                SizedBox(width: 10),
-                Text(
-                  'Complete Setup',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.crimson.withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Complete Setup',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -804,34 +812,38 @@ class VenuePreviewStep extends StatelessWidget {
         const SizedBox(height: 12),
 
         // Back Button
-        GestureDetector(
-          onTap: onBack,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.surface(brightness),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border(brightness)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.arrow_back_rounded,
-                  color: AppColors.text(brightness),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Back to Edit',
-                  style: TextStyle(
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onBack,
+            child: Ink(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surface(brightness),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border(brightness)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.arrow_back_rounded,
                     color: AppColors.text(brightness),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    size: 20,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Text(
+                    'Back to Edit',
+                    style: TextStyle(
+                      color: AppColors.text(brightness),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

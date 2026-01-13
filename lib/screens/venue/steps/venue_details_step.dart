@@ -288,7 +288,8 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                         _mapZoom,
                       ),
                       fit: BoxFit.cover,
-                      errorBuilder: (context, _, __) => _buildMapPlaceholder(brightness),
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildMapPlaceholder(brightness),
                     )
                   else
                     _buildMapPlaceholder(brightness),
@@ -732,33 +733,37 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
           ),
 
           // Open Toggle
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                hours.isOpen = !hours.isOpen;
-                if (hours.isOpen) {
-                  hours.openTime ??= '18:00';
-                  hours.closeTime ??= '02:00';
-                }
-              });
-              widget.onDataChanged();
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: hours.isOpen
-                    ? AppColors.crimson.withValues(alpha: 0.15)
-                    : AppColors.background(brightness),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                hours.isOpen ? 'Open' : 'Closed',
-                style: TextStyle(
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(6),
+              onTap: () {
+                setState(() {
+                  hours.isOpen = !hours.isOpen;
+                  if (hours.isOpen) {
+                    hours.openTime ??= '18:00';
+                    hours.closeTime ??= '02:00';
+                  }
+                });
+                widget.onDataChanged();
+              },
+              child: Ink(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
                   color: hours.isOpen
-                      ? AppColors.crimson
-                      : AppColors.textSec(brightness),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                      ? AppColors.crimson.withValues(alpha: 0.15)
+                      : AppColors.background(brightness),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  hours.isOpen ? 'Open' : 'Closed',
+                  style: TextStyle(
+                    color: hours.isOpen
+                        ? AppColors.crimson
+                        : AppColors.textSec(brightness),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -768,24 +773,28 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
 
           // Time Pickers
           if (hours.isOpen) ...[
-            GestureDetector(
-              onTap: () => _pickTime(day, true, brightness),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.background(brightness),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.border(brightness)),
-                ),
-                child: Text(
-                  hours.openTime ?? '--:--',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () => _pickTime(day, true, brightness),
+                child: Ink(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.background(brightness),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.border(brightness)),
+                  ),
+                  child: Text(
+                    hours.openTime ?? '--:--',
+                    style: TextStyle(
+                      color: AppColors.text(brightness),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -797,24 +806,28 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                 style: TextStyle(color: AppColors.textSec(brightness)),
               ),
             ),
-            GestureDetector(
-              onTap: () => _pickTime(day, false, brightness),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.background(brightness),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.border(brightness)),
-                ),
-                child: Text(
-                  hours.closeTime ?? '--:--',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () => _pickTime(day, false, brightness),
+                child: Ink(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.background(brightness),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.border(brightness)),
+                  ),
+                  child: Text(
+                    hours.closeTime ?? '--:--',
+                    style: TextStyle(
+                      color: AppColors.text(brightness),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -1025,33 +1038,37 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       children: [
         // Back Button
         Expanded(
-          child: GestureDetector(
-            onTap: widget.onBack,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: AppColors.surface(brightness),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border(brightness)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.arrow_back_rounded,
-                    color: AppColors.text(brightness),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Back',
-                    style: TextStyle(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: widget.onBack,
+              child: Ink(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface(brightness),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border(brightness)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.arrow_back_rounded,
                       color: AppColors.text(brightness),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      size: 20,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      'Back',
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1062,56 +1079,54 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
         // Continue Button
         Expanded(
           flex: 2,
-          child: GestureDetector(
-            onTap: _isValid ? widget.onNext : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                gradient: _isValid
-                    ? const LinearGradient(
-                        colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-                      )
-                    : null,
-                color: _isValid ? null : AppColors.surface(brightness),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _isValid
-                      ? Colors.transparent
-                      : AppColors.border(brightness),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: _isValid ? widget.onNext : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: _isValid
+                      ? const LinearGradient(
+                          colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                        )
+                      : null,
+                  color: _isValid ? null : AppColors.surface(brightness),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _isValid ? Colors.transparent : AppColors.border(brightness),
+                  ),
+                  boxShadow: _isValid
+                      ? [
+                          BoxShadow(
+                            color: AppColors.crimson.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ]
+                      : null,
                 ),
-                boxShadow: _isValid
-                    ? [
-                        BoxShadow(
-                          color: AppColors.crimson.withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Continue',
-                    style: TextStyle(
-                      color: _isValid
-                          ? Colors.white
-                          : AppColors.textSec(brightness),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Continue',
+                      style: TextStyle(
+                        color: _isValid ? Colors.white : AppColors.textSec(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    color: _isValid
-                        ? Colors.white
-                        : AppColors.textSec(brightness),
-                    size: 20,
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: _isValid ? Colors.white : AppColors.textSec(brightness),
+                      size: 20,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
