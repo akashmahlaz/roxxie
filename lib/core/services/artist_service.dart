@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import '../api/api.dart';
 import '../exceptions.dart';
 import '../models/models.dart';
-import '../providers/auth_provider.dart';
 
 class ArtistService {
   final ApiClient _client = ApiClient();

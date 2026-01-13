@@ -2,7 +2,6 @@
 ///
 /// Real-time chat screen for messaging between artists and venues
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,7 +9,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
-import '../../core/services/services.dart';
 
 /// 💬 Chat Screen - Main Widget
 class ChatScreen extends StatefulWidget {

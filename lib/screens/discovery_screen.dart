@@ -11,7 +11,8 @@
 /// - Premium boost indicators
 /// - Comprehensive error handling
 /// - Offline support
-library;
+library discovery_screen;
+
 
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -397,27 +398,26 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             onSelected: _toggleLocationFilter,
           ),
           const SizedBox(width: 8),
-            // Genre chips
-            ...genres.map((genre) {
-              final isSelected = _selectedGenres.contains(genre);
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  selected: isSelected,
-                  label: Text(genre),
-                  selectedColor: AppColors.crimson,
-                  checkmarkColor: Colors.white,
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.text(brightness),
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.w500,
-                  ),
-                  onSelected: (selected) => _toggleGenre(genre, selected),
+          // Genre chips
+          ...genres.map((genre) {
+            final isSelected = _selectedGenres.contains(genre);
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                selected: isSelected,
+                label: Text(genre),
+                selectedColor: AppColors.crimson,
+                checkmarkColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.text(brightness),
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
-              );
-            }),
-          ],
-        ),
+                onSelected: (selected) => _toggleGenre(genre, selected),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
-import '../venue_profile_setup_screen.dart';
+import '../../../core/models/venue_models.dart';
 
 /// 👁️ STEP 5: VENUE PREVIEW
 ///
@@ -189,8 +189,8 @@ class VenuePreviewStep extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          profileData.venueType.isNotEmpty
-                              ? profileData.venueType
+                          (profileData.venueType?.isNotEmpty ?? false)
+                              ? profileData.venueType!
                               : 'Venue',
                           style: const TextStyle(
                             color: Colors.white,
@@ -250,8 +250,8 @@ class VenuePreviewStep extends StatelessWidget {
               children: [
                 // Name and Location
                 Text(
-                  profileData.venueName.isNotEmpty
-                      ? profileData.venueName
+                  (profileData.venueName?.isNotEmpty ?? false)
+                      ? profileData.venueName!
                       : 'Your Venue Name',
                   style: TextStyle(
                     color: AppColors.text(brightness),
@@ -271,8 +271,8 @@ class VenuePreviewStep extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      profileData.city.isNotEmpty
-                          ? '${profileData.city}${profileData.country.isNotEmpty ? ', ${profileData.country}' : ''}'
+                      (profileData.city?.isNotEmpty ?? false)
+                          ? '${profileData.city}${(profileData.country?.isNotEmpty ?? false) ? ', ${profileData.country}' : ''}'
                           : 'City, Country',
                       style: TextStyle(
                         color: AppColors.textSec(brightness),
@@ -285,9 +285,9 @@ class VenuePreviewStep extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Description
-                if (profileData.description.isNotEmpty) ...[
+                if ((profileData.description?.isNotEmpty ?? false)) ...[
                   Text(
-                    profileData.description,
+                    profileData.description!,
                     style: TextStyle(
                       color: AppColors.text(brightness),
                       fontSize: 14,
@@ -321,7 +321,7 @@ class VenuePreviewStep extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${_getCurrencySymbol()}${profileData.minBudget.toInt()} - ${_getCurrencySymbol()}${profileData.maxBudget.toInt()}',
+                            '${_getCurrencySymbol()}${(profileData.minBudget ?? 0.0).toInt()} - ${_getCurrencySymbol()}${(profileData.maxBudget ?? 0.0).toInt()}',
                             style: const TextStyle(
                               color: AppColors.crimson,
                               fontSize: 18,
@@ -390,11 +390,11 @@ class VenuePreviewStep extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          if (profileData.address.isNotEmpty)
+          if ((profileData.address?.isNotEmpty ?? false))
             _buildDetailItem(
               Icons.home_rounded,
               'Address',
-              profileData.address,
+              profileData.address!,
               brightness,
             ),
 

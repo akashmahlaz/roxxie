@@ -1,5 +1,4 @@
 
-
 /// Multi-step onboarding flow for artists with comprehensive error handling:
 /// Step 1: Basic Info (name, stage name, bio, genres, influences)
 /// Step 2: Media Upload (photos, audio samples, videos)
@@ -20,7 +19,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
-import '../../core/services/services.dart';
 import '../../core/models/models.dart';
 import 'steps/basic_info_step.dart';
 import 'steps/media_upload_step.dart';

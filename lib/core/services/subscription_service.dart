@@ -15,9 +15,7 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:dio/dio.dart';
 import '../api/api.dart';
 import '../providers/auth_provider.dart';
 

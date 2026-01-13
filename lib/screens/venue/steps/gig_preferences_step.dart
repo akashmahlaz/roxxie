@@ -288,7 +288,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
             children: [
               _buildBudgetLabel(
                 'Min',
-                widget.profileData.minBudget,
+                widget.profileData.minBudget ?? 0.0,
                 brightness,
               ),
               Container(
@@ -301,7 +301,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${_getCurrencySymbol()}${widget.profileData.minBudget.toInt()} - ${_getCurrencySymbol()}${widget.profileData.maxBudget.toInt()}',
+                  '${_getCurrencySymbol()}${(widget.profileData.minBudget ?? 0.0).toInt()} - ${_getCurrencySymbol()}${(widget.profileData.maxBudget ?? 0.0).toInt()}',
                   style: const TextStyle(
                     color: AppColors.crimson,
                     fontSize: 15,
@@ -311,7 +311,7 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
               ),
               _buildBudgetLabel(
                 'Max',
-                widget.profileData.maxBudget,
+                widget.profileData.maxBudget ?? 0.0,
                 brightness,
               ),
             ],
@@ -322,8 +322,8 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
           // Range Slider
           RangeSlider(
             values: RangeValues(
-              widget.profileData.minBudget,
-              widget.profileData.maxBudget,
+              widget.profileData.minBudget ?? 0.0,
+              widget.profileData.maxBudget ?? 0.0,
             ),
             min: 0,
             max: 10000,

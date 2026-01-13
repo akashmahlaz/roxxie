@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/models/venue_models.dart';
 import '../../../core/theme/theme.dart';
-import '../venue_profile_setup_screen.dart';
 
 /// 🏢 STEP 1: VENUE BASIC INFO
 ///
@@ -57,8 +56,8 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
   }
 
   bool get _isValid =>
-      widget.profileData.venueName.isNotEmpty &&
-      widget.profileData.venueType.isNotEmpty;
+      (widget.profileData.venueName?.isNotEmpty ?? false) &&
+      (widget.profileData.venueType?.isNotEmpty ?? false);
 
   @override
   Widget build(BuildContext context) {

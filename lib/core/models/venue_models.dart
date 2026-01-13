@@ -11,8 +11,6 @@
 /// - Profile completeness scoring
 library;
 
-import 'user_models.dart';
-
 /// Venue Type Enum (matches backend VenueType enum)
 enum VenueType {
   bar('bar', 'Bar'),
@@ -721,6 +719,19 @@ class VenueProfileData {
   String? profilePhotoUrl;
   List<VenuePhoto> photoGallery = [];
   VirtualTour? virtualTour;
+  List<String> pastEventPhotos = [];
+
+  // Convenience properties for media management
+  String? get coverPhoto => profilePhotoUrl;
+  set coverPhoto(String? value) => profilePhotoUrl = value;
+  
+  List<String> get venuePhotos => photoGallery
+      .map((p) => p.url)
+      .whereType<String>()
+      .toList();
+  set venuePhotos(List<String> value) {
+    photoGallery = value.map((url) => VenuePhoto(url: url)).toList();
+  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 3: DETAILS & LOCATION

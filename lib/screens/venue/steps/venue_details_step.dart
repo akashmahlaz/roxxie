@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/models/venue_models.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/services/services.dart';
-import '../venue_profile_setup_screen.dart';
 
 /// 📍 STEP 3: VENUE DETAILS
 ///
@@ -69,7 +68,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
     // Initialize operating hours if empty
     if (widget.profileData.operatingHours.isEmpty) {
       for (final day in _weekDays) {
-        widget.profileData.operatingHours[day] = OperatingHours();
+        widget.profileData.operatingHours.add(
+          OperatingHours(dayOfWeek: day),
+        );
       }
     }
   }
@@ -86,8 +87,8 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   }
 
   bool get _isValid =>
-      widget.profileData.address.isNotEmpty &&
-      widget.profileData.city.isNotEmpty;
+      widget.profileData.address?.isNotEmpty == true &&
+      widget.profileData.city?.isNotEmpty == true;
 
   @override
   Widget build(BuildContext context) {
@@ -312,8 +313,8 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       if (result.country?.isNotEmpty == true) {
         widget.profileData.country = result.country!;
       }
-      widget.profileData.latitude = result.latitude;
-      widget.profileData.longitude = result.longitude;
+      widget.profileData.location.lat = result.latitude;
+      widget.profileData.location.lng = result.longitude;
 
       widget.onDataChanged();
 
@@ -395,7 +396,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                 ),
               ),
               Switch(
-                value: widget.profileData.showPhone,
+                value: widget.profileData.showPhone ?? false,
                 onChanged: (value) {
                   setState(() {
                     widget.profileData.showPhone = value;
@@ -468,8 +469,10 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
         border: Border.all(color: AppColors.border(brightness)),
       ),
       child: Column(
-        children: _weekDays.map((day) {
-          final hours = widget.profileData.operatingHours[day]!;
+        children: _weekDays.asMap().entries.map((entry) {
+          final index = entry.key;
+          final day = entry.value;
+          final hours = widget.profileData.operatingHours[index];
           return _buildDayRow(day, hours, brightness);
         }).toList(),
       ),
@@ -507,8 +510,8 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
               setState(() {
                 hours.isOpen = !hours.isOpen;
                 if (hours.isOpen) {
-                  hours.openTime ??= const TimeOfDay(hour: 18, minute: 0);
-                  hours.closeTime ??= const TimeOfDay(hour: 2, minute: 0);
+                  hours.openTime ??= '18:00';
+                  hours.closeTime ??= '02:00';
                 }
               });
               widget.onDataChanged();
@@ -551,7 +554,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                   border: Border.all(color: AppColors.border(brightness)),
                 ),
                 child: Text(
-                  hours.openTime?.format(context) ?? '--:--',
+                  hours.openTime ?? '--:--',
                   style: TextStyle(
                     color: AppColors.text(brightness),
                     fontSize: 13,
@@ -580,7 +583,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                   border: Border.all(color: AppColors.border(brightness)),
                 ),
                 child: Text(
-                  hours.closeTime?.format(context) ?? '--:--',
+                  hours.closeTime ?? '--:--',
                   style: TextStyle(
                     color: AppColors.text(brightness),
                     fontSize: 13,
@@ -600,14 +603,38 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
     bool isOpenTime,
     Brightness brightness,
   ) async {
-    final hours = widget.profileData.operatingHours[day]!;
+    final dayIndex = _weekDays.indexOf(day);
+    if (dayIndex < 0 || dayIndex >= widget.profileData.operatingHours.length) {
+      return;
+    }
+    final hours = widget.profileData.operatingHours[dayIndex];
+    
+    // Parse the time string to TimeOfDay
+    TimeOfDay parseTimeString(String? timeStr) {
+      if (timeStr == null || timeStr.isEmpty) {
+        return const TimeOfDay(hour: 18, minute: 0);
+      }
+      try {
+        final parts = timeStr.split(':');
+        if (parts.length == 2) {
+          return TimeOfDay(
+            hour: int.parse(parts[0]),
+            minute: int.parse(parts[1]),
+          );
+        }
+      } catch (e) {
+        return const TimeOfDay(hour: 18, minute: 0);
+      }
+      return const TimeOfDay(hour: 18, minute: 0);
+    }
+    
     final initialTime = isOpenTime
-        ? hours.openTime
-        : hours.closeTime ?? const TimeOfDay(hour: 18, minute: 0);
+        ? parseTimeString(hours.openTime)
+        : parseTimeString(hours.closeTime);
 
     final picked = await showTimePicker(
       context: context,
-      initialTime: initialTime!,
+      initialTime: initialTime,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -623,10 +650,11 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
 
     if (picked != null) {
       setState(() {
+        final timeString = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
         if (isOpenTime) {
-          hours.openTime = picked;
+          hours.openTime = timeString;
         } else {
-          hours.closeTime = picked;
+          hours.closeTime = timeString;
         }
       });
       widget.onDataChanged();
@@ -715,7 +743,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: widget.profileData.country.isEmpty
+              value: (widget.profileData.country?.isEmpty ?? true)
                   ? null
                   : widget.profileData.country,
               hint: Text(
