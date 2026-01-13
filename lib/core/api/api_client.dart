@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_config.dart';
 import 'endpoints.dart';
 import '../models/auth_models.dart';
+import '../services/error_handling_service.dart';
 
 class ApiClient {
   static ApiClient? _instance;
@@ -34,6 +35,7 @@ class ApiClient {
     // Add interceptors
     _dio.interceptors.addAll([
       _AuthInterceptor(this),
+      _RetryInterceptor(this),
       if (kDebugMode) _LoggingInterceptor(),
     ]);
   }
@@ -245,6 +247,75 @@ class _LoggingInterceptor extends Interceptor {
     if (err.response?.data != null) {
       debugPrint('   Response: ${err.response?.data}');
     }
+    
+    // Log to error handling service
+    ErrorHandlingService().logError(
+      err,
+      stackTrace: err.stackTrace,
+      context: {
+        'url': err.requestOptions.uri.toString(),
+        'method': err.requestOptions.method,
+        'statusCode': err.response?.statusCode,
+      },
+    );
+    
     handler.next(err);
+  }
+}
+
+/// 🔄 Retry Interceptor with Exponential Backoff
+class _RetryInterceptor extends Interceptor {
+  final ApiClient _client;
+  final int _maxRetries = 3;
+  final Duration _initialDelay = const Duration(milliseconds: 500);
+
+  _RetryInterceptor(this._client);
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    final shouldRetry = _shouldRetry(err);
+    final retryCount = err.requestOptions.extra['retryCount'] ?? 0;
+
+    if (shouldRetry && retryCount < _maxRetries) {
+      // Calculate exponential backoff delay
+      final delay = _initialDelay * (1 << retryCount); // 2^retryCount
+      
+      debugPrint('⏳ Retrying request (${retryCount + 1}/$_maxRetries) after ${delay.inMilliseconds}ms');
+      
+      await Future.delayed(delay);
+
+      // Increment retry count
+      err.requestOptions.extra['retryCount'] = retryCount + 1;
+
+      try {
+        final response = await _client.dio.fetch(err.requestOptions);
+        return handler.resolve(response);
+      } catch (e) {
+        if (e is DioException) {
+          return handler.next(e);
+        }
+      }
+    }
+
+    handler.next(err);
+  }
+
+  bool _shouldRetry(DioException err) {
+    // Retry on network errors
+    if (err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.receiveTimeout ||
+        err.type == DioExceptionType.sendTimeout ||
+        err.type == DioExceptionType.connectionError) {
+      return true;
+    }
+
+    // Retry on specific HTTP status codes
+    final statusCode = err.response?.statusCode;
+    if (statusCode != null) {
+      // Retry on server errors (500-599) and rate limiting (429)
+      return statusCode >= 500 || statusCode == 429;
+    }
+
+    return false;
   }
 }

@@ -15,3 +15,4 @@ export 'discovery_service.dart';
 export 'gigs_service.dart';
 export 'push_notification_service.dart';
 export 'subscription_service.dart';
+export 'error_handling_service.dart';

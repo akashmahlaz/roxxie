@@ -317,7 +317,10 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
           RangeSlider(
             values: RangeValues(
               (widget.profileData.minBudget ?? 0.0).clamp(0.0, 10000.0),
-              (widget.profileData.maxBudget ?? 5000.0).clamp(0.0, 10000.0),
+              (widget.profileData.maxBudget ?? 5000.0).clamp(
+                (widget.profileData.minBudget ?? 0.0).clamp(0.0, 10000.0),
+                10000.0,
+              ),
             ),
             min: 0,
             max: 10000,

@@ -61,6 +61,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   // Scroll controller for card stack
   final ScrollController _scrollController = ScrollController();
 
+  // Price range filter state
+  RangeValues _priceRange = const RangeValues(0, 1000);
+  double _minRating = 0;
+
   @override
   void initState() {
     super.initState();
@@ -1446,15 +1450,23 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     return Column(
       children: [
         RangeSlider(
-          values: const RangeValues(0, 1000),
-          onChanged: (_) {},
+          values: _priceRange,
+          min: 0,
+          max: 2000,
+          divisions: 40,
+          onChanged: (RangeValues values) {
+            setState(() {
+              _priceRange = values;
+            });
+          },
           activeColor: AppColors.crimson,
+          inactiveColor: AppColors.border(Theme.of(context).brightness),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text('\$0'),
-            Text('\$1000+'),
+          children: [
+            Text('\$${_priceRange.start.toInt()}'),
+            Text('\$${_priceRange.end.toInt()}'),
           ],
         ),
       ],
@@ -1467,11 +1479,17 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       spacing: 8,
       runSpacing: 8,
       children: ratings.map((rating) {
+        final bool isSelected = _minRating == rating;
         return FilterChip(
           label: Text('${rating.toStringAsFixed(1)}+'),
-          selected: false,
+          selected: isSelected,
           selectedColor: AppColors.crimson,
-          onSelected: (_) {},
+          checkmarkColor: Colors.white,
+          onSelected: (bool selected) {
+            setState(() {
+              _minRating = selected ? rating : 0;
+            });
+          },
         );
       }).toList(),
     );
