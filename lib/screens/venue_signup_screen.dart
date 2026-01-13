@@ -9,6 +9,7 @@
 /// ✅ Ultra-premium UI with Material 3 design
 /// ✅ Confirm password with validation
 /// ✅ Terms & conditions checkbox
+library venue_signup_screen;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

@@ -1,4 +1,3 @@
-
 /// Multi-step onboarding flow for artists with comprehensive error handling:
 /// Step 1: Basic Info (name, stage name, bio, genres, influences)
 /// Step 2: Media Upload (photos, audio samples, videos)

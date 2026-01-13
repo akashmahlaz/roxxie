@@ -11,8 +11,6 @@
 /// - Premium boost indicators
 /// - Comprehensive error handling
 /// - Offline support
-library discovery_screen;
-
 
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';

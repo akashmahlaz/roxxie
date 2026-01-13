@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/services/services.dart';
 import '../../../core/models/artist_models.dart';
-import '../artist_profile_setup_screen.dart';
 
 /// Step 3: Contact & Location
 /// - Phone Number (for quick calls - important feature!)

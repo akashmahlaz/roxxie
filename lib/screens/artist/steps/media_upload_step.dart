@@ -5,7 +5,6 @@ import 'package:file_picker/file_picker.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/services/upload_service.dart';
 import '../../../core/models/artist_models.dart';
-import '../artist_profile_setup_screen.dart';
 
 /// Step 2: Media Upload
 /// - Profile Photo (required)
