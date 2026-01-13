@@ -605,8 +605,8 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
           ),
           child: RangeSlider(
             values: RangeValues(
-              widget.profileData.minPrice,
-              widget.profileData.maxPrice,
+              (widget.profileData.minPrice).clamp(0.0, 2000.0),
+              (widget.profileData.maxPrice).clamp(0.0, 2000.0),
             ),
             min: 0,
             max: 2000,

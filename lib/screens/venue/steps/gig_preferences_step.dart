@@ -316,8 +316,8 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
           // Range Slider
           RangeSlider(
             values: RangeValues(
-              widget.profileData.minBudget ?? 0.0,
-              widget.profileData.maxBudget ?? 0.0,
+              (widget.profileData.minBudget ?? 0.0).clamp(0.0, 10000.0),
+              (widget.profileData.maxBudget ?? 5000.0).clamp(0.0, 10000.0),
             ),
             min: 0,
             max: 10000,
