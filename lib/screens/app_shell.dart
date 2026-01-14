@@ -34,8 +34,8 @@ import '../core/theme/theme.dart';
 // Existing screens
 import 'home_screen.dart';
 import 'discovery_screen.dart';
-import 'matches_screen.dart';
-import 'profile_screen.dart';
+import 'matches_screen_v2.dart';
+import 'profile_screen_v2.dart';
 
 // New screens
 import 'artist/calendar_screen.dart';
@@ -139,11 +139,11 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
             ),
             _TabNavigator(
               navigatorKey: _messagesNavKey,
-              root: const MatchesScreen(),
+              root: const MatchesScreenV2(),
             ),
             _TabNavigator(
               navigatorKey: _meNavKey,
-              root: const ProfileScreen(),
+              root: const ProfileScreenV2(),
             ),
           ],
         ),

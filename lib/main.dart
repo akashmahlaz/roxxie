@@ -16,8 +16,9 @@ import 'screens/login_screen_v2.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/discovery_screen.dart';
-import 'screens/matches_screen.dart';
+import 'screens/matches_screen_v2.dart';
 import 'screens/chat_screen.dart';
+import 'screens/profile_screen_v2.dart';
 import 'screens/profile_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/settings_screen.dart';
@@ -31,6 +32,7 @@ import 'screens/venue/venue_profile_setup_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/reviews_screen.dart';
 import 'screens/gig_contract_screen.dart';
+import 'screens/messages_list_screen_v2.dart';
 import 'screens/messages_list_screen.dart';
 import 'screens/explore_screen.dart';
 import 'screens/verification_screen.dart';
@@ -109,8 +111,9 @@ class GigMatchApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const AppShell(),
           '/discovery': (context) => const DiscoveryScreen(),
-          '/matches': (context) => const MatchesScreen(),
-          '/profile': (context) => const ProfileScreen(),
+          '/matches': (context) => const MatchesScreenV2(),
+          '/profile': (context) => const ProfileScreenV2(),
+          '/profile-old': (context) => const ProfileScreen(),
           '/edit-profile': (context) => const EditProfileScreen(),
           '/settings': (context) => const SettingsScreen(),
           '/premium': (context) => const PremiumScreen(),
@@ -123,7 +126,8 @@ class GigMatchApp extends StatelessWidget {
           '/wallet': (context) => const WalletScreen(),
           '/reviews': (context) => const ReviewsScreen(),
           '/contracts': (context) => const GigContractScreen(),
-          '/messages': (context) => const MessagesListScreen(),
+          '/messages': (context) => const MessagesListScreenV2(),
+          '/messages-old': (context) => const MessagesListScreen(),
           '/explore': (context) => const ExploreScreen(),
           '/verification': (context) => const VerificationScreen(),
           '/notifications': (context) => const NotificationsScreen(),

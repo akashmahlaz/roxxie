@@ -17,7 +17,7 @@ import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
 import 'artist_signup_screen_v2.dart';
 import 'venue_signup_screen_v2.dart';
-import 'login_screen.dart';
+import 'login_screen_v2.dart';
 
 class RoleSelectionScreenV3 extends StatefulWidget {
   const RoleSelectionScreenV3({super.key});
@@ -211,7 +211,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const LoginScreen(),
+        pageBuilder: (_, __, ___) => const LoginScreenV2(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
         },
