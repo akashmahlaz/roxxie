@@ -41,6 +41,15 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
   bool _isGettingLocation = false;
   final LocationService _locationService = LocationService();
 
+  /// Check if email was already set from signup
+  bool get _hasEmailFromSignup =>
+      widget.profileData.email != null && widget.profileData.email!.trim().isNotEmpty;
+
+  /// Check if city/country was already set from signup
+  bool get _hasLocationFromSignup =>
+      (widget.profileData.city != null && widget.profileData.city!.trim().isNotEmpty) ||
+      (widget.profileData.latitude != null && widget.profileData.latitude!.abs() > 0.000001);
+
   @override
   void initState() {
     super.initState();
@@ -148,32 +157,43 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
 
             const SizedBox(height: 24),
 
-            // Email
-            _buildSectionTitle(
-              'Email Address',
-              brightness,
-              icon: Icons.email_rounded,
-            ),
-            const SizedBox(height: 12),
-            _buildTextField(
-              controller: _emailController,
-              hint: 'your@email.com',
-              brightness: brightness,
-              keyboardType: TextInputType.emailAddress,
-              prefixIcon: Icons.email_outlined,
-              validator: (value) {
-                if (value != null && value.isNotEmpty) {
-                  if (!RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                  ).hasMatch(value)) {
-                    return 'Please enter a valid email';
+            // ═══════════════════════════════════════════════════════════════════
+            // EMAIL: Only show if NOT already set from signup
+            // ═══════════════════════════════════════════════════════════════════
+            if (!_hasEmailFromSignup) ...[
+              _buildSectionTitle(
+                'Email Address',
+                brightness,
+                icon: Icons.email_rounded,
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: _emailController,
+                hint: 'your@email.com',
+                brightness: brightness,
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: Icons.email_outlined,
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value)) {
+                      return 'Please enter a valid email';
+                    }
                   }
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 28),
+                  return null;
+                },
+              ),
+              const SizedBox(height: 28),
+            ] else ...[
+              _buildPrefilledCard(
+                'Email Address',
+                widget.profileData.email!,
+                Icons.email_rounded,
+                brightness,
+              ),
+              const SizedBox(height: 20),
+            ],
 
             // Social Links Section
             _buildSectionTitle(
@@ -226,59 +246,71 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
 
             const SizedBox(height: 28),
 
-            // Location Section
-            _buildSectionTitle(
-              'Location',
-              brightness,
-              icon: Icons.location_on_rounded,
-              subtitle: 'For local gig matching',
-            ),
-            const SizedBox(height: 12),
+            // ═══════════════════════════════════════════════════════════════════
+            // LOCATION Section - Hide if already set from signup
+            // ═══════════════════════════════════════════════════════════════════
+            if (!_hasLocationFromSignup) ...[
+              _buildSectionTitle(
+                'Location',
+                brightness,
+                icon: Icons.location_on_rounded,
+                subtitle: 'For local gig matching',
+              ),
+              const SizedBox(height: 12),
 
-            // Use current location
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: _isGettingLocation ? null : _fillFromCurrentLocation,
-                icon: _isGettingLocation
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.crimson,
-                        ),
-                      )
-                    : const Icon(Icons.my_location_rounded, size: 18),
-                label: const Text('Use current location'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.crimson,
+              // Use current location
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _isGettingLocation ? null : _fillFromCurrentLocation,
+                  icon: _isGettingLocation
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.crimson,
+                          ),
+                        )
+                      : const Icon(Icons.my_location_rounded, size: 18),
+                  label: const Text('Use current location'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.crimson,
+                  ),
                 ),
               ),
-            ),
 
-            // City & Country
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildTextField(
-                    controller: _cityController,
-                    hint: 'City',
-                    brightness: brightness,
-                    prefixIcon: Icons.location_city_rounded,
+              // City & Country
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: _buildTextField(
+                      controller: _cityController,
+                      hint: 'City',
+                      brightness: brightness,
+                      prefixIcon: Icons.location_city_rounded,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _countryController,
-                    hint: 'Country',
-                    brightness: brightness,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _countryController,
+                      hint: 'Country',
+                      brightness: brightness,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ] else ...[
+              _buildPrefilledCard(
+                'Location',
+                '${widget.profileData.city ?? ''}${widget.profileData.country != null ? ', ${widget.profileData.country}' : ''}',
+                Icons.location_on_rounded,
+                brightness,
+                badge: 'Auto',
+              ),
+            ],
 
             const SizedBox(height: 20),
 
@@ -820,6 +852,85 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Shows a compact card for pre-filled data from signup
+  Widget _buildPrefilledCard(
+    String label,
+    String value,
+    IconData icon,
+    Brightness brightness, {
+    String badge = 'Set',
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.crimson.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.crimson.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.crimson, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.green, size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  badge,
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

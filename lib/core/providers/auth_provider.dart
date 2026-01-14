@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../models/models.dart';
 import '../services/services.dart';
-import '../models/venue_models.dart';
+import '../models/venues_models.dart';
 
 enum AuthStatus {
   initial,

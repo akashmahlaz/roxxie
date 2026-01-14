@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import '../../../core/models/venue_models.dart';
+import '../../../core/models/venues_models.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/services/services.dart';
 
@@ -53,6 +53,19 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
     'Saturday',
     'Sunday',
   ];
+
+  /// Check if city was already set from signup
+  bool get _hasCityFromSignup =>
+      widget.profileData.city != null && widget.profileData.city!.trim().isNotEmpty;
+
+  /// Check if email was already set from signup
+  bool get _hasEmailFromSignup =>
+      widget.profileData.email != null && widget.profileData.email!.trim().isNotEmpty;
+
+  /// Check if we have valid coordinates (either from signup or auto-fetch)
+  bool get _hasLocationFromSignup =>
+      widget.profileData.location.latitude.abs() > 0.000001 &&
+      widget.profileData.location.longitude.abs() > 0.000001;
 
   @override
   void initState() {
@@ -219,27 +232,35 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   Widget _buildLocationSection(Brightness brightness) {
     return Column(
       children: [
-        // Use current location
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: _isGettingLocation ? null : () => _fillFromCurrentLocation(brightness),
-            icon: _isGettingLocation
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.crimson,
-                    ),
-                  )
-                : const Icon(Icons.my_location_rounded, size: 18),
-            label: const Text('Use current location'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.crimson),
+        // ═══════════════════════════════════════════════════════════════════
+        // LOCATION AUTO-FETCHED: Show compact view if we already have location
+        // ═══════════════════════════════════════════════════════════════════
+        if (_hasLocationFromSignup && _hasCityFromSignup) ...[
+          _buildPrefilledLocationCard(brightness),
+          const SizedBox(height: 14),
+        ] else ...[
+          // Use current location
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _isGettingLocation ? null : () => _fillFromCurrentLocation(brightness),
+              icon: _isGettingLocation
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.crimson,
+                      ),
+                    )
+                  : const Icon(Icons.my_location_rounded, size: 18),
+              label: const Text('Use current location'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.crimson),
+            ),
           ),
-        ),
+        ],
 
-        // Address
+        // Address - always show (venue may need specific street address)
         _buildTextField(
           controller: _addressController,
           label: 'Street Address *',
@@ -254,27 +275,102 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
 
         const SizedBox(height: 14),
 
-        // City
-        _buildTextField(
-          controller: _cityController,
-          label: 'City *',
-          hint: 'Los Angeles',
-          icon: Icons.location_city_rounded,
-          brightness: brightness,
-          onChanged: (value) {
-            widget.profileData.city = value;
-            widget.onDataChanged();
-          },
-        ),
-
-        const SizedBox(height: 14),
-
-        // Country Dropdown
-        _buildCountrySelector(brightness),
+        // ═══════════════════════════════════════════════════════════════════
+        // CITY: Only show if NOT already set from signup
+        // ═══════════════════════════════════════════════════════════════════
+        if (!_hasCityFromSignup) ...[
+          _buildTextField(
+            controller: _cityController,
+            label: 'City *',
+            hint: 'Los Angeles',
+            icon: Icons.location_city_rounded,
+            brightness: brightness,
+            onChanged: (value) {
+              widget.profileData.city = value;
+              widget.onDataChanged();
+            },
+          ),
+          const SizedBox(height: 14),
+          // Country Dropdown
+          _buildCountrySelector(brightness),
+        ],
 
         const SizedBox(height: 16),
         _buildMapPreview(brightness),
       ],
+    );
+  }
+
+  /// Shows a compact card when location is already set from signup
+  Widget _buildPrefilledLocationCard(Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.crimson.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.crimson.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.location_on_rounded, color: AppColors.crimson, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Location Detected',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${widget.profileData.city ?? ''}${widget.profileData.country != null ? ', ${widget.profileData.country}' : ''}',
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.green, size: 14),
+                SizedBox(width: 4),
+                Text(
+                  'Auto',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -666,20 +762,98 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
 
         const SizedBox(height: 14),
 
-        // Email
-        _buildTextField(
-          controller: _emailController,
-          label: 'Email',
-          hint: 'bookings@venue.com',
-          icon: Icons.email_rounded,
-          brightness: brightness,
-          keyboardType: TextInputType.emailAddress,
-          onChanged: (value) {
-            widget.profileData.email = value;
-            widget.onDataChanged();
-          },
-        ),
+        // ═══════════════════════════════════════════════════════════════════
+        // EMAIL: Only show if NOT already set from signup
+        // ═══════════════════════════════════════════════════════════════════
+        if (!_hasEmailFromSignup)
+          _buildTextField(
+            controller: _emailController,
+            label: 'Email',
+            hint: 'bookings@venue.com',
+            icon: Icons.email_rounded,
+            brightness: brightness,
+            keyboardType: TextInputType.emailAddress,
+            onChanged: (value) {
+              widget.profileData.email = value;
+              widget.onDataChanged();
+            },
+          )
+        else
+          _buildPrefilledEmailCard(brightness),
       ],
+    );
+  }
+
+  /// Shows a compact card when email is already set from signup
+  Widget _buildPrefilledEmailCard(Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.crimson.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.crimson.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.email_rounded, color: AppColors.crimson, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Booking Email',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  widget.profileData.email!,
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.green, size: 14),
+                SizedBox(width: 4),
+                Text(
+                  'Set',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

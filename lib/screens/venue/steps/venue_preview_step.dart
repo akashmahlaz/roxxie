@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
-import '../../../core/models/venue_models.dart';
+import '../../../core/models/venues_models.dart';
 
 /// 👁️ STEP 5: VENUE PREVIEW
 ///

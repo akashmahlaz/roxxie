@@ -134,6 +134,11 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     }
   }
 
+  /// Check if display name was already provided during signup
+  bool get _hasDisplayNameFromSignup =>
+      widget.profileData.displayName != null &&
+      widget.profileData.displayName!.trim().isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
@@ -146,25 +151,37 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display Name
-            _buildSectionTitle('Display Name *', brightness),
-            const SizedBox(height: 8),
-            _buildTextField(
-              controller: _displayNameController,
-              hint: 'Your name or band name',
-              brightness: brightness,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Display name is required';
-                }
-                if (value.trim().length < 2) {
-                  return 'Name must be at least 2 characters';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 20),
+            // ═══════════════════════════════════════════════════════════════════
+            // DISPLAY NAME: Only show if NOT already set from signup
+            // ═══════════════════════════════════════════════════════════════════
+            if (!_hasDisplayNameFromSignup) ...[
+              _buildSectionTitle('Display Name *', brightness),
+              const SizedBox(height: 8),
+              _buildTextField(
+                controller: _displayNameController,
+                hint: 'Your name or band name',
+                brightness: brightness,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Display name is required';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Name must be at least 2 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+            ] else ...[
+              // Show pre-filled confirmation
+              _buildPrefilledInfo(
+                'Display Name',
+                widget.profileData.displayName!,
+                Icons.person_rounded,
+                brightness,
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Stage Name (Optional)
             _buildSectionTitle('Stage Name', brightness, isOptional: true),
@@ -502,6 +519,84 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
             Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Shows pre-filled info from signup with a subtle "already set" indicator
+  Widget _buildPrefilledInfo(
+    String label,
+    String value,
+    IconData icon,
+    Brightness brightness,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.crimson.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.crimson.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.crimson, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.green, size: 14),
+                SizedBox(width: 4),
+                Text(
+                  'Set',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

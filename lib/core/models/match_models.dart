@@ -3,7 +3,7 @@
 library;
 
 import 'artist_models.dart';
-import 'venue_models.dart';
+import 'venues_models.dart';
 
 /// Swipe Action Type
 enum SwipeAction {

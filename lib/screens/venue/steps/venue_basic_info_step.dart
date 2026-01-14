@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/models/venue_models.dart';
+import '../../../core/models/venues_models.dart';
 import '../../../core/theme/theme.dart';
 
 /// 🏢 STEP 1: VENUE BASIC INFO
@@ -59,6 +59,11 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
       (widget.profileData.venueName?.isNotEmpty ?? false) &&
       (widget.profileData.venueType?.isNotEmpty ?? false);
 
+  /// Check if venue name was already provided during signup
+  bool get _hasVenueNameFromSignup => 
+      widget.profileData.venueName != null && 
+      widget.profileData.venueName!.trim().isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
@@ -68,21 +73,33 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Venue Name
-          _buildSectionTitle('Venue Name *', brightness),
-          const SizedBox(height: 10),
-          _buildTextField(
-            controller: _nameController,
-            hint: 'Enter your venue name',
-            icon: Icons.storefront_rounded,
-            brightness: brightness,
-            onChanged: (value) {
-              widget.profileData.venueName = value;
-              widget.onDataChanged();
-            },
-          ),
-
-          const SizedBox(height: 28),
+          // ═══════════════════════════════════════════════════════════════════
+          // VENUE NAME - Only show if NOT already set from signup
+          // ═══════════════════════════════════════════════════════════════════
+          if (!_hasVenueNameFromSignup) ...[
+            _buildSectionTitle('Venue Name *', brightness),
+            const SizedBox(height: 10),
+            _buildTextField(
+              controller: _nameController,
+              hint: 'Enter your venue name',
+              icon: Icons.storefront_rounded,
+              brightness: brightness,
+              onChanged: (value) {
+                widget.profileData.venueName = value;
+                widget.onDataChanged();
+              },
+            ),
+            const SizedBox(height: 28),
+          ] else ...[
+            // Show a confirmation that name is already set
+            _buildPrefilledInfo(
+              'Venue Name',
+              widget.profileData.venueName!,
+              Icons.storefront_rounded,
+              brightness,
+            ),
+            const SizedBox(height: 20),
+          ],
 
           // Venue Type
           _buildSectionTitle('Venue Type *', brightness),
@@ -422,6 +439,84 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Shows pre-filled info from signup with a subtle "already set" indicator
+  Widget _buildPrefilledInfo(
+    String label,
+    String value,
+    IconData icon,
+    Brightness brightness,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.crimson.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.crimson.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.crimson, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.green, size: 14),
+                SizedBox(width: 4),
+                Text(
+                  'Set',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
-import '../../core/models/venue_models.dart';
+import '../../core/models/venues_models.dart';
 import '../../core/services/upload_service.dart';
 import 'steps/venue_basic_info_step.dart';
 import 'steps/venue_media_step.dart';
@@ -448,6 +448,207 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     }
   }
 
+  /// Shows confirmation dialog for skipping all setup steps
+  void _showSkipAllConfirmation(Brightness brightness) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.surface(brightness),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.border(brightness),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Warning icon
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              Text(
+                'Skip All Steps?',
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Description
+              Text(
+                'Your profile will be incomplete:\n'
+                '• Less visibility to artists\n'
+                '• Lower match quality\n'
+                '• Can\'t receive booking requests',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textSec(brightness),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Tip
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.crimson.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.lightbulb_outline_rounded, 
+                               color: AppColors.crimson, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'You can complete your profile later from Settings → Edit Profile',
+                        style: TextStyle(
+                          color: AppColors.text(brightness),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Buttons
+              Row(
+                children: [
+                  // Continue setup
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.text(brightness),
+                        side: BorderSide(color: AppColors.border(brightness)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Continue Setup'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Skip all
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _skipAllAndComplete();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text('Skip All'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Skips all steps and saves minimal profile
+  Future<void> _skipAllAndComplete() async {
+    final brightness = Theme.of(context).brightness;
+    final authProvider = context.read<AuthProvider>();
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.surface(brightness),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: AppColors.crimson),
+                const SizedBox(height: 16),
+                Text(
+                  'Saving minimal profile...',
+                  style: TextStyle(color: AppColors.text(brightness)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Save minimal profile with whatever data we have
+    final success = await authProvider.completeVenueSetup(_profileData);
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // Close loading dialog
+
+    if (success) {
+      await authProvider.init();
+      
+      if (!mounted) return;
+
+      // Show quick success and navigate
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile saved! You can complete it later in Settings.'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? 'Failed to save profile'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -543,17 +744,50 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
             ),
           ),
 
-          // Skip button (optional for some steps)
+          // Skip / Skip All buttons
           if (_currentStep < _totalSteps - 1)
-            TextButton(
-              onPressed: _nextStep,
-              child: Text(
-                'Skip',
-                style: TextStyle(
-                  color: AppColors.textSec(brightness),
-                  fontWeight: FontWeight.w500,
-                ),
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert_rounded,
+                color: AppColors.textSec(brightness),
               ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: AppColors.surface(brightness),
+              onSelected: (value) {
+                if (value == 'skip') {
+                  _nextStep();
+                } else if (value == 'skip_all') {
+                  _showSkipAllConfirmation(brightness);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'skip',
+                  child: Row(
+                    children: [
+                      Icon(Icons.skip_next_rounded, 
+                           color: AppColors.textSec(brightness), size: 20),
+                      const SizedBox(width: 10),
+                      Text('Skip this step',
+                           style: TextStyle(color: AppColors.text(brightness))),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'skip_all',
+                  child: Row(
+                    children: [
+                      Icon(Icons.fast_forward_rounded, 
+                           color: AppColors.crimson, size: 20),
+                      const SizedBox(width: 10),
+                      Text('Skip all steps',
+                           style: TextStyle(color: AppColors.crimson, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ],
             )
           else
             const SizedBox(width: 48),
