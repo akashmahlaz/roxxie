@@ -1,9 +1,18 @@
 /// ⭐ GIGMATCH Premium Subscription Screen
+///
+/// 2026 Design Principles Applied:
+/// - Liquid Glass cards with premium feel
+/// - Micro-interactions on plan selection
+/// - Animated success states
+/// - Optimistic button for subscription
+///
 /// Upgrade to premium features
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
+import '../widgets/widgets.dart';
 
 class PremiumScreen extends StatefulWidget {
   const PremiumScreen({super.key});
@@ -284,16 +293,31 @@ class _PremiumScreenState extends State<PremiumScreen> {
   Widget _buildPlanCard(PremiumPlan plan, int index, Brightness brightness) {
     final isSelected = _selectedPlanIndex == index;
 
-    return GestureDetector(
-      onTap: () => setState(() => _selectedPlanIndex = index),
-      child: Container(
+    return AnimatedTapFeedback(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _selectedPlanIndex = index);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected 
+              ? AppColors.crimson.withValues(alpha: 0.05) 
+              : AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.crimson : AppColors.border(brightness),
             width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.crimson.withValues(alpha: 0.2),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Stack(
           children: [

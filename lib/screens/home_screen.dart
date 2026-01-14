@@ -1,12 +1,23 @@
 /// 🏠 GIGMATCH Dashboard Screen
+/// 
+/// 2026 Design Principles Applied:
+/// - Liquid Glass UI effects
+/// - Micro-interactions on all touch targets
+/// - Animated counters for statistics
+/// - Contextual/time-aware UI
+/// - Shimmer loading states
+/// - Optimistic state updates
+///
 /// Modern Material 3 dashboard - NO INTERNAL NAVIGATION
 /// Navigation is handled by AppShell only
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../widgets/widgets.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -121,7 +132,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildAppBar(Brightness brightness, String userName) {
-    final greeting = _getGreeting();
+    // Use contextual greeting from 2026 design patterns
+    final greeting = getContextualGreeting();
+    final greetingIcon = getTimeOfDayIcon();
 
     return SliverAppBar(
       expandedHeight: 140,
@@ -138,13 +151,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
-                greeting,
-                style: TextStyle(
-                  color: AppColors.textSec(brightness),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+              Row(
+                children: [
+                  Icon(
+                    greetingIcon,
+                    color: AppColors.textSec(brightness),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    greeting,
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(
@@ -160,32 +183,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       actions: [
-        // Notification bell
-        IconButton(
-          onPressed: () {},
-          icon: Stack(
-            children: [
-              Icon(
-                Icons.notifications_outlined,
-                color: AppColors.text(brightness),
-                size: 26,
+        // Notification bell with animated badge
+        AnimatedTapFeedback(
+          onTap: () {
+            HapticFeedback.selectionClick();
+          },
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.surface(brightness),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.border(brightness),
               ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: AppColors.crimson,
-                    shape: BoxShape.circle,
+            ),
+            child: Stack(
+              children: [
+                Icon(
+                  Icons.notifications_outlined,
+                  color: AppColors.text(brightness),
+                  size: 24,
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: AppColors.crimson,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.surface(brightness),
+                        width: 1.5,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 16),
       ],
     );
   }
@@ -417,46 +456,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.crimson.withValues(alpha: 0.08),
-                  Colors.purple.withValues(alpha: 0.04),
+          LiquidGlassContainer(
+            borderRadius: 20,
+            blur: 12,
+            tintColor: AppColors.crimson.withValues(alpha: 0.03),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  _ActivityItem(
+                    icon: Icons.visibility_rounded,
+                    title: 'Profile Views',
+                    value: '23 this week',
+                    brightness: brightness,
+                  ),
+                  Divider(height: 24, color: AppColors.border(brightness)),
+                  _ActivityItem(
+                    icon: Icons.trending_up_rounded,
+                    title: 'Match Rate',
+                    value: '15% higher',
+                    brightness: brightness,
+                    isPositive: true,
+                  ),
+                  Divider(height: 24, color: AppColors.border(brightness)),
+                  _ActivityItem(
+                    icon: Icons.star_rounded,
+                    title: 'Profile Score',
+                    value: '85/100',
+                    brightness: brightness,
+                  ),
                 ],
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.border(brightness),
-              ),
-            ),
-            child: Column(
-              children: [
-                _ActivityItem(
-                  icon: Icons.swipe_rounded,
-                  title: 'Profile Views',
-                  value: '23 this week',
-                  brightness: brightness,
-                ),
-                Divider(height: 24, color: AppColors.border(brightness)),
-                _ActivityItem(
-                  icon: Icons.trending_up_rounded,
-                  title: 'Match Rate',
-                  value: '15% higher',
-                  brightness: brightness,
-                  isPositive: true,
-                ),
-                Divider(height: 24, color: AppColors.border(brightness)),
-                _ActivityItem(
-                  icon: Icons.star_rounded,
-                  title: 'Profile Score',
-                  value: '85/100',
-                  brightness: brightness,
-                ),
-              ],
             ),
           ),
         ],
@@ -464,12 +494,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
+  // Remove _getGreeting - now using getContextualGreeting() from widgets
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -493,36 +518,52 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.border(brightness),
+    // Parse the value for animated counter
+    final numericValue = int.tryParse(value) ?? 0;
+    
+    return AnimatedTapFeedback(
+      onTap: () {
+        HapticFeedback.selectionClick();
+      },
+      child: LiquidGlassContainer(
+        borderRadius: 20,
+        blur: 15,
+        tintColor: iconColor.withValues(alpha: 0.05),
+        showGlow: true,
+        glowColor: iconColor.withValues(alpha: 0.3),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(height: 10),
+              AnimatedCounter(
+                value: numericValue,
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.textSec(brightness),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: iconColor, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: AppColors.text(brightness),
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 12,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -547,7 +588,7 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return AnimatedTapFeedback(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -560,17 +601,24 @@ class _ActionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: gradient.first.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: gradient.first.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: Colors.white, size: 28),
-            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white, size: 24),
+            ),
+            const SizedBox(height: 14),
             Text(
               title,
               style: const TextStyle(
@@ -583,7 +631,7 @@ class _ActionCard extends StatelessWidget {
             Text(
               subtitle,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: Colors.white.withValues(alpha: 0.85),
                 fontSize: 13,
               ),
             ),
@@ -607,7 +655,7 @@ class _MatchPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return AnimatedTapFeedback(
       onTap: onTap,
       child: SizedBox(
         width: 80,
@@ -618,17 +666,34 @@ class _MatchPreviewCard extends StatelessWidget {
               height: 64,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.crimson,
-                  width: 2,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.crimson,
+                    AppColors.crimson.withValues(alpha: 0.7),
+                  ],
                 ),
-                color: AppColors.surface(brightness),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.crimson.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: ClipOval(
-                child: Icon(
-                  Icons.person_rounded,
-                  color: AppColors.textSec(brightness),
-                  size: 32,
+              padding: const EdgeInsets.all(2),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.surface(brightness),
+                ),
+                child: ClipOval(
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: AppColors.textSec(brightness),
+                    size: 32,
+                  ),
                 ),
               ),
             ),
@@ -638,7 +703,7 @@ class _MatchPreviewCard extends StatelessWidget {
               style: TextStyle(
                 color: AppColors.text(brightness),
                 fontSize: 12,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

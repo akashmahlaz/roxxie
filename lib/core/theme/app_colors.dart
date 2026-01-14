@@ -253,6 +253,13 @@ class AppColors {
   static const Color shimmerBase = Color(0xFF1A1A1F);
   static const Color shimmerHighlight = Color(0xFF252530);
 
+  /// Skeleton color based on brightness
+  static Color skeleton(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? shimmerBase
+        : const Color(0xFFE5E5E5);
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 🎭 SWIPE COLORS (Core Feature)
   // ═══════════════════════════════════════════════════════════════════════════

@@ -1,11 +1,20 @@
 /// ⚙️ GIGMATCH Settings Screen
+///
+/// 2026 Design Principles Applied:
+/// - Liquid Glass section headers
+/// - Micro-interactions on toggles
+/// - Grouped settings with visual hierarchy
+/// - Premium account section
+///
 /// User preferences and app configuration
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../widgets/widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

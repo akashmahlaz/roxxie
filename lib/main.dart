@@ -6,10 +6,12 @@ import 'core/theme/theme.dart';
 import 'core/providers/providers.dart';
 import 'core/services/error_handling_service.dart';
 
-// Screens
-import 'screens/splash_screen_v2.dart';
-import 'screens/onboarding_screen_v2.dart';
-import 'screens/role_selection_screen_v2.dart';
+// Screens - Ultra-Premium 2026 Design
+import 'screens/splash_screen_v3.dart';
+import 'screens/onboarding_screen_v3.dart';
+import 'screens/role_selection_screen_v3.dart';
+import 'screens/artist_signup_screen_v2.dart';
+import 'screens/venue_signup_screen_v2.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/discovery_screen.dart';
@@ -23,6 +25,16 @@ import 'screens/about_screen.dart';
 import 'screens/support_screen.dart';
 import 'screens/artist/artist_profile_setup_screen.dart';
 import 'screens/venue/venue_profile_setup_screen.dart';
+
+// New Enterprise Screens
+import 'screens/wallet_screen.dart';
+import 'screens/reviews_screen.dart';
+import 'screens/gig_contract_screen.dart';
+import 'screens/messages_list_screen.dart';
+import 'screens/explore_screen.dart';
+import 'screens/verification_screen.dart';
+import 'screens/notifications_screen.dart';
+import 'screens/gig_details_screen.dart';
 
 // App Shell (5-tab navigation)
 import 'screens/app_shell.dart';
@@ -86,9 +98,11 @@ class GigMatchApp extends StatelessWidget {
         // Named routes for navigation
         initialRoute: '/',
         routes: {
-          '/': (context) => const SplashScreenV2(),
-          '/onboarding': (context) => const OnboardingScreenV2(),
-          '/role-selection': (context) => const RoleSelectionScreenV2(),
+          '/': (context) => const SplashScreenV3(),
+          '/onboarding': (context) => const OnboardingScreenV3(),
+          '/role-selection': (context) => const RoleSelectionScreenV3(),
+          '/artist-signup': (context) => const ArtistSignupScreenV2(),
+          '/venue-signup': (context) => const VenueSignupScreenV2(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const AppShell(),
@@ -102,6 +116,15 @@ class GigMatchApp extends StatelessWidget {
           '/support': (context) => const SupportScreen(),
           '/artist-setup': (context) => const ArtistProfileSetupScreen(),
           '/venue-setup': (context) => const VenueProfileSetupScreen(),
+          
+          // Enterprise Screens
+          '/wallet': (context) => const WalletScreen(),
+          '/reviews': (context) => const ReviewsScreen(),
+          '/contracts': (context) => const GigContractScreen(),
+          '/messages': (context) => const MessagesListScreen(),
+          '/explore': (context) => const ExploreScreen(),
+          '/verification': (context) => const VerificationScreen(),
+          '/notifications': (context) => const NotificationsScreen(),
         },
 
         // Handle dynamic routes with smooth transitions
@@ -111,6 +134,24 @@ class GigMatchApp extends StatelessWidget {
             final matchId = settings.name!.split('/').last;
             return _createFadeRoute(
               ChatScreen(matchId: matchId),
+              settings,
+            );
+          }
+
+          // Gig details screen with gig ID
+          if (settings.name?.startsWith('/gig/') ?? false) {
+            final gigId = settings.name!.split('/').last;
+            return _createFadeRoute(
+              GigDetailsScreen(gigId: gigId),
+              settings,
+            );
+          }
+
+          // Contract screen with contract ID
+          if (settings.name?.startsWith('/contract/') ?? false) {
+            final contractId = settings.name!.split('/').last;
+            return _createFadeRoute(
+              GigContractScreen(contractId: contractId),
               settings,
             );
           }

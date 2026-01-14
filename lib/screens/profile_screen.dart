@@ -1,12 +1,21 @@
 /// 👤 GIGMATCH Profile Screen
+/// 
+/// 2026 Design Principles Applied:
+/// - Liquid Glass effects for cards
+/// - Micro-interactions on all tap targets
+/// - Animated statistics
+/// - Premium badge animations
+///
 /// User profile and settings with dynamic theming
 library;
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../widgets/widgets.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -387,23 +396,51 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: AppColors.crimson, size: 24),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+    // Try to parse numeric value for animation
+    final numericValue = double.tryParse(value.replaceAll(',', ''));
+    
+    return AnimatedTapFeedback(
+      onTap: () => HapticFeedback.selectionClick(),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.crimson, size: 22),
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12),
-        ),
-      ],
+          const SizedBox(height: 10),
+          if (numericValue != null && numericValue % 1 == 0)
+            AnimatedCounter(
+              value: numericValue.toInt(),
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            )
+          else
+            Text(
+              value,
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -426,19 +463,44 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(icon, color: AppColors.textSec(brightness)),
-        title: Text(title, style: TextStyle(color: AppColors.text(brightness))),
-        trailing:
-            trailing ??
-            Icon(Icons.chevron_right, color: AppColors.textSec(brightness)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AnimatedTapFeedback(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface(brightness),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppColors.border(brightness),
+            ),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.crimson, size: 22),
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            trailing: trailing ?? Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textSec(brightness),
+            ),
+          ),
+        ),
       ),
     );
   }
