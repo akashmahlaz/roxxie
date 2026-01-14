@@ -12,6 +12,7 @@ import 'screens/onboarding_screen_v3.dart';
 import 'screens/role_selection_screen_v3.dart';
 import 'screens/artist_signup_screen_v2.dart';
 import 'screens/venue_signup_screen_v2.dart';
+import 'screens/login_screen_v2.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/discovery_screen.dart';
@@ -103,7 +104,8 @@ class GigMatchApp extends StatelessWidget {
           '/role-selection': (context) => const RoleSelectionScreenV3(),
           '/artist-signup': (context) => const ArtistSignupScreenV2(),
           '/venue-signup': (context) => const VenueSignupScreenV2(),
-          '/login': (context) => const LoginScreen(),
+          '/login': (context) => const LoginScreenV2(),
+          '/login-old': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const AppShell(),
           '/discovery': (context) => const DiscoveryScreen(),
