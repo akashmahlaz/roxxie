@@ -78,6 +78,33 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
         );
       }
     }
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // AUTO-FETCH LOCATION: If no coordinates set, get current location
+    // ═══════════════════════════════════════════════════════════════════════
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoFetchLocationIfNeeded();
+    });
+  }
+  
+  /// Auto-fetch current location if no valid coordinates are set
+  Future<void> _autoFetchLocationIfNeeded() async {
+    // Skip if we already have valid coordinates
+    if (_hasCoords) {
+      debugPrint('📍 Location already set, skipping auto-fetch');
+      return;
+    }
+    
+    // Skip if address is already filled (user may have entered manually)
+    if (widget.profileData.address?.isNotEmpty == true && 
+        widget.profileData.city?.isNotEmpty == true) {
+      debugPrint('📍 Address already filled, skipping auto-fetch');
+      return;
+    }
+    
+    debugPrint('📍 Auto-fetching location for venue...');
+    final brightness = Theme.of(context).brightness;
+    await _fillFromCurrentLocation(brightness);
   }
 
   @override
@@ -784,7 +811,10 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.background(brightness),
+                    // ═══════════════════════════════════════════════════════════
+                    // LIGHT MODE FIX: Use surfaceSecondary for better contrast
+                    // ═══════════════════════════════════════════════════════════
+                    color: AppColors.surfaceSecondary(brightness),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: AppColors.border(brightness)),
                   ),
@@ -817,7 +847,10 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.background(brightness),
+                    // ═══════════════════════════════════════════════════════════
+                    // LIGHT MODE FIX: Use surfaceSecondary for better contrast
+                    // ═══════════════════════════════════════════════════════════
+                    color: AppColors.surfaceSecondary(brightness),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: AppColors.border(brightness)),
                   ),

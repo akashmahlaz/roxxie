@@ -31,6 +31,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
   final int _totalSteps = 5;
+  bool _isInitialized = false;
 
   // Form data model
   final VenueProfileData _profileData = VenueProfileData();
@@ -59,6 +60,94 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     Icons.tune_rounded,
     Icons.preview_rounded,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-populate data from user account after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _prePopulateFromUserData();
+    });
+  }
+
+  /// Pre-populate venue setup with data from user signup & existing venue profile
+  void _prePopulateFromUserData() {
+    if (_isInitialized) return;
+    
+    final auth = context.read<AuthProvider>();
+    final user = auth.user;
+    final existingVenue = auth.venueProfile;
+    
+    setState(() {
+      // ═══════════════════════════════════════════════════════════════════
+      // PRE-POPULATE FROM USER ACCOUNT (signup data)
+      // ═══════════════════════════════════════════════════════════════════
+      
+      // Venue name from user's name (they entered venue name during signup)
+      if (user?.name != null && user!.name.isNotEmpty) {
+        _profileData.venueName ??= user.name;
+      }
+      
+      // Email from user account
+      if (user?.email != null && user!.email.isNotEmpty) {
+        _profileData.contactEmail ??= user.email;
+      }
+      
+      // Phone from user account
+      if (user?.phone != null && user!.phone!.isNotEmpty) {
+        _profileData.phone ??= user.phone;
+      }
+      
+      // Profile photo from user account
+      if (user?.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty) {
+        _profileData.profilePhotoUrl ??= user.profilePhotoUrl;
+      }
+      
+      // ═══════════════════════════════════════════════════════════════════
+      // PRE-POPULATE FROM EXISTING VENUE PROFILE (if any)
+      // ═══════════════════════════════════════════════════════════════════
+      
+      if (existingVenue != null) {
+        // Basic info
+        _profileData.venueName ??= existingVenue.name;
+        _profileData.venueType ??= existingVenue.venueType;
+        _profileData.description ??= existingVenue.description;
+        _profileData.capacity = existingVenue.capacity ?? 100;
+        
+        // Location
+        if (existingVenue.location != null) {
+          _profileData.location.city ??= existingVenue.location!.city;
+          _profileData.location.country ??= existingVenue.location!.country;
+          _profileData.location.streetAddress ??= existingVenue.location!.streetAddress;
+          
+          if (existingVenue.location!.hasValidCoordinates) {
+            _profileData.location.coordinates = existingVenue.location!.coordinates;
+          }
+        }
+        
+        // Media
+        _profileData.profilePhotoUrl ??= existingVenue.profilePhotoUrl;
+        if (existingVenue.galleryUrls != null && existingVenue.galleryUrls!.isNotEmpty) {
+          _profileData.photoGallery = existingVenue.galleryUrls!
+              .map((url) => VenuePhoto(url: url))
+              .toList();
+        }
+        
+        // Gig preferences
+        if (existingVenue.gigPreferences != null) {
+          _profileData.gigPreferences = existingVenue.gigPreferences!;
+        }
+      }
+      
+      _isInitialized = true;
+    });
+    
+    debugPrint('✅ Pre-populated venue setup with user data:');
+    debugPrint('   - Name: ${_profileData.venueName}');
+    debugPrint('   - Email: ${_profileData.contactEmail}');
+    debugPrint('   - Phone: ${_profileData.phone}');
+    debugPrint('   - City: ${_profileData.location.city}');
+  }
 
   void _nextStep() {
     if (_currentStep < _totalSteps - 1) {

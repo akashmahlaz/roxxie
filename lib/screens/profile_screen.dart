@@ -66,6 +66,12 @@ class ProfileScreen extends StatelessWidget {
                     _VenueStats(venue: venue, brightness: brightness),
 
                   const SizedBox(height: 24),
+                  
+                  // Contact & Location Info (Venue Only)
+                  if (auth.isVenue && venue != null)
+                    _VenueContactSection(venue: venue, brightness: brightness),
+
+                  const SizedBox(height: 24),
 
                   // Media Gallery Section
                   if (auth.isArtist && artist != null)
@@ -695,6 +701,257 @@ class _ArtistMediaSection extends StatelessWidget {
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
     return '${minutes}:${secs.toString().padLeft(2, '0')}';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 📞 VENUE CONTACT SECTION - Phone, Email, Address, Social Links
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Contact & Location Section for Venues
+class _VenueContactSection extends StatelessWidget {
+  final dynamic venue;
+  final Brightness brightness;
+
+  const _VenueContactSection({required this.venue, required this.brightness});
+
+  @override
+  Widget build(BuildContext context) {
+    // Gather available contact info
+    final hasPhone = venue.phone != null && venue.phone.isNotEmpty;
+    final hasEmail = venue.contactEmail != null && venue.contactEmail.isNotEmpty;
+    final hasAddress = venue.location?.streetAddress != null || 
+                       venue.location?.city != null ||
+                       venue.displayLocation != null;
+    final hasWebsite = venue.socialLinks?.website != null;
+    final hasInstagram = venue.socialLinks?.instagram != null;
+    final hasOperatingHours = venue.operatingHours != null && (venue.operatingHours as List).isNotEmpty;
+    
+    // Don't render if no contact info available
+    if (!hasPhone && !hasEmail && !hasAddress && !hasWebsite && !hasInstagram && !hasOperatingHours) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Contact Info Card
+        if (hasPhone || hasEmail || hasAddress || hasWebsite || hasInstagram)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface(brightness),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border(brightness)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Section Title
+                Row(
+                  children: [
+                    Icon(
+                      Icons.contact_phone_rounded,
+                      color: AppColors.crimson,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Contact Info',
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Phone
+                if (hasPhone)
+                  _ContactRow(
+                    icon: Icons.phone_rounded,
+                    value: venue.phone!,
+                    brightness: brightness,
+                  ),
+                
+                // Email
+                if (hasEmail)
+                  _ContactRow(
+                    icon: Icons.email_rounded,
+                    value: venue.contactEmail!,
+                    brightness: brightness,
+                  ),
+                
+                // Address
+                if (hasAddress)
+                  _ContactRow(
+                    icon: Icons.location_on_rounded,
+                    value: _buildAddressString(venue),
+                    brightness: brightness,
+                  ),
+                
+                // Website
+                if (hasWebsite)
+                  _ContactRow(
+                    icon: Icons.language_rounded,
+                    value: venue.socialLinks!.website!,
+                    brightness: brightness,
+                    isLink: true,
+                  ),
+                
+                // Instagram
+                if (hasInstagram)
+                  _ContactRow(
+                    icon: Icons.camera_alt_rounded,
+                    value: venue.socialLinks!.instagram!,
+                    brightness: brightness,
+                    isLink: true,
+                  ),
+              ],
+            ),
+          ),
+        
+        // Operating Hours Card
+        if (hasOperatingHours) ...[
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface(brightness),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border(brightness)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Section Title
+                Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      color: AppColors.crimson,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Operating Hours',
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                // Hours list
+                ...(venue.operatingHours as List).map<Widget>((hours) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          hours.dayOfWeek.toString().substring(0, 3),
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          hours.isOpen
+                              ? '${hours.openTime ?? '--:--'} - ${hours.closeTime ?? '--:--'}'
+                              : 'Closed',
+                          style: TextStyle(
+                            color: hours.isOpen 
+                                ? AppColors.textSec(brightness)
+                                : AppColors.crimson,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+  
+  String _buildAddressString(dynamic venue) {
+    final parts = <String>[];
+    
+    if (venue.location?.streetAddress != null && venue.location.streetAddress.isNotEmpty) {
+      parts.add(venue.location.streetAddress);
+    }
+    if (venue.location?.city != null && venue.location.city.isNotEmpty) {
+      parts.add(venue.location.city);
+    }
+    if (venue.location?.country != null && venue.location.country.isNotEmpty) {
+      parts.add(venue.location.country);
+    }
+    
+    if (parts.isEmpty && venue.displayLocation != null) {
+      return venue.displayLocation;
+    }
+    
+    return parts.join(', ');
+  }
+}
+
+/// Contact Info Row Widget
+class _ContactRow extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final Brightness brightness;
+  final bool isLink;
+
+  const _ContactRow({
+    required this.icon,
+    required this.value,
+    required this.brightness,
+    this.isLink = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: AppColors.crimson, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: isLink ? AppColors.crimson : AppColors.text(brightness),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                decoration: isLink ? TextDecoration.underline : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
