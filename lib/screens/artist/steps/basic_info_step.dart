@@ -29,6 +29,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   final _stageNameController = TextEditingController();
   final _bioController = TextEditingController();
   final _influenceController = TextEditingController();
+  final _genreSearchController = TextEditingController();
 
   final List<String> _availableGenres = [
     'Rock',
@@ -53,6 +54,16 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     'Gospel',
   ];
 
+  List<String> get _filteredGenres {
+    if (_genreSearchController.text.isEmpty) {
+      return _availableGenres;
+    }
+    return _availableGenres
+        .where((genre) =>
+            genre.toLowerCase().contains(_genreSearchController.text.toLowerCase()))
+        .toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -63,11 +74,34 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   }
 
   @override
+  void didUpdateWidget(BasicInfoStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CRITICAL FIX: Sync controllers when profileData is updated asynchronously
+    // This happens when _loadExistingProfile() finishes after initState()
+    // ═══════════════════════════════════════════════════════════════════════════
+    if (widget.profileData.displayName != _displayNameController.text &&
+        widget.profileData.displayName != null &&
+        widget.profileData.displayName!.isNotEmpty) {
+      _displayNameController.text = widget.profileData.displayName!;
+    }
+    if (widget.profileData.stageName != _stageNameController.text &&
+        widget.profileData.stageName != null) {
+      _stageNameController.text = widget.profileData.stageName!;
+    }
+    if (widget.profileData.bio != _bioController.text &&
+        widget.profileData.bio != null) {
+      _bioController.text = widget.profileData.bio!;
+    }
+  }
+
+  @override
   void dispose() {
     _displayNameController.dispose();
     _stageNameController.dispose();
     _bioController.dispose();
     _influenceController.dispose();
+    _genreSearchController.dispose();
     super.dispose();
   }
 
@@ -112,7 +146,14 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
 
   void _validateAndContinue() {
     if (_formKey.currentState!.validate()) {
-      widget.profileData.displayName = _displayNameController.text.trim();
+      // ═══════════════════════════════════════════════════════════════════════════
+      // CRITICAL FIX: Only update displayName from controller if the field is shown
+      // If name was pre-filled from signup, keep the existing profileData.displayName
+      // ═══════════════════════════════════════════════════════════════════════════
+      if (!_hasDisplayNameFromSignup) {
+        widget.profileData.displayName = _displayNameController.text.trim();
+      }
+      // Always update these optional fields from controllers
       widget.profileData.stageName = _stageNameController.text.trim();
       widget.profileData.bio = _bioController.text.trim();
 
@@ -214,7 +255,58 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               brightness,
               subtitle: '${widget.profileData.genres.length}/5 selected',
             ),
+            const SizedBox(height: 4),
+            _buildContextualHelp(
+              'Choose genres that best describe your music style. This helps venues find artists that match their vibe.',
+              brightness,
+            ),
             const SizedBox(height: 12),
+            
+            // Genre search bar
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.inputFill(brightness),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border(brightness)),
+              ),
+              child: TextField(
+                controller: _genreSearchController,
+                onChanged: (value) => setState(() {}),
+                style: TextStyle(color: AppColors.text(brightness), fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: '🔍 Search genres...',
+                  hintStyle: TextStyle(
+                    color: AppColors.textTert(brightness),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: AppColors.textSec(brightness),
+                    size: 20,
+                  ),
+                  suffixIcon: _genreSearchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(
+                            Icons.clear_rounded,
+                            color: AppColors.textSec(brightness),
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            _genreSearchController.clear();
+                            setState(() {});
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
             _buildGenreChips(brightness),
 
             const SizedBox(height: 24),
@@ -350,10 +442,27 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   }
 
   Widget _buildGenreChips(Brightness brightness) {
+    final genresToShow = _filteredGenres;
+    
+    if (genresToShow.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            'No genres found matching "${_genreSearchController.text}"',
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    }
+    
     return Wrap(
       spacing: 8,
       runSpacing: 10,
-      children: _availableGenres.map((genre) {
+      children: genresToShow.map((genre) {
         final isSelected = widget.profileData.genres.contains(genre);
         return GestureDetector(
           onTap: () => _toggleGenre(genre),
@@ -594,6 +703,39 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContextualHelp(String message, Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.crimson.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.crimson.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            size: 16,
+            color: AppColors.crimson,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 12,
+                height: 1.4,
+              ),
             ),
           ),
         ],

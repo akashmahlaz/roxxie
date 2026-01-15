@@ -111,7 +111,48 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
 
       final authProvider = context.read<AuthProvider>();
       final artistProfile = authProvider.artistProfile;
+      final user = authProvider.user;
 
+      // ═══════════════════════════════════════════════════════════════════════
+      // PRE-POPULATE FROM USER ACCOUNT (signup data)
+      // ═══════════════════════════════════════════════════════════════════════
+      if (user != null) {
+        if (user.name.isNotEmpty && _profileData.displayName == null) {
+          _profileData.displayName = user.name;
+          debugPrint('🎸 Pre-filled display name from user: ${user.name}');
+        }
+        if (user.email.isNotEmpty && _profileData.email == null) {
+          _profileData.email = user.email;
+          debugPrint('🎸 Pre-filled email from user: ${user.email}');
+        }
+        if (user.phone != null && user.phone!.isNotEmpty && _profileData.phone == null) {
+          _profileData.phone = user.phone;
+          debugPrint('🎸 Pre-filled phone from user: ${user.phone}');
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // PRE-POPULATE FROM SIGNUP LOCATION DATA (stored in AuthProvider)
+      // This is the primary source for location when no artist profile exists
+      // ═══════════════════════════════════════════════════════════════════════
+      if (authProvider.signupCity != null && authProvider.signupCity!.isNotEmpty) {
+        _profileData.city ??= authProvider.signupCity;
+        debugPrint('📍 Pre-filled city from signup: ${authProvider.signupCity}');
+      }
+      if (authProvider.signupCountry != null && authProvider.signupCountry!.isNotEmpty) {
+        _profileData.country ??= authProvider.signupCountry;
+        debugPrint('📍 Pre-filled country from signup: ${authProvider.signupCountry}');
+      }
+      if (authProvider.signupLatitude != null && authProvider.signupLongitude != null) {
+        _profileData.latitude ??= authProvider.signupLatitude;
+        _profileData.longitude ??= authProvider.signupLongitude;
+        debugPrint('📍 Pre-filled coordinates from signup: ${authProvider.signupLatitude}, ${authProvider.signupLongitude}');
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // PRE-POPULATE FROM EXISTING ARTIST PROFILE (if any)
+      // This overrides signup data with any saved profile data
+      // ═══════════════════════════════════════════════════════════════════════
       if (artistProfile != null) {
         debugPrint('🎸 [ArtistSetup] Found existing profile: ${artistProfile.displayName}');
 
@@ -135,7 +176,20 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
 
         debugPrint('🎸 [ArtistSetup] Profile data loaded successfully');
       } else {
-        debugPrint('🎸 [ArtistSetup] No existing profile found, starting fresh');
+        debugPrint('🎸 [ArtistSetup] No existing profile found, using signup data');
+      }
+      
+      debugPrint('✅ Pre-populated artist setup:');
+      debugPrint('   - Name: ${_profileData.displayName}');
+      debugPrint('   - Email: ${_profileData.email}');
+      debugPrint('   - City: ${_profileData.city}');
+      
+      // ═══════════════════════════════════════════════════════════════════════
+      // CRITICAL FIX: Trigger rebuild so child widgets get updated profileData
+      // Without this, BasicInfoStep won't receive the pre-populated data
+      // ═══════════════════════════════════════════════════════════════════════
+      if (mounted) {
+        setState(() {});
       }
     } catch (e, stackTrace) {
       debugPrint('❌ [ArtistSetup] Error loading existing profile: $e');
@@ -767,54 +821,84 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
 
-    return Scaffold(
-      backgroundColor: AppColors.background(brightness),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Progress Header
-            _buildProgressHeader(brightness),
+    return WillPopScope(
+      onWillPop: () async {
+        // Show save draft confirmation
+        return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Save your progress?'),
+            content: const Text(
+              'Your profile will be saved as a draft. You can continue setup later from Settings.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Discard'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, false);
+                  Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                ),
+                child: const Text('Save Draft'),
+              ),
+            ],
+          ),
+        ) ?? false;
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Enhanced Progress Header
+              _buildEnhancedProgressHeader(brightness),
 
-            // Error Banner (if any)
-            if (_lastError != null) _buildErrorBanner(brightness),
+              // Error Banner (if any)
+              if (_lastError != null) _buildErrorBanner(brightness),
 
-            // Step Content
-            Expanded(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    BasicInfoStep(
-                      profileData: _profileData,
-                      onNext: _nextStep,
-                    ),
-                    MediaUploadStep(
-                      profileData: _profileData,
-                      onNext: _nextStep,
-                      onBack: _previousStep,
-                    ),
-                    ContactLocationStep(
-                      profileData: _profileData,
-                      onNext: _nextStep,
-                      onBack: _previousStep,
-                    ),
-                    AvailabilityPricingStep(
-                      profileData: _profileData,
-                      onNext: _nextStep,
-                      onBack: _previousStep,
-                    ),
-                    ProfilePreviewStep(
-                      profileData: _profileData,
-                      onComplete: _completeSetup,
-                      onBack: _previousStep,
-                    ),
-                  ],
+              // Step Content
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      BasicInfoStep(
+                        profileData: _profileData,
+                        onNext: _nextStep,
+                      ),
+                      MediaUploadStep(
+                        profileData: _profileData,
+                        onNext: _nextStep,
+                        onBack: _previousStep,
+                      ),
+                      ContactLocationStep(
+                        profileData: _profileData,
+                        onNext: _nextStep,
+                        onBack: _previousStep,
+                      ),
+                      AvailabilityPricingStep(
+                        profileData: _profileData,
+                        onNext: _nextStep,
+                        onBack: _previousStep,
+                      ),
+                      ProfilePreviewStep(
+                        profileData: _profileData,
+                        onComplete: _completeSetup,
+                        onBack: _previousStep,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -983,6 +1067,182 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
                 _lastError = null;
               });
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedProgressHeader(Brightness brightness) {
+    final progress = (_currentStep + 1) / _totalSteps;
+    final estimatedMinutes = (_totalSteps - _currentStep) * 2;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground(brightness),
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.border(brightness),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              if (_currentStep > 0)
+                IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.text(brightness),
+                  ),
+                  onPressed: _previousStep,
+                )
+              else
+                const SizedBox(width: 48),
+              
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      'Artist Profile Setup',
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Step ${_currentStep + 1} of $_totalSteps',
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.crimson.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      color: AppColors.crimson,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '~$estimatedMinutes min',
+                      style: TextStyle(
+                        color: AppColors.crimson,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          Stack(
+            children: [
+              Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  color: AppColors.border(brightness),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: progress,
+                child: Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.crimson.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_totalSteps, (index) {
+              final isCompleted = index < _currentStep;
+              final isCurrent = index == _currentStep;
+              
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? AppColors.crimson
+                      : isCurrent
+                          ? AppColors.crimson.withValues(alpha: 0.2)
+                          : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isCurrent
+                        ? AppColors.crimson
+                        : AppColors.border(brightness),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _stepIcons[index],
+                      size: 12,
+                      color: isCompleted
+                          ? Colors.white
+                          : isCurrent
+                              ? AppColors.crimson
+                              : AppColors.textTert(brightness),
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      _stepTitles[index],
+                      style: TextStyle(
+                        color: isCompleted
+                            ? Colors.white
+                            : isCurrent
+                                ? AppColors.crimson
+                                : AppColors.textTert(brightness),
+                        fontSize: 10,
+                        fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),

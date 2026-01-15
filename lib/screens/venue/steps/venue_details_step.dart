@@ -91,6 +91,21 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
         );
       }
     }
+  }
+
+  @override
+  void didUpdateWidget(VenueDetailsStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controllers if data changed externally (e.g., from pre-population)
+    if (widget.profileData.city != _cityController.text) {
+      _cityController.text = widget.profileData.city ?? '';
+    }
+    if (widget.profileData.email != _emailController.text) {
+      _emailController.text = widget.profileData.email ?? '';
+    }
+    if (widget.profileData.address != _addressController.text) {
+      _addressController.text = widget.profileData.address ?? '';
+    }
     
     // ═══════════════════════════════════════════════════════════════════════
     // AUTO-FETCH LOCATION: If no coordinates set, get current location

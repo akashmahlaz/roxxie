@@ -48,6 +48,28 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
   }
 
   @override
+  void didUpdateWidget(VenueBasicInfoStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CRITICAL FIX: Sync ALL controllers when profileData is updated asynchronously
+    // This happens when _prePopulateFromUserData() finishes after initState()
+    // ═══════════════════════════════════════════════════════════════════════════
+    if (widget.profileData.venueName != _nameController.text &&
+        widget.profileData.venueName != null &&
+        widget.profileData.venueName!.isNotEmpty) {
+      _nameController.text = widget.profileData.venueName!;
+    }
+    if (widget.profileData.description != _descriptionController.text &&
+        widget.profileData.description != null) {
+      _descriptionController.text = widget.profileData.description!;
+    }
+    if (widget.profileData.capacity > 0 &&
+        _capacityController.text != widget.profileData.capacity.toString()) {
+      _capacityController.text = widget.profileData.capacity.toString();
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();

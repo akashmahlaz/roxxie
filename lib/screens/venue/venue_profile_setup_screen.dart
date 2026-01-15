@@ -78,6 +78,12 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     final user = auth.user;
     final existingVenue = auth.venueProfile;
     
+    debugPrint('🏢 [VenueSetup] Pre-populating data...');
+    debugPrint('   - User: ${user?.name}, ${user?.email}');
+    debugPrint('   - Existing venue: ${existingVenue?.name}');
+    debugPrint('   - Venue location: ${existingVenue?.location?.city}, ${existingVenue?.location?.country}');
+    debugPrint('   - Signup location: ${auth.signupCity}, ${auth.signupCountry}');
+    
     setState(() {
       // ═══════════════════════════════════════════════════════════════════
       // PRE-POPULATE FROM USER ACCOUNT (signup data)
@@ -104,18 +110,40 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       }
       
       // ═══════════════════════════════════════════════════════════════════
+      // PRE-POPULATE FROM SIGNUP LOCATION DATA (stored in AuthProvider)
+      // This is the primary source for location when no venue profile exists
+      // ═══════════════════════════════════════════════════════════════════
+      if (auth.signupCity != null && auth.signupCity!.isNotEmpty) {
+        _profileData.location.city ??= auth.signupCity;
+        debugPrint('📍 Pre-filled city from signup: ${auth.signupCity}');
+      }
+      if (auth.signupCountry != null && auth.signupCountry!.isNotEmpty) {
+        _profileData.location.country ??= auth.signupCountry;
+        debugPrint('📍 Pre-filled country from signup: ${auth.signupCountry}');
+      }
+      if (auth.signupLatitude != null && auth.signupLongitude != null) {
+        // Use GeoJSON format [longitude, latitude]
+        _profileData.location.coordinates = [auth.signupLongitude!, auth.signupLatitude!];
+        debugPrint('📍 Pre-filled coordinates from signup: ${auth.signupLatitude}, ${auth.signupLongitude}');
+      }
+      
+      // ═══════════════════════════════════════════════════════════════════
       // PRE-POPULATE FROM EXISTING VENUE PROFILE (if any)
+      // This overrides signup data with any saved profile data
       // ═══════════════════════════════════════════════════════════════════
       
       if (existingVenue != null) {
+        debugPrint('🏢 [VenueSetup] Found existing venue profile!');
+        
         // Basic info
         _profileData.venueName ??= existingVenue.name;
         _profileData.venueType ??= existingVenue.venueType;
         _profileData.description ??= existingVenue.description;
         _profileData.capacity = existingVenue.capacity ?? 100;
         
-        // Location
+        // Location (from signup!)
         if (existingVenue.location != null) {
+          debugPrint('🏢 [VenueSetup] Pre-filling location: ${existingVenue.location!.city}');
           _profileData.location.city ??= existingVenue.location!.city;
           _profileData.location.country ??= existingVenue.location!.country;
           _profileData.location.streetAddress ??= existingVenue.location!.streetAddress;
@@ -137,6 +165,8 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
         if (existingVenue.gigPreferences != null) {
           _profileData.gigPreferences = existingVenue.gigPreferences!;
         }
+      } else {
+        debugPrint('🏢 [VenueSetup] No existing venue profile found');
       }
       
       _isInitialized = true;
@@ -659,56 +689,259 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
 
-    return Scaffold(
-      backgroundColor: AppColors.background(brightness),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with progress
-            _buildHeader(brightness),
-
-            // Step indicator
-            _buildStepIndicator(brightness),
-
-            // Page content
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  VenueBasicInfoStep(
-                    profileData: _profileData,
-                    onDataChanged: () => setState(() {}),
-                    onNext: _nextStep,
-                  ),
-                  VenueMediaStep(
-                    profileData: _profileData,
-                    onDataChanged: () => setState(() {}),
-                    onNext: _nextStep,
-                    onBack: _previousStep,
-                  ),
-                  VenueDetailsStep(
-                    profileData: _profileData,
-                    onDataChanged: () => setState(() {}),
-                    onNext: _nextStep,
-                    onBack: _previousStep,
-                  ),
-                  GigPreferencesStep(
-                    profileData: _profileData,
-                    onDataChanged: () => setState(() {}),
-                    onNext: _nextStep,
-                    onBack: _previousStep,
-                  ),
-                  VenuePreviewStep(
-                    profileData: _profileData,
-                    onBack: _previousStep,
-                    onComplete: _completeSetup,
-                  ),
-                ],
-              ),
+    return WillPopScope(
+      onWillPop: () async {
+        // Show save draft confirmation
+        return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Save your progress?'),
+            content: const Text(
+              'Your profile will be saved as a draft. You can continue setup later from Settings.',
             ),
-          ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Discard'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, false);
+                  Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                ),
+                child: const Text('Save Draft'),
+              ),
+            ],
+          ),
+        ) ?? false;
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Enhanced Header with progress
+              _buildEnhancedHeader(brightness),
+
+              // Page content
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    VenueBasicInfoStep(
+                      profileData: _profileData,
+                      onDataChanged: () => setState(() {}),
+                      onNext: _nextStep,
+                    ),
+                    VenueMediaStep(
+                      profileData: _profileData,
+                      onDataChanged: () => setState(() {}),
+                      onNext: _nextStep,
+                      onBack: _previousStep,
+                    ),
+                    VenueDetailsStep(
+                      profileData: _profileData,
+                      onDataChanged: () => setState(() {}),
+                      onNext: _nextStep,
+                      onBack: _previousStep,
+                    ),
+                    GigPreferencesStep(
+                      profileData: _profileData,
+                      onDataChanged: () => setState(() {}),
+                      onNext: _nextStep,
+                      onBack: _previousStep,
+                    ),
+                    VenuePreviewStep(
+                      profileData: _profileData,
+                      onBack: _previousStep,
+                      onComplete: _completeSetup,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEnhancedHeader(Brightness brightness) {
+    final progress = (_currentStep + 1) / _totalSteps;
+    final estimatedMinutes = (_totalSteps - _currentStep) * 2;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground(brightness),
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.border(brightness),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              if (_currentStep > 0)
+                IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.text(brightness),
+                  ),
+                  onPressed: _previousStep,
+                )
+              else
+                const SizedBox(width: 48),
+              
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      'Venue Profile Setup',
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Step ${_currentStep + 1} of $_totalSteps',
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.crimson.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      color: AppColors.crimson,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '~$estimatedMinutes min',
+                      style: TextStyle(
+                        color: AppColors.crimson,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          Stack(
+            children: [
+              Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  color: AppColors.border(brightness),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: progress,
+                child: Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.crimson.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_totalSteps, (index) {
+              final isCompleted = index < _currentStep;
+              final isCurrent = index == _currentStep;
+              
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? AppColors.crimson
+                      : isCurrent
+                          ? AppColors.crimson.withValues(alpha: 0.2)
+                          : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isCurrent
+                        ? AppColors.crimson
+                        : AppColors.border(brightness),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _stepIcons[index],
+                      size: 12,
+                      color: isCompleted
+                          ? Colors.white
+                          : isCurrent
+                              ? AppColors.crimson
+                              : AppColors.textTert(brightness),
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      _stepTitles[index],
+                      style: TextStyle(
+                        color: isCompleted
+                            ? Colors.white
+                            : isCurrent
+                                ? AppColors.crimson
+                                : AppColors.textTert(brightness),
+                        fontSize: 10,
+                        fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
       ),
     );
   }

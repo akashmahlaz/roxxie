@@ -23,3 +23,8 @@ export 'chips.dart';
 export 'animated_micro_interactions.dart';
 export 'adaptive_ui.dart';
 export 'skeleton_screens.dart';
+
+// New UX Components (2026 Standards)
+export 'password_strength_indicator.dart';
+export 'profile_completion_tracker.dart';
+export 'smart_location_picker.dart';

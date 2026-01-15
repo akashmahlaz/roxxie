@@ -171,6 +171,41 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
     widget.onNext();
   }
 
+  void _skipStep() {
+    // Show confirmation if no photos added
+    if (widget.profileData.profilePhoto == null) {
+      _showSkipConfirmation();
+    } else {
+      widget.onNext();
+    }
+  }
+
+  void _showSkipConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Skip Photos?'),
+        content: const Text(
+          'Adding photos increases your chances of getting gigs by 5x. '
+          'Are you sure you want to skip?'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Add Photos'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              widget.onNext();
+            },
+            child: const Text('Skip'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;

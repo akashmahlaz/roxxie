@@ -15,8 +15,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
-import 'role_selection_screen_v3.dart';
-import 'login_screen.dart';
+import 'unified_signup_screen.dart';
 
 class OnboardingScreenV3 extends StatefulWidget {
   const OnboardingScreenV3({super.key});
@@ -204,7 +203,7 @@ class _OnboardingScreenV3State extends State<OnboardingScreenV3>
     HapticFeedback.mediumImpact();
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const RoleSelectionScreenV3(),
+        pageBuilder: (_, __, ___) => const UnifiedSignupScreen(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(
             opacity: animation,

@@ -28,11 +28,26 @@ class AuthProvider extends ChangeNotifier {
   Venue? _venueProfile;
   String? _errorMessage;
   bool _isLoading = false;
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SIGNUP DATA: Store location data from signup for profile setup
+  // This is needed because backend may not create venue profile immediately
+  // ═══════════════════════════════════════════════════════════════════════════
+  String? _signupCity;
+  String? _signupCountry;
+  double? _signupLatitude;
+  double? _signupLongitude;
 
   // Getters
   AuthStatus get status => _status;
   User? get user => _user;
   Artist? get artistProfile => _artistProfile;
+  
+  // Signup location getters - for use in profile setup
+  String? get signupCity => _signupCity;
+  String? get signupCountry => _signupCountry;
+  double? get signupLatitude => _signupLatitude;
+  double? get signupLongitude => _signupLongitude;
   Venue? get venueProfile => _venueProfile;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
@@ -116,6 +131,24 @@ class AuthProvider extends ChangeNotifier {
 
       _user = response.user;
       _status = AuthStatus.profileIncomplete;
+      
+      // ═══════════════════════════════════════════════════════════════════════
+      // STORE SIGNUP LOCATION DATA: Keep for profile setup screens
+      // Backend may not create venue/artist profile immediately, so we store
+      // the signup location data here for use in profile setup screens
+      // ═══════════════════════════════════════════════════════════════════════
+      _signupCity = city;
+      _signupCountry = country;
+      _signupLatitude = latitude;
+      _signupLongitude = longitude;
+      debugPrint('📍 Stored signup location: $city, $country (${latitude}, ${longitude})');
+      
+      // ═══════════════════════════════════════════════════════════════════════
+      // LOAD ROLE PROFILE: Load the initial profile created with signup data
+      // This ensures city/country/location from signup is available in setup
+      // ═══════════════════════════════════════════════════════════════════════
+      await _loadRoleProfile();
+      
       notifyListeners();
       return true;
     } on DioException catch (e) {
