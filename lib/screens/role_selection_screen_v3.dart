@@ -270,77 +270,65 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
 
                     // Premium Logo with shimmer
                     _buildShimmerLogo(brightness),
 
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
 
                     // Character reveal title
                     _buildRevealTitle(brightness),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
                     // Subtitle with fade
                     _buildSubtitle(brightness),
 
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 24),
 
-                    // 3D Role Cards
+                    // Role Cards
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Artist Card
-                          _build3DRoleCard(
-                            icon: Icons.headphones_rounded,
+                          _buildRoleCard(
+                            icon: Icons.music_note_rounded,
                             title: 'Artist / Band',
                             subtitle: 'Find gigs & get booked',
-                            gradient: [
-                              AppColors.crimson.withValues(alpha: 0.2),
-                              AppColors.crimson.withValues(alpha: 0.05),
+                            features: [
+                              'Create your portfolio',
+                              'Get discovered by venues',
+                              'Accept bookings',
                             ],
+                            accentColor: AppColors.crimson,
                             isHovered: _artistCardHovered,
-                            tiltX: _artistTiltX,
-                            tiltY: _artistTiltY,
                             onHover: (hovering) {
                               setState(() => _artistCardHovered = hovering);
                               if (hovering) HapticFeedback.selectionClick();
-                            },
-                            onTiltUpdate: (dx, dy) {
-                              setState(() {
-                                _artistTiltX = dx;
-                                _artistTiltY = dy;
-                              });
                             },
                             onTap: _navigateToArtistSignup,
                             brightness: brightness,
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 12),
 
                           // Venue Card
-                          _build3DRoleCard(
+                          _buildRoleCard(
                             icon: Icons.storefront_rounded,
                             title: 'Venue / Host',
                             subtitle: 'Book talent for your stage',
-                            gradient: [
-                              Colors.blueAccent.withValues(alpha: 0.15),
-                              Colors.blueAccent.withValues(alpha: 0.03),
+                            features: [
+                              'Browse local talent',
+                              'Send booking requests',
+                              'Manage your events',
                             ],
+                            accentColor: const Color(0xFF3B82F6),
                             isHovered: _venueCardHovered,
-                            tiltX: _venueTiltX,
-                            tiltY: _venueTiltY,
                             onHover: (hovering) {
                               setState(() => _venueCardHovered = hovering);
                               if (hovering) HapticFeedback.selectionClick();
-                            },
-                            onTiltUpdate: (dx, dy) {
-                              setState(() {
-                                _venueTiltX = dx;
-                                _venueTiltY = dy;
-                              });
                             },
                             onTap: _navigateToVenueSignup,
                             brightness: brightness,
@@ -352,7 +340,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
                     // Login link with shimmer
                     _buildLoginLink(brightness),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -499,19 +487,17 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 3D ROLE CARD WITH TILT EFFECT
+  // ROLE CARD WITH FEATURES (Clean Design)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _build3DRoleCard({
+  Widget _buildRoleCard({
     required IconData icon,
     required String title,
     required String subtitle,
-    required List<Color> gradient,
+    required List<String> features,
+    required Color accentColor,
     required bool isHovered,
-    required double tiltX,
-    required double tiltY,
     required Function(bool) onHover,
-    required Function(double, double) onTiltUpdate,
     required VoidCallback onTap,
     required Brightness brightness,
   }) {
@@ -525,130 +511,155 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
           onTapUp: (_) => onHover(false),
           onTapCancel: () => onHover(false),
           onTap: onTap,
-          onPanUpdate: (details) {
-            final dx = (details.localPosition.dx / 200 - 0.5) * 15;
-            final dy = (details.localPosition.dy / 100 - 0.5) * 10;
-            onTiltUpdate(dx.clamp(-15, 15), dy.clamp(-10, 10));
-          },
-          onPanEnd: (_) => onTiltUpdate(0, 0),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001) // Perspective
-              ..rotateX(tiltY * math.pi / 180)
-              ..rotateY(-tiltX * math.pi / 180)
-              ..translate(
-                0.0,
-                isHovered ? -4 + _cardFloatAnimation.value * 0.5 : _cardFloatAnimation.value,
-                isHovered ? 10.0 : 0.0,
-              ),
-            transformAlignment: Alignment.center,
+            transform: Matrix4.translationValues(
+              0,
+              isHovered ? -4 : _cardFloatAnimation.value * 0.5,
+              0,
+            ),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: gradient,
-                ),
+                color: isDark 
+                    ? AppColors.graphite
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isHovered
-                      ? gradient[0].withValues(alpha: 0.8)
-                      : AppColors.border(brightness).withValues(alpha: 0.3),
-                  width: isHovered ? 2 : 1,
+                      ? accentColor
+                      : isDark ? AppColors.slate : Colors.grey[300]!,
+                  width: isHovered ? 2 : 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: gradient[0].withValues(alpha: isHovered ? 0.4 : 0.15),
-                    blurRadius: isHovered ? 40 : 20,
+                    color: isHovered 
+                        ? accentColor.withValues(alpha: 0.3)
+                        : Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+                    blurRadius: isHovered ? 30 : 15,
                     spreadRadius: isHovered ? 2 : 0,
-                    offset: Offset(0, isHovered ? 15 : 8),
+                    offset: Offset(0, isHovered ? 10 : 5),
                   ),
                 ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(23),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Row(
-                    children: [
-                      // Animated icon container
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              gradient[0].withValues(alpha: isHovered ? 0.5 : 0.3),
-                              gradient[0].withValues(alpha: 0.1),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon container
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          accentColor,
+                          accentColor.withValues(alpha: 0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentColor.withValues(alpha: 0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      icon,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // Text content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        // Subtitle
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: AppColors.textSec(brightness),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Feature bullets
+                        ...features.map((feature) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: accentColor,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  feature,
+                                  style: TextStyle(
+                                    color: AppColors.textSec(brightness),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: gradient[0].withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Icon(
-                          icon,
-                          color: isDark ? Colors.white : gradient[0],
-                          size: 28,
-                        ),
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      // Text content
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: TextStyle(
-                                color: AppColors.text(brightness),
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              subtitle,
-                              style: TextStyle(
-                                color: AppColors.textSec(brightness),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Arrow icon
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        transform: Matrix4.translationValues(
-                          isHovered ? 4 : 0,
-                          0,
-                          0,
-                        ),
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
-                          color: isHovered
-                              ? gradient[0]
-                              : AppColors.textTert(brightness),
-                          size: 24,
-                        ),
-                      ),
-                    ],
+                        )),
+                      ],
+                    ),
                   ),
-                ),
+
+                  // Arrow icon
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.translationValues(
+                      isHovered ? 4 : 0,
+                      0,
+                      0,
+                    ),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: isHovered 
+                            ? accentColor.withValues(alpha: 0.15)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        color: isHovered
+                            ? accentColor
+                            : AppColors.textTert(brightness),
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

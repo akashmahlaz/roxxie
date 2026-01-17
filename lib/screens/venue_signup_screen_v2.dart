@@ -387,43 +387,6 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
         ),
 
         const Spacer(),
-
-        // Logo badge (blue for venue)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [_venueAccent, _venueAccent.withValues(alpha: 0.8)],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: _venueAccent.withValues(alpha: 0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.storefront_rounded, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'GigMatch',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const Spacer(),
-
-        const SizedBox(width: 48),
       ],
     );
   }

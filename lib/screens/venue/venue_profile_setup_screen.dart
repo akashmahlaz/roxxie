@@ -194,6 +194,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
   void _completeSetup() async {
     final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
     final authProvider = context.read<AuthProvider>();
     final uploadService = UploadService();
 
@@ -206,27 +207,117 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     // Venue name is pre-populated from signup, so we don't need to validate
     // User can skip all steps and complete with minimal/no data
 
-    // Show loading
+    // Show premium loading overlay
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground(brightness),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: AppColors.crimson),
-              const SizedBox(height: 16),
-              Text(
-                'Uploading photos...',
-                style: TextStyle(color: AppColors.text(brightness)),
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? [const Color(0xFF2A2A2A), const Color(0xFF1A1A1A)]
+                    : [Colors.white, const Color(0xFFF8F8F8)],
               ),
-            ],
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.crimson.withValues(alpha: 0.2),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated logo/icon
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: 0.8 + (0.2 * value),
+                      child: Opacity(
+                        opacity: value,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.crimson.withValues(alpha: 0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.storefront_rounded,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 28),
+                
+                // Title
+                Text(
+                  'Setting up your venue',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.text(brightness),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This will only take a moment...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                
+                // Custom animated progress
+                SizedBox(
+                  width: 160,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 2000),
+                      builder: (context, value, child) {
+                        return LinearProgressIndicator(
+                          value: null, // Indeterminate
+                          backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.crimson),
+                          minHeight: 6,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -332,117 +423,18 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       
       if (!mounted) return;
       
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.surface(brightness),
-                  AppColors.surface(brightness).withValues(alpha: 0.95),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: AppColors.crimson.withValues(alpha: 0.3),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.crimson.withValues(alpha: 0.3),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Success Icon
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.crimson.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Title
-                Text(
-                  'Profile Complete! 🎉',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                
-                // Message
-                Text(
-                  'Your venue profile is live! Start discovering talented artists and bands ready to perform.',
-                  style: TextStyle(
-                    color: AppColors.textSec(brightness),
-                    fontSize: 15,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                
-                // Action Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.pushReplacementNamed(context, '/home');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.crimson,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Start Discovering Artists',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+      // Navigate to a beautiful full-screen success experience
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => 
+              _VenueSetupSuccessScreen(brightness: brightness),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 400),
         ),
       );
     } else {
@@ -1247,4 +1239,359 @@ class PerformanceSlots {
     'Dinner Service',
     'Special Events',
   ];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 🎉 VENUE SETUP SUCCESS SCREEN
+// Beautiful full-screen success experience
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _VenueSetupSuccessScreen extends StatefulWidget {
+  final Brightness brightness;
+  
+  const _VenueSetupSuccessScreen({required this.brightness});
+
+  @override
+  State<_VenueSetupSuccessScreen> createState() => _VenueSetupSuccessScreenState();
+}
+
+class _VenueSetupSuccessScreenState extends State<_VenueSetupSuccessScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _mainController;
+  late AnimationController _pulseController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _mainController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _scaleAnimation = CurvedAnimation(
+      parent: _mainController,
+      curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
+    );
+    
+    _fadeAnimation = CurvedAnimation(
+      parent: _mainController,
+      curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
+    );
+    
+    _slideAnimation = CurvedAnimation(
+      parent: _mainController,
+      curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
+    );
+    
+    _mainController.forward();
+  }
+
+  @override
+  void dispose() {
+    _mainController.dispose();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.brightness == Brightness.dark;
+    
+    return Scaffold(
+      backgroundColor: AppColors.background(widget.brightness),
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [const Color(0xFF1A1A1A), const Color(0xFF0D0D0D)]
+                    : [Colors.white, const Color(0xFFF5F5F5)],
+              ),
+            ),
+          ),
+          
+          // Animated background circles
+          Positioned(
+            top: -100,
+            right: -100,
+            child: AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: 1 + (_pulseController.value * 0.1),
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.crimson.withValues(alpha: 0.15),
+                          AppColors.crimson.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          Positioned(
+            bottom: -150,
+            left: -100,
+            child: AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: 1.1 - (_pulseController.value * 0.1),
+                  child: Container(
+                    width: 350,
+                    height: 350,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.crimson.withValues(alpha: 0.1),
+                          AppColors.crimson.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          // Main content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                children: [
+                  const Spacer(flex: 2),
+                  
+                  // Success Icon with animation
+                  ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.crimson.withValues(alpha: 0.4),
+                            blurRadius: 40,
+                            offset: const Offset(0, 15),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 60,
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Title
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      "You're All Set! 🎉",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.text(widget.brightness),
+                        letterSpacing: -1,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Subtitle
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      'Your venue profile is live.\nStart discovering talented artists!',
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 48),
+                  
+                  // Features list
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.3),
+                      end: Offset.zero,
+                    ).animate(_slideAnimation),
+                    child: FadeTransition(
+                      opacity: _slideAnimation,
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: isDark 
+                              ? Colors.white.withValues(alpha: 0.05) 
+                              : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isDark 
+                                ? Colors.white.withValues(alpha: 0.1) 
+                                : Colors.grey[200]!,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildFeatureRow(
+                              Icons.search_rounded,
+                              'Discover Artists',
+                              'Find the perfect performers for your venue',
+                              isDark,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFeatureRow(
+                              Icons.favorite_rounded,
+                              'Save Favorites',
+                              'Swipe right to save artists you love',
+                              isDark,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFeatureRow(
+                              Icons.message_rounded,
+                              'Connect & Book',
+                              'Message artists and book performances',
+                              isDark,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const Spacer(flex: 2),
+                  
+                  // CTA Button
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.5),
+                      end: Offset.zero,
+                    ).animate(_slideAnimation),
+                    child: FadeTransition(
+                      opacity: _slideAnimation,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacementNamed(context, '/home');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.crimson,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Start Discovering',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureRow(IconData icon, String title, String subtitle, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.crimson.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.crimson,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.grey[500] : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

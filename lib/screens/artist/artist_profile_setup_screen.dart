@@ -1,30 +1,20 @@
-/// Multi-step onboarding flow for artists with comprehensive error handling:
-/// Step 1: Basic Info (name, stage name, bio, genres, influences)
-/// Step 2: Media Upload (photos, audio samples, videos)
-/// Step 3: Contact & Location (phone, social links, location, travel radius)
-/// Step 4: Availability & Pricing (calendar, price range)
-/// Step 5: Profile Preview & Complete
-///
-/// Features:
-/// - Comprehensive error handling with user-friendly messages
-/// - Retry logic for critical operations
-/// - Detailed logging for debugging
-/// - Network connectivity checks
-/// - Validation at each step
-/// - Progress saving and recovery
+// 🎸 ARTIST PROFILE SETUP WIZARD - MINIMAL 2-STEP FLOW
+//
+// Ultra-minimal onboarding collecting only essential matching info:
+// Step 1: Location & Music (GPS, genres) → For venue matching
+// Step 2: Budget & Type (price tier, act type) → For gig matching
+//
+// BOTH STEPS ARE SKIPPABLE - User can skip entire flow
+// Additional info (bio, photos, availability) can be added in Profile/Me tab
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import '../../core/services/upload_service.dart';
-import 'steps/basic_info_step.dart';
-import 'steps/media_upload_step.dart';
-import 'steps/contact_location_step.dart';
-import 'steps/availability_pricing_step.dart';
-import 'steps/profile_preview_step.dart';
+import 'steps/step1_location_music.dart';
+import 'steps/step2_budget_type.dart';
 
 class ArtistProfileSetupScreen extends StatefulWidget {
   const ArtistProfileSetupScreen({super.key});
@@ -34,735 +24,267 @@ class ArtistProfileSetupScreen extends StatefulWidget {
       _ArtistProfileSetupScreenState();
 }
 
-class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
-    with TickerProviderStateMixin {
+class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
   final PageController _pageController = PageController();
-  late final AnimationController _animationController;
-  late final Animation<double> _fadeAnimation;
-
   int _currentStep = 0;
-  final int _totalSteps = 5;
-  bool _isCompleting = false;
-  String? _lastError;
+  final int _totalSteps = 2;
+  bool _isInitialized = false;
 
   // Form data model
   final ArtistProfileData _profileData = ArtistProfileData();
 
   // Step titles
   final List<String> _stepTitles = [
-    'Basic Info',
-    'Media',
-    'Contact',
-    'Availability',
-    'Preview',
+    'Location & Music',
+    'Rate & Type',
   ];
 
   final List<String> _stepSubtitles = [
-    'Tell us about yourself',
-    'Showcase your talent',
-    'How venues reach you',
-    'When are you free?',
-    'Review your profile',
+    'Help venues find you',
+    'Set your typical rate',
   ];
 
   final List<IconData> _stepIcons = [
-    Icons.person_rounded,
-    Icons.photo_library_rounded,
-    Icons.contact_phone_rounded,
-    Icons.calendar_month_rounded,
-    Icons.preview_rounded,
+    Icons.location_on_rounded,
+    Icons.payments_rounded,
   ];
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize animations
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _animationController.forward();
-
-    // Pre-populate location data from artist profile if available
-    _loadExistingProfile();
-
-    debugPrint('🎸 [ArtistSetup] Screen initialized');
+    // Pre-populate data from user account after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _prePopulateFromUserData();
+    });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadExistingProfile() async {
-    try {
-      debugPrint('🎸 [ArtistSetup] Loading existing profile...');
-
-      final authProvider = context.read<AuthProvider>();
-      final artistProfile = authProvider.artistProfile;
-      final user = authProvider.user;
-
-      // ═══════════════════════════════════════════════════════════════════════
+  /// Pre-populate artist setup with data from user signup & existing artist profile
+  void _prePopulateFromUserData() {
+    if (_isInitialized) return;
+    
+    final auth = context.read<AuthProvider>();
+    final user = auth.user;
+    final existingArtist = auth.artistProfile;
+    
+    debugPrint('🎸 [ArtistSetup] Pre-populating data...');
+    debugPrint('   - User: ${user?.name}, ${user?.email}');
+    debugPrint('   - Existing artist: ${existingArtist?.stageName}');
+    debugPrint('   - Signup location: ${auth.signupCity}, ${auth.signupCountry}');
+    
+    setState(() {
+      // ═══════════════════════════════════════════════════════════════════
       // PRE-POPULATE FROM USER ACCOUNT (signup data)
-      // ═══════════════════════════════════════════════════════════════════════
-      if (user != null) {
-        if (user.name.isNotEmpty && _profileData.displayName == null) {
-          _profileData.displayName = user.name;
-          debugPrint('🎸 Pre-filled display name from user: ${user.name}');
-        }
-        if (user.email.isNotEmpty && _profileData.email == null) {
-          _profileData.email = user.email;
-          debugPrint('🎸 Pre-filled email from user: ${user.email}');
-        }
-        if (user.phone != null && user.phone!.isNotEmpty && _profileData.phone == null) {
-          _profileData.phone = user.phone;
-          debugPrint('🎸 Pre-filled phone from user: ${user.phone}');
-        }
+      // ═══════════════════════════════════════════════════════════════════
+      
+      // Display name / Stage name from user's name (they entered during signup)
+      if (user?.name != null && user!.name.isNotEmpty) {
+        _profileData.displayName = user.name;
+        _profileData.stageName = user.name;
+        debugPrint('✅ Set displayName from user.name: ${user.name}');
       }
-
-      // ═══════════════════════════════════════════════════════════════════════
+      
+      // Email from user account
+      if (user?.email != null && user!.email.isNotEmpty) {
+        _profileData.email = user.email;
+      }
+      
+      // Phone from user account
+      if (user?.phone != null && user!.phone!.isNotEmpty) {
+        _profileData.phone = user.phone;
+      }
+      
+      // ═══════════════════════════════════════════════════════════════════
       // PRE-POPULATE FROM SIGNUP LOCATION DATA (stored in AuthProvider)
-      // This is the primary source for location when no artist profile exists
-      // ═══════════════════════════════════════════════════════════════════════
-      if (authProvider.signupCity != null && authProvider.signupCity!.isNotEmpty) {
-        _profileData.city ??= authProvider.signupCity;
-        debugPrint('📍 Pre-filled city from signup: ${authProvider.signupCity}');
+      // ═══════════════════════════════════════════════════════════════════
+      if (auth.signupCity != null && auth.signupCity!.isNotEmpty) {
+        _profileData.city ??= auth.signupCity;
+        debugPrint('📍 Pre-filled city from signup: ${auth.signupCity}');
       }
-      if (authProvider.signupCountry != null && authProvider.signupCountry!.isNotEmpty) {
-        _profileData.country ??= authProvider.signupCountry;
-        debugPrint('📍 Pre-filled country from signup: ${authProvider.signupCountry}');
+      if (auth.signupCountry != null && auth.signupCountry!.isNotEmpty) {
+        _profileData.country ??= auth.signupCountry;
+        debugPrint('📍 Pre-filled country from signup: ${auth.signupCountry}');
       }
-      if (authProvider.signupLatitude != null && authProvider.signupLongitude != null) {
-        _profileData.latitude ??= authProvider.signupLatitude;
-        _profileData.longitude ??= authProvider.signupLongitude;
-        debugPrint('📍 Pre-filled coordinates from signup: ${authProvider.signupLatitude}, ${authProvider.signupLongitude}');
+      if (auth.signupLatitude != null && auth.signupLongitude != null) {
+        _profileData.latitude ??= auth.signupLatitude;
+        _profileData.longitude ??= auth.signupLongitude;
+        debugPrint('📍 Pre-filled coordinates from signup');
       }
-
-      // ═══════════════════════════════════════════════════════════════════════
+      
+      // ═══════════════════════════════════════════════════════════════════
       // PRE-POPULATE FROM EXISTING ARTIST PROFILE (if any)
-      // This overrides signup data with any saved profile data
-      // ═══════════════════════════════════════════════════════════════════════
-      if (artistProfile != null) {
-        debugPrint('🎸 [ArtistSetup] Found existing profile: ${artistProfile.displayName}');
-
-        // Pre-fill data from existing profile
-        _profileData.displayName = artistProfile.displayName;
-        _profileData.stageName = artistProfile.stageName;
-        _profileData.bio = artistProfile.bio;
-        _profileData.genres = List<String>.from(artistProfile.genres);
-        _profileData.minPrice = artistProfile.minPrice;
-        _profileData.maxPrice = artistProfile.maxPrice;
-        _profileData.currency = artistProfile.currency;
-
-        // Pre-fill location data from existing profile
-        if (artistProfile.location != null) {
-          _profileData.city = artistProfile.location!.city;
-          _profileData.country = artistProfile.location!.country;
-          _profileData.latitude = artistProfile.location!.latitude;
-          _profileData.longitude = artistProfile.location!.longitude;
-          _profileData.travelRadius = artistProfile.travelRadius;
+      // ═══════════════════════════════════════════════════════════════════
+      if (existingArtist != null) {
+        debugPrint('🎸 [ArtistSetup] Found existing artist profile!');
+        
+        _profileData.displayName ??= existingArtist.displayName;
+        _profileData.stageName ??= existingArtist.stageName;
+        _profileData.bio ??= existingArtist.bio;
+        
+        if (existingArtist.genres.isNotEmpty) {
+          _profileData.genres = List.from(existingArtist.genres);
         }
-
-        debugPrint('🎸 [ArtistSetup] Profile data loaded successfully');
-      } else {
-        debugPrint('🎸 [ArtistSetup] No existing profile found, using signup data');
+        
+        final location = existingArtist.location;
+        if (location != null) {
+          _profileData.city ??= location.city;
+          _profileData.country ??= location.country;
+          final coords = location.coordinates;
+          if (coords.length >= 2) {
+            _profileData.longitude = coords[0];
+            _profileData.latitude = coords[1];
+          }
+        }
+        
+        _profileData.minPrice = existingArtist.minPrice;
+        _profileData.maxPrice = existingArtist.maxPrice;
       }
       
-      debugPrint('✅ Pre-populated artist setup:');
-      debugPrint('   - Name: ${_profileData.displayName}');
-      debugPrint('   - Email: ${_profileData.email}');
-      debugPrint('   - City: ${_profileData.city}');
-      
-      // ═══════════════════════════════════════════════════════════════════════
-      // CRITICAL FIX: Trigger rebuild so child widgets get updated profileData
-      // Without this, BasicInfoStep won't receive the pre-populated data
-      // ═══════════════════════════════════════════════════════════════════════
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e, stackTrace) {
-      debugPrint('❌ [ArtistSetup] Error loading existing profile: $e');
-      debugPrint('Stack trace: $stackTrace');
-      // Continue with empty profile data - not critical
-    }
+      _isInitialized = true;
+    });
+    
+    debugPrint('✅ Pre-populated artist setup:');
+    debugPrint('   - Name: ${_profileData.displayName}');
+    debugPrint('   - City: ${_profileData.city}');
   }
 
   void _nextStep() {
     if (_currentStep < _totalSteps - 1) {
-      // Validate current step before proceeding
-      if (!_validateCurrentStep()) {
-        _showValidationError();
-        return;
-      }
-
-      setState(() {
-        _currentStep++;
-        _lastError = null;
-      });
-
+      setState(() => _currentStep++);
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
       );
-
-      debugPrint('🎸 [ArtistSetup] Moved to step ${_currentStep + 1}/$_totalSteps');
-    } else {
-      _completeSetup();
     }
   }
 
   void _previousStep() {
     if (_currentStep > 0) {
-      setState(() {
-        _currentStep--;
-        _lastError = null;
-      });
-
+      setState(() => _currentStep--);
       _pageController.previousPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
       );
-
-      debugPrint('🎸 [ArtistSetup] Moved back to step ${_currentStep + 1}/$_totalSteps');
     }
-  }
-
-  bool _validateCurrentStep() {
-    try {
-      switch (_currentStep) {
-        case 0: // Basic Info
-          if (_profileData.displayName == null || _profileData.displayName!.trim().isEmpty) {
-            _lastError = 'Display name is required';
-            return false;
-          }
-          if (_profileData.genres.isEmpty) {
-            _lastError = 'Please select at least one genre';
-            return false;
-          }
-          break;
-
-        case 2: // Contact & Location
-          if (_profileData.city == null || _profileData.city!.trim().isEmpty) {
-            _lastError = 'City is required';
-            return false;
-          }
-          if (_profileData.country == null || _profileData.country!.trim().isEmpty) {
-            _lastError = 'Country is required';
-            return false;
-          }
-          if (_profileData.latitude == null || _profileData.longitude == null) {
-            _lastError = 'Location coordinates are required';
-            return false;
-          }
-          break;
-
-        case 3: // Availability & Pricing
-          if (_profileData.minPrice <= 0) {
-            _lastError = 'Minimum price must be greater than 0';
-            return false;
-          }
-          if (_profileData.maxPrice <= 0) {
-            _lastError = 'Maximum price must be greater than 0';
-            return false;
-          }
-          if (_profileData.minPrice > _profileData.maxPrice) {
-            _lastError = 'Minimum price cannot be greater than maximum price';
-            return false;
-          }
-          break;
-      }
-
-      return true;
-    } catch (e) {
-      debugPrint('❌ [ArtistSetup] Validation error: $e');
-      _lastError = 'Validation failed. Please check your input.';
-      return false;
-    }
-  }
-
-  void _showValidationError() {
-    if (_lastError == null) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_lastError!),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
-      ),
-    );
   }
 
   void _completeSetup() async {
-    if (_isCompleting) return; // Prevent double submission
-
     final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
     final authProvider = context.read<AuthProvider>();
+    final uploadService = UploadService();
 
-    setState(() {
-      _isCompleting = true;
-      _lastError = null;
-    });
-
-    debugPrint('🎸 [ArtistSetup] Starting profile completion...');
-
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => _buildLoadingDialog(brightness),
-    );
-
-    try {
-      // Final validation before submission
-      final validationErrors = _profileData.validate();
-      if (validationErrors.isNotEmpty) {
-        throw Exception('Validation failed: ${validationErrors.join(', ')}');
-      }
-
-      // Check network connectivity
-      await _checkNetworkConnectivity();
-
-      // Upload photos before completing setup
-      final uploadService = UploadService();
-      
-      // Upload profile photo if it's a local file
-      if (_profileData.profilePhoto != null && 
-          _profileData.profilePhoto!.startsWith('/')) {
-        debugPrint('📤 Uploading profile photo...');
-        try {
-          final uploadResult = await uploadService.uploadProfilePhoto(
-            _profileData.profilePhoto!,
-          );
-          _profileData.profilePhoto = uploadResult.url;
-          debugPrint('✅ Profile photo uploaded: ${uploadResult.url}');
-        } catch (e) {
-          debugPrint('⚠️ Profile photo upload failed: $e');
-          _profileData.profilePhoto = null;
-        }
-      }
-
-      // Upload gallery photos if they are local files
-      final uploadedGallery = <String>[];
-      for (final photoPath in _profileData.photoGallery) {
-        if (photoPath.startsWith('/')) {
-          try {
-            final uploadResult = await uploadService.uploadGalleryImage(
-              photoPath,
-              index: uploadedGallery.length,
-            );
-            uploadedGallery.add(uploadResult.url);
-            debugPrint('✅ Gallery photo uploaded: ${uploadResult.url}');
-          } catch (e) {
-            debugPrint('⚠️ Gallery photo upload failed: $e');
-          }
-        } else {
-          uploadedGallery.add(photoPath);
-        }
-      }
-      _profileData.photoGallery = uploadedGallery;
-
-      // Build the request data using the model's toBackendDto method
-      final requestData = _profileData.toBackendDto();
-
-      debugPrint('🎸 [ArtistSetup] Request data keys: ${requestData.keys.toList()}');
-      debugPrint('🎸 [ArtistSetup] Location data: ${requestData['location']}');
-
-      // Attempt to complete setup with retry logic
-      bool success = false;
-      Exception? lastError;
-
-      for (int attempt = 1; attempt <= 3; attempt++) {
-        try {
-          debugPrint('🎸 [ArtistSetup] Setup attempt $attempt/3');
-
-          if (attempt > 1) {
-            // Wait before retry
-            await Future.delayed(Duration(seconds: attempt));
-          }
-
-          success = await authProvider.completeArtistSetupWithData(requestData);
-
-          if (success) {
-            debugPrint('🎸 [ArtistSetup] Profile completed successfully on attempt $attempt');
-            break;
-          }
-
-        } catch (e) {
-          lastError = e as Exception;
-          debugPrint('❌ [ArtistSetup] Setup attempt $attempt failed: $e');
-
-          // Don't retry on validation errors
-          if (e.toString().contains('Validation') || e.toString().contains('required')) {
-            break;
-          }
-        }
-      }
-
-      if (!success) {
-        throw lastError ?? Exception('Failed to complete setup after 3 attempts');
-      }
-
-      // Close loading dialog
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      // Show success message
-      if (mounted) {
-        _showSuccessDialog();
-      }
-
-    } catch (e, stackTrace) {
-      debugPrint('❌ [ArtistSetup] Setup failed: $e');
-      debugPrint('Stack trace: $stackTrace');
-
-      // Close loading dialog
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      // Show error dialog
-      _showErrorDialog(e.toString());
-
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isCompleting = false;
-        });
-      }
+    bool isRemoteUrl(String? value) {
+      if (value == null) return false;
+      return value.startsWith('http://') || value.startsWith('https://');
     }
-  }
 
-  Widget _buildLoadingDialog(Brightness brightness) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground(brightness),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.crimson.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(
-              color: AppColors.crimson,
-              strokeWidth: 3,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Setting up your profile...',
-              style: TextStyle(
-                color: AppColors.text(brightness),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'This may take a moment',
-              style: TextStyle(
-                color: AppColors.textSec(brightness),
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showSuccessDialog() {
+    // Show premium loading overlay
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: 64,
-                color: Colors.green,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Profile Complete!',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Welcome to GigMatch! Start discovering amazing venues.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  Navigator.pushReplacementNamed(context, '/home');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.crimson,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Get Started'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showErrorDialog(String errorMessage) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Setup Failed'),
-        content: Text(
-          'We encountered an error while setting up your profile:\n\n$errorMessage\n\nPlease try again.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _completeSetup(); // Retry
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.crimson,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _checkNetworkConnectivity() async {
-    try {
-      final result = await InternetAddress.lookup('google.com');
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        throw Exception('No internet connection. Please check your network and try again.');
-      }
-    } catch (e) {
-      throw Exception('No internet connection. Please check your network and try again.');
-    }
-  }
-
-  /// Shows confirmation dialog for skipping all setup steps
-  void _showSkipAllConfirmation(Brightness brightness) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppColors.border(brightness),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Warning icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.orange,
-                  size: 40,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Title
-              Text(
-                'Skip All Steps?',
-                style: TextStyle(
-                  color: AppColors.text(brightness),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Description
-              Text(
-                'Your profile will be incomplete:\n'
-                '• Less visibility to venues\n'
-                '• Lower match quality\n'
-                '• Can\'t receive gig offers',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.textSec(brightness),
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Tip
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.crimson.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.lightbulb_outline_rounded,
-                               color: AppColors.crimson, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'You can complete your profile later from Settings → Edit Profile',
-                        style: TextStyle(
-                          color: AppColors.text(brightness),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Buttons
-              Row(
-                children: [
-                  // Continue setup
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.text(brightness),
-                        side: BorderSide(color: AppColors.border(brightness)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Continue Setup'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Skip all
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _skipAllAndComplete();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text('Skip All'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Skips all steps and saves minimal profile
-  Future<void> _skipAllAndComplete() async {
-    final brightness = Theme.of(context).brightness;
-    final authProvider = context.read<AuthProvider>();
-
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
       builder: (context) => PopScope(
         canPop: false,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
+        child: Center(
           child: Container(
-            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
             decoration: BoxDecoration(
-              color: AppColors.surface(brightness),
-              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? [const Color(0xFF2A2A2A), const Color(0xFF1A1A1A)]
+                    : [Colors.white, const Color(0xFFF8F8F8)],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.crimson.withValues(alpha: 0.2),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(color: AppColors.crimson),
-                const SizedBox(height: 16),
+                // Animated logo/icon
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: 0.8 + (0.2 * value),
+                      child: Opacity(
+                        opacity: value,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.crimson.withValues(alpha: 0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.music_note_rounded,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 28),
+                
                 Text(
-                  'Saving minimal profile...',
-                  style: TextStyle(color: AppColors.text(brightness)),
+                  'Setting up your profile',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.text(brightness),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This will only take a moment...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                
+                // Animated progress
+                SizedBox(
+                  width: 160,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: null,
+                      backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.crimson),
+                      minHeight: 6,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -772,258 +294,257 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
     );
 
     try {
-      // Save minimal profile with whatever data we have
-      final requestData = _profileData.toBackendDto();
-      final success = await authProvider.completeArtistSetupWithData(requestData);
-
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
-
-      if (success) {
-        await authProvider.init();
-
-        if (!mounted) return;
-
-        // Show quick success and navigate
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile saved! You can complete it later in Settings.'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Failed to save profile'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      // Upload profile photo if exists and is local
+      if (_profileData.profilePhoto != null && !isRemoteUrl(_profileData.profilePhoto)) {
+        try {
+          final uploadResult = await uploadService.uploadProfilePhoto(
+            _profileData.profilePhoto!,
+          );
+          _profileData.profilePhoto = uploadResult.url;
+        } catch (e) {
+          debugPrint('⚠️ Profile photo upload failed: $e');
+          _profileData.profilePhoto = null;
+        }
       }
     } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
+      debugPrint('❌ Photo upload error: $e');
+    }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // CRITICAL: Ensure displayName is set (from user's signup name)
+    // ═══════════════════════════════════════════════════════════════════
+    if (_profileData.displayName == null || _profileData.displayName!.isEmpty) {
+      final user = authProvider.user;
+      if (user != null && user.name.isNotEmpty) {
+        _profileData.displayName = user.name;
+        _profileData.stageName = user.name;
+        debugPrint('🎸 [ArtistSetup] Setting displayName from user.name: ${user.name}');
+      } else {
+        // Last resort fallback
+        final email = user?.email ?? '';
+        _profileData.displayName = email.split('@').first.isNotEmpty 
+            ? email.split('@').first 
+            : 'Artist';
+        _profileData.stageName = _profileData.displayName;
+        debugPrint('⚠️ [ArtistSetup] Using email fallback for displayName');
+      }
+    }
+
+    // Build the request data
+    final requestData = _profileData.toBackendDto();
+    
+    debugPrint('🎸 [ArtistSetup] DTO keys: ${requestData.keys.toList()}');
+    debugPrint('🎸 [ArtistSetup] displayName: ${_profileData.displayName}');
+    debugPrint('🎸 [ArtistSetup] Genres: ${_profileData.genres.length}');
+
+    final success = await authProvider.completeArtistSetupWithData(requestData);
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // Close loading dialog
+
+    if (success) {
+      // Reload profile
+      await authProvider.init();
+      
+      if (!mounted) return;
+      
+      // Navigate to success screen
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => 
+              _ArtistSetupSuccessScreen(brightness: brightness),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 400),
+        ),
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: AppColors.error,
+          content: Text(authProvider.errorMessage ?? 'Setup failed. Please try again.'),
+          backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
   }
 
+  void _skipToEnd() {
+    _completeSetup();
+  }
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
 
-    return WillPopScope(
-      onWillPop: () async {
-        // Show save draft confirmation
-        return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Save your progress?'),
-            content: const Text(
-              'Your profile will be saved as a draft. You can continue setup later from Settings.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Discard'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context, false);
-                  Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.crimson,
-                ),
-                child: const Text('Save Draft'),
-              ),
-            ],
-          ),
-        ) ?? false;
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.background(brightness),
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Enhanced Progress Header
-              _buildEnhancedProgressHeader(brightness),
+    return Scaffold(
+      backgroundColor: AppColors.background(brightness),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with progress
+            _buildHeader(brightness, isDark),
 
-              // Error Banner (if any)
-              if (_lastError != null) _buildErrorBanner(brightness),
-
-              // Step Content
-              Expanded(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      BasicInfoStep(
-                        profileData: _profileData,
-                        onNext: _nextStep,
-                      ),
-                      MediaUploadStep(
-                        profileData: _profileData,
-                        onNext: _nextStep,
-                        onBack: _previousStep,
-                      ),
-                      ContactLocationStep(
-                        profileData: _profileData,
-                        onNext: _nextStep,
-                        onBack: _previousStep,
-                      ),
-                      AvailabilityPricingStep(
-                        profileData: _profileData,
-                        onNext: _nextStep,
-                        onBack: _previousStep,
-                      ),
-                      ProfilePreviewStep(
-                        profileData: _profileData,
-                        onComplete: _completeSetup,
-                        onBack: _previousStep,
-                      ),
-                    ],
+            // Page content
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  // Step 1: Location & Music
+                  ArtistStep1LocationMusic(
+                    profileData: _profileData,
+                    onDataChanged: () => setState(() {}),
+                    onNext: _nextStep,
+                    onSkip: _skipToEnd,
                   ),
-                ),
+                  // Step 2: Budget & Type
+                  ArtistStep2BudgetType(
+                    profileData: _profileData,
+                    onDataChanged: () => setState(() {}),
+                    onComplete: _completeSetup,
+                    onSkip: _skipToEnd,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            
+            // Bottom Navigation Button
+            _buildBottomNavigation(brightness),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildProgressHeader(Brightness brightness) {
-    return Container(
-      padding: const EdgeInsets.all(20),
+  Widget _buildHeader(Brightness brightness, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Column(
         children: [
-          // Header
+          // Top row with back/skip
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: Icon(Icons.arrow_back, color: AppColors.text(brightness)),
-                onPressed: () => Navigator.of(context).pop(),
+              // Back button
+              if (_currentStep > 0)
+                GestureDetector(
+                  onTap: _previousStep,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.graphite : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_rounded,
+                      color: AppColors.text(brightness),
+                      size: 22,
+                    ),
+                  ),
+                )
+              else
+                const SizedBox(width: 42),
+              
+              // Step indicator
+              Row(
+                children: List.generate(_totalSteps, (index) {
+                  final isActive = index == _currentStep;
+                  final isCompleted = index < _currentStep;
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: isActive ? 32 : 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: isActive || isCompleted 
+                          ? AppColors.crimson 
+                          : (isDark ? AppColors.slate : Colors.grey[300]),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  );
+                }),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Complete Your Profile',
-                      style: AppTypography.headlineMedium.copyWith(
-                        color: AppColors.text(brightness),
-                      ),
+              
+              // Skip button
+              GestureDetector(
+                onTap: _skipToEnd,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.graphite : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Skip',
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
-                    Text(
-                      'Step ${_currentStep + 1} of $_totalSteps',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textSec(brightness),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              // ═══════════════════════════════════════════════════════════════════
-              // SKIP / SKIP ALL Menu
-              // ═══════════════════════════════════════════════════════════════════
-              if (_currentStep < _totalSteps - 1)
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.more_vert_rounded,
-                    color: AppColors.textSec(brightness),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  color: AppColors.surface(brightness),
-                  onSelected: (value) {
-                    if (value == 'skip') {
-                      _nextStep();
-                    } else if (value == 'skip_all') {
-                      _showSkipAllConfirmation(brightness);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'skip',
-                      child: Row(
-                        children: [
-                          Icon(Icons.skip_next_rounded,
-                               color: AppColors.textSec(brightness), size: 20),
-                          const SizedBox(width: 10),
-                          Text('Skip this step',
-                               style: TextStyle(color: AppColors.text(brightness))),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'skip_all',
-                      child: Row(
-                        children: [
-                          Icon(Icons.fast_forward_rounded,
-                               color: AppColors.crimson, size: 20),
-                          const SizedBox(width: 10),
-                          Text('Skip all steps',
-                               style: TextStyle(color: AppColors.crimson, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
             ],
           ),
-
-          const SizedBox(height: 20),
-
-          // Progress Bar
-          LinearProgressIndicator(
-            value: (_currentStep + 1) / _totalSteps,
-            backgroundColor: AppColors.surface(brightness),
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.crimson),
-          ),
-
           const SizedBox(height: 16),
-
-          // Step Info
+          
+          // Step title
           Row(
             children: [
-              Icon(
-                _stepIcons[_currentStep],
-                color: AppColors.crimson,
-                size: 20,
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.crimson.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _stepIcons[_currentStep],
+                  color: AppColors.crimson,
+                  size: 22,
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       _stepTitles[_currentStep],
-                      style: AppTypography.bodyMedium.copyWith(
+                      style: TextStyle(
                         color: AppColors.text(brightness),
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
                       _stepSubtitles[_currentStep],
-                      style: AppTypography.bodySmall.copyWith(
+                      style: TextStyle(
                         color: AppColors.textSec(brightness),
+                        fontSize: 13,
                       ),
                     ),
                   ],
+                ),
+              ),
+              // Step counter
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.surface(brightness),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border(brightness)),
+                ),
+                child: Text(
+                  '${_currentStep + 1}/$_totalSteps',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -1033,219 +554,410 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen>
     );
   }
 
-  Widget _buildErrorBanner(Brightness brightness) {
+  Widget _buildBottomNavigation(Brightness brightness) {
+    final isLastStep = _currentStep == _totalSteps - 1;
+    final buttonText = isLastStep ? 'Complete Profile' : 'Continue';
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              _lastError!,
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: Icon(Icons.close, color: Colors.red, size: 16),
-            onPressed: () {
-              setState(() {
-                _lastError = null;
-              });
-            },
+        color: AppColors.background(brightness),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildEnhancedProgressHeader(Brightness brightness) {
-    final progress = (_currentStep + 1) / _totalSteps;
-    final estimatedMinutes = (_totalSteps - _currentStep) * 2;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground(brightness),
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.border(brightness),
-            width: 1,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: isLastStep ? _completeSetup : _nextStep,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.crimson,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  buttonText,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (!isLastStep) ...[
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 20),
+                ],
+              ],
+            ),
           ),
         ),
       ),
-      child: Column(
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 🎉 ARTIST SETUP SUCCESS SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _ArtistSetupSuccessScreen extends StatefulWidget {
+  final Brightness brightness;
+  
+  const _ArtistSetupSuccessScreen({required this.brightness});
+
+  @override
+  State<_ArtistSetupSuccessScreen> createState() => _ArtistSetupSuccessScreenState();
+}
+
+class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _mainController;
+  late AnimationController _pulseController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _mainController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _scaleAnimation = CurvedAnimation(
+      parent: _mainController,
+      curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
+    );
+    
+    _fadeAnimation = CurvedAnimation(
+      parent: _mainController,
+      curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
+    );
+    
+    _slideAnimation = CurvedAnimation(
+      parent: _mainController,
+      curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
+    );
+    
+    _mainController.forward();
+  }
+
+  @override
+  void dispose() {
+    _mainController.dispose();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.brightness == Brightness.dark;
+    
+    return Scaffold(
+      backgroundColor: AppColors.background(widget.brightness),
+      body: Stack(
         children: [
-          Row(
-            children: [
-              if (_currentStep > 0)
-                IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_rounded,
-                    color: AppColors.text(brightness),
-                  ),
-                  onPressed: _previousStep,
-                )
-              else
-                const SizedBox(width: 48),
-              
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      'Artist Profile Setup',
-                      style: TextStyle(
-                        color: AppColors.text(brightness),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Step ${_currentStep + 1} of $_totalSteps',
-                      style: TextStyle(
-                        color: AppColors.textSec(brightness),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
+          // Background gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [const Color(0xFF1A1A1A), const Color(0xFF0D0D0D)]
+                    : [Colors.white, const Color(0xFFF5F5F5)],
               ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.crimson.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      color: AppColors.crimson,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '~$estimatedMinutes min',
-                      style: TextStyle(
-                        color: AppColors.crimson,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-
-          const SizedBox(height: 12),
-
-          Stack(
-            children: [
-              Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: AppColors.border(brightness),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: progress,
-                child: Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-                    ),
-                    borderRadius: BorderRadius.circular(3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.crimson.withValues(alpha: 0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
+          
+          // Animated background circles
+          Positioned(
+            top: -100,
+            right: -100,
+            child: AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: 1 + (_pulseController.value * 0.1),
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.crimson.withValues(alpha: 0.15),
+                          AppColors.crimson.withValues(alpha: 0.0),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
-
-          const SizedBox(height: 8),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_totalSteps, (index) {
-              final isCompleted = index < _currentStep;
-              final isCurrent = index == _currentStep;
-              
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isCompleted
-                      ? AppColors.crimson
-                      : isCurrent
-                          ? AppColors.crimson.withValues(alpha: 0.2)
-                          : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isCurrent
-                        ? AppColors.crimson
-                        : AppColors.border(brightness),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _stepIcons[index],
-                      size: 12,
-                      color: isCompleted
-                          ? Colors.white
-                          : isCurrent
-                              ? AppColors.crimson
-                              : AppColors.textTert(brightness),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      _stepTitles[index],
-                      style: TextStyle(
-                        color: isCompleted
-                            ? Colors.white
-                            : isCurrent
-                                ? AppColors.crimson
-                                : AppColors.textTert(brightness),
-                        fontSize: 10,
-                        fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+          
+          Positioned(
+            bottom: -150,
+            left: -100,
+            child: AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: 1.1 - (_pulseController.value * 0.1),
+                  child: Container(
+                    width: 350,
+                    height: 350,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.crimson.withValues(alpha: 0.1),
+                          AppColors.crimson.withValues(alpha: 0.0),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              );
-            }),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          // Main content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                children: [
+                  const Spacer(flex: 2),
+                  
+                  // Success Icon
+                  ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.crimson.withValues(alpha: 0.4),
+                            blurRadius: 40,
+                            offset: const Offset(0, 15),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 60,
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Title
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      "You're All Set! 🎸",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.text(widget.brightness),
+                        letterSpacing: -1,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Subtitle
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      'Your artist profile is live.\nStart discovering amazing gigs!',
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 48),
+                  
+                  // Features list
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.3),
+                      end: Offset.zero,
+                    ).animate(_slideAnimation),
+                    child: FadeTransition(
+                      opacity: _slideAnimation,
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: isDark 
+                              ? Colors.white.withValues(alpha: 0.05) 
+                              : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isDark 
+                                ? Colors.white.withValues(alpha: 0.1) 
+                                : Colors.grey[200]!,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildFeatureRow(
+                              Icons.search_rounded,
+                              'Discover Gigs',
+                              'Find gigs that match your style',
+                              isDark,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFeatureRow(
+                              Icons.favorite_rounded,
+                              'Get Matched',
+                              'Swipe right on venues you like',
+                              isDark,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFeatureRow(
+                              Icons.message_rounded,
+                              'Book & Perform',
+                              'Chat with venues and book gigs',
+                              isDark,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const Spacer(flex: 2),
+                  
+                  // CTA Button
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.5),
+                      end: Offset.zero,
+                    ).animate(_slideAnimation),
+                    child: FadeTransition(
+                      opacity: _slideAnimation,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacementNamed(context, '/home');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.crimson,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Start Discovering',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFeatureRow(IconData icon, String title, String subtitle, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.crimson.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.crimson,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.grey[500] : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

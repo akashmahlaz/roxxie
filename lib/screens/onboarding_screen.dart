@@ -51,7 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final List<_NebulaParticle> _particles = [];
   final math.Random _random = math.Random();
 
-  // Onboarding content
+  // Onboarding content (3 screens - merged Get Booked + Community)
   final List<_OnboardingContent> _pages = [
     _OnboardingContent(
       image: 'assets/images/onboarding/image1.png',
@@ -71,15 +71,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       image: 'assets/images/onboarding/Artist avatar(image5).png',
       titleHighlight: 'Get',
       titleNormal: ' Booked',
-      subtitle: 'Match with venues and secure your next gig',
-      icon: Icons.calendar_today_rounded,
-    ),
-    _OnboardingContent(
-      image: 'assets/images/onboarding/Venue card image(image7).png',
-      titleHighlight: 'Join',
-      titleNormal: ' the Community',
-      subtitle: 'Thousands of artists and venues already connected',
-      icon: Icons.people_alt_rounded,
+      subtitle: 'Match with venues and join thousands of connected artists',
+      icon: Icons.rocket_launch_rounded,
     ),
   ];
 
@@ -179,7 +172,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   void _nextPage() {
     HapticFeedback.lightImpact();
-    if (_currentPage < 3) {
+    if (_currentPage < 2) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeOutCubic,
@@ -586,7 +579,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               AnimatedOpacity(
                 opacity: _currentPage > 0 ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 200),
-                child: _buildGlassButton(
+                child: _buildSolidButton(
                   icon: Icons.arrow_back_rounded,
                   onTap: _prevPage,
                   brightness: brightness,
@@ -594,7 +587,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
 
               // Skip button
-              _buildGlassTextButton(
+              _buildSolidTextButton(
                 text: 'Skip',
                 onTap: _goToRoleSelection,
                 brightness: brightness,
@@ -677,7 +670,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildCTAButton(Brightness brightness) {
-    final isLastPage = _currentPage == 3;
+    final isLastPage = _currentPage == 2;
+    // Make first (0) and third (2) pages have red filled button
+    final isRedButton = _currentPage == 0 || _currentPage == 2;
 
     return GestureDetector(
       onTap: _nextPage,
@@ -687,12 +682,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           return AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: double.infinity,
-            height: 60,
+            height: 64,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: isLastPage
+                colors: isRedButton
                     ? [
                         AppColors.crimson,
                         AppColors.crimson.withValues(alpha: 0.8),
@@ -702,12 +697,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         AppColors.crimson.withValues(alpha: 0.05),
                       ],
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppColors.crimson.withValues(alpha: isLastPage ? 0.0 : 0.3),
+                color: AppColors.crimson.withValues(alpha: isRedButton ? 0.0 : 0.3),
                 width: 1.5,
               ),
-              boxShadow: isLastPage
+              boxShadow: isRedButton
                   ? [
                       BoxShadow(
                         color: AppColors.crimson.withValues(
@@ -726,7 +721,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 Text(
                   isLastPage ? 'Get Started' : 'Continue',
                   style: TextStyle(
-                    color: isLastPage ? Colors.white : AppColors.crimson,
+                    color: isRedButton ? Colors.white : AppColors.crimson,
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.3,
@@ -735,7 +730,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 const SizedBox(width: 10),
                 Icon(
                   isLastPage ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
-                  color: isLastPage ? Colors.white : AppColors.crimson,
+                  color: isRedButton ? Colors.white : AppColors.crimson,
                   size: 22,
                 ),
               ],
@@ -747,69 +742,83 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // GLASS BUTTON
+  // SOLID BUTTONS (No Glassmorphism)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildGlassButton({
+  Widget _buildSolidButton({
     required IconData icon,
     required VoidCallback onTap,
     required Brightness brightness,
   }) {
+    final isDark = brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground(brightness).withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: AppColors.border(brightness).withValues(alpha: 0.3),
-              ),
-            ),
-            child: Icon(
-              icon,
-              color: AppColors.text(brightness),
-              size: 22,
-            ),
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          color: isDark 
+              ? AppColors.graphite
+              : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isDark 
+                ? AppColors.slate 
+                : Colors.grey[300]!,
+            width: 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: AppColors.text(brightness),
+          size: 24,
         ),
       ),
     );
   }
 
-  Widget _buildGlassTextButton({
+  Widget _buildSolidTextButton({
     required String text,
     required VoidCallback onTap,
     required Brightness brightness,
   }) {
+    final isDark = brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground(brightness).withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: AppColors.border(brightness).withValues(alpha: 0.3),
-              ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        decoration: BoxDecoration(
+          color: isDark 
+              ? AppColors.graphite
+              : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isDark 
+                ? AppColors.slate 
+                : Colors.grey[300]!,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
-            child: Text(
-              text,
-              style: TextStyle(
-                color: AppColors.textSec(brightness),
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          ],
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: AppColors.textSec(brightness),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
