@@ -3,10 +3,11 @@ import 'package:flutter/services.dart';
 import '../../../core/models/venues_models.dart';
 import '../../../core/theme/theme.dart';
 
-/// 🏢 STEP 2: BUDGET
+/// 🏢 STEP 2: VENUE TYPE & BUDGET
 /// 
-/// Minimal step collecting budget range for matching:
-/// - Min-Max budget slider → For price-based matching
+/// Collecting:
+/// - Venue Type (required for matching)
+/// - Min-Max budget slider (for price-based matching)
 /// 
 /// This step is SKIPPABLE - user can proceed without filling
 
@@ -29,30 +30,73 @@ class Step2Budget extends StatefulWidget {
 }
 
 class _Step2BudgetState extends State<Step2Budget> {
-  late double _minBudget;
-  late double _maxBudget;
+  String? _selectedVenueType;
+  String? _selectedBudgetTier;
+
+  // Budget tiers with min/max values
+  final List<Map<String, dynamic>> _budgetTiers = [
+    {'name': 'Casual', 'icon': Icons.local_cafe_rounded, 'min': 50.0, 'max': 150.0, 'range': '\$50–150'},
+    {'name': 'Standard', 'icon': Icons.music_note_rounded, 'min': 150.0, 'max': 400.0, 'range': '\$150–400'},
+    {'name': 'Premium', 'icon': Icons.star_rounded, 'min': 400.0, 'max': 800.0, 'range': '\$400–800'},
+    {'name': 'VIP', 'icon': Icons.diamond_rounded, 'min': 800.0, 'max': 2000.0, 'range': '\$800+'},
+  ];
+
+  // Popular venue types shown first
+  final List<VenueType> _venueTypes = [
+    VenueType.bar,
+    VenueType.restaurant,
+    VenueType.club,
+    VenueType.lounge,
+    VenueType.cafe,
+    VenueType.concertHall,
+    VenueType.jazzClub,
+    VenueType.hotel,
+    VenueType.brewery,
+    VenueType.winery,
+    VenueType.theater,
+    VenueType.outdoorVenue,
+    VenueType.weddingVenue,
+    VenueType.privateEventSpace,
+    VenueType.other,
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Initialize with existing values or defaults
-    _minBudget = widget.profileData.gigPreferences.minBudget > 0 
-        ? widget.profileData.gigPreferences.minBudget 
-        : 100;
-    _maxBudget = widget.profileData.gigPreferences.maxBudget > 0 
-        ? widget.profileData.gigPreferences.maxBudget 
-        : 500;
     
-    // Ensure values are set in model
-    widget.profileData.gigPreferences.minBudget = _minBudget;
-    widget.profileData.gigPreferences.maxBudget = _maxBudget;
+    // Initialize venue type if already set
+    _selectedVenueType = widget.profileData.venueType;
+    
+    // Determine which tier is selected based on existing budget
+    final existingMin = widget.profileData.gigPreferences.minBudget;
+    final existingMax = widget.profileData.gigPreferences.maxBudget;
+    if (existingMin > 0 && existingMax > 0) {
+      for (var tier in _budgetTiers) {
+        if (existingMin == tier['min'] && existingMax == tier['max']) {
+          _selectedBudgetTier = tier['name'];
+          break;
+        }
+      }
+    }
   }
 
-  String _formatBudget(double value) {
-    if (value >= 1000) {
-      return '\$${(value / 1000).toStringAsFixed(1)}k';
-    }
-    return '\$${value.round()}';
+  void _selectVenueType(VenueType type) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _selectedVenueType = type.displayName;
+      widget.profileData.venueType = type.displayName;
+    });
+    widget.onDataChanged();
+  }
+
+  void _selectBudgetTier(Map<String, dynamic> tier) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _selectedBudgetTier = tier['name'];
+      widget.profileData.gigPreferences.minBudget = tier['min'];
+      widget.profileData.gigPreferences.maxBudget = tier['max'];
+    });
+    widget.onDataChanged();
   }
 
   @override
@@ -61,7 +105,7 @@ class _Step2BudgetState extends State<Step2Budget> {
     final isDark = brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -70,8 +114,8 @@ class _Step2BudgetState extends State<Step2Budget> {
           // ═══════════════════════════════════════════════════════════════
           Center(
             child: Container(
-              width: 80,
-              height: 80,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -81,301 +125,286 @@ class _Step2BudgetState extends State<Step2Budget> {
                     AppColors.crimson.withValues(alpha: 0.7),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.crimson.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: const Icon(
-                Icons.payments_rounded,
+                Icons.storefront_rounded,
                 color: Colors.white,
-                size: 40,
+                size: 36,
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           
           Center(
             child: Text(
-              "What's your budget?",
+              'Almost there!',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 26,
                 fontWeight: FontWeight.w800,
                 color: AppColors.text(brightness),
                 letterSpacing: -0.5,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Center(
             child: Text(
-              'Set your typical range per performance',
+              'Tell us about your venue',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 28),
 
           // ═══════════════════════════════════════════════════════════════
-          // BUDGET DISPLAY
+          // VENUE TYPE SECTION
           // ═══════════════════════════════════════════════════════════════
-          Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.graphite : Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: isDark ? AppColors.slate : Colors.grey[200]!,
+          Row(
+            children: [
+              Icon(
+                Icons.category_rounded,
+                color: AppColors.crimson,
+                size: 20,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+              const SizedBox(width: 8),
+              Text(
+                'What type of venue?',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.text(brightness),
                 ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Min & Max Labels
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildBudgetDisplay('Min', _minBudget, brightness, isDark),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.charcoal : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'to',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.grey[500] : Colors.grey[500],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    _buildBudgetDisplay('Max', _maxBudget, brightness, isDark),
-                  ],
-                ),
-                const SizedBox(height: 40),
-
-                // Range Slider
-                SliderTheme(
-                  data: SliderThemeData(
-                    activeTrackColor: AppColors.crimson,
-                    inactiveTrackColor: isDark 
-                        ? AppColors.slate.withValues(alpha: 0.5) 
-                        : Colors.grey[200],
-                    thumbColor: AppColors.crimson,
-                    overlayColor: AppColors.crimson.withValues(alpha: 0.15),
-                    trackHeight: 10,
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 16,
-                      elevation: 6,
-                    ),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 28),
-                    rangeThumbShape: const RoundRangeSliderThumbShape(
-                      enabledThumbRadius: 16,
-                      elevation: 6,
-                    ),
-                    rangeTrackShape: const RoundedRectRangeSliderTrackShape(),
-                  ),
-                  child: RangeSlider(
-                    values: RangeValues(_minBudget, _maxBudget),
-                    min: 50,
-                    max: 2000,
-                    divisions: 39,
-                    onChanged: (values) {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _minBudget = values.start;
-                        _maxBudget = values.end;
-                        widget.profileData.gigPreferences.minBudget = _minBudget;
-                        widget.profileData.gigPreferences.maxBudget = _maxBudget;
-                      });
-                      widget.onDataChanged();
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Range Labels
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '\$50',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark ? Colors.grey[600] : Colors.grey[400],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '\$2,000',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark ? Colors.grey[600] : Colors.grey[400],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 14),
 
-          // ═══════════════════════════════════════════════════════════════
-          // INFO CARD
-          // ═══════════════════════════════════════════════════════════════
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.crimson.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.crimson.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
+          // Venue Type Chips (Fully Rounded)
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: _venueTypes.map((type) {
+              final isSelected = _selectedVenueType == type.displayName;
+              return GestureDetector(
+                onTap: () => _selectVenueType(type),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.crimson.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: isSelected
+                        ? LinearGradient(
+                            colors: [
+                              AppColors.crimson,
+                              AppColors.crimson.withValues(alpha: 0.8),
+                            ],
+                          )
+                        : null,
+                    color: isSelected 
+                        ? null 
+                        : (isDark ? AppColors.graphite : Colors.grey[100]),
+                    borderRadius: BorderRadius.circular(50), // Fully rounded
+                    border: Border.all(
+                      color: isSelected 
+                          ? AppColors.crimson 
+                          : (isDark ? AppColors.slate : Colors.grey[300]!),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.crimson.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ]
+                        : null,
                   ),
-                  child: Icon(
-                    Icons.lightbulb_outline_rounded,
-                    color: AppColors.crimson,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (isSelected) ...[
+                        const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
                       Text(
-                        'Pro tip',
+                        type.displayName,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.crimson,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'A wider range helps you match with more artists. You can always negotiate the final price.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          height: 1.4,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected 
+                              ? Colors.white 
+                              : AppColors.text(brightness),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
+          const SizedBox(height: 28),
 
           // ═══════════════════════════════════════════════════════════════
-          // COMPLETION MESSAGE
+          // BUDGET TIER SECTION
           // ═══════════════════════════════════════════════════════════════
-          const SizedBox(height: 40),
-          Center(
-            child: Column(
+          Row(
+            children: [
+              Icon(
+                Icons.payments_rounded,
+                color: AppColors.crimson,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Budget per gig',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.text(brightness),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Budget Tier Cards - 2x2 Grid
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.4,
+            children: _budgetTiers.map((tier) {
+              final isSelected = _selectedBudgetTier == tier['name'];
+              return GestureDetector(
+                onTap: () => _selectBudgetTier(tier),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.crimson,
+                              AppColors.crimson.withValues(alpha: 0.8),
+                            ],
+                          )
+                        : null,
+                    color: isSelected 
+                        ? null 
+                        : (isDark ? AppColors.graphite : Colors.grey[50]),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected 
+                          ? AppColors.crimson 
+                          : (isDark ? AppColors.slate : Colors.grey[300]!),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.crimson.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        tier['icon'] as IconData,
+                        size: 28,
+                        color: isSelected 
+                            ? Colors.white 
+                            : AppColors.crimson,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        tier['name'] as String,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected 
+                              ? Colors.white 
+                              : AppColors.text(brightness),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        tier['range'] as String,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isSelected 
+                              ? Colors.white.withValues(alpha: 0.9) 
+                              : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+
+          // ═══════════════════════════════════════════════════════════════
+          // PRO TIP
+          // ═══════════════════════════════════════════════════════════════
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.crimson.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Row(
               children: [
                 Icon(
-                  Icons.check_circle_outline_rounded,
-                  color: Colors.green[400],
-                  size: 48,
+                  Icons.lightbulb_outline_rounded,
+                  color: AppColors.crimson,
+                  size: 20,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  "You're all set!",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.text(brightness),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Choose a tier that fits your typical gig budget.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      height: 1.4,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Complete your profile to start matching\nwith musicians in your area.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
 
           // Bottom spacing for button
-          const SizedBox(height: 120),
+          const SizedBox(height: 100),
         ],
       ),
-    );
-  }
-
-  Widget _buildBudgetDisplay(String label, double value, Brightness brightness, bool isDark) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: isDark ? Colors.grey[500] : Colors.grey[500],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.crimson,
-                AppColors.crimson.withValues(alpha: 0.8),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.crimson.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Text(
-            _formatBudget(value),
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
