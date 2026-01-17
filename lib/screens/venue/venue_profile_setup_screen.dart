@@ -79,8 +79,12 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       // ═══════════════════════════════════════════════════════════════════
       
       // Venue name from user's name (they entered venue name during signup)
+      // CRITICAL: This is REQUIRED for backend validation
       if (user?.name != null && user!.name.isNotEmpty) {
-        _profileData.venueName ??= user.name;
+        _profileData.venueName = user.name; // Always set, not ??=
+        debugPrint('✅ Set venueName from user.name: ${user.name}');
+      } else {
+        debugPrint('⚠️ user.name is null or empty! User: $user');
       }
       
       // Email from user account
@@ -289,9 +293,28 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     _profileData.maxBudget = _profileData.gigPreferences.maxBudget;
     _profileData.currency = _profileData.gigPreferences.currency;
 
+    // ═══════════════════════════════════════════════════════════════════
+    // CRITICAL: Ensure venueName is set (from user's signup name)
+    // ═══════════════════════════════════════════════════════════════════
+    if (_profileData.venueName == null || _profileData.venueName!.isEmpty) {
+      final user = authProvider.user;
+      if (user != null && user.name.isNotEmpty) {
+        _profileData.venueName = user.name;
+        debugPrint('🏢 [VenueSetup] Setting venueName from user.name: ${user.name}');
+      } else {
+        // Last resort fallback - use email prefix
+        final email = user?.email ?? authProvider.user?.email ?? '';
+        _profileData.venueName = email.split('@').first.isNotEmpty 
+            ? email.split('@').first 
+            : 'My Venue';
+        debugPrint('⚠️ [VenueSetup] Using email fallback for venueName: ${_profileData.venueName}');
+      }
+    }
+
     assert(() {
       final dto = _profileData.toBackendDto();
       debugPrint('🏢 [VenueSetup] DTO keys: ${dto.keys.toList()}');
+      debugPrint('🏢 [VenueSetup] venueName: ${_profileData.venueName}');
       debugPrint(
         '🏢 [VenueSetup] Genres: ${_profileData.gigPreferences.preferredGenres.length}, photos: ${_profileData.venuePhotos.length}',
       );
