@@ -7,13 +7,13 @@ import 'core/providers/providers.dart';
 import 'core/services/error_handling_service.dart';
 
 // Screens - Ultra-Premium 2026 Design
-import 'screens/splash_screen_v3.dart';
-import 'screens/onboarding_screen_v3.dart';
+import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/role_selection_screen_v3.dart';
 import 'screens/artist_signup_screen_v2.dart';
 import 'screens/venue_signup_screen_v2.dart';
-import 'screens/login_screen_v2.dart';
 import 'screens/login_screen.dart';
+import 'screens/unified_signup_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/discovery_screen.dart';
 import 'screens/matches_screen_v2.dart';
@@ -101,12 +101,12 @@ class GigMatchApp extends StatelessWidget {
         // Named routes for navigation
         initialRoute: '/',
         routes: {
-          '/': (context) => const SplashScreenV3(),
-          '/onboarding': (context) => const OnboardingScreenV3(),
+          '/': (context) => const SplashScreen(),
+          '/onboarding': (context) => const OnboardingScreen(),
           '/role-selection': (context) => const RoleSelectionScreenV3(),
           '/artist-signup': (context) => const ArtistSignupScreenV2(),
           '/venue-signup': (context) => const VenueSignupScreenV2(),
-          '/login': (context) => const LoginScreenV2(),
+          '/login': (context) => const LoginScreen(),
           '/login-old': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const AppShell(),

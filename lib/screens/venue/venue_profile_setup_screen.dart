@@ -4,20 +4,18 @@ import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/venues_models.dart';
 import '../../core/services/upload_service.dart';
-import 'steps/venue_basic_info_step.dart';
-import 'steps/venue_media_step.dart';
-import 'steps/venue_details_step.dart';
-import 'steps/gig_preferences_step.dart';
-import 'steps/venue_preview_step.dart';
+// Minimal 2-step flow
+import 'steps/step1_location_music.dart';
+import 'steps/step2_budget.dart';
 
-/// 🏢 VENUE PROFILE SETUP WIZARD
+/// 🏢 VENUE PROFILE SETUP WIZARD - MINIMAL 2-STEP FLOW
 ///
-/// Multi-step onboarding flow for venues/event organizers:
-/// Step 1: Basic Info (venue name, type, capacity, description)
-/// Step 2: Media (photos of venue, past events)
-/// Step 3: Details (location, contact, operating hours)
-/// Step 4: Gig Preferences (genres, budget range, typical slots)
-/// Step 5: Profile Preview & Complete
+/// Ultra-minimal onboarding collecting only essential matching info:
+/// Step 1: Location & Music (city, genres) → For matching
+/// Step 2: Budget (min-max range) → For price matching
+///
+/// BOTH STEPS ARE SKIPPABLE - User can skip entire flow
+/// Additional info (capacity, venue type, amenities) can be added in Profile/Me tab
 
 class VenueProfileSetupScreen extends StatefulWidget {
   const VenueProfileSetupScreen({super.key});
@@ -30,7 +28,7 @@ class VenueProfileSetupScreen extends StatefulWidget {
 class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
-  final int _totalSteps = 5;
+  final int _totalSteps = 2;
   bool _isInitialized = false;
 
   // Form data model
@@ -38,27 +36,18 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
   // Step titles
   final List<String> _stepTitles = [
-    'Venue Info',
-    'Media',
-    'Details',
-    'Preferences',
-    'Preview',
+    'Location & Music',
+    'Budget',
   ];
 
   final List<String> _stepSubtitles = [
-    'Tell us about your venue',
-    'Show off your space',
-    'Location & contact',
-    'What artists do you want?',
-    'Review your profile',
+    'Help musicians find you',
+    'Set your budget range',
   ];
 
   final List<IconData> _stepIcons = [
-    Icons.storefront_rounded,
-    Icons.photo_library_rounded,
     Icons.location_on_rounded,
-    Icons.tune_rounded,
-    Icons.preview_rounded,
+    Icons.payments_rounded,
   ];
 
   @override
@@ -209,43 +198,9 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       return value.startsWith('http://') || value.startsWith('https://');
     }
 
-    // Validate before doing any long-running uploads.
-    final validationErrors = _profileData.validate();
-    if (validationErrors.isNotEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(validationErrors.first),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.crimson,
-        ),
-      );
-      return;
-    }
-
-    // Require valid location before completing venue setup
-    final hasCity = (_profileData.city ?? '').trim().isNotEmpty;
-    final hasCountry = (_profileData.country ?? '').trim().isNotEmpty;
-    final lat = _profileData.location.latitude;
-    final lng = _profileData.location.longitude;
-    final hasValidCoords = lat.abs() > 0.000001 && lng.abs() > 0.000001;
-
-    if (!hasCity || !hasCountry || !hasValidCoords) {
-      if (!mounted) return;
-
-      final message = !hasCity || !hasCountry
-          ? 'Please set your venue city and country to continue.'
-          : 'Please enable location and select your venue location to continue.';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.crimson,
-        ),
-      );
-      return;
-    }
+    // MINIMAL FLOW: All fields are optional - skip validation
+    // Venue name is pre-populated from signup, so we don't need to validate
+    // User can skip all steps and complete with minimal/no data
 
     // Show loading
     showDialog(
@@ -732,39 +687,116 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    VenueBasicInfoStep(
+                    // Step 1: Location & Music Preferences
+                    Step1LocationMusic(
                       profileData: _profileData,
                       onDataChanged: () => setState(() {}),
                       onNext: _nextStep,
+                      onSkip: _skipToEnd,
                     ),
-                    VenueMediaStep(
+                    // Step 2: Budget
+                    Step2Budget(
                       profileData: _profileData,
                       onDataChanged: () => setState(() {}),
-                      onNext: _nextStep,
-                      onBack: _previousStep,
-                    ),
-                    VenueDetailsStep(
-                      profileData: _profileData,
-                      onDataChanged: () => setState(() {}),
-                      onNext: _nextStep,
-                      onBack: _previousStep,
-                    ),
-                    GigPreferencesStep(
-                      profileData: _profileData,
-                      onDataChanged: () => setState(() {}),
-                      onNext: _nextStep,
-                      onBack: _previousStep,
-                    ),
-                    VenuePreviewStep(
-                      profileData: _profileData,
-                      onBack: _previousStep,
                       onComplete: _completeSetup,
+                      onSkip: _skipToEnd,
                     ),
                   ],
                 ),
               ),
+              
+              // Fixed Bottom Navigation Button
+              _buildBottomNavigation(brightness),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Skip all steps and complete setup with minimal data
+  void _skipToEnd() {
+    _completeSetup();
+  }
+
+  /// Build the fixed bottom navigation with Continue button
+  Widget _buildBottomNavigation(Brightness brightness) {
+    final isLastStep = _currentStep == _totalSteps - 1;
+    final buttonText = isLastStep ? 'Complete Profile' : 'Continue';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.background(brightness).withValues(alpha: 0),
+            AppColors.background(brightness),
+            AppColors.background(brightness),
+          ],
+          stops: const [0.0, 0.3, 1.0],
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Main action button
+            ElevatedButton(
+              onPressed: () {
+                if (isLastStep) {
+                  _completeSetup();
+                } else {
+                  _nextStep();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                elevation: 8,
+                shadowColor: AppColors.crimson.withValues(alpha: 0.4),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    isLastStep ? Icons.check_circle_rounded : Icons.arrow_forward_rounded,
+                    size: 22,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Skip button
+            TextButton(
+              onPressed: _skipToEnd,
+              child: Text(
+                'Skip for now',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.grey[400] 
+                      : Colors.grey[600],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

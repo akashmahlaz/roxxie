@@ -18,8 +18,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
-import '../core/services/services.dart';
-import 'login_screen_v2.dart';
+import 'login_screen.dart';
 import 'venue/venue_profile_setup_screen.dart';
 
 class VenueSignupScreenV2 extends StatefulWidget {
@@ -38,12 +37,9 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _countryController = TextEditingController();
 
   // Form & Validation
   final _formKey = GlobalKey<FormState>();
-  final _locationService = LocationService();
 
   // ═══════════════════════════════════════════════════════════════════════════
   // STATE
@@ -51,14 +47,7 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
-  bool _isGettingLocation = false;
   bool _acceptTerms = false;
-
-  // Location state
-  double? _latitude;
-  double? _longitude;
-  String? _detectedCity;
-  String? _detectedCountry;
 
   // Field focus states for animations
   final Map<String, bool> _fieldFocus = {};
@@ -151,55 +140,12 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _cityController.dispose();
-    _countryController.dispose();
     _particleController.dispose();
     _floatController.dispose();
     _pulseController.dispose();
     _enterController.dispose();
     _shimmerController.dispose();
     super.dispose();
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // LOCATION METHODS
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  void _getCurrentLocation() async {
-    if (_isGettingLocation) return;
-    HapticFeedback.lightImpact();
-
-    setState(() => _isGettingLocation = true);
-    final messenger = ScaffoldMessenger.of(context);
-
-    try {
-      final locationResult = await _locationService.getCurrentLocationWithAddress();
-
-      if (locationResult != null) {
-        if (mounted) {
-          setState(() {
-            _cityController.text = locationResult.city ?? '';
-            _countryController.text = locationResult.country ?? '';
-            _latitude = locationResult.latitude;
-            _longitude = locationResult.longitude;
-            _detectedCity = locationResult.city;
-            _detectedCountry = locationResult.country;
-          });
-        }
-        HapticFeedback.mediumImpact();
-        messenger.showSnackBar(_buildPremiumSnackBar(
-          '📍 Location detected: ${locationResult.city}, ${locationResult.country}',
-          Colors.green,
-        ));
-      }
-    } catch (e) {
-      messenger.showSnackBar(_buildPremiumSnackBar(
-        '📍 Enable location or enter manually',
-        _venueAccent,
-      ));
-    } finally {
-      if (mounted) setState(() => _isGettingLocation = false);
-    }
   }
 
   SnackBar _buildPremiumSnackBar(String message, Color color) {
@@ -239,22 +185,12 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
 
     try {
       final authProvider = context.read<AuthProvider>();
-      final city = _cityController.text.trim();
-      final country = _countryController.text.trim();
-
-      if (city.isEmpty && country.isEmpty) {
-        throw _ValidationException('Please enter your city or enable location');
-      }
 
       final success = await authProvider.register(
         email: _emailController.text.trim().toLowerCase(),
         password: _passwordController.text,
         name: _venueNameController.text.trim(),
         role: UserRole.venue,
-        city: city.isNotEmpty ? city : null,
-        country: country.isNotEmpty ? country : null,
-        latitude: _latitude,
-        longitude: _longitude,
       );
 
       if (!mounted) return;
@@ -364,10 +300,10 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
 
                       const SizedBox(height: 32),
 
-                      // Glassmorphic form card
-                      _buildFormCard(brightness),
+                      // Form fields (no card wrapper)
+                      _buildFormFields(brightness),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
                       // Terms checkbox
                       _buildTermsCheckbox(brightness),
@@ -594,62 +530,37 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // GLASSMORPHIC FORM CARD
+  // FORM FIELDS - NO CARD WRAPPER
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildFormCard(Brightness brightness) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground(brightness).withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: AppColors.border(brightness).withValues(alpha: 0.2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Venue name field
-              _buildPremiumTextField(
-                key: 'name',
-                controller: _venueNameController,
-                label: 'Venue Name',
-                hint: 'Club / Bar / Event Space',
-                icon: Icons.storefront_outlined,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Required';
-                  if (v.trim().length < 2) return 'Min 2 characters';
-                  return null;
-                },
-                brightness: brightness,
-              ),
+  Widget _buildFormFields(Brightness brightness) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Venue name field
+        _buildPremiumTextField(
+          key: 'name',
+          controller: _venueNameController,
+          label: 'Venue Name',
+          hint: 'Your venue or business name',
+          icon: Icons.storefront_rounded,
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return 'Required';
+            if (v.trim().length < 2) return 'Min 2 characters';
+            return null;
+          },
+          brightness: brightness,
+        ),
 
-              const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
-              // Location fields
-              _buildLocationFields(brightness),
-
-              const SizedBox(height: 20),
-
-              // Email field
+        // Email field
               _buildPremiumTextField(
                 key: 'email',
                 controller: _emailController,
                 label: 'Email Address',
-                hint: 'venue@example.com',
-                icon: Icons.email_outlined,
+                hint: 'yourname@example.com',
+                icon: Icons.email_rounded,
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Required';
@@ -660,21 +571,21 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
                 brightness: brightness,
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Password field
               _buildPremiumTextField(
                 key: 'password',
                 controller: _passwordController,
                 label: 'Password',
-                hint: '••••••••',
-                icon: Icons.lock_outline_rounded,
+                hint: 'Create a strong password',
+                icon: Icons.lock_rounded,
                 obscureText: _obscurePassword,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscurePassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
                     color: AppColors.textTert(brightness),
-                    size: 22,
+                    size: 24,
                   ),
                   onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
@@ -692,31 +603,41 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
 
               // Password hint
               Padding(
-                padding: const EdgeInsets.only(top: 8, left: 4),
-                child: Text(
-                  '8+ chars: A-Z, a-z, 0-9, @\$!%*?&',
-                  style: TextStyle(
-                    color: AppColors.textTert(brightness),
-                    fontSize: 11,
-                  ),
+                padding: const EdgeInsets.only(top: 10, left: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 14,
+                      color: AppColors.textTert(brightness),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '8+ chars with A-Z, a-z, 0-9, @\$!%*?&',
+                      style: TextStyle(
+                        color: AppColors.textTert(brightness),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Confirm password
               _buildPremiumTextField(
                 key: 'confirmPassword',
                 controller: _confirmPasswordController,
                 label: 'Confirm Password',
-                hint: '••••••••',
-                icon: Icons.lock_reset_outlined,
+                hint: 'Re-enter your password',
+                icon: Icons.lock_reset_rounded,
                 obscureText: _obscureConfirmPassword,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscureConfirmPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
                     color: AppColors.textTert(brightness),
-                    size: 22,
+                    size: 24,
                   ),
                   onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                 ),
@@ -727,10 +648,9 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
                 },
                 brightness: brightness,
               ),
-            ],
-          ),
-        ),
-      ),
+
+        const SizedBox(height: 8),
+      ],
     );
   }
 
@@ -751,6 +671,7 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
     required Brightness brightness,
   }) {
     final isFocused = _fieldFocus[key] ?? false;
+    final isDark = brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,11 +680,12 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
           label,
           style: TextStyle(
             color: isFocused ? _venueAccent : AppColors.textSec(brightness),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Focus(
           onFocusChange: (focused) {
             setState(() => _fieldFocus[key] = focused);
@@ -772,13 +694,14 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: isFocused
                   ? [
                       BoxShadow(
-                        color: _venueAccent.withValues(alpha: 0.2),
-                        blurRadius: 15,
-                        spreadRadius: 1,
+                        color: _venueAccent.withValues(alpha: 0.25),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
                       ),
                     ]
                   : null,
@@ -790,206 +713,64 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
               obscureText: obscureText,
               style: TextStyle(
                 color: AppColors.text(brightness),
-                fontSize: 15,
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: TextStyle(
                   color: AppColors.textTert(brightness),
-                  fontSize: 15,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
                 ),
-                prefixIcon: Icon(
-                  icon,
-                  color: isFocused ? _venueAccent : AppColors.textTert(brightness),
-                  size: 22,
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 14),
+                  child: Icon(
+                    icon,
+                    color: isFocused ? _venueAccent : AppColors.textTert(brightness),
+                    size: 24,
+                  ),
                 ),
-                suffixIcon: suffixIcon,
+                prefixIconConstraints: const BoxConstraints(minWidth: 56),
+                suffixIcon: suffixIcon != null ? Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: suffixIcon,
+                ) : null,
                 filled: true,
-                fillColor: AppColors.inputFill(brightness),
+                fillColor: isDark 
+                    ? AppColors.graphite.withValues(alpha: 0.6)
+                    : Colors.grey[50],
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.border(brightness)),
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(
+                    color: isDark ? AppColors.slate : Colors.grey[300]!,
+                    width: 1.5,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.border(brightness)),
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(
+                    color: isDark ? AppColors.slate : Colors.grey[300]!,
+                    width: 1.5,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: _venueAccent, width: 2),
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: _venueAccent, width: 2.5),
                 ),
                 errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Colors.red),
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.red, width: 2.5),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // LOCATION FIELDS
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  Widget _buildLocationFields(Brightness brightness) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Location',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // City field
-            Expanded(
-              child: TextFormField(
-                controller: _cityController,
-                style: TextStyle(color: AppColors.text(brightness), fontSize: 15),
-                decoration: InputDecoration(
-                  hintText: 'City',
-                  hintStyle: TextStyle(color: AppColors.textTert(brightness)),
-                  prefixIcon: Icon(Icons.location_city_outlined, color: AppColors.textTert(brightness), size: 22),
-                  filled: true,
-                  fillColor: AppColors.inputFill(brightness),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.border(brightness)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.border(brightness)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: _venueAccent, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 12),
-
-            // GPS button
-            GestureDetector(
-              onTap: _isGettingLocation ? null : _getCurrentLocation,
-              child: AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, _) {
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          _venueAccent.withValues(alpha: 0.2),
-                          _venueAccent.withValues(alpha: 0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _venueAccent.withValues(alpha: 0.4),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _venueAccent.withValues(alpha: 0.15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: _isGettingLocation
-                        ? Center(
-                            child: SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                color: _venueAccent,
-                                strokeWidth: 2.5,
-                              ),
-                            ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.my_location_rounded, color: _venueAccent, size: 22),
-                              Text(
-                                'GPS',
-                                style: TextStyle(
-                                  color: _venueAccent,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-
-        // Country field
-        TextFormField(
-          controller: _countryController,
-          style: TextStyle(color: AppColors.text(brightness), fontSize: 15),
-          decoration: InputDecoration(
-            hintText: 'Country',
-            hintStyle: TextStyle(color: AppColors.textTert(brightness)),
-            prefixIcon: Icon(Icons.public_outlined, color: AppColors.textTert(brightness), size: 22),
-            filled: true,
-            fillColor: AppColors.inputFill(brightness),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: AppColors.border(brightness)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: AppColors.border(brightness)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: _venueAccent, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-        ),
-
-        // Location detected indicator
-        if (_detectedCity != null) ...[
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                'GPS: $_detectedCity, $_detectedCountry',
-                style: TextStyle(color: Colors.green, fontSize: 12),
-              ),
-            ],
-          ),
-        ],
       ],
     );
   }
@@ -1009,8 +790,8 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 26,
-            height: 26,
+            width: 28,
+            height: 28,
             decoration: BoxDecoration(
               gradient: _acceptTerms
                   ? LinearGradient(colors: [_venueAccent, _venueAccent.withValues(alpha: 0.8)])
@@ -1020,19 +801,19 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
                 color: _acceptTerms ? _venueAccent : AppColors.border(brightness),
                 width: 2,
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
               boxShadow: _acceptTerms
                   ? [
                       BoxShadow(
                         color: _venueAccent.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        spreadRadius: 1,
+                        blurRadius: 10,
+                        spreadRadius: 2,
                       ),
                     ]
                   : null,
             ),
             child: _acceptTerms
-                ? Icon(Icons.check_rounded, color: Colors.white, size: 18)
+                ? Icon(Icons.check_rounded, color: Colors.white, size: 20)
                 : null,
           ),
           const SizedBox(width: 14),
@@ -1042,19 +823,19 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
                 children: [
                   TextSpan(
                     text: 'I agree to the ',
-                    style: TextStyle(color: AppColors.textSec(brightness), fontSize: 14),
+                    style: TextStyle(color: AppColors.textSec(brightness), fontSize: 15),
                   ),
                   TextSpan(
                     text: 'Terms of Service',
-                    style: TextStyle(color: _venueAccent, fontSize: 14, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: _venueAccent, fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   TextSpan(
                     text: ' and ',
-                    style: TextStyle(color: AppColors.textSec(brightness), fontSize: 14),
+                    style: TextStyle(color: AppColors.textSec(brightness), fontSize: 15),
                   ),
                   TextSpan(
                     text: 'Privacy Policy',
-                    style: TextStyle(color: _venueAccent, fontSize: 14, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: _venueAccent, fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -1077,7 +858,7 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
         builder: (context, _) {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            height: 60,
+            height: 64,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -1087,13 +868,13 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
                   _venueAccent.withValues(alpha: 0.85),
                 ],
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
                   color: _venueAccent.withValues(alpha: _isLoading ? 0.2 : 0.4 * _pulseAnimation.value),
-                  blurRadius: 25,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 10),
+                  blurRadius: 30,
+                  spreadRadius: 4,
+                  offset: const Offset(0, 12),
                 ),
               ],
             ),
@@ -1103,36 +884,29 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(
-                          width: 22,
-                          height: 22,
+                          width: 24,
+                          height: 24,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 14),
                         Text(
                           'Creating Profile...',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.storefront_rounded, color: Colors.white, size: 22),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Create Venue Profile',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
+                  : Text(
+                      'Create Profile',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
                     ),
             ),
           );
@@ -1159,7 +933,7 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
-                pageBuilder: (_, __, ___) => const LoginScreenV2(),
+                pageBuilder: (_, __, ___) => const LoginScreen(),
                 transitionsBuilder: (_, animation, __, child) {
                   return FadeTransition(opacity: animation, child: child);
                 },

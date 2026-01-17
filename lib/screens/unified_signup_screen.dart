@@ -19,7 +19,7 @@ import '../core/models/models.dart';
 import '../widgets/widgets.dart';
 import 'artist/artist_profile_setup_screen.dart';
 import 'venue/venue_profile_setup_screen.dart';
-import 'login_screen_v2.dart';
+import 'login_screen.dart';
 
 class UnifiedSignupScreen extends StatefulWidget {
   const UnifiedSignupScreen({super.key});
@@ -183,39 +183,36 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          const AuroraBackground(),
-          
-          SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  top: 20,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Back button
-                      IconButton(
-                        icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
-                        onPressed: () => Navigator.pop(context),
-                        padding: EdgeInsets.zero,
-                        alignment: Alignment.centerLeft,
-                      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Back button
+                  IconButton(
+                    icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    alignment: Alignment.centerLeft,
+                  ),
 
-                      const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-                      // Header
-                      Text(
-                        'Create Account',
-                        style: TextStyle(
+                  // Header
+                  Text(
+                    'Create Account',
+                    style: TextStyle(
                           color: AppColors.text(brightness),
                           fontSize: 32,
                           fontWeight: FontWeight.w800,
@@ -361,17 +358,15 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
 
                       const SizedBox(height: 20),
 
-                      // Login link
-                      _buildLoginLink(brightness),
+                  // Login link
+                  _buildLoginLink(brightness),
 
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                ),
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -748,7 +743,7 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
       child: TextButton(
         onPressed: () => Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreenV2()),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         ),
         child: Text.rich(
           TextSpan(

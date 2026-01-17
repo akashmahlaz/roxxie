@@ -19,7 +19,7 @@ import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
 import '../core/services/services.dart';
-import 'login_screen_v2.dart';
+import 'login_screen.dart';
 import 'artist/artist_profile_setup_screen.dart';
 
 class ArtistSignupScreenV2 extends StatefulWidget {
@@ -1156,7 +1156,7 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
-                pageBuilder: (_, __, ___) => const LoginScreenV2(),
+                pageBuilder: (_, __, ___) => const LoginScreen(),
                 transitionsBuilder: (_, animation, __, child) {
                   return FadeTransition(opacity: animation, child: child);
                 },

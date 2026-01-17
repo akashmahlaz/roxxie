@@ -706,6 +706,14 @@ class GigPreferences {
   bool openToNewArtists = true;
   bool acceptsDemos = false;
   String? demoSubmissionEmail;
+  
+  // New fields for enhanced venue setup
+  List<String> typicalEventNights = []; // ['Fri', 'Sat', 'Sun']
+  String? bookingLeadTime; // '1 week', '2 weeks', '1 month', '2 months', 'No preference'
+  String? paymentTerm; // 'per_show', 'monthly', 'per_hour'
+  bool providesDrinks = false;
+  bool providesAccommodation = false;
+  bool providesPromotion = false;
 
   GigPreferences();
 
@@ -723,6 +731,13 @@ class GigPreferences {
     'openToNewArtists': openToNewArtists,
     'acceptsDemos': acceptsDemos,
     if (demoSubmissionEmail != null) 'demoSubmissionEmail': demoSubmissionEmail,
+    // New fields for enhanced venue setup
+    if (typicalEventNights.isNotEmpty) 'typicalEventNights': typicalEventNights,
+    if (bookingLeadTime != null) 'bookingLeadTime': bookingLeadTime,
+    if (paymentTerm != null) 'paymentTerm': paymentTerm,
+    'providesDrinks': providesDrinks,
+    'providesAccommodation': providesAccommodation,
+    'providesPromotion': providesPromotion,
   };
 
   factory GigPreferences.fromJson(Map<String, dynamic> json) {
@@ -744,6 +759,15 @@ class GigPreferences {
     prefs.openToNewArtists = json['openToNewArtists'] ?? true;
     prefs.acceptsDemos = json['acceptsDemos'] ?? false;
     prefs.demoSubmissionEmail = json['demoSubmissionEmail'];
+    // New fields for enhanced venue setup
+    if (json['typicalEventNights'] != null) {
+      prefs.typicalEventNights = List<String>.from(json['typicalEventNights']);
+    }
+    prefs.bookingLeadTime = json['bookingLeadTime'];
+    prefs.paymentTerm = json['paymentTerm'];
+    prefs.providesDrinks = json['providesDrinks'] ?? false;
+    prefs.providesAccommodation = json['providesAccommodation'] ?? false;
+    prefs.providesPromotion = json['providesPromotion'] ?? false;
     return prefs;
   }
 }
