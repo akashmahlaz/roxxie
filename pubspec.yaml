@@ -134,6 +134,19 @@ dev_dependencies:
   build_runner: ^2.4.13
   json_serializable: ^6.8.0
 
+  # App icon generator
+  flutter_launcher_icons: ^0.13.1
+
+# Flutter Launcher Icons configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  # Uncomment below to customize
+  # min_sdk_android: 21
+  # remove_alpha_ios: true
+  # background_color_ios: "#ffffff"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
