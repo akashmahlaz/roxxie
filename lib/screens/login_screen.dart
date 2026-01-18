@@ -156,7 +156,8 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (success) {
         HapticFeedback.heavyImpact();
-        if (authProvider.isProfileComplete) {
+        // Use hasCompletedOnboarding (profile exists) instead of isProfileComplete
+        if (authProvider.hasCompletedOnboarding) {
           Navigator.pushReplacementNamed(context, '/home');
         } else {
           if (authProvider.isArtist) {

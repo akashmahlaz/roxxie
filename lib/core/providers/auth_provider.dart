@@ -28,6 +28,7 @@ class AuthProvider extends ChangeNotifier {
   Venue? _venueProfile;
   String? _errorMessage;
   bool _isLoading = false;
+  bool _onboardingSkipped = false;
   
   // ═══════════════════════════════════════════════════════════════════════════
   // SIGNUP DATA: Store location data from signup for profile setup
@@ -55,6 +56,16 @@ class AuthProvider extends ChangeNotifier {
   bool get isArtist => _user?.role == UserRole.artist;
   bool get isVenue => _user?.role == UserRole.venue;
   bool get isProfileComplete => _user?.isProfileComplete ?? false;
+  
+  /// 🎯 Has completed onboarding (venue/artist profile exists)
+  /// This is separate from isProfileComplete which is for full Me tab completion
+  bool get hasCompletedOnboarding {
+    if (_user == null) return false;
+    if (_onboardingSkipped) return true;
+    if (_user!.isVenue) return _venueProfile != null;
+    if (_user!.isArtist) return _artistProfile != null;
+    return false;
+  }
 
   /// 🔄 Initialize - Check existing auth state
   Future<void> init() async {
@@ -64,24 +75,35 @@ class AuthProvider extends ChangeNotifier {
       if (isLoggedIn) {
         // Try to get cached user first
         _user = await _authService.getCachedUser();
+        _onboardingSkipped = await _authService.getOnboardingSkipped();
+        final cachedProfileComplete = _user?.isProfileComplete ?? false;
 
         // Then fetch fresh profile
         try {
-          _user = await _authService.getProfile();
+          final updatedUser = await _authService.getProfile();
           await _loadRoleProfile();
+          // If cached user says complete, do not downgrade on stale backend data
+          _user = cachedProfileComplete && !updatedUser.isProfileComplete
+              ? updatedUser.copyWith(isProfileComplete: true)
+              : updatedUser;
 
-          if (_user!.isProfileComplete) {
-            _status = AuthStatus.authenticated;
-          } else {
-            _status = AuthStatus.profileIncomplete;
-          }
+          // Use hasCompletedOnboarding (profile exists) instead of isProfileComplete
+          _status = hasCompletedOnboarding
+              ? AuthStatus.authenticated
+              : AuthStatus.profileIncomplete;
         } catch (e) {
           // Token might be expired, try refresh
           final refreshed = await _authService.refreshTokens();
           if (refreshed) {
-            _user = await _authService.getProfile();
+            final updatedUser = await _authService.getProfile();
             await _loadRoleProfile();
-            _status = _user!.isProfileComplete
+            // If cached user says complete, do not downgrade on stale backend data
+            _user = cachedProfileComplete && !updatedUser.isProfileComplete
+                ? updatedUser.copyWith(isProfileComplete: true)
+                : updatedUser;
+
+            // Use hasCompletedOnboarding (profile exists) instead of isProfileComplete
+            _status = hasCompletedOnboarding
                 ? AuthStatus.authenticated
                 : AuthStatus.profileIncomplete;
           } else {
@@ -175,7 +197,8 @@ class AuthProvider extends ChangeNotifier {
       _user = response.user;
       await _loadRoleProfile();
 
-      if (_user!.isProfileComplete) {
+      // Use hasCompletedOnboarding (profile exists) instead of isProfileComplete
+      if (hasCompletedOnboarding) {
         _status = AuthStatus.authenticated;
       } else {
         _status = AuthStatus.profileIncomplete;
@@ -203,9 +226,18 @@ class AuthProvider extends ChangeNotifier {
       _user = null;
       _artistProfile = null;
       _venueProfile = null;
+      _onboardingSkipped = false;
       _status = AuthStatus.unauthenticated;
       _setLoading(false);
     }
+  }
+
+  /// ✅ Mark onboarding as skipped (local-only fallback)
+  Future<void> markOnboardingSkipped() async {
+    _onboardingSkipped = true;
+    await _authService.setOnboardingSkipped(true);
+    _status = AuthStatus.authenticated;
+    notifyListeners();
   }
 
   /// 👤 Load role-specific profile
@@ -268,14 +300,30 @@ class AuthProvider extends ChangeNotifier {
       // Fetch fresh user data from backend to get updated hasCompletedSetup flag
       try {
         final updatedUser = await _authService.getProfile();
-        _user = updatedUser;
+        // Ensure isProfileComplete is true even if backend hasn't synced
+        _user = updatedUser.copyWith(isProfileComplete: true);
       } catch (e) {
         // If fetching updated user fails, still update local state
         debugPrint('Warning: Failed to fetch updated user profile: $e');
         _user = _user?.copyWith(isProfileComplete: true);
       }
 
+      // Cache the user with isProfileComplete = true so app restart works correctly
+      if (_user != null) {
+        await _authService.cacheUser(_user!);
+        debugPrint('💾 [ArtistSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}');
+      }
+
+      // Clear local onboarding skipped flag on success
+      _onboardingSkipped = false;
+      await _authService.setOnboardingSkipped(false);
+
+      // Clear local onboarding skipped flag on success
+      _onboardingSkipped = false;
+      await _authService.setOnboardingSkipped(false);
+
       _status = AuthStatus.authenticated;
+      debugPrint('✅ [ArtistSetup] Profile complete! Status: $_status');
       notifyListeners();
       return true;
     } catch (e) {
@@ -297,14 +345,22 @@ class AuthProvider extends ChangeNotifier {
       // Fetch fresh user data from backend to get updated hasCompletedSetup flag
       try {
         final updatedUser = await _authService.getProfile();
-        _user = updatedUser;
+        // Ensure isProfileComplete is true even if backend hasn't synced
+        _user = updatedUser.copyWith(isProfileComplete: true);
       } catch (e) {
         // If fetching updated user fails, still update local state
         debugPrint('Warning: Failed to fetch updated user profile: $e');
         _user = _user?.copyWith(isProfileComplete: true);
       }
 
+      // Cache the user with isProfileComplete = true so app restart works correctly
+      if (_user != null) {
+        await _authService.cacheUser(_user!);
+        debugPrint('💾 [ArtistSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}');
+      }
+
       _status = AuthStatus.authenticated;
+      debugPrint('✅ [ArtistSetup] Profile complete! Status: $_status');
       notifyListeners();
       return true;
     } catch (e) {
@@ -343,14 +399,26 @@ class AuthProvider extends ChangeNotifier {
       // Fetch fresh user data from backend to get updated hasCompletedSetup flag
       try {
         final updatedUser = await _authService.getProfile();
-        _user = updatedUser;
+        // Ensure isProfileComplete is true even if backend hasn't synced
+        _user = updatedUser.copyWith(isProfileComplete: true);
       } catch (e) {
         // If fetching updated user fails, still update local state
         debugPrint('Warning: Failed to fetch updated user profile: $e');
         _user = _user?.copyWith(isProfileComplete: true);
       }
 
+      // Cache the user with isProfileComplete = true so app restart works correctly
+      if (_user != null) {
+        await _authService.cacheUser(_user!);
+        debugPrint('💾 [VenueSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}');
+      }
+
+      // Clear local onboarding skipped flag on success
+      _onboardingSkipped = false;
+      await _authService.setOnboardingSkipped(false);
+
       _status = AuthStatus.authenticated;
+      debugPrint('✅ [VenueSetup] Profile complete! Status: $_status');
       notifyListeners();
       return true;
     } catch (e) {

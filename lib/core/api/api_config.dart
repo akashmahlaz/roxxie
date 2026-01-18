@@ -20,6 +20,7 @@ class ApiConfig {
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
   static const String userKey = 'user_data';
+  static const String onboardingSkippedKey = 'onboarding_skipped';
 
   // 📡 Endpoints
   static const String auth = '/auth';

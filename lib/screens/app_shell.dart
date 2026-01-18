@@ -57,6 +57,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
   late int _index;
   late AnimationController _badgeController;
+  bool _didRedirectAuth = false;
 
   // Nested navigators to preserve state per tab
   final _homeNavKey = GlobalKey<NavigatorState>();
@@ -104,6 +105,14 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
     // Safety: if user is not authenticated, route away from shell.
     // App-level routing may already prevent this.
     if (!auth.isAuthenticated && auth.status != AuthStatus.profileIncomplete) {
+      if (!_didRedirectAuth) {
+        _didRedirectAuth = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.of(context, rootNavigator: true)
+              .pushNamedAndRemoveUntil('/login', (route) => false);
+        });
+      }
       return Scaffold(
         backgroundColor: AppColors.background(brightness),
         body: Center(
@@ -114,6 +123,26 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
         ),
       );
     }
+
+    // If user needs to finish setup, send them to profile setup
+    if (auth.status == AuthStatus.profileIncomplete) {
+      if (!_didRedirectAuth) {
+        _didRedirectAuth = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.of(context, rootNavigator: true)
+              .pushNamedAndRemoveUntil('/profile-setup', (route) => false);
+        });
+      }
+      return Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.crimson),
+        ),
+      );
+    }
+
+    _didRedirectAuth = false;
 
     final isArtist = auth.isArtist;
 

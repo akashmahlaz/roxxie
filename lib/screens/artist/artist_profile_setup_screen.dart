@@ -13,6 +13,7 @@ import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
 import '../../core/services/upload_service.dart';
+import '../../widgets/setup_loading_overlay.dart';
 import 'steps/step1_location_music.dart';
 import 'steps/step2_budget_type.dart';
 
@@ -184,113 +185,12 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
       return value.startsWith('http://') || value.startsWith('https://');
     }
 
-    // Show premium loading overlay
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (context) => PopScope(
-        canPop: false,
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [const Color(0xFF2A2A2A), const Color(0xFF1A1A1A)]
-                    : [Colors.white, const Color(0xFFF8F8F8)],
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.crimson.withValues(alpha: 0.2),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Animated logo/icon
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 800),
-                  builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: 0.8 + (0.2 * value),
-                      child: Opacity(
-                        opacity: value,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-                            ),
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.crimson.withValues(alpha: 0.4),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.music_note_rounded,
-                            color: Colors.white,
-                            size: 40,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 28),
-                
-                Text(
-                  'Setting up your profile',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.text(brightness),
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'This will only take a moment...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                
-                // Animated progress
-                SizedBox(
-                  width: 160,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: null,
-                      backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.crimson),
-                      minHeight: 6,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    // Show professional loading overlay
+    SetupLoadingOverlay.show(
+      context,
+      title: 'Setting up your profile',
+      subtitle: 'This will only take a moment...',
+      icon: Icons.music_note_rounded,
     );
 
     try {
@@ -343,8 +243,10 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
     Navigator.of(context).pop(); // Close loading dialog
 
     if (success) {
-      // Reload profile
-      await authProvider.init();
+      // NOTE: Do NOT call authProvider.init() here!
+      // completeArtistSetupWithData() already sets _status = AuthStatus.authenticated
+      // Calling init() would re-fetch user from backend which may have stale data
+      // and could reset status to profileIncomplete
       
       if (!mounted) return;
       
@@ -372,7 +274,47 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
   }
 
   void _skipToEnd() {
-    _completeSetup();
+    _skipAllAndComplete();
+  }
+
+  Future<void> _skipAllAndComplete() async {
+    final authProvider = context.read<AuthProvider>();
+
+    // Show minimal loading overlay
+    MinimalLoadingOverlay.show(context, message: 'Saving profile...');
+
+    // Try to save minimal profile
+    final success = await authProvider.completeArtistSetupWithData(
+      _profileData.toBackendDto(),
+    );
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // Close loading dialog
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile saved! You can complete it later in Settings.'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    } else {
+      // Fallback: allow skip even if backend fails
+      await authProvider.markOnboardingSkipped();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Skipped for now. You can complete your profile later in Settings.'),
+          backgroundColor: AppColors.crimson,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    }
   }
 
   @override
@@ -805,7 +747,7 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
                       'Your artist profile is live.\nStart discovering amazing gigs!',
                       style: TextStyle(
                         fontSize: 17,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        color: AppColors.textSec(widget.brightness),
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,

@@ -671,8 +671,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildCTAButton(Brightness brightness) {
     final isLastPage = _currentPage == 2;
-    // Make first (0) and third (2) pages have red filled button
-    final isRedButton = _currentPage == 0 || _currentPage == 2;
+    // All buttons are red filled for consistency
+    final isRedButton = true;
 
     return GestureDetector(
       onTap: _nextPage,

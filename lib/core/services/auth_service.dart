@@ -164,4 +164,19 @@ class AuthService {
       return null;
     }
   }
+
+  /// 💾 Save user to cache (for profile completion)
+  Future<void> cacheUser(User user) async {
+    await _client.saveUser(jsonEncode(user.toJson()));
+  }
+
+  /// ✅ Onboarding skipped flag
+  Future<void> setOnboardingSkipped(bool value) async {
+    await _client.saveOnboardingSkipped(value);
+  }
+
+  /// ✅ Read onboarding skipped flag
+  Future<bool> getOnboardingSkipped() async {
+    return await _client.getOnboardingSkipped();
+  }
 }

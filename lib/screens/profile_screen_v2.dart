@@ -144,11 +144,11 @@ class _ProfileScreenV2State extends State<ProfileScreenV2> with TickerProviderSt
 
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                    // Menu Items
-                    _buildMenuItem(context, 'Edit Profile', Icons.edit_rounded, '/edit-profile', brightness, 3),
-                    _buildMenuItem(context, 'Wallet', Icons.account_balance_wallet_rounded, '/wallet', brightness, 4),
-                    _buildMenuItem(context, 'Settings', Icons.settings_rounded, '/settings', brightness, 5),
-                    _buildMenuItem(context, 'Help & Support', Icons.help_outline_rounded, '/support', brightness, 6),
+                    // Menu Items - wrapped in SliverToBoxAdapter
+                    SliverToBoxAdapter(child: _buildMenuItem(context, 'Edit Profile', Icons.edit_rounded, '/edit-profile', brightness, 3)),
+                    SliverToBoxAdapter(child: _buildMenuItem(context, 'Wallet', Icons.account_balance_wallet_rounded, '/wallet', brightness, 4)),
+                    SliverToBoxAdapter(child: _buildMenuItem(context, 'Settings', Icons.settings_rounded, '/settings', brightness, 5)),
+                    SliverToBoxAdapter(child: _buildMenuItem(context, 'Help & Support', Icons.help_outline_rounded, '/support', brightness, 6)),
                     
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     

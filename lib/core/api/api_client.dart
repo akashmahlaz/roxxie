@@ -66,6 +66,7 @@ class ApiClient {
     await _storage.delete(key: ApiConfig.accessTokenKey);
     await _storage.delete(key: ApiConfig.refreshTokenKey);
     await _storage.delete(key: ApiConfig.userKey);
+    await _storage.delete(key: ApiConfig.onboardingSkippedKey);
   }
 
   Future<void> saveUser(String userData) async {
@@ -74,6 +75,19 @@ class ApiClient {
 
   Future<String?> getUser() async {
     return await _storage.read(key: ApiConfig.userKey);
+  }
+
+  // ✅ Onboarding skipped flag
+  Future<void> saveOnboardingSkipped(bool value) async {
+    await _storage.write(
+      key: ApiConfig.onboardingSkippedKey,
+      value: value ? 'true' : 'false',
+    );
+  }
+
+  Future<bool> getOnboardingSkipped() async {
+    final value = await _storage.read(key: ApiConfig.onboardingSkippedKey);
+    return value == 'true';
   }
 
   // 🔄 Token Refresh

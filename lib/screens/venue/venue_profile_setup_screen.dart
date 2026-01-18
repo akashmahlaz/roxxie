@@ -4,6 +4,7 @@ import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/venues_models.dart';
 import '../../core/services/upload_service.dart';
+import '../../widgets/setup_loading_overlay.dart';
 // Minimal 2-step flow
 import 'steps/step1_location_music.dart';
 import 'steps/step2_budget.dart';
@@ -207,120 +208,12 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     // Venue name is pre-populated from signup, so we don't need to validate
     // User can skip all steps and complete with minimal/no data
 
-    // Show premium loading overlay
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (context) => PopScope(
-        canPop: false,
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [const Color(0xFF2A2A2A), const Color(0xFF1A1A1A)]
-                    : [Colors.white, const Color(0xFFF8F8F8)],
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.crimson.withValues(alpha: 0.2),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Animated logo/icon
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 800),
-                  builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: 0.8 + (0.2 * value),
-                      child: Opacity(
-                        opacity: value,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-                            ),
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.crimson.withValues(alpha: 0.4),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.storefront_rounded,
-                            color: Colors.white,
-                            size: 40,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 28),
-                
-                // Title
-                Text(
-                  'Setting up your venue',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.text(brightness),
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'This will only take a moment...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                
-                // Custom animated progress
-                SizedBox(
-                  width: 160,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 2000),
-                      builder: (context, value, child) {
-                        return LinearProgressIndicator(
-                          value: null, // Indeterminate
-                          backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.crimson),
-                          minHeight: 6,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    // Show professional loading overlay
+    SetupLoadingOverlay.show(
+      context,
+      title: 'Setting up your venue',
+      subtitle: 'This will only take a moment...',
+      icon: Icons.storefront_rounded,
     );
 
     try {
@@ -418,8 +311,10 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     Navigator.of(context).pop(); // Close loading dialog
 
     if (success) {
-      // Reload the venue profile to show updated data
-      await authProvider.init();
+      // NOTE: Do NOT call authProvider.init() here!
+      // completeVenueSetup() already sets _status = AuthStatus.authenticated
+      // Calling init() would re-fetch user from backend which may have stale data
+      // and could reset status to profileIncomplete
       
       if (!mounted) return;
       
@@ -584,38 +479,10 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
   /// Skips all steps and saves minimal profile
   Future<void> _skipAllAndComplete() async {
-    final brightness = Theme.of(context).brightness;
     final authProvider = context.read<AuthProvider>();
 
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => PopScope(
-        canPop: false,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.surface(brightness),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(color: AppColors.crimson),
-                const SizedBox(height: 16),
-                Text(
-                  'Saving minimal profile...',
-                  style: TextStyle(color: AppColors.text(brightness)),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    // Show minimal loading overlay
+    MinimalLoadingOverlay.show(context, message: 'Saving profile...');
 
     // Save minimal profile with whatever data we have
     final success = await authProvider.completeVenueSetup(_profileData);
@@ -624,7 +491,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     Navigator.of(context).pop(); // Close loading dialog
 
     if (success) {
-      await authProvider.init();
+      // NOTE: Do NOT call authProvider.init() here - it would reset status
       
       if (!mounted) return;
 
@@ -639,13 +506,20 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     } else {
+      // Fallback: allow skip even if backend fails
+      await authProvider.markOnboardingSkipped();
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Failed to save profile'),
-          backgroundColor: AppColors.error,
+        const SnackBar(
+          content: Text('Skipped for now. You can complete your profile later in Settings.'),
+          backgroundColor: AppColors.crimson,
           behavior: SnackBarBehavior.floating,
         ),
       );
+
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     }
   }
 
@@ -731,7 +605,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
   /// Skip all steps and complete setup with minimal data
   void _skipToEnd() {
-    _completeSetup();
+    _skipAllAndComplete();
   }
 
   /// Build the fixed bottom navigation with Continue button
@@ -1439,7 +1313,7 @@ class _VenueSetupSuccessScreenState extends State<_VenueSetupSuccessScreen>
                       'Your venue profile is live.\nStart discovering talented artists!',
                       style: TextStyle(
                         fontSize: 17,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        color: AppColors.textSec(widget.brightness),
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
