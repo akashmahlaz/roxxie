@@ -91,45 +91,69 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
         return;
       }
       
-      // Get current position
+      // Try last known position first (fast)
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null && mounted) {
+        _applyPosition(lastKnown, quick: true);
+      }
+
+      // Get current position with faster settings
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 6),
         ),
       );
-      
-      // Reverse geocode to get city & country
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        
-        setState(() {
-          _currentPosition = LatLng(position.latitude, position.longitude);
-          _detectedCity = place.locality ?? place.subAdministrativeArea ?? 'Unknown';
-          _detectedCountry = place.country ?? 'Unknown';
-          _locationDetected = true;
-          
-          // Update profile data
-          widget.profileData.location.city = _detectedCity;
-          widget.profileData.location.country = _detectedCountry;
-          widget.profileData.location.coordinates = [position.longitude, position.latitude];
-        });
-        
-        // Move map to detected location
-        _mapController.move(_currentPosition, 14);
-        
-        widget.onDataChanged();
-        HapticFeedback.mediumImpact();
-      }
+
+      _applyPosition(position, quick: false);
     } catch (e) {
       _showLocationError('Could not detect location. Try again.');
     } finally {
       if (mounted) setState(() => _isDetectingLocation = false);
+    }
+  }
+
+  Future<void> _applyPosition(Position position, {required bool quick}) async {
+    try {
+      // Reverse geocode with timeout to avoid long waits
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      ).timeout(const Duration(seconds: 4));
+
+      String? city;
+      String? country;
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        city = place.locality ?? place.subAdministrativeArea;
+        country = place.country;
+      }
+
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _detectedCity = city ?? _detectedCity ?? 'Unknown';
+        _detectedCountry = country ?? _detectedCountry ?? 'Unknown';
+        _locationDetected = true;
+
+        // Update profile data
+        widget.profileData.location.city = _detectedCity;
+        widget.profileData.location.country = _detectedCountry;
+        widget.profileData.location.coordinates = [position.longitude, position.latitude];
+      });
+
+      _mapController.move(_currentPosition, quick ? 12 : 14);
+      widget.onDataChanged();
+      if (!quick) HapticFeedback.mediumImpact();
+    } catch (_) {
+      // If reverse geocode fails, still save coordinates
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _locationDetected = true;
+        widget.profileData.location.coordinates = [position.longitude, position.latitude];
+      });
+
+      _mapController.move(_currentPosition, quick ? 12 : 14);
+      widget.onDataChanged();
     }
   }
   

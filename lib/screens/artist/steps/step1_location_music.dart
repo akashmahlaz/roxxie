@@ -338,47 +338,71 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
                       ),
                     ),
                   
-                  // Refresh button
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: GestureDetector(
-                      onTap: _isDetectingLocation ? null : _detectLocation,
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.my_location_rounded,
-                          color: AppColors.crimson,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+                  // Try last known position first (fast)
+                  final lastKnown = await Geolocator.getLastKnownPosition();
+                  if (lastKnown != null && mounted) {
+                    _applyPosition(lastKnown, quick: true);
+                  }
 
-          // Location detected indicator
-          if (_locationDetected)
+                  // Get current position with faster settings
+                  final position = await Geolocator.getCurrentPosition(
+                    locationSettings: const LocationSettings(
+                      accuracy: LocationAccuracy.medium,
+                      timeLimit: Duration(seconds: 6),
+                    ),
+                  );
+
+                  _applyPosition(position, quick: false);
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
+
+              Future<void> _applyPosition(Position position, {required bool quick}) async {
+                try {
+                  // Reverse geocode with timeout to avoid long waits
+                  final placemarks = await placemarkFromCoordinates(
+                    position.latitude,
+                    position.longitude,
+                  ).timeout(const Duration(seconds: 4));
+
+                  String? city;
+                  String? country;
+                  if (placemarks.isNotEmpty) {
+                    final place = placemarks.first;
+                    city = place.locality ?? place.subAdministrativeArea;
+                    country = place.country;
+                  }
+
+                  setState(() {
+                    _currentPosition = LatLng(position.latitude, position.longitude);
+                    _detectedCity = city ?? _detectedCity ?? 'Unknown';
+                    _detectedCountry = country ?? _detectedCountry ?? 'Unknown';
+                    _locationDetected = true;
+
+                    // Update profile data
+                    widget.profileData.location.city = _detectedCity;
+                    widget.profileData.location.country = _detectedCountry;
+                    widget.profileData.location.coordinates = [position.longitude, position.latitude];
+                  });
+
+                  _mapController.move(_currentPosition, quick ? 12 : 14);
+                  widget.onDataChanged();
+                  if (!quick) HapticFeedback.mediumImpact();
+                } catch (_) {
+                  // If reverse geocode fails, still save coordinates
+                  setState(() {
+                    _currentPosition = LatLng(position.latitude, position.longitude);
+                    _locationDetected = true;
+                    widget.profileData.location.coordinates = [position.longitude, position.latitude];
+                  });
+
+                  _mapController.move(_currentPosition, quick ? 12 : 14);
+                  widget.onDataChanged();
+                }
+              }
                   color: Colors.green.withValues(alpha: 0.3),
                 ),
               ),

@@ -72,7 +72,7 @@ class User {
     return User(
       id: json['_id'] ?? json['id'] ?? '',
       email: json['email'] ?? '',
-      name: json['name'] ?? '',
+      name: json['fullName'] ?? json['name'] ?? '',
       role: UserRole.fromString(json['role'] ?? 'artist'),
       status: UserStatus.fromString(json['status'] ?? 'active'),
       profilePhotoUrl: json['profilePhotoUrl'],
@@ -89,7 +89,7 @@ class User {
   Map<String, dynamic> toJson() => {
     'id': id,
     'email': email,
-    'name': name,
+    'fullName': name,
     'role': role.value,
     'status': status.value,
     'profilePhotoUrl': profilePhotoUrl,
