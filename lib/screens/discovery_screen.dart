@@ -48,6 +48,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   bool _isDragging = false;
 
   final Set<String> _selectedGenres = <String>{};
+  bool _useLocationFilter = false;
 
   // Match animation state
   bool _showMatchAnimation = false;
@@ -300,16 +301,18 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final provider = context.watch<DiscoveryProvider>();
+    final auth = context.watch<AuthProvider>();
     final cards = provider.cards;
     final isLoading = provider.isLoading;
     final error = provider.errorMessage;
+    final isArtist = auth.isArtist;
 
     return Stack(
       children: [
         // Main content
         Scaffold(
           backgroundColor: AppColors.background(brightness),
-          appBar: _buildAppBar(brightness),
+          appBar: _buildAppBar(brightness, isArtist),
           body: SafeArea(
             top: false,
             bottom: false,
@@ -339,19 +342,52 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  PreferredSizeWidget _buildAppBar(Brightness brightness) {
+  PreferredSizeWidget _buildAppBar(Brightness brightness, bool isArtist) {
+    final hasPriceFilter = _priceRange.start > 0 || _priceRange.end < 1000;
+    final hasRatingFilter = _minRating > 0;
+    final activeFilterCount = _selectedGenres.length +
+        (_useLocationFilter ? 1 : 0) +
+        (hasPriceFilter ? 1 : 0) +
+        (hasRatingFilter ? 1 : 0);
+
     return AppBar(
       backgroundColor: AppColors.background(brightness),
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.tune_rounded,
-          color: _showFilters ? AppColors.crimson : AppColors.text(brightness),
-        ),
-        onPressed: _toggleFilters,
+      leading: Stack(
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.tune_rounded,
+              color: _showFilters || activeFilterCount > 0
+                  ? AppColors.crimson
+                  : AppColors.text(brightness),
+            ),
+            onPressed: _toggleFilters,
+          ),
+          if (activeFilterCount > 0)
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: AppColors.crimson,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$activeFilterCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       title: Text(
-        'Discover',
+        isArtist ? 'Discover Gigs' : 'Discover Artists',
         style: TextStyle(
           color: AppColors.text(brightness),
           fontSize: 22,
@@ -373,32 +409,23 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Widget _buildFilterChips(Brightness brightness) {
-    final provider = context.watch<DiscoveryProvider>();
-    // Get location filter state (for now we'll track this locally)
-    final hasLocationFilter = provider.cards.isNotEmpty; // Simplified for now
     final genres = ['Rock', 'Jazz', 'Pop', 'Hip-Hop', 'Electronic', 'Blues'];
 
     return Container(
-      height: 60,
+      height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           // Location chip
-          FilterChip(
-            selected: hasLocationFilter,
-            label: const Text('Nearby'),
-            avatar: Icon(
-              hasLocationFilter
-                  ? Icons.location_on_rounded
-                  : Icons.location_off_rounded,
-              size: 18,
-              color: hasLocationFilter
-                  ? Colors.white
-                  : AppColors.crimson,
-            ),
-            selectedColor: AppColors.crimson,
-            onSelected: _toggleLocationFilter,
+          _buildStyledFilterChip(
+            label: 'Nearby',
+            icon: _useLocationFilter
+                ? Icons.location_on_rounded
+                : Icons.location_off_rounded,
+            isSelected: _useLocationFilter,
+            brightness: brightness,
+            onSelected: (selected) => _toggleLocationFilter(selected),
           ),
           const SizedBox(width: 8),
           // Genre chips
@@ -406,21 +433,65 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             final isSelected = _selectedGenres.contains(genre);
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                selected: isSelected,
-                label: Text(genre),
-                selectedColor: AppColors.crimson,
-                checkmarkColor: Colors.white,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.text(brightness),
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
+              child: _buildStyledFilterChip(
+                label: genre,
+                isSelected: isSelected,
+                brightness: brightness,
                 onSelected: (selected) => _toggleGenre(genre, selected),
               ),
             );
           }),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStyledFilterChip({
+    required String label,
+    IconData? icon,
+    required bool isSelected,
+    required Brightness brightness,
+    required ValueChanged<bool> onSelected,
+  }) {
+    return GestureDetector(
+      onTap: () => onSelected(!isSelected),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: icon != null ? 12 : 16,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.crimson : AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.crimson
+                : AppColors.border(brightness),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? Colors.white : AppColors.crimson,
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.text(brightness),
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -436,10 +507,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     }
 
     if (cards.isEmpty) {
-      return _buildErrorState(error, brightness);
-    }
-
-    if (cards.isEmpty) {
+      if (error.isNotEmpty) {
+        return _buildErrorState(error, brightness);
+      }
       return _buildEmptyState(brightness);
     }
 
@@ -476,28 +546,30 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           );
         }),
 
-        // Swipe hint overlay
-        if (cards.length - _currentCardIndex <= 2) Positioned(
-          bottom: 100,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.crimson.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${cards.length - _currentCardIndex} more to see',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+        // Remaining cards indicator (subtle at top)
+        if (cards.length - _currentCardIndex <= 3)
+          Positioned(
+            top: 16,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${cards.length - _currentCardIndex} left',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -838,6 +910,26 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Text(
+                item.typeLabel.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             Text(
               item.title,
               style: const TextStyle(
@@ -1201,7 +1293,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           _buildActionButton(
             icon: Icons.replay_rounded,
             color: Colors.blue.shade400,
-            size: 48,
+            size: 44,
+            label: 'Rewind',
             onTap: _undoLastSwipe,
           ),
 
@@ -1209,7 +1302,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           _buildActionButton(
             icon: Icons.close_rounded,
             color: AppColors.crimson,
-            size: 64,
+            size: 58,
+            label: 'Pass',
             onTap: () => _animateSwipe(false),
           ),
 
@@ -1217,7 +1311,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           _buildActionButton(
             icon: Icons.star_rounded,
             color: Colors.blue.shade600,
-            size: 56,
+            size: 52,
+            label: 'Super',
             onTap: () => _superLike(),
           ),
 
@@ -1225,16 +1320,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           _buildActionButton(
             icon: Icons.favorite_rounded,
             color: Colors.green.shade500,
-            size: 64,
+            size: 58,
+            label: 'Like',
             onTap: () => _animateSwipe(true),
-          ),
-
-          // Boost button
-          _buildActionButton(
-            icon: Icons.rocket_launch_rounded,
-            color: Colors.amber.shade600,
-            size: 48,
-            onTap: _showBoostDialog,
           ),
         ],
       ),
@@ -1246,28 +1334,45 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     required Color color,
     required double size,
     required VoidCallback onTap,
+    String? label,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: AppColors.surface(Theme.of(context).brightness),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: AppColors.surface(Theme.of(context).brightness),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: size * 0.6,
+            ),
+          ),
+          if (label != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: AppColors.textSec(Theme.of(context).brightness),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
-        ),
-        child: Icon(
-          icon,
-          color: color,
-          size: size,
-        ),
+        ],
       ),
     );
   }
@@ -1287,6 +1392,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   void _toggleLocationFilter(bool enabled) {
     final provider = context.read<DiscoveryProvider>();
+    setState(() {
+      _useLocationFilter = enabled;
+    });
     if (enabled) {
       provider.setLocationFilter(
         latitude: 40.7128,
@@ -1319,6 +1427,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       animation: _filterController,
       builder: (context, child) {
         final panelWidth = MediaQuery.of(context).size.width * 0.85;
+        final hasPriceFilter = _priceRange.start > 0 || _priceRange.end < 1000;
+        final hasRatingFilter = _minRating > 0;
+        final appliedCount = _selectedGenres.length +
+            (_useLocationFilter ? 1 : 0) +
+            (hasPriceFilter ? 1 : 0) +
+            (hasRatingFilter ? 1 : 0);
         final offset = _showFilters
             ? Offset.zero
             : Offset(-panelWidth, 0);
@@ -1340,20 +1454,59 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Filters',
-                          style: TextStyle(
-                            color: AppColors.text(brightness),
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              'Filters',
+                              style: TextStyle(
+                                color: AppColors.text(brightness),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (appliedCount > 0) ...[
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.crimson,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '$appliedCount applied',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        IconButton(
-                          onPressed: _toggleFilters,
-                          icon: Icon(
-                            Icons.close_rounded,
-                            color: AppColors.textSec(brightness),
-                          ),
+                        Row(
+                          children: [
+                            TextButton(
+                              onPressed: _clearAllFilters,
+                              child: Text(
+                                'Clear',
+                                style: TextStyle(
+                                  color: AppColors.textSec(brightness),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _toggleFilters,
+                              icon: Icon(
+                                Icons.close_rounded,
+                                color: AppColors.textSec(brightness),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -1370,7 +1523,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                             _buildFilterOption(
                               'Use my location',
                               Icons.my_location_rounded,
-                              true,
+                              _useLocationFilter,
                               _onLocationFilterChanged,
                             ),
                           ],
@@ -1686,6 +1839,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   void _onLocationFilterChanged(bool enabled) {
     // Get current location and update filters
     final provider = context.read<DiscoveryProvider>();
+    setState(() {
+      _useLocationFilter = enabled;
+    });
 
     if (enabled) {
       provider.setLocationFilter(
@@ -1699,6 +1855,17 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         _selectedGenres.clear();
       });
     }
+  }
+
+  void _clearAllFilters() {
+    final provider = context.read<DiscoveryProvider>();
+    provider.clearFilters();
+    setState(() {
+      _selectedGenres.clear();
+      _useLocationFilter = false;
+      _priceRange = const RangeValues(0, 1000);
+      _minRating = 0;
+    });
   }
 
 
@@ -1826,6 +1993,7 @@ class DiscoveryItem {
   final String? imageUrl;
   final bool isBoosted;
   final bool isVerified;
+  final String typeLabel;
   final String title;
   final String? subtitle;
   final String? city;
@@ -1838,6 +2006,7 @@ class DiscoveryItem {
     this.imageUrl,
     required this.isBoosted,
     required this.isVerified,
+    required this.typeLabel,
     required this.title,
     this.subtitle,
     this.city,
@@ -1871,6 +2040,7 @@ class DiscoveryItem {
       imageUrl: imageUrl,
       isBoosted: card.isBoosted,
       isVerified: card.isVerified,
+      typeLabel: card.typeLabel,
       title: card.name,
       subtitle: subtitle,
       city: card.location ?? gig?.location.venueAddress ?? gig?.location.city,
