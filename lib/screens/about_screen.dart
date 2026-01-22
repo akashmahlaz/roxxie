@@ -4,7 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../core/theme/theme.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import '../widgets/widgets.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -18,10 +18,7 @@ class AboutScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.surface(brightness),
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: GlassBackButton(),
         title: Text(
           'About',
           style: TextStyle(

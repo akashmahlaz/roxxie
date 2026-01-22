@@ -513,7 +513,7 @@ class ArtistService {
       throw ValidationException('Country is required to complete setup');
     }
 
-    if (request.location!.coordinates == null || request.location!.coordinates!.length != 2) {
+    if (request.location!.coordinates.length != 2) {
       throw ValidationException('Valid coordinates [longitude, latitude] are required to complete setup');
     }
   }

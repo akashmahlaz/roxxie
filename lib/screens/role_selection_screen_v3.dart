@@ -9,9 +9,9 @@
 /// ✅ Morphing gradient orbs
 /// ✅ Character-by-character text reveal
 /// ✅ Premium micro-interactions
+library;
 
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
@@ -52,11 +52,12 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
   bool _artistCardHovered = false;
   bool _venueCardHovered = false;
 
-  // Card tilt values
-  double _artistTiltX = 0;
-  double _artistTiltY = 0;
-  double _venueTiltX = 0;
-  double _venueTiltY = 0;
+  // Card tilt values (reserved for 3D hover effects)
+  // Uncomment when implementing mouse/gyro based tilt
+  // double _artistTiltX = 0;
+  // double _artistTiltY = 0;
+  // double _venueTiltX = 0;
+  // double _venueTiltY = 0;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // LIFECYCLE
@@ -156,7 +157,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
 
   void _navigateToArtistSignup() {
     HapticFeedback.mediumImpact();
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const ArtistSignupScreenV2(),
@@ -182,7 +183,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
 
   void _navigateToVenueSignup() {
     HapticFeedback.mediumImpact();
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const VenueSignupScreenV2(),
@@ -208,7 +209,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
 
   void _navigateToLogin() {
     HapticFeedback.lightImpact();
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const LoginScreen(),
@@ -229,128 +230,174 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.background(brightness),
-      body: Stack(
-        children: [
-          // Layer 1: Animated particle starfield
-          AnimatedBuilder(
-            animation: _particleController,
-            builder: (context, _) {
-              return CustomPaint(
-                painter: _ParticleFieldPainter(
-                  particles: _particles,
-                  progress: _particleController.value,
-                  color: isDark ? Colors.white : AppColors.crimson,
-                ),
-                size: Size.infinite,
-              );
-            },
-          ),
+    // PopScope to handle back button - this is the entry point, show exit confirmation
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Show exit confirmation dialog
+        _showExitConfirmation(context, brightness);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        body: Stack(
+          children: [
+              // Layer 1: Animated particle starfield
+            AnimatedBuilder(
+              animation: _particleController,
+              builder: (context, _) {
+                return CustomPaint(
+                  painter: _ParticleFieldPainter(
+                    particles: _particles,
+                    progress: _particleController.value,
+                    color: isDark ? Colors.white : AppColors.crimson,
+                  ),
+                  size: Size.infinite,
+                );
+              },
+            ),
 
-          // Layer 2: Morphing gradient orbs
-          AnimatedBuilder(
-            animation: _orbController,
-            builder: (context, _) {
-              return CustomPaint(
-                painter: _GradientOrbPainter(
-                  progress: _orbController.value,
-                  isDark: isDark,
-                ),
-                size: Size.infinite,
-              );
-            },
-          ),
+            // Layer 2: Morphing gradient orbs
+            AnimatedBuilder(
+              animation: _orbController,
+              builder: (context, _) {
+                return CustomPaint(
+                  painter: _GradientOrbPainter(
+                    progress: _orbController.value,
+                    isDark: isDark,
+                  ),
+                  size: Size.infinite,
+                );
+              },
+            ),
 
-          // Layer 3: Main content
-          SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 32),
+            // Layer 3: Main content
+            SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 32),
 
-                    // Premium Logo with shimmer
-                    _buildShimmerLogo(brightness),
+                      // Premium Logo with shimmer
+                      _buildShimmerLogo(brightness),
 
-                    const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                    // Character reveal title
-                    _buildRevealTitle(brightness),
+                      // Character reveal title
+                      _buildRevealTitle(brightness),
 
-                    const SizedBox(height: 8),
+                      const SizedBox(height: 8),
 
-                    // Subtitle with fade
-                    _buildSubtitle(brightness),
+                      // Subtitle with fade
+                      _buildSubtitle(brightness),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Role Cards
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Artist Card
-                          _buildRoleCard(
-                            icon: Icons.music_note_rounded,
-                            title: 'Artist / Band',
-                            subtitle: 'Find gigs & get booked',
-                            features: [
-                              'Create your portfolio',
-                              'Get discovered by venues',
-                              'Accept bookings',
-                            ],
-                            accentColor: AppColors.crimson,
-                            isHovered: _artistCardHovered,
-                            onHover: (hovering) {
-                              setState(() => _artistCardHovered = hovering);
-                              if (hovering) HapticFeedback.selectionClick();
-                            },
-                            onTap: _navigateToArtistSignup,
-                            brightness: brightness,
-                          ),
+                      // Role Cards
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Artist Card
+                            _buildRoleCard(
+                              icon: Icons.music_note_rounded,
+                              title: 'Artist / Band',
+                              subtitle: 'Find gigs & get booked',
+                              features: [
+                                'Create your portfolio',
+                                'Get discovered by venues',
+                                'Accept bookings',
+                              ],
+                              accentColor: AppColors.crimson,
+                              isHovered: _artistCardHovered,
+                              onHover: (hovering) {
+                                setState(() => _artistCardHovered = hovering);
+                                if (hovering) HapticFeedback.selectionClick();
+                              },
+                              onTap: _navigateToArtistSignup,
+                              brightness: brightness,
+                            ),
 
-                          const SizedBox(height: 12),
+                            const SizedBox(height: 12),
 
-                          // Venue Card
-                          _buildRoleCard(
-                            icon: Icons.storefront_rounded,
-                            title: 'Venue / Host',
-                            subtitle: 'Book talent for your stage',
-                            features: [
-                              'Browse local talent',
-                              'Send booking requests',
-                              'Manage your events',
-                            ],
-                            accentColor: const Color(0xFF3B82F6),
-                            isHovered: _venueCardHovered,
-                            onHover: (hovering) {
-                              setState(() => _venueCardHovered = hovering);
-                              if (hovering) HapticFeedback.selectionClick();
-                            },
-                            onTap: _navigateToVenueSignup,
-                            brightness: brightness,
-                          ),
-                        ],
+                            // Venue Card
+                            _buildRoleCard(
+                              icon: Icons.storefront_rounded,
+                              title: 'Venue / Host',
+                              subtitle: 'Book talent for your stage',
+                              features: [
+                                'Browse local talent',
+                                'Send booking requests',
+                                'Manage your events',
+                              ],
+                              accentColor: const Color(0xFF3B82F6),
+                              isHovered: _venueCardHovered,
+                              onHover: (hovering) {
+                                setState(() => _venueCardHovered = hovering);
+                                if (hovering) HapticFeedback.selectionClick();
+                              },
+                              onTap: _navigateToVenueSignup,
+                              brightness: brightness,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // Login link with shimmer
-                    _buildLoginLink(brightness),
+                      // Login link with shimmer
+                      _buildLoginLink(brightness),
 
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showExitConfirmation(BuildContext context, Brightness brightness) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Exit App?',
+          style: TextStyle(color: AppColors.text(brightness)),
+        ),
+        content: Text(
+          'Are you sure you want to exit?',
+          style: TextStyle(color: AppColors.textSec(brightness)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Actually exit the app
+              SystemNavigator.pop();
+            },
+            child: const Text(
+              'Exit',
+              style: TextStyle(color: AppColors.crimson),
             ),
           ),
         ],
       ),
     );
   }
-
   // ═══════════════════════════════════════════════════════════════════════════
   // SHIMMER LOGO
   // ═══════════════════════════════════════════════════════════════════════════

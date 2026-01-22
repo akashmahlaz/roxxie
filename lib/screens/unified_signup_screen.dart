@@ -10,6 +10,7 @@
 /// ✅ Mobile-first design
 /// ✅ Autofill support
 /// ✅ Progressive profiling (collect details later)
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

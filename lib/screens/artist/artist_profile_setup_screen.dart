@@ -176,7 +176,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
 
   void _completeSetup() async {
     final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
+    // brightness used below for color theming
     final authProvider = context.read<AuthProvider>();
     final uploadService = UploadService();
 

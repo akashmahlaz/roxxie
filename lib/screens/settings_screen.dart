@@ -10,10 +10,10 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../widgets/widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -41,10 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface(brightness),
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: GlassBackButton(),
         title: Text(
           'Settings',
           style: TextStyle(
@@ -136,7 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               [
                 _buildSliderTile(
                   'Maximum Distance',
-                  '${_maxDistance} miles',
+                  '$_maxDistance miles',
                   Icons.explore_rounded,
                   _maxDistance.toDouble(),
                   5,
@@ -283,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: AppColors.crimson,
+        activeThumbColor: AppColors.crimson,
       ),
     );
   }
@@ -478,7 +475,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (context.mounted) {
                 Navigator.pushNamedAndRemoveUntil(
                   context,
-                  '/login',
+                  '/role-selection',
                   (route) => false,
                 );
               }

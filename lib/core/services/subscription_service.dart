@@ -424,29 +424,25 @@ class SubscriptionException implements Exception {
 
 class PaymentFailedException extends SubscriptionException {
   const PaymentFailedException(
-    String message, {
-    dynamic originalError,
+    super.message, {
+    super.originalError,
   }) : super(
-          message,
           code: 'PAYMENT_FAILED',
-          originalError: originalError,
         );
 }
 
 class SubscriptionInactiveException extends SubscriptionException {
   const SubscriptionInactiveException([
-    String message = 'Active subscription required',
+    super.message = 'Active subscription required',
   ]) : super(
-          message,
           code: 'SUBSCRIPTION_INACTIVE',
         );
 }
 
 class FeatureNotAvailableException extends SubscriptionException {
   const FeatureNotAvailableException([
-    String message = 'This feature is not available in your plan',
+    super.message = 'This feature is not available in your plan',
   ]) : super(
-          message,
           code: 'FEATURE_NOT_AVAILABLE',
         );
 }
@@ -457,10 +453,11 @@ class FeatureNotAvailableException extends SubscriptionException {
 
 class SubscriptionService {
   final ApiClient _client;
-  final AuthProvider? _authProvider;
+  // Reserved for future use: final AuthProvider? _authProvider;
 
-  static const int _maxRetries = 3;
-  static const Duration _retryDelay = Duration(seconds: 2);
+  // Retry settings (reserved for future use)
+  // static const int _maxRetries = 3;
+  // static const Duration _retryDelay = Duration(seconds: 2);
 
   // State
   UserSubscription? _currentSubscription;
@@ -528,8 +525,8 @@ class SubscriptionService {
   SubscriptionService({
     required ApiClient apiClient,
     AuthProvider? authProvider,
-  })  : _client = apiClient,
-        _authProvider = authProvider;
+  })  : _client = apiClient;
+        // _authProvider = authProvider; // Reserved for future use
 
   /// Initialize subscription service
   /// Call this after authentication

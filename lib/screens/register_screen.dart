@@ -67,10 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.text(brightness)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: const GlassBackButton(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

@@ -470,8 +470,9 @@ class AnalyticsService {
   final ApiClient _client;
   final AuthProvider? _authProvider;
 
-  static const int _maxRetries = 3;
-  static const Duration _retryDelay = Duration(seconds: 1);
+  // Retry settings (reserved for future use)
+  // static const int _maxRetries = 3;
+  // static const Duration _retryDelay = Duration(seconds: 1);
 
   // State
   AnalyticsOverview? _overview;

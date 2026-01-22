@@ -90,6 +90,19 @@ class ApiClient {
     return value == 'true';
   }
 
+  // ✅ Has seen onboarding (for non-logged in users)
+  Future<void> saveHasSeenOnboarding(bool value) async {
+    await _storage.write(
+      key: ApiConfig.hasSeenOnboardingKey,
+      value: value ? 'true' : 'false',
+    );
+  }
+
+  Future<bool> getHasSeenOnboarding() async {
+    final value = await _storage.read(key: ApiConfig.hasSeenOnboardingKey);
+    return value == 'true';
+  }
+
   // 🔄 Token Refresh
   Future<bool> refreshTokens() async {
     try {

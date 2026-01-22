@@ -14,7 +14,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../core/api/api_client.dart';
 import 'onboarding_screen.dart';
+import 'role_selection_screen_v3.dart';
 import 'app_shell.dart';
 import 'artist/artist_profile_setup_screen.dart';
 import 'venue/venue_profile_setup_screen.dart';
@@ -151,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _navigateBasedOnAuthState() {
+  void _navigateBasedOnAuthState() async {
     final authProvider = context.read<AuthProvider>();
     Widget destination;
 
@@ -160,12 +162,18 @@ class _SplashScreenState extends State<SplashScreen>
         destination = const AppShell();
         break;
       case AuthStatus.profileIncomplete:
+      case AuthStatus.needsRoleSelection:
         destination = authProvider.isArtist
             ? const ArtistProfileSetupScreen()
             : const VenueProfileSetupScreen();
         break;
       default:
-        destination = const OnboardingScreen();
+        // Check if user has seen onboarding before
+        final apiClient = ApiClient();
+        final hasSeenOnboarding = await apiClient.getHasSeenOnboarding();
+        destination = hasSeenOnboarding 
+            ? const RoleSelectionScreenV3()
+            : const OnboardingScreen();
     }
 
     Navigator.of(context).pushReplacement(

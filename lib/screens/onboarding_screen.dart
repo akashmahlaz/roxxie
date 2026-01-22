@@ -9,12 +9,14 @@
 /// ✅ Haptic feedback integration
 /// ✅ Parallax depth effects
 /// ✅ Staggered element animations
+library;
 
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
+import '../core/api/api_client.dart';
 import 'role_selection_screen_v3.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -192,8 +194,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     }
   }
 
-  void _goToRoleSelection() {
+  void _goToRoleSelection() async {
     HapticFeedback.mediumImpact();
+    
+    // Save that user has seen onboarding
+    final apiClient = ApiClient();
+    await apiClient.saveHasSeenOnboarding(true);
+    
+    if (!mounted) return;
+    
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const RoleSelectionScreenV3(),
@@ -750,35 +759,26 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     required VoidCallback onTap,
     required Brightness brightness,
   }) {
-    final isDark = brightness == Brightness.dark;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Container(
-        width: 52,
-        height: 52,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
-          color: isDark 
-              ? AppColors.graphite
-              : Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark 
-                ? AppColors.slate 
-                : Colors.grey[300]!,
-            width: 1.5,
+            color: AppColors.border(brightness),
+            width: 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
         ),
         child: Icon(
           icon,
           color: AppColors.text(brightness),
-          size: 24,
+          size: 22,
         ),
       ),
     );
@@ -789,36 +789,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     required VoidCallback onTap,
     required Brightness brightness,
   }) {
-    final isDark = brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        decoration: BoxDecoration(
-          color: isDark 
-              ? AppColors.graphite
-              : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isDark 
-                ? AppColors.slate 
-                : Colors.grey[300]!,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Text(
           text,
           style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+            color: AppColors.textSec(brightness).withValues(alpha: 0.7),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),

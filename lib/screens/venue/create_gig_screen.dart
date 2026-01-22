@@ -971,7 +971,7 @@ class _CreateGigScreenState extends State<CreateGigScreen>
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppColors.crimson,
+              activeThumbColor: AppColors.crimson,
             ),
           ],
         ),

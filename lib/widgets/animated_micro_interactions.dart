@@ -10,6 +10,7 @@
 /// - Skeleton loading with shimmer
 /// - Pull-to-refresh with custom physics
 /// - Optimistic state patterns
+library;
 
 import 'dart:ui';
 import 'package:flutter/material.dart';

@@ -306,7 +306,7 @@ class Endpoints {
   static const String messagesSearch = '/messages/search';
 
   /// Get unread message count
-  static const String messagesUnreadCount = '/messages/unread/count';
+    static const String messagesUnreadCount = '/messages/unread-count';
 
   // ═══════════════════════════════════════════════════════════════════════
   // GIGS / BOOKINGS

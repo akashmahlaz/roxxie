@@ -7,6 +7,7 @@
 /// ✅ Staggered List Animations
 /// ✅ Micro-interactions on Stats
 /// ✅ Dynamic Gradient Themes
+library;
 
 import 'dart:math' as math;
 import 'dart:ui';
@@ -409,7 +410,9 @@ class _ProfileScreenV2State extends State<ProfileScreenV2> with TickerProviderSt
            TextButton(onPressed: () async {
              Navigator.pop(context);
              await context.read<AuthProvider>().logout();
-             Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+             // Navigate to role selection (entry point) instead of login
+             // This ensures proper navigation stack for back button handling
+             Navigator.pushNamedAndRemoveUntil(context, '/role-selection', (route) => false);
            }, child: const Text('Sign Out', style: TextStyle(color: AppColors.crimson, fontWeight: FontWeight.bold))),
          ],
        )

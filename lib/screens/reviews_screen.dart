@@ -11,7 +11,6 @@
 /// View and manage all reviews
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
@@ -150,7 +149,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
     super.dispose();
   }
 
-  Future<void> _refresh() async {
+  Future<void> refresh() async {
     HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(seconds: 1));

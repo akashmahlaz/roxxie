@@ -35,7 +35,7 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
   
   bool _agreedToTerms = false;
   DateTime _selectedMonth = DateTime.now();
-  Set<int> _selectedDays = {};
+  final Set<int> _selectedDays = {};
 
   // Day name mapping
   final List<String> _weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -68,8 +68,8 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
   }
 
   void _initSelectedDays() {
-    final typicalNights = widget.profileData.gigPreferences.typicalEventNights;
-    // For demonstration - would normally map to actual calendar dates
+    // Future: Map typical event nights to calendar dates
+    // final typicalNights = widget.profileData.gigPreferences.typicalEventNights;
   }
 
   @override

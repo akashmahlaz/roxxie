@@ -7,6 +7,7 @@
 /// ✅ Validated coordinates [lng, lat] format
 /// ✅ Role-specific profile completion flow
 /// ✅ Ultra-premium UI with Material 3 design
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -432,7 +433,7 @@ class _ArtistSignupScreenState extends State<ArtistSignupScreen>
               Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
               const SizedBox(width: 6),
               Text(
-                'GPS: ${_detectedCity}, ${_detectedCountry}',
+                'GPS: $_detectedCity, $_detectedCountry',
                 style: TextStyle(
                   color: Colors.green,
                   fontSize: 12,

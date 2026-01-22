@@ -8,6 +8,7 @@
 /// ✅ Animated Tab Switcher
 /// ✅ Haptic Feedback
 /// ✅ Dynamic Gradient Text
+library;
 
 import 'dart:math' as math;
 import 'dart:ui';
@@ -31,7 +32,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
   late AnimationController _particleController;
   late AnimationController _floatController;
   late AnimationController _badgePulseController;
-  late Animation<double> _badgePulseAnimation;
+  // Reserved for badge pulse effect: late Animation<double> _badgePulseAnimation;
 
   final List<_MatchParticle> _particles = [];
   final math.Random _random = math.Random();
@@ -55,9 +56,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    _badgePulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _badgePulseController, curve: Curves.easeInOut),
-    );
+    // Reserved for future badge animation
+    // _badgePulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+    //   CurvedAnimation(parent: _badgePulseController, curve: Curves.easeInOut),
+    // );
 
     _initParticles();
 

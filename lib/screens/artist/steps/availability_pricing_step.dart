@@ -39,7 +39,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
 
     // Pre-populate selected dates from existing availability
     for (var slot in widget.profileData.availability) {
-      final slotMap = slot as Map<String, dynamic>;
+      final slotMap = slot;
       final dateString = slotMap['date'] as String;
       final date = DateTime.parse(dateString);
       _selectedDates.add(
@@ -55,7 +55,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
         _selectedDates.remove(normalizedDate);
         widget.profileData.availability.removeWhere(
           (slot) {
-            final slotMap = slot as Map<String, dynamic>;
+            final slotMap = slot;
             final slotDateString = slotMap['date'] as String;
             final slotDate = DateTime.parse(slotDateString);
             return slotDate.year == date.year &&

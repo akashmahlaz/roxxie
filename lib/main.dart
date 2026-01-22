@@ -13,7 +13,6 @@ import 'screens/role_selection_screen_v3.dart';
 import 'screens/artist_signup_screen_v2.dart';
 import 'screens/venue_signup_screen_v2.dart';
 import 'screens/login_screen.dart';
-import 'screens/unified_signup_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/discovery_screen.dart';
 import 'screens/matches_screen_v2.dart';

@@ -456,11 +456,10 @@ class VenueService {
     if (params.radiusMiles != null && params.radiusMiles! <= 0) {
       throw ValidationException('Radius must be greater than 0');
     }
-    if (params.page != null && params.page! < 1) {
+    if (params.page < 1) {
       throw ValidationException('Page must be 1 or greater');
     }
-    if (params.limit != null &&
-        (params.limit! < 1 || params.limit! > 100)) {
+    if ((params.limit < 1 || params.limit > 100)) {
       throw ValidationException('Limit must be between 1 and 100');
     }
   }

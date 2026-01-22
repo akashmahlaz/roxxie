@@ -195,7 +195,7 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
   void _completeSetup() async {
     final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
+    // brightness used below for color theming
     final authProvider = context.read<AuthProvider>();
     final uploadService = UploadService();
 
@@ -691,176 +691,137 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
     );
   }
 
+  /// Consistent header matching Artist profile setup style
   Widget _buildEnhancedHeader(Brightness brightness) {
-    final progress = (_currentStep + 1) / _totalSteps;
-    final estimatedMinutes = (_totalSteps - _currentStep) * 2;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground(brightness),
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.border(brightness),
-            width: 1,
-          ),
-        ),
-      ),
+    final isDark = brightness == Brightness.dark;
+    
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Column(
         children: [
+          // Top row with back/skip
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              // Back button
               if (_currentStep > 0)
-                IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_rounded,
-                    color: AppColors.text(brightness),
+                GestureDetector(
+                  onTap: _previousStep,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.graphite : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_rounded,
+                      color: AppColors.text(brightness),
+                      size: 22,
+                    ),
                   ),
-                  onPressed: _previousStep,
                 )
               else
-                const SizedBox(width: 48),
+                const SizedBox(width: 42),
               
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      'Venue Profile Setup',
-                      style: TextStyle(
-                        color: AppColors.text(brightness),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+              // Step indicator (dot style matching artist)
+              Row(
+                children: List.generate(_totalSteps, (index) {
+                  final isActive = index == _currentStep;
+                  final isCompleted = index < _currentStep;
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: isActive ? 32 : 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: isActive || isCompleted 
+                          ? AppColors.crimson 
+                          : (isDark ? AppColors.slate : Colors.grey[300]),
+                      borderRadius: BorderRadius.circular(5),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Step ${_currentStep + 1} of $_totalSteps',
-                      style: TextStyle(
-                        color: AppColors.textSec(brightness),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  );
+                }),
+              ),
+              
+              // Skip button
+              GestureDetector(
+                onTap: _skipToEnd,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.graphite : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Skip',
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ],
+                  ),
                 ),
               ),
-
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Step title with icon
+          Row(
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.crimson.withValues(alpha: 0.1),
+                  color: AppColors.crimson.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Icon(
+                  _stepIcons[_currentStep],
+                  color: AppColors.crimson,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      color: AppColors.crimson,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
                     Text(
-                      '~$estimatedMinutes min',
+                      _stepTitles[_currentStep],
                       style: TextStyle(
-                        color: AppColors.crimson,
-                        fontSize: 11,
+                        color: AppColors.text(brightness),
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          Stack(
-            children: [
-              Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: AppColors.border(brightness),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: progress,
-                child: Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-                    ),
-                    borderRadius: BorderRadius.circular(3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.crimson.withValues(alpha: 0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_totalSteps, (index) {
-              final isCompleted = index < _currentStep;
-              final isCurrent = index == _currentStep;
-              
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isCompleted
-                      ? AppColors.crimson
-                      : isCurrent
-                          ? AppColors.crimson.withValues(alpha: 0.2)
-                          : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isCurrent
-                        ? AppColors.crimson
-                        : AppColors.border(brightness),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _stepIcons[index],
-                      size: 12,
-                      color: isCompleted
-                          ? Colors.white
-                          : isCurrent
-                              ? AppColors.crimson
-                              : AppColors.textTert(brightness),
-                    ),
-                    const SizedBox(width: 3),
                     Text(
-                      _stepTitles[index],
+                      _stepSubtitles[_currentStep],
                       style: TextStyle(
-                        color: isCompleted
-                            ? Colors.white
-                            : isCurrent
-                                ? AppColors.crimson
-                                : AppColors.textTert(brightness),
-                        fontSize: 10,
-                        fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                        color: AppColors.textSec(brightness),
+                        fontSize: 13,
                       ),
                     ),
                   ],
                 ),
-              );
-            }),
+              ),
+              // Step counter (matching artist format)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.surface(brightness),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border(brightness)),
+                ),
+                child: Text(
+                  '${_currentStep + 1}/$_totalSteps',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

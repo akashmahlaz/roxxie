@@ -1,6 +1,7 @@
 /// 💬 GIGMATCH Chat Screen
 ///
 /// Real-time chat screen for messaging between artists and venues
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
+import '../../widgets/widgets.dart';
 
 /// 💬 Chat Screen - Main Widget
 class ChatScreen extends StatefulWidget {
@@ -37,8 +39,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _isSending = false;
   bool _participantOnline = false;
-  bool _participantTyping = false;
-  List<dynamic> _messages = [];
+  final bool _participantTyping = false;
+  final List<dynamic> _messages = [];
   String? _conversationId;
   String? _participantName;
   String? _participantPhoto;
@@ -194,10 +196,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return AppBar(
       backgroundColor: AppColors.surface(brightness),
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: GlassBackButton(),
       title: Row(
         children: [
           _buildAvatarWithOnlineIndicator(),

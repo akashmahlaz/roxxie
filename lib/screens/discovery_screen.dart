@@ -11,6 +11,7 @@
 /// - Premium boost indicators
 /// - Comprehensive error handling
 /// - Offline support
+library;
 
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -434,7 +435,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       return _buildLoadingState(brightness);
     }
 
-    if (error != null && cards.isEmpty) {
+    if (cards.isEmpty) {
       return _buildErrorState(error, brightness);
     }
 
@@ -455,7 +456,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       fit: StackFit.expand,
       children: [
         // Background cards (already swiped)
-        ...cards.take(_currentCardIndex).map((item) => _buildCard(item, brightness, opacity: 0)).toList(),
+        ...cards.take(_currentCardIndex).map((item) => _buildCard(item, brightness, opacity: 0)),
 
         // Current and upcoming cards
         ...displayCards.asMap().entries.map((entry) {
@@ -1073,33 +1074,64 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Widget _buildEmptyState(Brightness brightness) {
+    final auth = context.watch<AuthProvider>();
+    final isArtist = auth.isArtist;
+    
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off_rounded,
-            color: AppColors.textSec(brightness),
-            size: 64,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No results found',
-            style: TextStyle(
-              color: AppColors.text(brightness),
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.surface(brightness),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isArtist ? Icons.business_rounded : Icons.mic_rounded,
+                color: AppColors.crimson,
+                size: 64,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Try adjusting your filters',
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 14,
+            const SizedBox(height: 24),
+            Text(
+              isArtist ? 'No gigs yet' : 'No artists yet',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              isArtist 
+                  ? 'Gigs in your area will appear here.\nWe\'re growing fast — check back soon!'
+                  : 'Artists in your area will appear here.\nWe\'re growing fast — check back soon!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 15,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _loadDiscoveryFeed,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: const Text('Refresh'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1630,7 +1662,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         border: Border.all(color: Colors.white, width: 3),
         image: _pendingMatch?.getOtherPartyPhoto(context.read<AuthProvider>().isArtist) != null
             ? DecorationImage(
-                image: NetworkImage(_pendingMatch!.getOtherPartyPhoto(context.read<AuthProvider>().isArtist)!),
+                image: NetworkImage(_pendingMatch!.getOtherPartyPhoto(context.read<AuthProvider>().isArtist)),
                 fit: BoxFit.cover,
               )
             : null,
@@ -1818,17 +1850,18 @@ class DiscoveryItem {
   factory DiscoveryItem.fromCard(DiscoveryCard card) {
     final artist = card.artist;
     final venue = card.venue;
+    final gig = card.gig;
 
     final String? imageUrl = card.primaryPhotoUrl.isNotEmpty
         ? card.primaryPhotoUrl
         : (card.galleryUrls.isNotEmpty ? card.galleryUrls.first : null);
 
     final double? priceMin =
-        artist?.minPrice ?? venue?.gigPreferences?.minBudget;
+      artist?.minPrice ?? venue?.gigPreferences?.minBudget ?? gig?.budget;
 
     final String? subtitle = card.genres.isNotEmpty
-        ? card.genres.take(3).join(' • ')
-        : card.bio;
+      ? card.genres.take(3).join(' • ')
+      : (card.bio ?? gig?.description);
 
     final double recommendationScore = card.isBoosted
         ? 95
@@ -1840,7 +1873,7 @@ class DiscoveryItem {
       isVerified: card.isVerified,
       title: card.name,
       subtitle: subtitle,
-      city: card.location,
+      city: card.location ?? gig?.location.venueAddress ?? gig?.location.city,
       distanceMiles: card.distance ?? 0,
       rating: card.rating > 0 ? card.rating : null,
       priceMin: priceMin,

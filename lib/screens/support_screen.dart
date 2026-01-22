@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../core/theme/theme.dart';
+import '../widgets/widgets.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
@@ -67,10 +68,7 @@ class _SupportScreenState extends State<SupportScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface(brightness),
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: GlassBackButton(),
         title: Text(
           'Help & Support',
           style: TextStyle(
@@ -196,7 +194,7 @@ class _SupportScreenState extends State<SupportScreen> {
                     final index = entry.key;
                     final faq = entry.value;
                     return _buildFAQItem(faq, index, brightness);
-                  }).toList(),
+                  }),
                 ],
               ),
             ),

@@ -14,6 +14,7 @@ library;
 
 // Core UI Components
 export 'glass_container.dart';
+export 'glass_back_button.dart';
 export 'buttons.dart';
 export 'animated_backgrounds.dart';
 export 'text_fields.dart';

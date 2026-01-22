@@ -251,6 +251,7 @@ class _SplashScreenV2State extends State<SplashScreenV2>
         destination = const HomeScreen();
         break;
       case AuthStatus.profileIncomplete:
+      case AuthStatus.needsRoleSelection:
         // User is logged in but needs to complete profile
         if (authProvider.isArtist) {
           debugPrint('   → Going to ArtistProfileSetupScreen');

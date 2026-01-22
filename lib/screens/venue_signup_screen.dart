@@ -9,6 +9,7 @@
 /// ✅ Ultra-premium UI with Material 3 design
 /// ✅ Confirm password with validation
 /// ✅ Terms & conditions checkbox
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -424,7 +425,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
               Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
               const SizedBox(width: 6),
               Text(
-                'GPS: ${_detectedCity}, ${_detectedCountry}',
+                'GPS: $_detectedCity, $_detectedCountry',
                 style: TextStyle(
                   color: AppColors.success,
                   fontSize: 12,

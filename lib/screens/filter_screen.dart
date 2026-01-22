@@ -84,10 +84,7 @@ class _FilterScreenState extends State<FilterScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface(brightness),
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.close_rounded, color: AppColors.text(brightness)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: const GlassBackButton(),
         title: Text(
           'Filters',
           style: TextStyle(
@@ -726,7 +723,7 @@ class _ToggleOption extends StatelessWidget {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppColors.crimson,
+              activeThumbColor: AppColors.crimson,
             ),
           ],
         ),

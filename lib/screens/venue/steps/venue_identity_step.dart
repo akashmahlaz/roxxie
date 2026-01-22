@@ -48,8 +48,8 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
     _AmenityOption(id: 'sound_engineer', title: 'Sound Engineer', icon: Icons.headphones_rounded),
   ];
 
-  Set<String> _selectedVibes = {};
-  Set<String> _selectedAmenities = {};
+  final Set<String> _selectedVibes = {};
+  final Set<String> _selectedAmenities = {};
 
   @override
   void initState() {

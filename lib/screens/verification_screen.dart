@@ -11,7 +11,6 @@
 /// Identity verification for premium trust badges
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';

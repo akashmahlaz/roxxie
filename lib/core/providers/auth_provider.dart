@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../models/models.dart';
 import '../services/services.dart';
-import '../models/venues_models.dart';
 
 enum AuthStatus {
   initial,
@@ -14,11 +13,13 @@ enum AuthStatus {
   authenticated,
   unauthenticated,
   profileIncomplete,
+  needsRoleSelection,
   error,
 }
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final SocialAuthService _socialAuthService = SocialAuthService();
   final ArtistService _artistService = ArtistService();
   final VenueService _venueService = VenueService();
 
@@ -163,7 +164,7 @@ class AuthProvider extends ChangeNotifier {
       _signupCountry = country;
       _signupLatitude = latitude;
       _signupLongitude = longitude;
-      debugPrint('📍 Stored signup location: $city, $country (${latitude}, ${longitude})');
+      debugPrint('📍 Stored signup location: $city, $country ($latitude, $longitude)');
       
       // ═══════════════════════════════════════════════════════════════════════
       // LOAD ROLE PROFILE: Load the initial profile created with signup data
@@ -217,11 +218,110 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SOCIAL LOGIN
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// 🔵 Sign in with Google
+  Future<bool> signInWithGoogle({UserRole? role}) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final result = await _socialAuthService.signInWithGoogle(role: role);
+      
+      if (!result.success) {
+        _setError(result.errorMessage ?? 'Google sign-in failed');
+        return false;
+      }
+
+      _user = result.user;
+      await _loadRoleProfile();
+
+      if (result.needsRoleSelection) {
+        _status = AuthStatus.needsRoleSelection;
+      } else if (hasCompletedOnboarding) {
+        _status = AuthStatus.authenticated;
+      } else {
+        _status = AuthStatus.profileIncomplete;
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('Google sign-in failed: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// 🍎 Sign in with Apple
+  Future<bool> signInWithApple({UserRole? role}) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final result = await _socialAuthService.signInWithApple(role: role);
+      
+      if (!result.success) {
+        _setError(result.errorMessage ?? 'Apple sign-in failed');
+        return false;
+      }
+
+      _user = result.user;
+      await _loadRoleProfile();
+
+      if (result.needsRoleSelection) {
+        _status = AuthStatus.needsRoleSelection;
+      } else if (hasCompletedOnboarding) {
+        _status = AuthStatus.authenticated;
+      } else {
+        _status = AuthStatus.profileIncomplete;
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('Apple sign-in failed: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Check if Apple Sign-In is available
+  Future<bool> isAppleSignInAvailable() async {
+    return await _socialAuthService.isAppleSignInAvailable();
+  }
+
+  /// Update user role after social sign-in
+  Future<bool> updateRole(UserRole role) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final success = await _socialAuthService.updateUserRole(role);
+      if (success) {
+        _user = _user?.copyWith(role: role);
+        _status = AuthStatus.profileIncomplete;
+        notifyListeners();
+      }
+      return success;
+    } catch (e) {
+      _setError('Failed to update role');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// 🚪 Logout
   Future<void> logout() async {
     _setLoading(true);
     try {
       await _authService.logout();
+      await _socialAuthService.signOutGoogle();
     } finally {
       _user = null;
       _artistProfile = null;

@@ -3,6 +3,7 @@
 library;
 
 export 'auth_service.dart';
+export 'social_auth_service.dart';
 export 'artist_service.dart';
 export 'venue_service.dart';
 export 'swipe_service.dart';

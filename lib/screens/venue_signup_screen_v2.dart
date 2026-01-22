@@ -9,6 +9,7 @@
 /// ✅ Micro-interaction feedback
 /// ✅ Haptic feedback integration
 /// ✅ Animated form field focus
+library;
 
 import 'dart:math' as math;
 import 'dart:ui';
@@ -20,6 +21,7 @@ import '../core/providers/providers.dart';
 import '../core/models/models.dart';
 import 'login_screen.dart';
 import 'venue/venue_profile_setup_screen.dart';
+import 'role_selection_screen_v3.dart';
 
 class VenueSignupScreenV2 extends StatefulWidget {
   const VenueSignupScreenV2({super.key});
@@ -312,6 +314,16 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
 
                       // Submit button
                       _buildSubmitButton(),
+
+                      const SizedBox(height: 24),
+
+                      // Or divider
+                      _buildOrDivider(brightness),
+
+                      const SizedBox(height: 24),
+
+                      // Social sign-up buttons
+                      _buildSocialButtons(brightness),
 
                       const SizedBox(height: 24),
 
@@ -643,94 +655,70 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
           label,
           style: TextStyle(
             color: isFocused ? _venueAccent : AppColors.textSec(brightness),
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Focus(
           onFocusChange: (focused) {
             setState(() => _fieldFocus[key] = focused);
             if (focused) HapticFeedback.selectionClick();
           },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: isFocused
-                  ? [
-                      BoxShadow(
-                        color: _venueAccent.withValues(alpha: 0.25),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
+          child: TextFormField(
+            controller: controller,
+            validator: validator,
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
-            child: TextFormField(
-              controller: controller,
-              validator: validator,
-              keyboardType: keyboardType,
-              obscureText: obscureText,
-              style: TextStyle(
-                color: AppColors.text(brightness),
-                fontSize: 17,
-                fontWeight: FontWeight.w500,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: AppColors.textTert(brightness),
+                fontSize: 15,
               ),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(
-                  color: AppColors.textTert(brightness),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 14, right: 10),
+                child: Icon(
+                  icon,
+                  color: isFocused ? _venueAccent : AppColors.textTert(brightness),
+                  size: 20,
                 ),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 18, right: 14),
-                  child: Icon(
-                    icon,
-                    color: isFocused ? _venueAccent : AppColors.textTert(brightness),
-                    size: 24,
-                  ),
-                ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 56),
-                suffixIcon: suffixIcon != null ? Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: suffixIcon,
-                ) : null,
-                filled: true,
-                fillColor: isDark 
-                    ? AppColors.graphite.withValues(alpha: 0.6)
-                    : Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.slate : Colors.grey[300]!,
-                    width: 1.5,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.slate : Colors.grey[300]!,
-                    width: 1.5,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: _venueAccent, width: 2.5),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: Colors.red, width: 2.5),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
+              prefixIconConstraints: const BoxConstraints(minWidth: 44),
+              suffixIcon: suffixIcon,
+              filled: true,
+              fillColor: isDark 
+                  ? AppColors.graphite.withValues(alpha: 0.5)
+                  : Colors.grey[100],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.slate.withValues(alpha: 0.5) : Colors.grey[300]!,
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: _venueAccent, width: 1.5),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 1),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
           ),
         ),
@@ -914,6 +902,186 @@ class _VenueSignupScreenV2State extends State<VenueSignupScreenV2>
           ),
         ),
       ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OR DIVIDER
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildOrDivider(Brightness brightness) {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: AppColors.border(brightness), thickness: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'or sign up with',
+            style: TextStyle(color: AppColors.textTert(brightness), fontSize: 13),
+          ),
+        ),
+        Expanded(child: Divider(color: AppColors.border(brightness), thickness: 1)),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SOCIAL BUTTONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildSocialButtons(Brightness brightness) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildSocialButton(
+            icon: Icons.g_mobiledata_rounded,
+            label: 'Google',
+            onTap: _handleGoogleSignUp,
+            brightness: brightness,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FutureBuilder<bool>(
+            future: context.read<AuthProvider>().isAppleSignInAvailable(),
+            builder: (context, snapshot) {
+              final isAvailable = snapshot.data ?? false;
+              return _buildSocialButton(
+                icon: Icons.apple_rounded,
+                label: 'Apple',
+                onTap: isAvailable ? _handleAppleSignUp : null,
+                brightness: brightness,
+                disabled: !isAvailable,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleGoogleSignUp() async {
+    HapticFeedback.lightImpact();
+    if (_isLoading) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      final authProvider = context.read<AuthProvider>();
+      // Pass venue role for social signup
+      final success = await authProvider.signInWithGoogle(role: UserRole.venue);
+      
+      if (!mounted) return;
+      
+      if (success) {
+        HapticFeedback.heavyImpact();
+        _navigateAfterSocialLogin(authProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Google sign-up failed'),
+            backgroundColor: _venueAccent,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleAppleSignUp() async {
+    HapticFeedback.lightImpact();
+    if (_isLoading) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      final authProvider = context.read<AuthProvider>();
+      // Pass venue role for social signup
+      final success = await authProvider.signInWithApple(role: UserRole.venue);
+      
+      if (!mounted) return;
+      
+      if (success) {
+        HapticFeedback.heavyImpact();
+        _navigateAfterSocialLogin(authProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Apple sign-up failed'),
+            backgroundColor: _venueAccent,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _navigateAfterSocialLogin(AuthProvider authProvider) {
+    if (authProvider.status == AuthStatus.needsRoleSelection) {
+      // Shouldn't happen since we passed role, but handle it
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const RoleSelectionScreenV3()),
+      );
+    } else if (authProvider.status == AuthStatus.profileIncomplete) {
+      // Go to venue profile setup
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const VenueProfileSetupScreen()),
+      );
+    } else if (authProvider.status == AuthStatus.authenticated) {
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    }
+  }
+
+  Widget _buildSocialButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+    required Brightness brightness,
+    bool disabled = false,
+  }) {
+    final isDark = brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: disabled || _isLoading ? null : onTap,
+      child: AnimatedOpacity(
+        opacity: disabled ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: isDark 
+                ? AppColors.graphite.withValues(alpha: 0.6)
+                : Colors.grey[50],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? AppColors.slate : Colors.grey[300]!,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppColors.text(brightness), size: 24),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

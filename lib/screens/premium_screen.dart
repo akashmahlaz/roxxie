@@ -111,10 +111,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             expandedHeight: 200,
             pinned: true,
             backgroundColor: AppColors.surface(brightness),
-            leading: IconButton(
-              icon: Icon(Icons.close_rounded, color: AppColors.text(brightness)),
-              onPressed: () => Navigator.pop(context),
-            ),
+            leading: const GlassBackButton(),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
@@ -199,7 +196,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                           padding: const EdgeInsets.only(bottom: 12),
                           child: _buildPlanCard(plan, index, brightness),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),
@@ -227,7 +224,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                           padding: const EdgeInsets.only(bottom: 16),
                           child: _buildFeatureItem(feature, brightness),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),

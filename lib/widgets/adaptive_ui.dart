@@ -11,6 +11,7 @@
 /// - Bottom Navigation Bar (compact)
 /// - Navigation Rail (medium)
 /// - Navigation Drawer (expanded)
+library;
 
 import 'package:flutter/material.dart';
 import '../core/theme/theme.dart';

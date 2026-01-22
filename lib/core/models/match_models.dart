@@ -3,6 +3,7 @@
 library;
 
 import 'artist_models.dart';
+import 'gig_models.dart';
 import 'venues_models.dart';
 
 /// Swipe Action Type
@@ -80,6 +81,7 @@ class SwipeResponse {
 class DiscoveryCard {
   final String id;
   final bool isArtist;
+  final bool isGig;
   final String name;
   final String? bio;
   final String primaryPhotoUrl;
@@ -98,9 +100,13 @@ class DiscoveryCard {
   // Venue-specific
   final Venue? venue;
 
+  // Gig-specific
+  final Gig? gig;
+
   DiscoveryCard({
     required this.id,
     required this.isArtist,
+    required this.isGig,
     required this.name,
     this.bio,
     required this.primaryPhotoUrl,
@@ -114,12 +120,14 @@ class DiscoveryCard {
     this.isBoosted = false,
     this.artist,
     this.venue,
+    this.gig,
   });
 
   factory DiscoveryCard.fromArtist(Artist artist, {double? distance}) {
     return DiscoveryCard(
       id: artist.id,
       isArtist: true,
+      isGig: false,
       name: artist.stageName,
       bio: artist.bio,
       primaryPhotoUrl: artist.primaryPhoto,
@@ -139,6 +147,7 @@ class DiscoveryCard {
     return DiscoveryCard(
       id: venue.id,
       isArtist: false,
+      isGig: false,
       name: venue.name,
       bio: venue.bio,
       primaryPhotoUrl: venue.primaryPhoto,
@@ -154,8 +163,37 @@ class DiscoveryCard {
     );
   }
 
+  factory DiscoveryCard.fromGig(Gig gig, {double? distance}) {
+    return DiscoveryCard(
+      id: gig.id,
+      isArtist: false,
+      isGig: true,
+      name: gig.title,
+      bio: gig.description,
+      primaryPhotoUrl: gig.venue?.coverPhoto ?? '',
+      galleryUrls: const [],
+      location: gig.location.venueAddress ?? gig.location.city,
+      distance: distance,
+      genres: gig.requiredGenres,
+      rating: 0.0,
+      reviewCount: 0,
+      isVerified: false,
+      isBoosted: false,
+      gig: gig,
+    );
+  }
+
   factory DiscoveryCard.fromJson(Map<String, dynamic> json) {
+    final isGig = json['title'] != null && json['budget'] != null;
     final isArtist = json['type'] == 'artist' || json['stageName'] != null;
+
+    if (isGig) {
+      final gig = Gig.fromJson(json);
+      return DiscoveryCard.fromGig(
+        gig,
+        distance: (json['distance'] as num?)?.toDouble(),
+      );
+    }
 
     if (isArtist) {
       final artist = Artist.fromJson(json);
@@ -163,16 +201,16 @@ class DiscoveryCard {
         artist,
         distance: (json['distance'] as num?)?.toDouble(),
       );
-    } else {
-      final venue = Venue.fromJson(json);
-      return DiscoveryCard.fromVenue(
-        venue,
-        distance: (json['distance'] as num?)?.toDouble(),
-      );
     }
+
+    final venue = Venue.fromJson(json);
+    return DiscoveryCard.fromVenue(
+      venue,
+      distance: (json['distance'] as num?)?.toDouble(),
+    );
   }
 
-  String get typeLabel => isArtist ? 'Artist' : 'Venue';
+  String get typeLabel => isGig ? 'Gig' : (isArtist ? 'Artist' : 'Venue');
   String get distanceLabel =>
       distance != null ? '${distance!.toStringAsFixed(1)} mi' : '';
 }

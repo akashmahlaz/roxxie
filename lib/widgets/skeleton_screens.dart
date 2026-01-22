@@ -11,6 +11,7 @@
 /// else
 ///   actualContent
 /// ```
+library;
 
 import 'package:flutter/material.dart';
 import '../core/theme/theme.dart';

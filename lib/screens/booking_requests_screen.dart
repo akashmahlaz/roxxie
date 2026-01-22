@@ -351,10 +351,7 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
       backgroundColor: AppColors.surface(brightness),
       elevation: 0,
       centerTitle: false,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: const GlassBackButton(),
       title: Text(
         'Booking Requests',
         style: TextStyle(

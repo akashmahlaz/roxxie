@@ -31,8 +31,6 @@ class MediaUploadStep extends StatefulWidget {
 class _MediaUploadStepState extends State<MediaUploadStep> {
   final ImagePicker _picker = ImagePicker();
   final UploadService _uploadService = UploadService();
-  bool _isUploading = false;
-  String? _uploadingItem;
 
   Future<void> _pickProfilePhoto() async {
     final XFile? image = await _picker.pickImage(

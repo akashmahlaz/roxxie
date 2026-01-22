@@ -67,8 +67,8 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
   final _meNavKey = GlobalKey<NavigatorState>();
 
   // Badge counts (would come from providers in production)
-  int _unreadMessages = 3;
-  int _pendingRequests = 2;
+  final int _unreadMessages = 3;
+  final int _pendingRequests = 2;
 
   @override
   void initState() {

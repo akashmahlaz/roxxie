@@ -12,8 +12,6 @@
 // - No isActive/isVisible/hasPromotedActs in DTO
 library;
 
-import 'user_models.dart';
-
 // ═══════════════════════════════════════════════════════════════════════════
 // VENUE TYPE ENUM
 // ═══════════════════════════════════════════════════════════════════════════

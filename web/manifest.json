@@ -1,6 +1,6 @@
 {
-    "name": "roxxie",
-    "short_name": "roxxie",
+    "name": "GigMatch",
+    "short_name": "GigMatch",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -9,6 +9,7 @@
 /// ✅ Haptic feedback integration
 /// ✅ Biometric login option
 /// ✅ Social login buttons
+library;
 
 import 'dart:math' as math;
 import 'dart:ui';
@@ -331,9 +332,18 @@ class _LoginScreenState extends State<LoginScreen>
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.background(brightness),
-      body: Stack(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Navigate to role selection instead of allowing back with empty stack
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const RoleSelectionScreenV3()),
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        body: Stack(
         children: [
           // Layer 1: Particle background
           AnimatedBuilder(
@@ -413,6 +423,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -867,58 +878,140 @@ class _LoginScreenState extends State<LoginScreen>
           child: _buildSocialButton(
             icon: Icons.g_mobiledata_rounded,
             label: 'Google',
-            onTap: () {
-              HapticFeedback.lightImpact();
-              // TODO: Implement Google login
-            },
+            onTap: _handleGoogleSignIn,
             brightness: brightness,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _buildSocialButton(
-            icon: Icons.apple_rounded,
-            label: 'Apple',
-            onTap: () {
-              HapticFeedback.lightImpact();
-              // TODO: Implement Apple login
+          child: FutureBuilder<bool>(
+            future: context.read<AuthProvider>().isAppleSignInAvailable(),
+            builder: (context, snapshot) {
+              final isAvailable = snapshot.data ?? false;
+              return _buildSocialButton(
+                icon: Icons.apple_rounded,
+                label: 'Apple',
+                onTap: isAvailable ? _handleAppleSignIn : null,
+                brightness: brightness,
+                disabled: !isAvailable,
+              );
             },
-            brightness: brightness,
           ),
         ),
       ],
     );
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    HapticFeedback.lightImpact();
+    if (_isLoading) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.signInWithGoogle();
+      
+      if (!mounted) return;
+      
+      if (success) {
+        HapticFeedback.heavyImpact();
+        _navigateAfterSocialLogin(authProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Google sign-in failed'),
+            backgroundColor: AppColors.crimson,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    HapticFeedback.lightImpact();
+    if (_isLoading) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.signInWithApple();
+      
+      if (!mounted) return;
+      
+      if (success) {
+        HapticFeedback.heavyImpact();
+        _navigateAfterSocialLogin(authProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Apple sign-in failed'),
+            backgroundColor: AppColors.crimson,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _navigateAfterSocialLogin(AuthProvider authProvider) {
+    if (authProvider.status == AuthStatus.needsRoleSelection) {
+      // User needs to select artist or venue role
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const RoleSelectionScreenV3()),
+      );
+    } else if (authProvider.status == AuthStatus.profileIncomplete) {
+      // User has role but needs to complete profile
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        authProvider.isArtist ? '/artist-setup' : '/venue-setup',
+        (route) => false,
+      );
+    } else if (authProvider.status == AuthStatus.authenticated) {
+      // User is fully set up
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    }
+  }
+
   Widget _buildSocialButton({
     required IconData icon,
     required String label,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
     required Brightness brightness,
+    bool disabled = false,
   }) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 54,
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground(brightness),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border(brightness)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.text(brightness), size: 24),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: AppColors.text(brightness),
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+      onTap: disabled || _isLoading ? null : onTap,
+      child: AnimatedOpacity(
+        opacity: disabled ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground(brightness),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border(brightness)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppColors.text(brightness), size: 24),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

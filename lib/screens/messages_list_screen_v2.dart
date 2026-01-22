@@ -8,6 +8,7 @@
 /// ✅ Animated unread badges
 /// ✅ Smart search with 3D transition
 /// ✅ Floating gradient orbs
+library;
 
 import 'dart:math' as math;
 import 'dart:ui';
@@ -76,7 +77,6 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
   late Animation<double> _pulseAnimation;
 
   // State
-  bool _isLoading = false;
   bool _isSearching = false;
   String _searchQuery = '';
   final List<_MessageParticle> _particles = [];

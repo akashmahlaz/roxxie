@@ -9,7 +9,6 @@ library;
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
@@ -17,6 +16,7 @@ import '../core/providers/providers.dart';
 import '../core/services/upload_service.dart';
 import '../core/services/venue_service.dart';
 import '../core/models/models.dart';
+import '../widgets/widgets.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -288,8 +288,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     return AppBar(
       backgroundColor: AppColors.background(brightness),
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
+      leading: GlassBackButton(
         onPressed: () {
           if (_hasChanges) {
             _showDiscardDialog(brightness);
