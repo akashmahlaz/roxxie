@@ -18,7 +18,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
-import 'role_selection_screen_v3.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -376,11 +375,7 @@ class _LoginScreenState extends State<LoginScreen>
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         // Navigate to role selection instead of allowing back with empty stack
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const RoleSelectionScreenV3(),
-          ),
-        );
+        Navigator.of(context).pushReplacementNamed('/role-selection');
       },
       child: Scaffold(
         backgroundColor: AppColors.background(brightness),
@@ -499,7 +494,7 @@ class _LoginScreenState extends State<LoginScreen>
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            Navigator.pop(context);
+            Navigator.of(context).pushReplacementNamed('/role-selection');
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(14),
@@ -1081,10 +1076,7 @@ class _LoginScreenState extends State<LoginScreen>
   void _navigateAfterSocialLogin(AuthProvider authProvider) {
     if (authProvider.status == AuthStatus.needsRoleSelection) {
       // User needs to select artist or venue role
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const RoleSelectionScreenV3()),
-      );
+      Navigator.pushReplacementNamed(context, '/role-selection');
     } else if (authProvider.status == AuthStatus.profileIncomplete) {
       // User has role but needs to complete profile
       Navigator.pushNamedAndRemoveUntil(
@@ -1152,16 +1144,7 @@ class _LoginScreenState extends State<LoginScreen>
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            Navigator.pushReplacement(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (_, _, _) => const RoleSelectionScreenV3(),
-                transitionsBuilder: (_, animation, _, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                transitionDuration: const Duration(milliseconds: 300),
-              ),
-            );
+            Navigator.pushReplacementNamed(context, '/role-selection');
           },
           child: Text(
             'Sign Up',

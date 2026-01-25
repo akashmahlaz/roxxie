@@ -639,7 +639,11 @@ class AuthProvider extends ChangeNotifier {
 
   void _setError(String message) {
     _errorMessage = message;
-    _status = AuthStatus.error;
+    // Only set error status if not already authenticated
+    // This prevents kicking user out when profile updates fail
+    if (_status != AuthStatus.authenticated) {
+      _status = AuthStatus.error;
+    }
     notifyListeners();
   }
 

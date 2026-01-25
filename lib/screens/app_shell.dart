@@ -35,7 +35,7 @@ import '../core/theme/theme.dart';
 import 'home_screen.dart';
 import 'discovery_screen.dart';
 import 'matches_screen_v2.dart';
-import 'profile_screen_v2.dart';
+import 'profile_screen_v3.dart';
 
 // New screens
 import 'artist/calendar_screen.dart';
@@ -176,7 +176,7 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
             ),
             _TabNavigator(
               navigatorKey: _meNavKey,
-              root: const ProfileScreenV2(),
+              root: const ProfileScreenV3(),
             ),
           ],
         ),
