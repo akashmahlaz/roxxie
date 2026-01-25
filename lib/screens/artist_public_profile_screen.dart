@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
@@ -1029,6 +1030,7 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
 
   void _shareProfile(Artist artist) {
     final url = 'https://gigmatch.app/artist/${artist.id}';
+    Share.share('Check out this artist on GigMatch! 🎵\n$url');
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile link copied to clipboard!')),

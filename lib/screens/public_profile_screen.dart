@@ -10,6 +10,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
@@ -169,9 +170,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   void _shareProfile() {
     final auth = context.read<AuthProvider>();
     final profileUrl = 'https://gigmatch.app/profile/${auth.user?.id ?? ''}';
-    Clipboard.setData(
-      ClipboardData(text: 'Check out my profile on GigMatch! 🎵\n$profileUrl'),
-    );
+    final message = 'Check out my profile on GigMatch! 🎵\n$profileUrl';
+    Share.share(message);
+    Clipboard.setData(ClipboardData(text: message));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile link copied to clipboard!')),
     );
@@ -272,126 +273,185 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             right: 0,
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Name and verified badge
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          isArtist
-                              ? (artist?.stageName ??
-                                    artist?.displayName ??
-                                    'Artist')
-                              : (venue?.name ?? 'Venue'),
-                          style: TextStyle(
-                            color: AppColors.text(brightness),
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      if ((isArtist && artist?.isVerified == true) ||
-                          (!isArtist && venue?.isVerified == true))
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppColors.crimson,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.verified_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Location and artist type
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_rounded,
-                        color: AppColors.textSec(brightness),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isArtist
-                            ? (artist?.location?.city ?? 'Location not set')
-                            : (venue?.location?.city ?? 'Location not set'),
-                        style: TextStyle(
-                          color: AppColors.textSec(brightness),
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      if (isArtist && artist != null) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.rose.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            artist.artistType.name.toUpperCase(),
-                            style: TextStyle(
-                              color: AppColors.rose,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                  _buildProfileAvatar(brightness, isArtist, artist, venue),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Name and verified badge
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                isArtist
+                                    ? (artist?.stageName ??
+                                          artist?.displayName ??
+                                          'Artist')
+                                    : (venue?.name ?? 'Venue'),
+                                style: TextStyle(
+                                  color: AppColors.text(brightness),
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                             ),
-                          ),
+                            if ((isArtist && artist?.isVerified == true) ||
+                                (!isArtist && venue?.isVerified == true))
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.crimson,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.verified_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                          ],
                         ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                        const SizedBox(height: 6),
 
-                  // Genres
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children:
-                        (isArtist
-                                ? (artist?.genres ?? [])
-                                : (venue?.gigPreferences?.preferredGenres ??
-                                      []))
-                            .take(4)
-                            .map(
-                              (genre) => Container(
+                        // Location and artist type
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_rounded,
+                              color: AppColors.textSec(brightness),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isArtist
+                                  ? (artist?.location?.city ??
+                                        'Location not set')
+                                  : (venue?.location?.city ??
+                                        'Location not set'),
+                              style: TextStyle(
+                                color: AppColors.textSec(brightness),
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            if (isArtist && artist != null) ...[
+                              Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.crimson.withValues(
-                                    alpha: 0.15,
-                                  ),
+                                  color: AppColors.rose.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  genre,
+                                  artist.artistType.name.toUpperCase(),
                                   style: TextStyle(
-                                    color: AppColors.crimson,
+                                    color: AppColors.rose,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
-                            )
-                            .toList(),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Genres
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children:
+                              (isArtist
+                                      ? (artist?.genres ?? [])
+                                      : (venue
+                                              ?.gigPreferences
+                                              ?.preferredGenres ??
+                                          []))
+                                  .take(4)
+                                  .map(
+                                    (genre) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.crimson.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        genre,
+                                        style: TextStyle(
+                                          color: AppColors.crimson,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileAvatar(
+    Brightness brightness,
+    bool isArtist,
+    Artist? artist,
+    Venue? venue,
+  ) {
+    final avatarUrl =
+        isArtist ? artist?.profilePhoto : venue?.profilePhotoUrl;
+
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.background(brightness), width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: avatarUrl != null
+            ? Image.network(
+                avatarUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _buildAvatarFallback(brightness),
+              )
+            : _buildAvatarFallback(brightness),
+      ),
+    );
+  }
+
+  Widget _buildAvatarFallback(Brightness brightness) {
+    return Container(
+      color: AppColors.surface(brightness),
+      child: Icon(
+        Icons.person_rounded,
+        size: 32,
+        color: AppColors.textSec(brightness),
       ),
     );
   }

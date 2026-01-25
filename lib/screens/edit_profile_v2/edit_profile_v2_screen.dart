@@ -97,7 +97,9 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
   bool _hasChanges = false;
   bool _isLoadingProfile = true;
   String? _newProfilePhotoPath;
+  String? _newCoverPhotoPath;
   String? _currentProfilePhotoUrl;
+  String? _currentCoverPhotoUrl;
   List<String> _selectedGenres = [];
   List<AudioSampleState> _audioSamples = [];
   List<VideoSampleState> _videoSamples = [];
@@ -110,6 +112,10 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
   ArtistType _artistType = ArtistType.solo;
   ExperienceLevel _experienceLevel = ExperienceLevel.beginner;
   List<String> _equipment = [];
+  String? _locationCity;
+  String? _locationCountry;
+  double? _locationLatitude;
+  double? _locationLongitude;
 
   // Tab configuration
   final List<_TabConfig> _tabs = [
@@ -154,7 +160,11 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
             : (user?.name ?? '');
         _stageNameController.text = artist.stageName;
         _bioController.text = artist.bio ?? '';
-        _cityController.text = artist.location?.city ?? '';
+        _locationCity = artist.location?.city;
+        _locationCountry = artist.location?.country;
+        _locationLatitude = artist.location?.latitude;
+        _locationLongitude = artist.location?.longitude;
+        _cityController.text = _locationCity ?? '';
         _selectedGenres = List<String>.from(artist.genres);
         _currentProfilePhotoUrl = artist.profilePhoto;
         _artistType = artist.artistType;
@@ -211,14 +221,27 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
               (url) => PhotoGalleryState(id: url, url: url, isUploaded: true),
             )
             .toList();
+
+        if (_galleryPhotos.isNotEmpty) {
+          _currentCoverPhotoUrl = _galleryPhotos.first.url;
+        } else {
+          _currentCoverPhotoUrl = _currentProfilePhotoUrl;
+        }
       } else if (auth.isVenue && venue != null) {
         _nameController.text = venue.name;
         _bioController.text = venue.description ?? '';
-        _cityController.text = venue.location?.city ?? '';
+        _locationCity = venue.location?.city;
+        _locationCountry = venue.location?.country;
+        _locationLatitude = venue.location?.latitude;
+        _locationLongitude = venue.location?.longitude;
+        _cityController.text = _locationCity ?? '';
         final photos = venue.galleryUrls ?? [];
         _currentProfilePhotoUrl = photos.isNotEmpty
             ? photos.first
             : venue.profilePhotoUrl;
+        _currentCoverPhotoUrl = photos.isNotEmpty
+            ? photos.first
+            : _currentProfilePhotoUrl;
         _selectedGenres = List<String>.from(
           venue.gigPreferences?.preferredGenres ?? [],
         );
@@ -267,6 +290,22 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
     }
   }
 
+  Future<void> _pickCoverPhoto() async {
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      maxHeight: 1080,
+      imageQuality: 85,
+    );
+
+    if (image != null) {
+      setState(() {
+        _newCoverPhotoPath = image.path;
+        _hasChanges = true;
+      });
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) {
       // Switch to tab with errors
@@ -279,6 +318,7 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
     try {
       final auth = context.read<AuthProvider>();
       String? uploadedPhotoUrl;
+      String? uploadedCoverUrl;
 
       // Upload new profile photo if selected
       if (_newProfilePhotoPath != null) {
@@ -290,6 +330,42 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
         } catch (e) {
           debugPrint('Photo upload failed: $e');
         }
+      }
+
+      if (_newCoverPhotoPath != null) {
+        try {
+          final result = await _uploadService.uploadGalleryImage(
+            _newCoverPhotoPath!,
+            index: 0,
+          );
+          uploadedCoverUrl = result.url;
+        } catch (e) {
+          debugPrint('Cover upload failed: $e');
+        }
+      }
+
+      Location? updatedLocation;
+      if ((_locationCity?.trim().isNotEmpty ?? false) &&
+          (_locationCountry?.trim().isNotEmpty ?? false) &&
+          _locationLatitude != null &&
+          _locationLongitude != null) {
+        updatedLocation = Location(
+          city: _locationCity?.trim(),
+          country: _locationCountry?.trim(),
+          coordinates: [_locationLongitude!, _locationLatitude!],
+        );
+      }
+
+      VenueLocation? updatedVenueLocation;
+      if ((_locationCity?.trim().isNotEmpty ?? false) &&
+          (_locationCountry?.trim().isNotEmpty ?? false) &&
+          _locationLatitude != null &&
+          _locationLongitude != null) {
+        updatedVenueLocation = VenueLocation(
+          city: _locationCity?.trim(),
+          country: _locationCountry?.trim(),
+          coordinates: [_locationLongitude!, _locationLatitude!],
+        );
       }
 
       // Build update data for user
@@ -325,6 +401,40 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
               : _youtubeController.text.trim(),
         );
 
+        final galleryUrls = _galleryPhotos
+            .where((p) => p.isUploaded && p.url != null)
+            .map((p) => p.url!)
+            .toList();
+
+        final coverUrl = uploadedCoverUrl ?? _currentCoverPhotoUrl;
+        if (coverUrl != null) {
+          galleryUrls.remove(coverUrl);
+          galleryUrls.insert(0, coverUrl);
+        }
+
+        final audioSamples = _audioSamples
+            .where((s) => s.isUploaded && s.url != null)
+            .map(
+              (s) => AudioSample(
+                url: s.url!,
+                title: s.title,
+                durationSeconds: s.duration,
+              ),
+            )
+            .toList();
+
+        final videoSamples = _videoSamples
+            .where((s) => s.isUploaded && s.url != null)
+            .map(
+              (s) => VideoSample(
+                url: s.url!,
+                title: s.title,
+                thumbnailUrl: s.thumbnailUrl,
+                durationSeconds: s.duration,
+              ),
+            )
+            .toList();
+
         await auth.updateArtistProfile(
           UpdateArtistRequest(
             stageName: _stageNameController.text.trim().isEmpty
@@ -335,15 +445,15 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
             genres: _selectedGenres,
             experienceLevel: _experienceLevel,
             yearsOfExperience: _yearsOfExperience,
+            location: updatedLocation,
             maxTravelDistance: _maxTravelDistance,
             bandSize: _bandSize,
             equipment: _equipment,
             priceRange: priceRange,
             socialLinks: socialLinks,
-            galleryUrls: _galleryPhotos
-                .where((p) => p.isUploaded)
-                .map((p) => p.url!)
-                .toList(),
+            galleryUrls: galleryUrls,
+            audioSamples: audioSamples,
+            videoSamples: videoSamples,
           ),
         );
       } else if (auth.isVenue) {
@@ -351,6 +461,7 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
           UpdateVenueRequest(
             venueName: _nameController.text.trim(),
             description: _bioController.text.trim(),
+            location: updatedVenueLocation,
             preferredGenres: _selectedGenres,
             phone: _phoneController.text.trim().isEmpty
                 ? null
@@ -502,6 +613,8 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
                     bioController: _bioController,
                     phoneController: _phoneController,
                     cityController: _cityController,
+                    initialCity: _locationCity,
+                    initialCountry: _locationCountry,
                     selectedGenres: _selectedGenres,
                     artistType: _artistType,
                     experienceLevel: _experienceLevel,
@@ -528,6 +641,15 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
                       _bandSize = size;
                       _markChanged();
                     }),
+                    onLocationSelected: (city, country, lat, lng) =>
+                        setState(() {
+                          _locationCity = city;
+                          _locationCountry = country;
+                          _locationLatitude = lat;
+                          _locationLongitude = lng;
+                          _cityController.text = city;
+                          _markChanged();
+                        }),
                     websiteController: _websiteController,
                     instagramController: _instagramController,
                     spotifyController: _spotifyController,
@@ -662,62 +784,147 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
 
   Widget _buildProfilePhotoHeader(Brightness brightness) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: GestureDetector(
-        onTap: _pickProfilePhoto,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Photo
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [AppColors.crimson, AppColors.rose],
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Stack(
+        children: [
+          Container(
+            height: 160,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: AppColors.surface(brightness),
+              image: _newCoverPhotoPath != null
+                  ? DecorationImage(
+                      image: FileImage(File(_newCoverPhotoPath!)),
+                      fit: BoxFit.cover,
+                    )
+                  : _currentCoverPhotoUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(_currentCoverPhotoUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: _newCoverPhotoPath == null && _currentCoverPhotoUrl == null
+                ? _buildCoverPlaceholder(brightness)
+                : null,
+          ),
+          Positioned(
+            top: 12,
+            right: 28,
+            child: FilledButton.icon(
+              onPressed: _pickCoverPhoto,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.black.withValues(alpha: 0.35),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.crimson.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ],
               ),
-              padding: const EdgeInsets.all(3),
-              child: ClipOval(
-                child: _newProfilePhotoPath != null
-                    ? Image.file(File(_newProfilePhotoPath!), fit: BoxFit.cover)
-                    : _currentProfilePhotoUrl != null
-                    ? Image.network(
-                        _currentProfilePhotoUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            _buildDefaultAvatar(brightness),
-                      )
-                    : _buildDefaultAvatar(brightness),
+              icon: const Icon(Icons.photo_camera_rounded, size: 16),
+              label: const Text('Edit cover'),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: _pickProfilePhoto,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppColors.crimson, AppColors.rose],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.crimson.withValues(alpha: 0.35),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: ClipOval(
+                        child: _newProfilePhotoPath != null
+                            ? Image.file(
+                                File(_newProfilePhotoPath!),
+                                fit: BoxFit.cover,
+                              )
+                            : _currentProfilePhotoUrl != null
+                            ? Image.network(
+                                _currentProfilePhotoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) =>
+                                    _buildDefaultAvatar(brightness),
+                              )
+                            : _buildDefaultAvatar(brightness),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.crimson,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.background(brightness),
+                            width: 3,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt_rounded,
+                          color: Colors.black,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            // Edit badge
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.crimson,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.background(brightness),
-                    width: 3,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.camera_alt_rounded,
-                  color: Colors.black,
-                  size: 16,
-                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCoverPlaceholder(Brightness brightness) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.surface(brightness),
+            AppColors.surface(brightness).withValues(alpha: 0.7),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.photo_rounded,
+              color: AppColors.textSec(brightness),
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add a cover photo',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

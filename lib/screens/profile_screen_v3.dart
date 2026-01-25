@@ -14,6 +14,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 
@@ -79,7 +80,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     final profileUrl =
         'https://gigmatch.app/profile/${auth.isArtist ? 'artist' : 'venue'}/${profile.artist?.id ?? profile.venue?.id ?? ''}';
 
-    // Copy to clipboard and show snackbar
+    Share.share('Check out my profile on GigMatch! 🎵\n$profileUrl');
     Clipboard.setData(ClipboardData(text: profileUrl));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

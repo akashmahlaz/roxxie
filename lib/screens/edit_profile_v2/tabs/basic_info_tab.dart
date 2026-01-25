@@ -12,6 +12,8 @@ class _BasicInfoTab extends StatelessWidget {
   final TextEditingController bioController;
   final TextEditingController phoneController;
   final TextEditingController cityController;
+  final String? initialCity;
+  final String? initialCountry;
   final TextEditingController websiteController;
   final TextEditingController instagramController;
   final TextEditingController spotifyController;
@@ -27,6 +29,7 @@ class _BasicInfoTab extends StatelessWidget {
   final Function(ExperienceLevel) onExperienceLevelChanged;
   final Function(int) onYearsChanged;
   final Function(int) onBandSizeChanged;
+  final Function(String, String, double?, double?) onLocationSelected;
 
   const _BasicInfoTab({
     required this.nameController,
@@ -34,6 +37,8 @@ class _BasicInfoTab extends StatelessWidget {
     required this.bioController,
     required this.phoneController,
     required this.cityController,
+    required this.initialCity,
+    required this.initialCountry,
     required this.websiteController,
     required this.instagramController,
     required this.spotifyController,
@@ -49,6 +54,7 @@ class _BasicInfoTab extends StatelessWidget {
     required this.onExperienceLevelChanged,
     required this.onYearsChanged,
     required this.onBandSizeChanged,
+    required this.onLocationSelected,
   });
 
   static const List<String> _allGenres = [
@@ -159,12 +165,13 @@ class _BasicInfoTab extends StatelessWidget {
         _buildSectionHeader(context, 'Location', Icons.location_on_rounded),
         const SizedBox(height: 16),
 
-        _buildTextField(
-          context,
-          controller: cityController,
-          label: 'City',
-          hint: 'Your city or location',
-          icon: Icons.location_city_rounded,
+        SmartLocationPicker(
+          initialCity: initialCity ?? cityController.text.trim(),
+          initialCountry: initialCountry,
+          onLocationSelected: (city, country, lat, lng) {
+            cityController.text = city;
+            onLocationSelected(city, country, lat, lng);
+          },
         ),
 
         const SizedBox(height: 16),
