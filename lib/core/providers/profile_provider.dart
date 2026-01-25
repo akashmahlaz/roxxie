@@ -96,9 +96,7 @@ class ProfileProvider extends ChangeNotifier {
     return 0;
   }
 
-  /// Get profile completeness percentage from backend
   int get profileCompleteness {
-    if (_artist != null) return _artist!.profileCompletionPercent;
     if (_venue != null) return _venue!.profileCompleteness;
     return 0;
   }

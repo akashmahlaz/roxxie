@@ -24,7 +24,7 @@ class _PhotoGalleryItem extends StatelessWidget {
             color: AppColors.surface(brightness),
             borderRadius: BorderRadius.circular(12),
             border: photo.isUploading
-                ? Border.all(color: AppColors.cyan, width: 2)
+                ? Border.all(color: AppColors.crimson, width: 2)
                 : null,
           ),
           clipBehavior: Clip.antiAlias,
@@ -38,7 +38,7 @@ class _PhotoGalleryItem extends StatelessWidget {
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(AppColors.cyan),
+                          valueColor: AlwaysStoppedAnimation(AppColors.crimson),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -53,34 +53,34 @@ class _PhotoGalleryItem extends StatelessWidget {
                   ),
                 )
               : photo.localPath != null
-                  ? Image.file(
-                      File(photo.localPath!),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                    )
-                  : photo.url != null
-                      ? Image.network(
-                          photo.url!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                          errorBuilder: (_, __, ___) => _buildErrorWidget(brightness),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(AppColors.cyan),
-                              ),
-                            );
-                          },
-                        )
-                      : _buildErrorWidget(brightness),
+              ? Image.file(
+                  File(photo.localPath!),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                )
+              : photo.url != null
+              ? Image.network(
+                  photo.url!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  errorBuilder: (_, _, _) => _buildErrorWidget(brightness),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                            : null,
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(AppColors.crimson),
+                      ),
+                    );
+                  },
+                )
+              : _buildErrorWidget(brightness),
         ),
 
         // Index badge

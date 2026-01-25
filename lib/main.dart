@@ -19,15 +19,16 @@ import 'screens/matches_screen_v2.dart';
 import 'screens/chat_screen.dart';
 import 'screens/profile_screen_v3.dart';
 import 'screens/profile_screen.dart';
-import 'screens/edit_profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/premium_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/support_screen.dart';
 import 'screens/artist/artist_profile_setup_screen.dart';
 import 'screens/venue/venue_profile_setup_screen.dart';
-import 'screens/public_profile_screen.dart';
+import 'screens/artist_public_profile_screen.dart';
 import 'screens/edit_profile_v2/edit_profile_v2_screen.dart';
+// ignore: unused_import
+import 'screens/edit_profile/edit_profile_screen.dart' as edit_profile;
 
 // New Enterprise Screens
 import 'screens/wallet_screen.dart';
@@ -120,9 +121,9 @@ class GigMatchApp extends StatelessWidget {
           '/matches': (context) => const MatchesScreenV2(),
           '/profile': (context) => const ProfileScreenV3(),
           '/profile-old': (context) => const ProfileScreen(),
-          '/edit-profile': (context) => const EditProfileV2Screen(),
-          '/edit-profile-old': (context) => const EditProfileScreen(),
-          '/public-profile': (context) => const PublicProfileScreen(),
+          '/edit-profile': (context) => const edit_profile.EditProfileScreen(),
+          '/edit-profile-v2': (context) => const EditProfileV2Screen(),
+          '/public-profile': (context) => const ArtistPublicProfileScreen(),
           '/settings': (context) => const SettingsScreen(),
           '/premium': (context) => const PremiumScreen(),
           '/about': (context) => const AboutScreen(),
@@ -166,11 +167,20 @@ class GigMatchApp extends StatelessWidget {
             );
           }
 
-          // Public profile with user ID
+          // Public profile with user ID (for viewing other artists)
           if (settings.name?.startsWith('/profile/') ?? false) {
-            final userId = settings.name!.split('/').last;
+            final artistId = settings.name!.split('/').last;
             return _createFadeRoute(
-              PublicProfileScreen(userId: userId),
+              ArtistPublicProfileScreen(artistId: artistId),
+              settings,
+            );
+          }
+
+          // Artist profile route
+          if (settings.name?.startsWith('/artist/') ?? false) {
+            final artistId = settings.name!.split('/').last;
+            return _createFadeRoute(
+              ArtistPublicProfileScreen(artistId: artistId),
               settings,
             );
           }

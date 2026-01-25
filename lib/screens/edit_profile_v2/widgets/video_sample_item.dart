@@ -44,15 +44,15 @@ class _VideoSampleItem extends StatelessWidget {
                   ? Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(AppColors.cyan),
+                        valueColor: AlwaysStoppedAnimation(AppColors.crimson),
                       ),
                     )
                   : sample.thumbnailUrl == null
-                      ? Icon(
-                          Icons.videocam_rounded,
-                          color: AppColors.textSec(brightness),
-                        )
-                      : null,
+                  ? Icon(
+                      Icons.videocam_rounded,
+                      color: AppColors.textSec(brightness),
+                    )
+                  : null,
             ),
             if (!sample.isUploading && sample.isUploaded)
               Container(
@@ -84,10 +84,7 @@ class _VideoSampleItem extends StatelessWidget {
             if (sample.isUploading)
               Text(
                 'Uploading video...',
-                style: TextStyle(
-                  color: AppColors.cyan,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.crimson, fontSize: 12),
               )
             else if (sample.isUploaded)
               Row(
@@ -110,10 +107,7 @@ class _VideoSampleItem extends StatelessWidget {
             else
               Text(
                 'Upload failed',
-                style: TextStyle(
-                  color: AppColors.crimson,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.crimson, fontSize: 12),
               ),
           ],
         ),

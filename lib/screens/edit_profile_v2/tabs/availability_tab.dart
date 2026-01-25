@@ -68,17 +68,18 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
       padding: const EdgeInsets.all(20),
       children: [
         // Travel Distance Section
-        _buildSectionHeader(context, 'Travel Distance', Icons.directions_car_rounded),
+        _buildSectionHeader(
+          context,
+          'Travel Distance',
+          Icons.directions_car_rounded,
+        ),
         const SizedBox(height: 8),
         Text(
           'How far are you willing to travel for gigs?',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 13,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 13),
         ),
         const SizedBox(height: 20),
-        
+
         _buildTravelDistanceSlider(context),
 
         const SizedBox(height: 32),
@@ -88,10 +89,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
         const SizedBox(height: 8),
         Text(
           'What gear can you bring to gigs?',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 13,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 13),
         ),
         const SizedBox(height: 16),
 
@@ -104,9 +102,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
         const SizedBox(height: 16),
 
         // Selected equipment list
-        if (widget.equipment.isNotEmpty) ...[
-          _buildSelectedEquipment(context),
-        ],
+        if (widget.equipment.isNotEmpty) ...[_buildSelectedEquipment(context)],
 
         const SizedBox(height: 32),
 
@@ -123,9 +119,13 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Row(
       children: [
         Container(
@@ -133,13 +133,13 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.cyan.withValues(alpha: 0.2),
+                AppColors.crimson.withValues(alpha: 0.2),
                 AppColors.rose.withValues(alpha: 0.2),
               ],
             ),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: AppColors.cyan, size: 20),
+          child: Icon(icon, color: AppColors.crimson, size: 20),
         ),
         const SizedBox(width: 12),
         Text(
@@ -156,7 +156,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
 
   Widget _buildTravelDistanceSlider(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -170,13 +170,13 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
             children: [
               Icon(
                 Icons.location_on_rounded,
-                color: AppColors.cyan,
+                color: AppColors.crimson,
                 size: 28,
               ),
               const SizedBox(width: 8),
               Text(
-                widget.maxTravelDistance >= 200 
-                    ? 'Anywhere' 
+                widget.maxTravelDistance >= 200
+                    ? 'Anywhere'
                     : '${widget.maxTravelDistance} miles',
                 style: TextStyle(
                   color: AppColors.text(brightness),
@@ -199,15 +199,15 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
           const SizedBox(height: 20),
           SliderTheme(
             data: SliderThemeData(
-              activeTrackColor: AppColors.cyan,
+              activeTrackColor: AppColors.crimson,
               inactiveTrackColor: AppColors.divider(brightness),
-              thumbColor: AppColors.cyan,
-              overlayColor: AppColors.cyan.withValues(alpha: 0.2),
+              thumbColor: AppColors.crimson,
+              overlayColor: AppColors.crimson.withValues(alpha: 0.2),
               trackHeight: 8,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
             ),
             child: Slider(
-              value: widget.maxTravelDistance.toDouble(),
+              value: widget.maxTravelDistance.clamp(10, 200).toDouble(),
               min: 10,
               max: 200,
               divisions: 19,
@@ -247,13 +247,13 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
 
   Widget _buildQuickAddChips(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: _commonEquipment.map((item) {
         final isSelected = widget.equipment.contains(item);
-        
+
         return FilterChip(
           label: Text(item),
           selected: isSelected,
@@ -287,7 +287,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
 
   Widget _buildEquipmentInput(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Row(
       children: [
         Expanded(
@@ -299,7 +299,10 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
               hintStyle: TextStyle(
                 color: AppColors.textSec(brightness).withValues(alpha: 0.5),
               ),
-              prefixIcon: Icon(Icons.add_rounded, color: AppColors.textSec(brightness)),
+              prefixIcon: Icon(
+                Icons.add_rounded,
+                color: AppColors.textSec(brightness),
+              ),
               filled: true,
               fillColor: AppColors.surface(brightness),
               border: OutlineInputBorder(
@@ -308,9 +311,12 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.cyan, width: 2),
+                borderSide: BorderSide(color: AppColors.crimson, width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
             onFieldSubmitted: (value) {
               _addEquipment(value.trim());
@@ -324,7 +330,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
           },
           icon: const Icon(Icons.add_rounded),
           style: IconButton.styleFrom(
-            backgroundColor: AppColors.cyan,
+            backgroundColor: AppColors.crimson,
             foregroundColor: Colors.black,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -337,7 +343,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
 
   Widget _buildSelectedEquipment(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -349,7 +355,11 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
         children: [
           Row(
             children: [
-              Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18),
+              Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Your Equipment (${widget.equipment.length})',
@@ -369,15 +379,17 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
                 label: Text(item),
                 deleteIcon: const Icon(Icons.close_rounded, size: 16),
                 onDeleted: () => _removeEquipment(item),
-                backgroundColor: AppColors.cyan.withValues(alpha: 0.1),
-                deleteIconColor: AppColors.cyan,
+                backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
+                deleteIconColor: AppColors.crimson,
                 labelStyle: TextStyle(
                   color: AppColors.text(brightness),
                   fontWeight: FontWeight.w500,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: AppColors.cyan.withValues(alpha: 0.3)),
+                  side: BorderSide(
+                    color: AppColors.crimson.withValues(alpha: 0.3),
+                  ),
                 ),
               );
             }).toList(),
@@ -389,7 +401,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
 
   Widget _buildAvailabilityTips(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -413,9 +425,21 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
             ],
           ),
           const SizedBox(height: 12),
-          _buildTip(context, '🎸', 'Having your own equipment increases booking chances by 40%'),
-          _buildTip(context, '🚗', 'Artists who travel 50+ miles get 2x more gig opportunities'),
-          _buildTip(context, '📅', 'Keep your calendar updated for accurate availability'),
+          _buildTip(
+            context,
+            '🎸',
+            'Having your own equipment increases booking chances by 40%',
+          ),
+          _buildTip(
+            context,
+            '🚗',
+            'Artists who travel 50+ miles get 2x more gig opportunities',
+          ),
+          _buildTip(
+            context,
+            '📅',
+            'Keep your calendar updated for accurate availability',
+          ),
         ],
       ),
     );
@@ -423,7 +447,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
 
   Widget _buildTip(BuildContext context, String emoji, String text) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -447,7 +471,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
 
   Widget _buildCalendarLink(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return GestureDetector(
       onTap: () {
         Navigator.of(context, rootNavigator: true).pushNamed('/calendar');
@@ -457,14 +481,12 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.cyan.withValues(alpha: 0.1),
+              AppColors.crimson.withValues(alpha: 0.1),
               AppColors.rose.withValues(alpha: 0.1),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.cyan.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -472,7 +494,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.cyan, AppColors.rose],
+                  colors: [AppColors.crimson, AppColors.rose],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -508,7 +530,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
             ),
             Icon(
               Icons.arrow_forward_ios_rounded,
-              color: AppColors.cyan,
+              color: AppColors.crimson,
               size: 18,
             ),
           ],

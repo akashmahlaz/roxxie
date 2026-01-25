@@ -1,5 +1,5 @@
 /// 👁️ GIGMATCH Public Profile View
-/// 
+///
 /// Shows what venues/artists see when viewing your profile
 /// - Hero section with photo/video
 /// - Audio player with samples
@@ -17,7 +17,7 @@ import '../widgets/widgets.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   final String? userId; // If null, show current user's profile
-  
+
   const PublicProfileScreen({super.key, this.userId});
 
   @override
@@ -28,7 +28,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     with SingleTickerProviderStateMixin {
   late ScrollController _scrollController;
   late AnimationController _animController;
-  
+
   double _headerOpacity = 0.0;
   int _currentPhotoIndex = 0;
   int? _playingAudioIndex;
@@ -76,10 +76,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           // Hero Section
           SliverToBoxAdapter(
             child: _buildHeroSection(
-              context, 
-              brightness, 
-              isArtist, 
-              artist, 
+              context,
+              brightness,
+              isArtist,
+              artist,
               venue,
             ),
           ),
@@ -137,7 +137,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               color: Colors.black.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.share_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
         ),
         if (isOwnProfile)
@@ -151,7 +155,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                 color: Colors.black.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.edit_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.edit_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ),
       ],
@@ -161,9 +169,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   void _shareProfile() {
     final auth = context.read<AuthProvider>();
     final profileUrl = 'https://gigmatch.app/profile/${auth.user?.id ?? ''}';
-    Clipboard.setData(ClipboardData(
-      text: 'Check out my profile on GigMatch! 🎵\n$profileUrl',
-    ));
+    Clipboard.setData(
+      ClipboardData(text: 'Check out my profile on GigMatch! 🎵\n$profileUrl'),
+    );
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile link copied to clipboard!')),
     );
@@ -177,11 +185,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     Venue? venue,
   ) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final photos = isArtist 
+    final photos = isArtist
         ? (artist?.galleryUrls ?? [])
         : (venue?.galleryUrls ?? []);
-    final primaryPhoto = isArtist 
-        ? artist?.profilePhoto 
+    final primaryPhoto = isArtist
+        ? artist?.profilePhoto
         : (photos.isNotEmpty ? photos.first : null);
 
     return SizedBox(
@@ -193,12 +201,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
           if (photos.isNotEmpty)
             PageView.builder(
               itemCount: photos.length,
-              onPageChanged: (index) => setState(() => _currentPhotoIndex = index),
+              onPageChanged: (index) =>
+                  setState(() => _currentPhotoIndex = index),
               itemBuilder: (context, index) {
                 return Image.network(
                   photos[index],
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildPhotoPlaceholder(brightness),
+                  errorBuilder: (_, _, _) => _buildPhotoPlaceholder(brightness),
                 );
               },
             )
@@ -206,7 +215,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             Image.network(
               primaryPhoto,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _buildPhotoPlaceholder(brightness),
+              errorBuilder: (_, _, _) => _buildPhotoPlaceholder(brightness),
             )
           else
             _buildPhotoPlaceholder(brightness),
@@ -246,8 +255,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                     width: isActive ? 24 : 8,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: isActive 
-                          ? Colors.white 
+                      color: isActive
+                          ? Colors.white
                           : Colors.white.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
@@ -272,7 +281,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                       Expanded(
                         child: Text(
                           isArtist
-                              ? (artist?.stageName ?? artist?.displayName ?? 'Artist')
+                              ? (artist?.stageName ??
+                                    artist?.displayName ??
+                                    'Artist')
                               : (venue?.name ?? 'Venue'),
                           style: TextStyle(
                             color: AppColors.text(brightness),
@@ -286,7 +297,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.cyan,
+                            color: AppColors.crimson,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -346,29 +357,35 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: (isArtist
-                            ? (artist?.genres ?? [])
-                            : (venue?.gigPreferences?.preferredGenres ?? []))
-                        .take(4)
-                        .map((genre) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.cyan.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                genre,
-                                style: TextStyle(
-                                  color: AppColors.cyan,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                    children:
+                        (isArtist
+                                ? (artist?.genres ?? [])
+                                : (venue?.gigPreferences?.preferredGenres ??
+                                      []))
+                            .take(4)
+                            .map(
+                              (genre) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.crimson.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  genre,
+                                  style: TextStyle(
+                                    color: AppColors.crimson,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                            ))
-                        .toList(),
+                            )
+                            .toList(),
                   ),
                 ],
               ),
@@ -461,7 +478,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: artist.videoSamples.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final video = artist.videoSamples[index];
                     return _buildVideoThumbnail(context, brightness, video);
@@ -484,7 +501,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                 runSpacing: 8,
                 children: artist.equipment.map((item) {
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surface(brightness),
                       borderRadius: BorderRadius.circular(20),
@@ -521,7 +541,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               brightness,
               title: 'Pricing',
               icon: Icons.attach_money_rounded,
-              child: _buildPricingCard(context, brightness, artist!.priceRange!),
+              child: _buildPricingCard(
+                context,
+                brightness,
+                artist!.priceRange!,
+              ),
             ),
             const SizedBox(height: 24),
           ],
@@ -533,7 +557,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               brightness,
               title: 'Connect',
               icon: Icons.link_rounded,
-              child: _buildSocialLinks(context, brightness, artist!.socialLinks!),
+              child: _buildSocialLinks(
+                context,
+                brightness,
+                artist!.socialLinks!,
+              ),
             ),
             const SizedBox(height: 24),
           ],
@@ -546,12 +574,15 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             icon: Icons.star_rounded,
             trailing: TextButton(
               onPressed: () {
-                Navigator.of(context, rootNavigator: true).pushNamed('/reviews');
+                Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).pushNamed('/reviews');
               },
               child: Text(
                 'See All',
                 style: TextStyle(
-                  color: AppColors.cyan,
+                  color: AppColors.crimson,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -595,9 +626,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             context,
             brightness,
             icon: Icons.event_rounded,
-            value: isArtist
-                ? (artist?.completedGigs ?? 0).toString()
-                : '0',
+            value: isArtist ? (artist?.completedGigs ?? 0).toString() : '0',
             label: 'Gigs',
             color: AppColors.rose,
           ),
@@ -606,20 +635,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             context,
             brightness,
             icon: Icons.reviews_rounded,
-            value: isArtist
-                ? (artist?.totalReviews ?? 0).toString()
-                : '0',
+            value: isArtist ? (artist?.totalReviews ?? 0).toString() : '0',
             label: 'Reviews',
-            color: AppColors.cyan,
+            color: AppColors.crimson,
           ),
           _buildStatDivider(brightness),
           _buildStatItem(
             context,
             brightness,
             icon: Icons.verified_user_rounded,
-            value: isArtist
-                ? '${artist?.reliabilityScore ?? 100}%'
-                : '100%',
+            value: isArtist ? '${artist?.reliabilityScore ?? 100}%' : '100%',
             label: 'Reliable',
             color: AppColors.success,
           ),
@@ -685,10 +710,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.cyan.withValues(alpha: 0.1),
+                color: AppColors.crimson.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: AppColors.cyan, size: 18),
+              child: Icon(icon, color: AppColors.crimson, size: 18),
             ),
             const SizedBox(width: 10),
             Text(
@@ -699,10 +724,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                 fontSize: 16,
               ),
             ),
-            if (trailing != null) ...[
-              const Spacer(),
-              trailing,
-            ],
+            if (trailing != null) ...[const Spacer(), trailing],
           ],
         ),
         const SizedBox(height: 12),
@@ -718,7 +740,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     int index,
   ) {
     final isPlaying = _playingAudioIndex == index;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -726,7 +748,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
         color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(12),
         border: isPlaying
-            ? Border.all(color: AppColors.cyan, width: 2)
+            ? Border.all(color: AppColors.crimson, width: 2)
             : null,
       ),
       child: Row(
@@ -745,7 +767,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               height: 44,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.cyan, AppColors.rose],
+                  colors: [AppColors.crimson, AppColors.rose],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -757,7 +779,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Track info and waveform
           Expanded(
             child: Column(
@@ -786,8 +808,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                           height: height,
                           decoration: BoxDecoration(
                             color: progress < 0.3
-                                ? AppColors.cyan
-                                : AppColors.cyan.withValues(alpha: 0.3),
+                                ? AppColors.crimson
+                                : AppColors.crimson.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -798,7 +820,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               ],
             ),
           ),
-          
+
           // Duration
           Text(
             _formatDuration(sample.durationSeconds ?? 0),
@@ -843,7 +865,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               Image.network(
                 video.thumbnailUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   color: AppColors.surface(brightness),
                   child: Icon(
                     Icons.videocam_rounded,
@@ -861,7 +883,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                   size: 40,
                 ),
               ),
-            
+
             // Play overlay
             Center(
               child: Container(
@@ -877,7 +899,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                 ),
               ),
             ),
-            
+
             // Title at bottom
             Positioned(
               bottom: 0,
@@ -923,22 +945,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.cyan.withValues(alpha: 0.1),
+            AppColors.crimson.withValues(alpha: 0.1),
             AppColors.rose.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.cyan.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.payments_rounded,
-            color: AppColors.cyan,
-            size: 32,
-          ),
+          Icon(Icons.payments_rounded, color: AppColors.crimson, size: 32),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -972,13 +988,33 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
   ) {
     final socialItems = <_SocialLinkItem>[
       if (links.website != null && links.website!.isNotEmpty)
-        _SocialLinkItem(Icons.language_rounded, 'Website', links.website!, null),
+        _SocialLinkItem(
+          Icons.language_rounded,
+          'Website',
+          links.website!,
+          null,
+        ),
       if (links.instagram != null && links.instagram!.isNotEmpty)
-        _SocialLinkItem(Icons.camera_alt_rounded, 'Instagram', links.instagram!, const Color(0xFFE1306C)),
+        _SocialLinkItem(
+          Icons.camera_alt_rounded,
+          'Instagram',
+          links.instagram!,
+          const Color(0xFFE1306C),
+        ),
       if (links.spotify != null && links.spotify!.isNotEmpty)
-        _SocialLinkItem(Icons.music_note_rounded, 'Spotify', links.spotify!, const Color(0xFF1DB954)),
+        _SocialLinkItem(
+          Icons.music_note_rounded,
+          'Spotify',
+          links.spotify!,
+          const Color(0xFF1DB954),
+        ),
       if (links.youtube != null && links.youtube!.isNotEmpty)
-        _SocialLinkItem(Icons.play_circle_rounded, 'YouTube', links.youtube!, const Color(0xFFFF0000)),
+        _SocialLinkItem(
+          Icons.play_circle_rounded,
+          'YouTube',
+          links.youtube!,
+          const Color(0xFFFF0000),
+        ),
     ];
 
     if (socialItems.isEmpty) {
@@ -1003,12 +1039,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (item.color ?? AppColors.cyan).withValues(alpha: 0.1),
+                color: (item.color ?? AppColors.crimson).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 item.icon,
-                color: item.color ?? AppColors.cyan,
+                color: item.color ?? AppColors.crimson,
                 size: 24,
               ),
             ),
@@ -1055,8 +1091,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                         index < rating.floor()
                             ? Icons.star_rounded
                             : (index < rating)
-                                ? Icons.star_half_rounded
-                                : Icons.star_outline_rounded,
+                            ? Icons.star_half_rounded
+                            : Icons.star_outline_rounded,
                         color: AppColors.warning,
                         size: 20,
                       );
@@ -1093,9 +1129,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
       ),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        border: Border(
-          top: BorderSide(color: AppColors.divider(brightness)),
-        ),
+        border: Border(top: BorderSide(color: AppColors.divider(brightness))),
       ),
       child: Row(
         children: [
@@ -1116,7 +1150,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Book button
           Expanded(
             child: FilledButton.icon(
@@ -1124,7 +1158,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                 // TODO: Navigate to booking flow
               },
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.cyan,
+                backgroundColor: AppColors.crimson,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(

@@ -671,6 +671,8 @@ class UpdateArtistRequest {
   final bool? isAvailable;
   final double? minPrice;
   final double? maxPrice;
+  final List<AudioSample>? audioSamples;
+  final List<VideoSample>? videoSamples;
 
   UpdateArtistRequest({
     this.stageName,
@@ -689,6 +691,8 @@ class UpdateArtistRequest {
     this.isAvailable,
     this.minPrice,
     this.maxPrice,
+    this.audioSamples,
+    this.videoSamples,
   });
 
   Map<String, dynamic> toJson() {
@@ -713,6 +717,12 @@ class UpdateArtistRequest {
     if (equipment != null) json['equipment'] = equipment;
     if (bandSize != null) json['bandSize'] = bandSize;
     if (isAvailable != null) json['isAvailable'] = isAvailable;
+    if (audioSamples != null) {
+      json['audioSamples'] = audioSamples!.map((s) => s.toJson()).toList();
+    }
+    if (videoSamples != null) {
+      json['videoSamples'] = videoSamples!.map((s) => s.toJson()).toList();
+    }
     return json;
   }
 }

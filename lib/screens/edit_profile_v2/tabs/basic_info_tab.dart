@@ -52,9 +52,26 @@ class _BasicInfoTab extends StatelessWidget {
   });
 
   static const List<String> _allGenres = [
-    'Rock', 'Pop', 'Jazz', 'Blues', 'Country', 'R&B', 'Hip Hop',
-    'Electronic', 'Folk', 'Indie', 'Metal', 'Punk', 'Classical',
-    'Reggae', 'Soul', 'Funk', 'Gospel', 'Latin', 'World', 'Alternative',
+    'Rock',
+    'Pop',
+    'Jazz',
+    'Blues',
+    'Country',
+    'R&B',
+    'Hip Hop',
+    'Electronic',
+    'Folk',
+    'Indie',
+    'Metal',
+    'Punk',
+    'Classical',
+    'Reggae',
+    'Soul',
+    'Funk',
+    'Gospel',
+    'Latin',
+    'World',
+    'Alternative',
   ];
 
   @override
@@ -67,7 +84,7 @@ class _BasicInfoTab extends StatelessWidget {
         // Basic Info Section
         _buildSectionHeader(context, 'Basic Information', Icons.person_rounded),
         const SizedBox(height: 16),
-        
+
         _buildTextField(
           context,
           controller: nameController,
@@ -76,7 +93,7 @@ class _BasicInfoTab extends StatelessWidget {
           icon: isArtist ? Icons.music_note_rounded : Icons.business_rounded,
           validator: (v) => v?.isEmpty ?? true ? 'Name is required' : null,
         ),
-        
+
         if (isArtist) ...[
           const SizedBox(height: 16),
           _buildTextField(
@@ -87,13 +104,13 @@ class _BasicInfoTab extends StatelessWidget {
             icon: Icons.star_rounded,
           ),
         ],
-        
+
         const SizedBox(height: 16),
         _buildTextField(
           context,
           controller: bioController,
           label: isArtist ? 'Bio' : 'Description',
-          hint: isArtist 
+          hint: isArtist
               ? 'Tell venues about your music, style, and experience...'
               : 'Describe your venue, atmosphere, and what makes it special...',
           icon: Icons.description_rounded,
@@ -104,14 +121,15 @@ class _BasicInfoTab extends StatelessWidget {
         const SizedBox(height: 32),
 
         // Genres Section
-        _buildSectionHeader(context, isArtist ? 'Your Genres' : 'Preferred Genres', Icons.category_rounded),
+        _buildSectionHeader(
+          context,
+          isArtist ? 'Your Genres' : 'Preferred Genres',
+          Icons.category_rounded,
+        ),
         const SizedBox(height: 12),
         Text(
           'Select up to 5 genres',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 13,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 13),
         ),
         const SizedBox(height: 12),
         _buildGenreChips(context),
@@ -122,13 +140,13 @@ class _BasicInfoTab extends StatelessWidget {
           // Artist Type & Experience Section
           _buildSectionHeader(context, 'Artist Details', Icons.mic_rounded),
           const SizedBox(height: 16),
-          
+
           _buildArtistTypeSelector(context),
           const SizedBox(height: 16),
           _buildExperienceLevelSelector(context),
           const SizedBox(height: 16),
           _buildYearsOfExperience(context),
-          
+
           if (artistType == ArtistType.band) ...[
             const SizedBox(height: 16),
             _buildBandSizeSelector(context),
@@ -140,7 +158,7 @@ class _BasicInfoTab extends StatelessWidget {
         // Contact Section
         _buildSectionHeader(context, 'Location', Icons.location_on_rounded),
         const SizedBox(height: 16),
-        
+
         _buildTextField(
           context,
           controller: cityController,
@@ -148,7 +166,7 @@ class _BasicInfoTab extends StatelessWidget {
           hint: 'Your city or location',
           icon: Icons.location_city_rounded,
         ),
-        
+
         const SizedBox(height: 16),
         _buildTextField(
           context,
@@ -164,7 +182,7 @@ class _BasicInfoTab extends StatelessWidget {
         // Social Links Section
         _buildSectionHeader(context, 'Social Links', Icons.link_rounded),
         const SizedBox(height: 16),
-        
+
         _buildSocialLinkField(
           context,
           controller: websiteController,
@@ -205,9 +223,13 @@ class _BasicInfoTab extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Row(
       children: [
         Container(
@@ -215,13 +237,13 @@ class _BasicInfoTab extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.cyan.withValues(alpha: 0.2),
+                AppColors.crimson.withValues(alpha: 0.2),
                 AppColors.rose.withValues(alpha: 0.2),
               ],
             ),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: AppColors.cyan, size: 20),
+          child: Icon(icon, color: AppColors.crimson, size: 20),
         ),
         const SizedBox(width: 12),
         Text(
@@ -248,7 +270,7 @@ class _BasicInfoTab extends StatelessWidget {
     String? Function(String?)? validator,
   }) {
     final brightness = Theme.of(context).brightness;
-    
+
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
@@ -259,9 +281,11 @@ class _BasicInfoTab extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: TextStyle(color: AppColors.textSec(brightness).withValues(alpha: 0.5)),
+        hintStyle: TextStyle(
+          color: AppColors.textSec(brightness).withValues(alpha: 0.5),
+        ),
         labelStyle: TextStyle(color: AppColors.textSec(brightness)),
-        prefixIcon: Icon(icon, color: AppColors.cyan),
+        prefixIcon: Icon(icon, color: AppColors.crimson),
         filled: true,
         fillColor: AppColors.surface(brightness),
         border: OutlineInputBorder(
@@ -270,7 +294,7 @@ class _BasicInfoTab extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.cyan, width: 2),
+          borderSide: BorderSide(color: AppColors.crimson, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -290,14 +314,16 @@ class _BasicInfoTab extends StatelessWidget {
     Color? color,
   }) {
     final brightness = Theme.of(context).brightness;
-    
+
     return TextFormField(
       controller: controller,
       style: TextStyle(color: AppColors.text(brightness)),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: TextStyle(color: AppColors.textSec(brightness).withValues(alpha: 0.5)),
+        hintStyle: TextStyle(
+          color: AppColors.textSec(brightness).withValues(alpha: 0.5),
+        ),
         labelStyle: TextStyle(color: AppColors.textSec(brightness)),
         prefixIcon: Icon(icon, color: color ?? AppColors.textSec(brightness)),
         filled: true,
@@ -308,44 +334,53 @@ class _BasicInfoTab extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: color ?? AppColors.cyan, width: 2),
+          borderSide: BorderSide(color: color ?? AppColors.crimson, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
 
   Widget _buildGenreChips(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: _allGenres.map((genre) {
         final isSelected = selectedGenres.contains(genre);
         final canSelect = isSelected || selectedGenres.length < 5;
-        
+
         return FilterChip(
           label: Text(genre),
           selected: isSelected,
-          onSelected: canSelect ? (selected) {
-            if (selected) {
-              onGenresChanged([...selectedGenres, genre]);
-            } else {
-              onGenresChanged(selectedGenres.where((g) => g != genre).toList());
-            }
-          } : null,
+          onSelected: canSelect
+              ? (selected) {
+                  if (selected) {
+                    onGenresChanged([...selectedGenres, genre]);
+                  } else {
+                    onGenresChanged(
+                      selectedGenres.where((g) => g != genre).toList(),
+                    );
+                  }
+                }
+              : null,
           backgroundColor: AppColors.surface(brightness),
-          selectedColor: AppColors.cyan.withValues(alpha: 0.2),
-          checkmarkColor: AppColors.cyan,
+          selectedColor: AppColors.crimson.withValues(alpha: 0.2),
+          checkmarkColor: AppColors.crimson,
           labelStyle: TextStyle(
-            color: isSelected ? AppColors.cyan : AppColors.textSec(brightness),
+            color: isSelected
+                ? AppColors.crimson
+                : AppColors.textSec(brightness),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: BorderSide(
-              color: isSelected ? AppColors.cyan : Colors.transparent,
+              color: isSelected ? AppColors.crimson : Colors.transparent,
               width: 1.5,
             ),
           ),
@@ -357,7 +392,7 @@ class _BasicInfoTab extends StatelessWidget {
 
   Widget _buildArtistTypeSelector(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -411,7 +446,7 @@ class _BasicInfoTab extends StatelessWidget {
 
   Widget _buildExperienceLevelSelector(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -438,7 +473,9 @@ class _BasicInfoTab extends StatelessWidget {
                   backgroundColor: AppColors.surface(brightness),
                   selectedColor: AppColors.rose.withValues(alpha: 0.2),
                   labelStyle: TextStyle(
-                    color: isSelected ? AppColors.rose : AppColors.textSec(brightness),
+                    color: isSelected
+                        ? AppColors.rose
+                        : AppColors.textSec(brightness),
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
                   shape: RoundedRectangleBorder(
@@ -458,7 +495,7 @@ class _BasicInfoTab extends StatelessWidget {
 
   Widget _buildYearsOfExperience(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -476,13 +513,13 @@ class _BasicInfoTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.cyan.withValues(alpha: 0.1),
+                color: AppColors.crimson.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 '$yearsOfExperience ${yearsOfExperience == 1 ? 'year' : 'years'}',
                 style: TextStyle(
-                  color: AppColors.cyan,
+                  color: AppColors.crimson,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -492,14 +529,14 @@ class _BasicInfoTab extends StatelessWidget {
         const SizedBox(height: 8),
         SliderTheme(
           data: SliderThemeData(
-            activeTrackColor: AppColors.cyan,
+            activeTrackColor: AppColors.crimson,
             inactiveTrackColor: AppColors.surface(brightness),
-            thumbColor: AppColors.cyan,
-            overlayColor: AppColors.cyan.withValues(alpha: 0.2),
+            thumbColor: AppColors.crimson,
+            overlayColor: AppColors.crimson.withValues(alpha: 0.2),
             trackHeight: 6,
           ),
           child: Slider(
-            value: yearsOfExperience.toDouble(),
+            value: yearsOfExperience.clamp(1, 30).toDouble(),
             min: 1,
             max: 30,
             divisions: 29,
@@ -512,7 +549,7 @@ class _BasicInfoTab extends StatelessWidget {
 
   Widget _buildBandSizeSelector(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -546,14 +583,14 @@ class _BasicInfoTab extends StatelessWidget {
         const SizedBox(height: 8),
         SliderTheme(
           data: SliderThemeData(
-            activeTrackColor: AppColors.rose,
+            activeTrackColor: AppColors.crimson,
             inactiveTrackColor: AppColors.surface(brightness),
-            thumbColor: AppColors.rose,
-            overlayColor: AppColors.rose.withValues(alpha: 0.2),
+            thumbColor: AppColors.crimson,
+            overlayColor: AppColors.crimson.withValues(alpha: 0.2),
             trackHeight: 6,
           ),
           child: Slider(
-            value: bandSize.toDouble(),
+            value: bandSize.clamp(2, 20).toDouble(),
             min: 2,
             max: 20,
             divisions: 18,
@@ -581,19 +618,19 @@ class _SelectableCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.cyan.withValues(alpha: 0.1)
+          color: isSelected
+              ? AppColors.crimson.withValues(alpha: 0.1)
               : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.cyan : Colors.transparent,
+            color: isSelected ? AppColors.crimson : Colors.transparent,
             width: 2,
           ),
         ),
@@ -601,14 +638,18 @@ class _SelectableCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.cyan : AppColors.textSec(brightness),
+              color: isSelected
+                  ? AppColors.crimson
+                  : AppColors.textSec(brightness),
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? AppColors.cyan : AppColors.textSec(brightness),
+                color: isSelected
+                    ? AppColors.crimson
+                    : AppColors.textSec(brightness),
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 11,
               ),

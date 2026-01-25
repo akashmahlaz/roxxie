@@ -40,7 +40,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
       ..addListener(() {
         setState(() => _scrollOffset = _scrollController.offset);
       });
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadProfile());
   }
 
@@ -76,8 +76,9 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
 
   void _shareProfile(ProfileProvider profile) {
     final auth = context.read<AuthProvider>();
-    final profileUrl = 'https://gigmatch.app/profile/${auth.isArtist ? 'artist' : 'venue'}/${profile.artist?.id ?? profile.venue?.id ?? ''}';
-    
+    final profileUrl =
+        'https://gigmatch.app/profile/${auth.isArtist ? 'artist' : 'venue'}/${profile.artist?.id ?? profile.venue?.id ?? ''}';
+
     // Copy to clipboard and show snackbar
     Clipboard.setData(ClipboardData(text: profileUrl));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -86,9 +87,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
           children: [
             const Icon(Icons.check_circle, color: Colors.white, size: 20),
             const SizedBox(width: 12),
-            const Expanded(
-              child: Text('Profile link copied to clipboard!'),
-            ),
+            const Expanded(child: Text('Profile link copied to clipboard!')),
           ],
         ),
         backgroundColor: AppColors.crimson,
@@ -257,9 +256,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                 ),
 
                 // Logout Button
-                SliverToBoxAdapter(
-                  child: _buildLogoutButton(brightness),
-                ),
+                SliverToBoxAdapter(child: _buildLogoutButton(brightness)),
 
                 // Bottom padding
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -318,7 +315,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                     // Profile Photo with Glow
                     _buildProfileAvatar(profile, brightness),
                     const SizedBox(height: 16),
-                    
+
                     // Name & Role
                     Text(
                       profile.displayName,
@@ -335,12 +332,12 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    
+
                     // Role Badge
                     _buildRoleBadge(isArtist, profile.subscriptionTier),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Verification & Premium Status
                     _buildStatusRow(profile),
                   ],
@@ -375,10 +372,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
       animation: _pulseController,
       builder: (context, child) {
         final scale = 1.0 + _pulseController.value * 0.02;
-        return Transform.scale(
-          scale: scale,
-          child: child,
-        );
+        return Transform.scale(scale: scale, child: child);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -396,17 +390,13 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
           backgroundColor: Colors.white,
           child: CircleAvatar(
             radius: 52,
-            backgroundImage: profile.profilePhoto != null &&
-                    profile.profilePhoto!.isNotEmpty
+            backgroundImage:
+                profile.profilePhoto != null && profile.profilePhoto!.isNotEmpty
                 ? NetworkImage(profile.profilePhoto!)
                 : null,
             backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
             child: profile.profilePhoto == null || profile.profilePhoto!.isEmpty
-                ? Icon(
-                    Icons.person_rounded,
-                    size: 50,
-                    color: AppColors.crimson,
-                  )
+                ? Icon(Icons.person_rounded, size: 50, color: AppColors.crimson)
                 : null,
           ),
         ),
@@ -416,15 +406,13 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
 
   Widget _buildRoleBadge(bool isArtist, String subscriptionTier) {
     final isPremium = subscriptionTier != 'free';
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -528,13 +516,13 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     Brightness brightness,
   ) {
     return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 0.3),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _entranceController,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
-      )),
+      position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+          .animate(
+            CurvedAnimation(
+              parent: _entranceController,
+              curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+            ),
+          ),
       child: FadeTransition(
         opacity: _entranceController,
         child: Padding(
@@ -561,7 +549,10 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                     Icons.rate_review_rounded,
                     Colors.purple,
                     brightness,
-                    () => Navigator.of(context, rootNavigator: true).pushNamed('/reviews'),
+                    () => Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed('/reviews'),
                   ),
                 ),
                 _buildDivider(brightness),
@@ -575,7 +566,10 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                     AppColors.crimson,
                     brightness,
                     isArtist
-                        ? () => Navigator.of(context, rootNavigator: true).pushNamed('/calendar')
+                        ? () => Navigator.of(
+                            context,
+                            rootNavigator: true,
+                          ).pushNamed('/calendar')
                         : null,
                   ),
                 ),
@@ -587,7 +581,10 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                     Icons.check_circle_outline_rounded,
                     Colors.green,
                     brightness,
-                    () => Navigator.of(context, rootNavigator: true).pushNamed('/edit-profile'),
+                    () => Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed('/edit-profile'),
                   ),
                 ),
               ],
@@ -645,22 +642,18 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
   }
 
   Widget _buildDivider(Brightness brightness) {
-    return Container(
-      width: 1,
-      height: 50,
-      color: AppColors.border(brightness),
-    );
+    return Container(width: 1, height: 50, color: AppColors.border(brightness));
   }
 
   Widget _buildQuickActions(bool isArtist, Brightness brightness) {
     return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 0.3),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _entranceController,
-        curve: const Interval(0.3, 0.9, curve: Curves.easeOutCubic),
-      )),
+      position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+          .animate(
+            CurvedAnimation(
+              parent: _entranceController,
+              curve: const Interval(0.3, 0.9, curve: Curves.easeOutCubic),
+            ),
+          ),
       child: FadeTransition(
         opacity: _entranceController,
         child: Padding(
@@ -672,7 +665,10 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                   isArtist ? 'Find Gigs' : 'Find Artists',
                   Icons.explore_rounded,
                   AppColors.crimson,
-                  () => Navigator.of(context, rootNavigator: true).pushNamed('/explore'),
+                  () => Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).pushNamed('/explore'),
                   brightness,
                 ),
               ),
@@ -682,7 +678,10 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                   'Messages',
                   Icons.chat_bubble_outline_rounded,
                   Colors.blue,
-                  () => Navigator.of(context, rootNavigator: true).pushNamed('/messages'),
+                  () => Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).pushNamed('/messages'),
                   brightness,
                 ),
               ),
@@ -690,11 +689,14 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
               Expanded(
                 child: _buildQuickActionTile(
                   isArtist ? 'Go Premium' : 'Post Gig',
-                  isArtist ? Icons.diamond_rounded : Icons.add_circle_outline_rounded,
+                  isArtist
+                      ? Icons.diamond_rounded
+                      : Icons.add_circle_outline_rounded,
                   isArtist ? const Color(0xFFDAA520) : Colors.green,
-                  () => Navigator.of(context, rootNavigator: true).pushNamed(
-                    isArtist ? '/premium' : '/contracts',
-                  ),
+                  () => Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).pushNamed(isArtist ? '/premium' : '/contracts'),
                   brightness,
                 ),
               ),
@@ -722,9 +724,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [
@@ -752,17 +752,17 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     int sectionIndex,
   ) {
     return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0.1, 0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _entranceController,
-        curve: Interval(
-          0.4 + sectionIndex * 0.1,
-          1.0,
-          curve: Curves.easeOutCubic,
-        ),
-      )),
+      position: Tween<Offset>(begin: const Offset(0.1, 0), end: Offset.zero)
+          .animate(
+            CurvedAnimation(
+              parent: _entranceController,
+              curve: Interval(
+                0.4 + sectionIndex * 0.1,
+                1.0,
+                curve: Curves.easeOutCubic,
+              ),
+            ),
+          ),
       child: FadeTransition(
         opacity: _entranceController,
         child: Padding(
@@ -882,9 +882,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.crimson.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -936,10 +934,10 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
               context.read<ProfileProvider>().clear();
               await context.read<AuthProvider>().logout();
               if (!mounted) return;
-              Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-                '/role-selection',
-                (route) => false,
-              );
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamedAndRemoveUntil('/role-selection', (route) => false);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.crimson,

@@ -49,15 +49,15 @@ class _MediaTabState extends State<_MediaTab> {
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
         final id = DateTime.now().millisecondsSinceEpoch.toString();
-        
+
         final sample = AudioSampleState(
           id: id,
           title: file.name.replaceAll(RegExp(r'\.(mp3|wav|m4a|aac)$'), ''),
           isUploading: true,
         );
-        
+
         widget.onAudioAdded(sample);
-        
+
         // Upload to Cloudinary
         try {
           if (file.path != null) {
@@ -86,21 +86,24 @@ class _MediaTabState extends State<_MediaTab> {
 
       if (video != null) {
         final id = DateTime.now().millisecondsSinceEpoch.toString();
-        
+
         final sample = VideoSampleState(
           id: id,
           title: video.name.replaceAll(RegExp(r'\.(mp4|mov|avi)$'), ''),
           isUploading: true,
         );
-        
+
         widget.onVideoAdded(sample);
-        
+
         // Upload to Cloudinary
         try {
           final uploadResult = await _uploadService.uploadVideo(video.path);
           sample.url = uploadResult.url;
           // Thumbnail generated from video URL with Cloudinary transformation
-          sample.thumbnailUrl = uploadResult.url.replaceAll('/video/upload/', '/video/upload/so_0,c_thumb,w_320,h_180/');
+          sample.thumbnailUrl = uploadResult.url.replaceAll(
+            '/video/upload/',
+            '/video/upload/so_0,c_thumb,w_320,h_180/',
+          );
           sample.isUploaded = true;
           sample.isUploading = false;
           setState(() {});
@@ -124,18 +127,20 @@ class _MediaTabState extends State<_MediaTab> {
 
       for (final image in images) {
         final id = DateTime.now().millisecondsSinceEpoch.toString();
-        
+
         final photo = PhotoGalleryState(
           id: id,
           localPath: image.path,
           isUploading: true,
         );
-        
+
         widget.onPhotoAdded(photo);
-        
+
         // Upload to Cloudinary
         try {
-          final uploadResult = await _uploadService.uploadGalleryImage(image.path);
+          final uploadResult = await _uploadService.uploadGalleryImage(
+            image.path,
+          );
           photo.url = uploadResult.url;
           photo.isUploaded = true;
           photo.isUploading = false;
@@ -153,17 +158,12 @@ class _MediaTabState extends State<_MediaTab> {
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.crimson,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.crimson),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -176,7 +176,7 @@ class _MediaTabState extends State<_MediaTab> {
           count: '${widget.audioSamples.length}/5',
         ),
         const SizedBox(height: 12),
-        
+
         if (widget.audioSamples.isEmpty)
           _buildEmptyState(
             context,
@@ -201,8 +201,9 @@ class _MediaTabState extends State<_MediaTab> {
               );
             },
           ),
-        
-        if (widget.audioSamples.isNotEmpty && widget.audioSamples.length < 5) ...[
+
+        if (widget.audioSamples.isNotEmpty &&
+            widget.audioSamples.length < 5) ...[
           const SizedBox(height: 12),
           _buildAddButton(
             context,
@@ -223,7 +224,7 @@ class _MediaTabState extends State<_MediaTab> {
           count: '${widget.videoSamples.length}/3',
         ),
         const SizedBox(height: 12),
-        
+
         if (widget.videoSamples.isEmpty)
           _buildEmptyState(
             context,
@@ -242,8 +243,9 @@ class _MediaTabState extends State<_MediaTab> {
               );
             }).toList(),
           ),
-        
-        if (widget.videoSamples.isNotEmpty && widget.videoSamples.length < 3) ...[
+
+        if (widget.videoSamples.isNotEmpty &&
+            widget.videoSamples.length < 3) ...[
           const SizedBox(height: 12),
           _buildAddButton(
             context,
@@ -264,7 +266,7 @@ class _MediaTabState extends State<_MediaTab> {
           count: '${widget.galleryPhotos.length}/10',
         ),
         const SizedBox(height: 12),
-        
+
         if (widget.galleryPhotos.isEmpty)
           _buildEmptyState(
             context,
@@ -282,7 +284,9 @@ class _MediaTabState extends State<_MediaTab> {
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
             ),
-            itemCount: widget.galleryPhotos.length + (widget.galleryPhotos.length < 10 ? 1 : 0),
+            itemCount:
+                widget.galleryPhotos.length +
+                (widget.galleryPhotos.length < 10 ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == widget.galleryPhotos.length) {
                 return _buildAddPhotoTile(context);
@@ -314,7 +318,7 @@ class _MediaTabState extends State<_MediaTab> {
     String? count,
   }) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -325,13 +329,13 @@ class _MediaTabState extends State<_MediaTab> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.cyan.withValues(alpha: 0.2),
+                    AppColors.crimson.withValues(alpha: 0.2),
                     AppColors.rose.withValues(alpha: 0.2),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: AppColors.cyan, size: 20),
+              child: Icon(icon, color: AppColors.crimson, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -346,7 +350,10 @@ class _MediaTabState extends State<_MediaTab> {
             ),
             if (count != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface(brightness),
                   borderRadius: BorderRadius.circular(8),
@@ -387,7 +394,7 @@ class _MediaTabState extends State<_MediaTab> {
     VoidCallback? onAdd,
   }) {
     final brightness = Theme.of(context).brightness;
-    
+
     return GestureDetector(
       onTap: onAdd,
       child: Container(
@@ -406,10 +413,10 @@ class _MediaTabState extends State<_MediaTab> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.cyan.withValues(alpha: 0.1),
+                color: AppColors.crimson.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: AppColors.cyan, size: 32),
+              child: Icon(icon, color: AppColors.crimson, size: 32),
             ),
             const SizedBox(height: 16),
             Text(
@@ -432,10 +439,13 @@ class _MediaTabState extends State<_MediaTab> {
             if (onAdd != null) ...[
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.cyan, AppColors.rose],
+                    colors: [AppColors.crimson, AppColors.rose],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -468,7 +478,7 @@ class _MediaTabState extends State<_MediaTab> {
     required VoidCallback onTap,
   }) {
     final brightness = Theme.of(context).brightness;
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -478,19 +488,19 @@ class _MediaTabState extends State<_MediaTab> {
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppColors.cyan.withValues(alpha: 0.3),
+            color: AppColors.crimson.withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.cyan, size: 20),
+            Icon(icon, color: AppColors.crimson, size: 20),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: AppColors.cyan,
+                color: AppColors.crimson,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -502,7 +512,7 @@ class _MediaTabState extends State<_MediaTab> {
 
   Widget _buildAddPhotoTile(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return InkWell(
       onTap: _pickPhotos,
       borderRadius: BorderRadius.circular(12),
@@ -511,7 +521,7 @@ class _MediaTabState extends State<_MediaTab> {
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppColors.cyan.withValues(alpha: 0.3),
+            color: AppColors.crimson.withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
@@ -520,14 +530,14 @@ class _MediaTabState extends State<_MediaTab> {
           children: [
             Icon(
               Icons.add_photo_alternate_rounded,
-              color: AppColors.cyan,
+              color: AppColors.crimson,
               size: 28,
             ),
             const SizedBox(height: 4),
             Text(
               'Add',
               style: TextStyle(
-                color: AppColors.cyan,
+                color: AppColors.crimson,
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
               ),
@@ -540,20 +550,18 @@ class _MediaTabState extends State<_MediaTab> {
 
   Widget _buildTipsCard(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.cyan.withValues(alpha: 0.05),
+            AppColors.crimson.withValues(alpha: 0.05),
             AppColors.rose.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.cyan.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,10 +580,26 @@ class _MediaTabState extends State<_MediaTab> {
             ],
           ),
           const SizedBox(height: 12),
-          _buildTipItem(context, '🎵', 'Audio: Use high-quality recordings (320kbps MP3 or WAV)'),
-          _buildTipItem(context, '🎬', 'Video: Good lighting and clear audio make a difference'),
-          _buildTipItem(context, '📸', 'Photos: Professional shots get 3x more profile views'),
-          _buildTipItem(context, '⭐', 'First items appear on your discovery card'),
+          _buildTipItem(
+            context,
+            '🎵',
+            'Audio: Use high-quality recordings (320kbps MP3 or WAV)',
+          ),
+          _buildTipItem(
+            context,
+            '🎬',
+            'Video: Good lighting and clear audio make a difference',
+          ),
+          _buildTipItem(
+            context,
+            '📸',
+            'Photos: Professional shots get 3x more profile views',
+          ),
+          _buildTipItem(
+            context,
+            '⭐',
+            'First items appear on your discovery card',
+          ),
         ],
       ),
     );
@@ -583,7 +607,7 @@ class _MediaTabState extends State<_MediaTab> {
 
   Widget _buildTipItem(BuildContext context, String emoji, String text) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(

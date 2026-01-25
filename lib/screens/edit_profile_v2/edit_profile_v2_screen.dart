@@ -1,5 +1,5 @@
 /// ✏️ GIGMATCH Professional Profile Edit System V2
-/// 
+///
 /// Complete multi-tab profile editor with:
 /// - Tab-based navigation (Basic, Media, Pricing, Availability)
 /// - Real-time upload progress
@@ -149,8 +149,10 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
 
     setState(() {
       if (auth.isArtist && artist != null) {
-        _nameController.text = artist.displayName ?? user?.name ?? '';
-        _stageNameController.text = artist.stageName ?? '';
+        _nameController.text = artist.displayName.isNotEmpty
+            ? artist.displayName
+            : (user?.name ?? '');
+        _stageNameController.text = artist.stageName;
         _bioController.text = artist.bio ?? '';
         _cityController.text = artist.location?.city ?? '';
         _selectedGenres = List<String>.from(artist.genres);
@@ -158,10 +160,10 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
         _artistType = artist.artistType;
         _experienceLevel = artist.experienceLevel;
         _yearsOfExperience = artist.yearsOfExperience ?? 0;
+        _maxTravelDistance = artist.maxTravelDistance;
         _bandSize = artist.bandSize ?? 1;
-        _maxTravelDistance = artist.maxTravelDistance ?? 50;
         _equipment = List<String>.from(artist.equipment);
-        
+
         // Load price range
         if (artist.priceRange != null) {
           _minPriceController.text = artist.priceRange!.min.toStringAsFixed(0);
@@ -169,7 +171,7 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
           _pricePer = artist.priceRange!.per;
           _currency = artist.priceRange!.currency;
         }
-        
+
         // Load social links
         if (artist.socialLinks != null) {
           _websiteController.text = artist.socialLinks!.website ?? '';
@@ -177,40 +179,51 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
           _spotifyController.text = artist.socialLinks!.spotify ?? '';
           _youtubeController.text = artist.socialLinks!.youtube ?? '';
         }
-        
+
         // Load media
-        _audioSamples = artist.audioSamples.map((s) => AudioSampleState(
-          id: s.url,
-          url: s.url,
-          title: s.title ?? 'Untitled',
-          duration: s.durationSeconds ?? 0,
-          isUploaded: true,
-        )).toList();
-        
-        _videoSamples = artist.videoSamples.map((s) => VideoSampleState(
-          id: s.url,
-          url: s.url,
-          title: s.title ?? 'Untitled',
-          thumbnailUrl: s.thumbnailUrl,
-          duration: s.durationSeconds ?? 0,
-          isUploaded: true,
-        )).toList();
-        
-        _galleryPhotos = artist.galleryUrls.map((url) => PhotoGalleryState(
-          id: url,
-          url: url,
-          isUploaded: true,
-        )).toList();
-        
+        _audioSamples = artist.audioSamples
+            .map(
+              (s) => AudioSampleState(
+                id: s.url,
+                url: s.url,
+                title: s.title ?? 'Untitled',
+                duration: s.durationSeconds ?? 0,
+                isUploaded: true,
+              ),
+            )
+            .toList();
+
+        _videoSamples = artist.videoSamples
+            .map(
+              (s) => VideoSampleState(
+                id: s.url,
+                url: s.url,
+                title: s.title ?? 'Untitled',
+                thumbnailUrl: s.thumbnailUrl,
+                duration: s.durationSeconds ?? 0,
+                isUploaded: true,
+              ),
+            )
+            .toList();
+
+        _galleryPhotos = artist.galleryUrls
+            .map(
+              (url) => PhotoGalleryState(id: url, url: url, isUploaded: true),
+            )
+            .toList();
       } else if (auth.isVenue && venue != null) {
         _nameController.text = venue.name;
         _bioController.text = venue.description ?? '';
         _cityController.text = venue.location?.city ?? '';
         final photos = venue.galleryUrls ?? [];
-        _currentProfilePhotoUrl = photos.isNotEmpty ? photos.first : venue.profilePhotoUrl;
-        _selectedGenres = List<String>.from(venue.gigPreferences?.preferredGenres ?? []);
+        _currentProfilePhotoUrl = photos.isNotEmpty
+            ? photos.first
+            : venue.profilePhotoUrl;
+        _selectedGenres = List<String>.from(
+          venue.gigPreferences?.preferredGenres ?? [],
+        );
       }
-      
+
       _isLoadingProfile = false;
     });
   }
@@ -270,7 +283,9 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
       // Upload new profile photo if selected
       if (_newProfilePhotoPath != null) {
         try {
-          final result = await _uploadService.uploadProfilePhoto(_newProfilePhotoPath!);
+          final result = await _uploadService.uploadProfilePhoto(
+            _newProfilePhotoPath!,
+          );
           uploadedPhotoUrl = result.url;
         } catch (e) {
           debugPrint('Photo upload failed: $e');
@@ -296,15 +311,25 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
         );
 
         final socialLinks = SocialLinks(
-          website: _websiteController.text.trim().isEmpty ? null : _websiteController.text.trim(),
-          instagram: _instagramController.text.trim().isEmpty ? null : _instagramController.text.trim(),
-          spotify: _spotifyController.text.trim().isEmpty ? null : _spotifyController.text.trim(),
-          youtube: _youtubeController.text.trim().isEmpty ? null : _youtubeController.text.trim(),
+          website: _websiteController.text.trim().isEmpty
+              ? null
+              : _websiteController.text.trim(),
+          instagram: _instagramController.text.trim().isEmpty
+              ? null
+              : _instagramController.text.trim(),
+          spotify: _spotifyController.text.trim().isEmpty
+              ? null
+              : _spotifyController.text.trim(),
+          youtube: _youtubeController.text.trim().isEmpty
+              ? null
+              : _youtubeController.text.trim(),
         );
 
         await auth.updateArtistProfile(
           UpdateArtistRequest(
-            stageName: _stageNameController.text.trim().isEmpty ? null : _stageNameController.text.trim(),
+            stageName: _stageNameController.text.trim().isEmpty
+                ? null
+                : _stageNameController.text.trim(),
             bio: _bioController.text.trim(),
             artistType: _artistType,
             genres: _selectedGenres,
@@ -315,7 +340,10 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
             equipment: _equipment,
             priceRange: priceRange,
             socialLinks: socialLinks,
-            galleryUrls: _galleryPhotos.where((p) => p.isUploaded).map((p) => p.url!).toList(),
+            galleryUrls: _galleryPhotos
+                .where((p) => p.isUploaded)
+                .map((p) => p.url!)
+                .toList(),
           ),
         );
       } else if (auth.isVenue) {
@@ -324,7 +352,9 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
             venueName: _nameController.text.trim(),
             description: _bioController.text.trim(),
             preferredGenres: _selectedGenres,
-            phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+            phone: _phoneController.text.trim().isEmpty
+                ? null
+                : _phoneController.text.trim(),
           ),
         );
       }
@@ -334,7 +364,6 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
       HapticFeedback.heavyImpact();
       _showSuccessSnackBar('Profile updated successfully!');
       Navigator.pop(context);
-      
     } catch (e) {
       _showErrorSnackBar('Error: ${e.toString()}');
     } finally {
@@ -380,7 +409,7 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
 
   void _showDiscardDialog() {
     final brightness = Theme.of(context).brightness;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -394,7 +423,11 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
                 color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.warning_rounded, color: AppColors.warning, size: 24),
+              child: Icon(
+                Icons.warning_rounded,
+                color: AppColors.warning,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 12),
             Text(
@@ -423,9 +456,7 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Close edit screen
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.crimson,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.crimson),
             child: const Text('Discard'),
           ),
         ],
@@ -601,17 +632,24 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context, rootNavigator: true).pushNamed('/public-profile');
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).pushNamed('/public-profile');
           },
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.visibility_rounded, size: 18, color: AppColors.cyan),
+              Icon(
+                Icons.visibility_rounded,
+                size: 18,
+                color: AppColors.crimson,
+              ),
               const SizedBox(width: 4),
               Text(
                 'Preview',
                 style: TextStyle(
-                  color: AppColors.cyan,
+                  color: AppColors.crimson,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -637,11 +675,11 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [AppColors.cyan, AppColors.rose],
+                  colors: [AppColors.crimson, AppColors.rose],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.cyan.withValues(alpha: 0.3),
+                    color: AppColors.crimson.withValues(alpha: 0.3),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),
@@ -650,17 +688,15 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
               padding: const EdgeInsets.all(3),
               child: ClipOval(
                 child: _newProfilePhotoPath != null
-                    ? Image.file(
-                        File(_newProfilePhotoPath!),
-                        fit: BoxFit.cover,
-                      )
+                    ? Image.file(File(_newProfilePhotoPath!), fit: BoxFit.cover)
                     : _currentProfilePhotoUrl != null
-                        ? Image.network(
-                            _currentProfilePhotoUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildDefaultAvatar(brightness),
-                          )
-                        : _buildDefaultAvatar(brightness),
+                    ? Image.network(
+                        _currentProfilePhotoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            _buildDefaultAvatar(brightness),
+                      )
+                    : _buildDefaultAvatar(brightness),
               ),
             ),
             // Edit badge
@@ -670,7 +706,7 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.cyan,
+                  color: AppColors.crimson,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: AppColors.background(brightness),
@@ -713,7 +749,10 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
-            colors: [AppColors.cyan, AppColors.rose],
+            colors: [
+              AppColors.crimson,
+              AppColors.crimson.withValues(alpha: 0.8),
+            ],
           ),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
@@ -722,16 +761,20 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
         labelColor: Colors.white,
         unselectedLabelColor: AppColors.textSec(brightness),
         labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-        tabs: _tabs.map((tab) => Tab(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(tab.icon, size: 16),
-              const SizedBox(width: 4),
-              Text(tab.label),
-            ],
-          ),
-        )).toList(),
+        tabs: _tabs
+            .map(
+              (tab) => Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(tab.icon, size: 16),
+                    const SizedBox(width: 4),
+                    Text(tab.label),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -743,10 +786,7 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           border: Border(
-            top: BorderSide(
-              color: AppColors.divider(brightness),
-              width: 1,
-            ),
+            top: BorderSide(color: AppColors.divider(brightness), width: 1),
           ),
         ),
         child: Row(
@@ -754,7 +794,10 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
             // Unsaved indicator
             if (_hasChanges)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -774,16 +817,19 @@ class _EditProfileV2ScreenState extends State<EditProfileV2Screen>
                   ],
                 ),
               ),
-            
+
             const Spacer(),
 
             // Save button
             FilledButton.icon(
               onPressed: _isSaving ? null : _saveProfile,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.cyan,
+                backgroundColor: AppColors.crimson,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),

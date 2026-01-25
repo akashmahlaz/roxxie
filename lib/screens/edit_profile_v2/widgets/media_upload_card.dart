@@ -1,6 +1,7 @@
 part of '../edit_profile_v2_screen.dart';
 
 /// Media Upload Card - Empty state for adding media
+// ignore: unused_element
 class _MediaUploadCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -38,17 +39,13 @@ class _MediaUploadCard extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.cyan.withValues(alpha: 0.1),
+                    AppColors.crimson.withValues(alpha: 0.1),
                     AppColors.rose.withValues(alpha: 0.1),
                   ],
                 ),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: AppColors.cyan,
-                size: 32,
-              ),
+              child: Icon(icon, color: AppColors.crimson, size: 32),
             ),
             const SizedBox(height: 16),
             Text(
@@ -73,7 +70,7 @@ class _MediaUploadCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.cyan, AppColors.rose],
+                  colors: [AppColors.crimson, AppColors.rose],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),

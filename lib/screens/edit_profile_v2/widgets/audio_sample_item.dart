@@ -23,7 +23,10 @@ class _AudioSampleItem extends StatelessWidget {
         color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(14),
         border: sample.isUploading
-            ? Border.all(color: AppColors.cyan.withValues(alpha: 0.5), width: 2)
+            ? Border.all(
+                color: AppColors.crimson.withValues(alpha: 0.5),
+                width: 2,
+              )
             : null,
       ),
       child: ListTile(
@@ -37,7 +40,7 @@ class _AudioSampleItem extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.cyan.withValues(alpha: 0.2),
+                    AppColors.crimson.withValues(alpha: 0.2),
                     AppColors.rose.withValues(alpha: 0.2),
                   ],
                 ),
@@ -48,12 +51,12 @@ class _AudioSampleItem extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(AppColors.cyan),
+                        valueColor: AlwaysStoppedAnimation(AppColors.crimson),
                       ),
                     )
                   : Icon(
                       Icons.music_note_rounded,
-                      color: AppColors.cyan,
+                      color: AppColors.crimson,
                       size: 24,
                     ),
             ),
@@ -94,10 +97,7 @@ class _AudioSampleItem extends StatelessWidget {
             if (sample.isUploading)
               Text(
                 'Uploading...',
-                style: TextStyle(
-                  color: AppColors.cyan,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.crimson, fontSize: 12),
               )
             else if (sample.isUploaded)
               Row(
@@ -120,12 +120,9 @@ class _AudioSampleItem extends StatelessWidget {
             else
               Text(
                 'Upload failed',
-                style: TextStyle(
-                  color: AppColors.crimson,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.crimson, fontSize: 12),
               ),
-            
+
             // Waveform visualization (simplified)
             const SizedBox(width: 12),
             Expanded(
@@ -139,7 +136,7 @@ class _AudioSampleItem extends StatelessWidget {
                       width: 2,
                       height: height,
                       decoration: BoxDecoration(
-                        color: AppColors.cyan.withValues(alpha: 0.4),
+                        color: AppColors.crimson.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(1),
                       ),
                     );

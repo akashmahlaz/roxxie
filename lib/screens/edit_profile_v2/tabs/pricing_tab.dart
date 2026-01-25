@@ -24,7 +24,14 @@ class _PricingTab extends StatelessWidget {
     required this.isArtist,
   });
 
-  static const List<String> _currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR'];
+  static const List<String> _currencies = [
+    'USD',
+    'EUR',
+    'GBP',
+    'CAD',
+    'AUD',
+    'INR',
+  ];
   static const List<Map<String, dynamic>> _pricePerOptions = [
     {'value': 'show', 'label': 'Per Show', 'icon': Icons.event_rounded},
     {'value': 'hour', 'label': 'Per Hour', 'icon': Icons.schedule_rounded},
@@ -43,10 +50,7 @@ class _PricingTab extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Set a competitive price range for your services',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 13,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 13),
         ),
         const SizedBox(height: 20),
 
@@ -106,9 +110,13 @@ class _PricingTab extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Row(
       children: [
         Container(
@@ -116,13 +124,13 @@ class _PricingTab extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.cyan.withValues(alpha: 0.2),
+                AppColors.crimson.withValues(alpha: 0.2),
                 AppColors.rose.withValues(alpha: 0.2),
               ],
             ),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: AppColors.cyan, size: 20),
+          child: Icon(icon, color: AppColors.crimson, size: 20),
         ),
         const SizedBox(width: 12),
         Text(
@@ -139,7 +147,7 @@ class _PricingTab extends StatelessWidget {
 
   Widget _buildCurrencySelector(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -164,18 +172,25 @@ class _PricingTab extends StatelessWidget {
                   selected: isSelected,
                   onSelected: (_) => onCurrencyChanged(curr),
                   backgroundColor: AppColors.surface(brightness),
-                  selectedColor: AppColors.cyan.withValues(alpha: 0.2),
+                  selectedColor: AppColors.crimson.withValues(alpha: 0.2),
                   labelStyle: TextStyle(
-                    color: isSelected ? AppColors.cyan : AppColors.textSec(brightness),
+                    color: isSelected
+                        ? AppColors.crimson
+                        : AppColors.textSec(brightness),
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
-                      color: isSelected ? AppColors.cyan : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.crimson
+                          : Colors.transparent,
                     ),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                 ),
               );
             }).toList(),
@@ -192,7 +207,7 @@ class _PricingTab extends StatelessWidget {
     required String hint,
   }) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -221,7 +236,7 @@ class _PricingTab extends StatelessWidget {
             ),
             prefixText: _getCurrencySymbol(currency),
             prefixStyle: TextStyle(
-              color: AppColors.cyan,
+              color: AppColors.crimson,
               fontWeight: FontWeight.w700,
               fontSize: 18,
             ),
@@ -233,9 +248,12 @@ class _PricingTab extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: AppColors.cyan, width: 2),
+              borderSide: BorderSide(color: AppColors.crimson, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
@@ -267,7 +285,7 @@ class _PricingTab extends StatelessWidget {
 
   Widget _buildPricePerSelector(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -299,9 +317,7 @@ class _PricingTab extends StatelessWidget {
                           : AppColors.surface(brightness),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isSelected
-                            ? AppColors.rose
-                            : Colors.transparent,
+                        color: isSelected ? AppColors.rose : Colors.transparent,
                         width: 2,
                       ),
                     ),
@@ -341,7 +357,7 @@ class _PricingTab extends StatelessWidget {
 
   Widget _buildPricingTips(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -353,7 +369,11 @@ class _PricingTab extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.tips_and_updates_rounded, color: AppColors.warning, size: 20),
+              Icon(
+                Icons.tips_and_updates_rounded,
+                color: AppColors.warning,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Pricing Tips',
@@ -376,7 +396,7 @@ class _PricingTab extends StatelessWidget {
 
   Widget _buildTip(BuildContext context, String emoji, String text) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -400,27 +420,25 @@ class _PricingTab extends StatelessWidget {
 
   Widget _buildMarketInsights(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.cyan.withValues(alpha: 0.05),
+            AppColors.crimson.withValues(alpha: 0.05),
             AppColors.rose.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.cyan.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.insights_rounded, color: AppColors.cyan, size: 20),
+              Icon(Icons.insights_rounded, color: AppColors.crimson, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Market Insights',
@@ -484,7 +502,7 @@ class _PricingTab extends StatelessWidget {
     bool? trendUp,
   }) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -513,7 +531,9 @@ class _PricingTab extends StatelessWidget {
                   const SizedBox(width: 8),
                   if (trendUp != null)
                     Icon(
-                      trendUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                      trendUp
+                          ? Icons.trending_up_rounded
+                          : Icons.trending_down_rounded,
                       color: trendUp ? AppColors.success : AppColors.crimson,
                       size: 16,
                     ),
@@ -524,8 +544,8 @@ class _PricingTab extends StatelessWidget {
                       color: trendUp == true
                           ? AppColors.success
                           : trendUp == false
-                              ? AppColors.crimson
-                              : AppColors.textSec(brightness),
+                          ? AppColors.crimson
+                          : AppColors.textSec(brightness),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
