@@ -88,7 +88,8 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
       id: '1',
       participantName: 'The Velvet Lounge',
       participantImage: '',
-      lastMessage: 'Looking forward to your performance this Saturday! Let us know if you need anything.',
+      lastMessage:
+          'Looking forward to your performance this Saturday! Let us know if you need anything.',
       lastMessageTime: DateTime.now().subtract(const Duration(minutes: 5)),
       unreadCount: 2,
       isOnline: true,
@@ -163,13 +164,15 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
 
   void _initParticles() {
     for (int i = 0; i < 25; i++) {
-      _particles.add(_MessageParticle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble(),
-        size: _random.nextDouble() * 3 + 1,
-        speed: _random.nextDouble() * 0.1 + 0.05,
-        opacity: _random.nextDouble() * 0.3 + 0.1,
-      ));
+      _particles.add(
+        _MessageParticle(
+          x: _random.nextDouble(),
+          y: _random.nextDouble(),
+          size: _random.nextDouble() * 3 + 1,
+          speed: _random.nextDouble() * 0.1 + 0.05,
+          opacity: _random.nextDouble() * 0.3 + 0.1,
+        ),
+      );
     }
   }
 
@@ -210,14 +213,19 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
     super.dispose();
   }
 
-  int get _totalUnread => _conversations.fold(0, (sum, c) => sum + c.unreadCount);
+  int get _totalUnread =>
+      _conversations.fold(0, (sum, c) => sum + c.unreadCount);
 
   List<Conversation> get _filteredConversations {
     if (_searchQuery.isEmpty) return _conversations;
     return _conversations
-        .where((c) =>
-            c.participantName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            c.lastMessage.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (c) =>
+              c.participantName.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ||
+              c.lastMessage.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -280,7 +288,11 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
                 controller: _tabController,
                 children: [
                   _buildConversationsList(brightness, _filteredConversations),
-                  _buildConversationsList(brightness, _archivedConversations, isArchived: true),
+                  _buildConversationsList(
+                    brightness,
+                    _archivedConversations,
+                    isArchived: true,
+                  ),
                 ],
               ),
             ),
@@ -296,7 +308,9 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
           },
           backgroundColor: AppColors.crimson,
           elevation: 10,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: const Icon(Icons.edit_rounded, color: Colors.white),
         ),
       ),
@@ -328,7 +342,11 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
           CircleAvatar(
             backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
             radius: 20,
-            child: Icon(Icons.chat_bubble_outline_rounded, color: AppColors.crimson, size: 20),
+            child: Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: AppColors.crimson,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Text(
@@ -367,7 +385,9 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
             decoration: BoxDecoration(
               color: AppColors.surface(brightness).withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border(brightness).withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.border(brightness).withValues(alpha: 0.3),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -386,10 +406,16 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
               decoration: InputDecoration(
                 hintText: 'Search chats...',
                 hintStyle: TextStyle(color: AppColors.textTert(brightness)),
-                prefixIcon: Icon(Icons.search_rounded, color: AppColors.crimson),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: AppColors.crimson,
+                ),
                 suffixIcon: _isSearching
                     ? IconButton(
-                        icon: Icon(Icons.close_rounded, color: AppColors.textSec(brightness)),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: AppColors.textSec(brightness),
+                        ),
                         onPressed: () {
                           HapticFeedback.selectionClick();
                           _searchController.clear();
@@ -428,7 +454,7 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final filter = filters[index];
           final isSelected = index == 0;
@@ -438,12 +464,21 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               gradient: isSelected
-                  ? LinearGradient(colors: [AppColors.crimson, AppColors.crimson.withValues(alpha: 0.8)])
+                  ? LinearGradient(
+                      colors: [
+                        AppColors.crimson,
+                        AppColors.crimson.withValues(alpha: 0.8),
+                      ],
+                    )
                   : null,
-              color: isSelected ? null : AppColors.surface(brightness).withValues(alpha: 0.6),
+              color: isSelected
+                  ? null
+                  : AppColors.surface(brightness).withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? Colors.transparent : AppColors.border(brightness).withValues(alpha: 0.5),
+                color: isSelected
+                    ? Colors.transparent
+                    : AppColors.border(brightness).withValues(alpha: 0.5),
               ),
               boxShadow: isSelected
                   ? [
@@ -451,7 +486,7 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
                         color: AppColors.crimson.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
-                      )
+                      ),
                     ]
                   : null,
             ),
@@ -461,14 +496,18 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
                   Icon(
                     filter.$2,
                     size: 14,
-                    color: isSelected ? Colors.white : AppColors.textSec(brightness),
+                    color: isSelected
+                        ? Colors.white
+                        : AppColors.textSec(brightness),
                   ),
                   const SizedBox(width: 6),
                 ],
                 Text(
                   filter.$1,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.text(brightness),
+                    color: isSelected
+                        ? Colors.white
+                        : AppColors.text(brightness),
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 13,
                   ),
@@ -485,7 +524,11 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
   // LIST BUILDER
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildConversationsList(Brightness brightness, List<Conversation> items, {bool isArchived = false}) {
+  Widget _buildConversationsList(
+    Brightness brightness,
+    List<Conversation> items, {
+    bool isArchived = false,
+  }) {
     if (items.isEmpty) {
       return _buildEmptyState(brightness, isArchived);
     }
@@ -510,7 +553,10 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(animation),
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.2),
+              end: Offset.zero,
+            ).animate(animation),
             child: _PremiumConversationTile(
               conversation: items[index],
               brightness: brightness,
@@ -532,10 +578,14 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
             decoration: BoxDecoration(
               color: AppColors.surface(brightness).withValues(alpha: 0.5),
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.border(brightness).withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.border(brightness).withValues(alpha: 0.3),
+              ),
             ),
             child: Icon(
-              isArchived ? Icons.archive_outlined : Icons.chat_bubble_outline_rounded,
+              isArchived
+                  ? Icons.archive_outlined
+                  : Icons.chat_bubble_outline_rounded,
               size: 50,
               color: AppColors.textTert(brightness),
             ),
@@ -551,8 +601,13 @@ class _MessagesListScreenV2State extends State<MessagesListScreenV2>
           ),
           const SizedBox(height: 8),
           Text(
-            isArchived ? 'Archived conversations appear here' : 'Start matching to connect!',
-            style: TextStyle(color: AppColors.textSec(brightness), fontSize: 14),
+            isArchived
+                ? 'Archived conversations appear here'
+                : 'Start matching to connect!',
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -629,7 +684,9 @@ class _PremiumConversationTile extends StatelessWidget {
                           color: AppColors.surface(brightness),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: conversation.isOnline ? Colors.green : Colors.transparent,
+                            color: conversation.isOnline
+                                ? Colors.green
+                                : Colors.transparent,
                             width: 2,
                           ),
                           boxShadow: [
@@ -652,7 +709,7 @@ class _PremiumConversationTile extends StatelessWidget {
                         ),
                       ),
                       if (conversation.isOnline)
-                         Positioned(
+                        Positioned(
                           right: 0,
                           bottom: 0,
                           child: Container(
@@ -668,7 +725,7 @@ class _PremiumConversationTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(width: 16),
-                  
+
                   // Text Content
                   Expanded(
                     child: Column(
@@ -681,16 +738,22 @@ class _PremiumConversationTile extends StatelessWidget {
                               conversation.participantName,
                               style: TextStyle(
                                 color: AppColors.text(brightness),
-                                fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
+                                fontWeight: unread
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
                                 fontSize: 16,
                               ),
                             ),
                             Text(
                               _formatTime(conversation.lastMessageTime),
                               style: TextStyle(
-                                color: unread ? AppColors.crimson : AppColors.textTert(brightness),
+                                color: unread
+                                    ? AppColors.crimson
+                                    : AppColors.textTert(brightness),
                                 fontSize: 12,
-                                fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
+                                fontWeight: unread
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
                               ),
                             ),
                           ],
@@ -707,8 +770,12 @@ class _PremiumConversationTile extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: unread ? AppColors.text(brightness) : AppColors.textSec(brightness),
-                                    fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
+                                    color: unread
+                                        ? AppColors.text(brightness)
+                                        : AppColors.textSec(brightness),
+                                    fontWeight: unread
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -716,13 +783,18 @@ class _PremiumConversationTile extends StatelessWidget {
                             if (unread)
                               Container(
                                 margin: const EdgeInsets.only(left: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.crimson,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.crimson.withValues(alpha: 0.3),
+                                      color: AppColors.crimson.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -776,7 +848,11 @@ class _PremiumTabBarDelegate extends SliverPersistentHeaderDelegate {
   });
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -790,7 +866,10 @@ class _PremiumTabBarDelegate extends SliverPersistentHeaderDelegate {
             indicatorSize: TabBarIndicatorSize.label,
             labelColor: AppColors.crimson,
             unselectedLabelColor: AppColors.textSec(brightness),
-            labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            labelStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
             tabs: [
               Tab(text: 'Inbox ${unreadCount > 0 ? "($unreadCount)" : ""}'),
               const Tab(text: 'Archived'),
@@ -852,7 +931,13 @@ class _MessageParticle {
   double size;
   double speed;
   double opacity;
-  _MessageParticle({required this.x, required this.y, required this.size, required this.speed, required this.opacity});
+  _MessageParticle({
+    required this.x,
+    required this.y,
+    required this.size,
+    required this.speed,
+    required this.opacity,
+  });
 }
 
 class _MessageParticlePainter extends CustomPainter {
@@ -860,7 +945,11 @@ class _MessageParticlePainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _MessageParticlePainter({required this.particles, required this.progress, required this.color});
+  _MessageParticlePainter({
+    required this.particles,
+    required this.progress,
+    required this.color,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -870,10 +959,13 @@ class _MessageParticlePainter extends CustomPainter {
       canvas.drawCircle(
         Offset(x * size.width, y * size.height),
         p.size,
-        Paint()..color = color.withValues(alpha: p.opacity * 0.3)..style = PaintingStyle.fill,
+        Paint()
+          ..color = color.withValues(alpha: p.opacity * 0.3)
+          ..style = PaintingStyle.fill,
       );
     }
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter old) => true;
 }
@@ -887,24 +979,37 @@ class _MessageOrbPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final orb1 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.blue.withValues(alpha: isDark ? 0.15 : 0.08),
-          Colors.blue.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(size.width * 0.2, size.height * 0.3), radius: 200));
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.blue.withValues(alpha: isDark ? 0.15 : 0.08),
+              Colors.blue.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.2, size.height * 0.3),
+              radius: 200,
+            ),
+          );
 
     final orb2 = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.crimson.withValues(alpha: isDark ? 0.15 : 0.08),
-          AppColors.crimson.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(size.width * 0.8, size.height * 0.7), radius: 250));
+      ..shader =
+          RadialGradient(
+            colors: [
+              AppColors.crimson.withValues(alpha: isDark ? 0.15 : 0.08),
+              AppColors.crimson.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.8, size.height * 0.7),
+              radius: 250,
+            ),
+          );
 
     canvas.drawRect(Offset.zero & size, orb1);
     canvas.drawRect(Offset.zero & size, orb2);
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter old) => true;
 }

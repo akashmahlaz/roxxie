@@ -77,7 +77,9 @@ class PasswordStrengthIndicator extends StatelessWidget {
           Text(
             req.label,
             style: TextStyle(
-              color: req.met ? AppColors.text(brightness) : AppColors.textSec(brightness),
+              color: req.met
+                  ? AppColors.text(brightness)
+                  : AppColors.textSec(brightness),
               fontSize: 12,
               fontWeight: req.met ? FontWeight.w500 : FontWeight.w400,
               decoration: req.met ? TextDecoration.lineThrough : null,
@@ -112,10 +114,7 @@ class PasswordStrengthIndicator extends StatelessWidget {
 
   List<_Requirement> _getRequirements() {
     return [
-      _Requirement(
-        'At least 8 characters',
-        password.length >= 8,
-      ),
+      _Requirement('At least 8 characters', password.length >= 8),
       _Requirement(
         'One uppercase letter (A-Z)',
         password.contains(RegExp(r'[A-Z]')),
@@ -124,10 +123,7 @@ class PasswordStrengthIndicator extends StatelessWidget {
         'One lowercase letter (a-z)',
         password.contains(RegExp(r'[a-z]')),
       ),
-      _Requirement(
-        'One number (0-9)',
-        password.contains(RegExp(r'[0-9]')),
-      ),
+      _Requirement('One number (0-9)', password.contains(RegExp(r'[0-9]'))),
       _Requirement(
         'One special character (@\$!%*?&)',
         password.contains(RegExp(r'[@$!%*?&]')),

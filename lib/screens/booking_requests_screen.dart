@@ -126,7 +126,8 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
           venueLocation: 'Greenwich Village, NYC',
           status: RequestStatus.pending,
           sentAt: DateTime.now().subtract(const Duration(hours: 2)),
-          message: 'We loved your demo reel! Would you be available for our Friday jazz night?',
+          message:
+              'We loved your demo reel! Would you be available for our Friday jazz night?',
           isIncoming: true,
         ),
         BookingRequest(
@@ -219,11 +220,13 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
     });
   }
 
-  List<BookingRequest> get _incomingRequests =>
-      _requests.where((r) => r.isIncoming && r.status == RequestStatus.pending).toList();
+  List<BookingRequest> get _incomingRequests => _requests
+      .where((r) => r.isIncoming && r.status == RequestStatus.pending)
+      .toList();
 
-  List<BookingRequest> get _outgoingRequests =>
-      _requests.where((r) => !r.isIncoming && r.status == RequestStatus.pending).toList();
+  List<BookingRequest> get _outgoingRequests => _requests
+      .where((r) => !r.isIncoming && r.status == RequestStatus.pending)
+      .toList();
 
   List<BookingRequest> get _historyRequests =>
       _requests.where((r) => r.status != RequestStatus.pending).toList()
@@ -237,7 +240,7 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
         _requests[index] = request.copyWith(status: RequestStatus.accepted);
       }
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -245,7 +248,9 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
             const AnimatedSuccessCheck(size: 20, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(
-              child: Text('Booking accepted! ${request.senderName} has been notified.'),
+              child: Text(
+                'Booking accepted! ${request.senderName} has been notified.',
+              ),
             ),
           ],
         ),
@@ -264,7 +269,7 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
 
   void _showDeclineDialog(BookingRequest request) {
     final brightness = Theme.of(context).brightness;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -285,13 +290,19 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
             const SizedBox(height: 16),
             _QuickResponseButton(
               text: 'Thanks, but I\'m not available',
-              onTap: () => _performDecline(request, 'Thanks for reaching out, but I\'m not available for this date.'),
+              onTap: () => _performDecline(
+                request,
+                'Thanks for reaching out, but I\'m not available for this date.',
+              ),
               brightness: brightness,
             ),
             const SizedBox(height: 8),
             _QuickResponseButton(
               text: 'Schedule conflict',
-              onTap: () => _performDecline(request, 'Unfortunately, I have a scheduling conflict.'),
+              onTap: () => _performDecline(
+                request,
+                'Unfortunately, I have a scheduling conflict.',
+              ),
               brightness: brightness,
             ),
             const SizedBox(height: 8),
@@ -318,7 +329,9 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Request declined${message != null ? ' with message' : ''}'),
+        content: Text(
+          'Request declined${message != null ? ' with message' : ''}',
+        ),
         backgroundColor: AppColors.textSec(Theme.of(context).brightness),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -338,9 +351,21 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
           : TabBarView(
               controller: _tabController,
               children: [
-                _buildRequestList(_incomingRequests, RequestTab.incoming, brightness),
-                _buildRequestList(_outgoingRequests, RequestTab.outgoing, brightness),
-                _buildRequestList(_historyRequests, RequestTab.history, brightness),
+                _buildRequestList(
+                  _incomingRequests,
+                  RequestTab.incoming,
+                  brightness,
+                ),
+                _buildRequestList(
+                  _outgoingRequests,
+                  RequestTab.outgoing,
+                  brightness,
+                ),
+                _buildRequestList(
+                  _historyRequests,
+                  RequestTab.history,
+                  brightness,
+                ),
               ],
             ),
     );
@@ -368,7 +393,10 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
           unselectedLabelColor: AppColors.textSec(brightness),
           indicatorColor: AppColors.crimson,
           indicatorWeight: 3,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+          ),
           tabs: [
             Tab(
               child: Row(
@@ -378,7 +406,10 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
                   if (_incomingRequests.isNotEmpty) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.crimson,
                         borderRadius: BorderRadius.circular(10),
@@ -409,7 +440,7 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: 4,
-        itemBuilder: (_, __) => Padding(
+        itemBuilder: (_, _) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Container(
             height: 160,
@@ -423,7 +454,11 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
     );
   }
 
-  Widget _buildRequestList(List<BookingRequest> requests, RequestTab tab, Brightness brightness) {
+  Widget _buildRequestList(
+    List<BookingRequest> requests,
+    RequestTab tab,
+    Brightness brightness,
+  ) {
     if (requests.isEmpty) {
       return _buildEmptyState(tab, brightness);
     }
@@ -532,7 +567,8 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
         return {
           'icon': Icons.history_rounded,
           'title': 'No History Yet',
-          'subtitle': 'Your accepted, declined, and completed bookings will appear here.',
+          'subtitle':
+              'Your accepted, declined, and completed bookings will appear here.',
         };
     }
   }
@@ -642,7 +678,10 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
                             const SizedBox(height: 8),
                             _buildDetailRow(
                               Icons.access_time_rounded,
-                              _formatTimeRange(request.startTime, request.endTime),
+                              _formatTimeRange(
+                                request.startTime,
+                                request.endTime,
+                              ),
                               brightness,
                             ),
                             const SizedBox(height: 8),
@@ -686,7 +725,8 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
                     ],
 
                     // Actions
-                    if (request.status == RequestStatus.pending && request.isIncoming) ...[
+                    if (request.status == RequestStatus.pending &&
+                        request.isIncoming) ...[
                       const SizedBox(height: 24),
                       Row(
                         children: [
@@ -697,7 +737,9 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
                                 _declineRequest(request);
                               },
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 side: BorderSide(color: AppColors.error),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -739,7 +781,12 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String text, Brightness brightness, {bool highlight = false}) {
+  Widget _buildDetailRow(
+    IconData icon,
+    String text,
+    Brightness brightness, {
+    bool highlight = false,
+  }) {
     return Row(
       children: [
         Icon(
@@ -805,8 +852,20 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
   }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
@@ -817,6 +876,7 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
       final period = t.period == DayPeriod.am ? 'AM' : 'PM';
       return '$hour:${t.minute.toString().padLeft(2, '0')} $period';
     }
+
     if (end != null) {
       return '${format(start)} - ${format(end)}';
     }
@@ -881,7 +941,9 @@ class _SwipeableRequestCardState extends State<_SwipeableRequestCard> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: progress > 0 ? progress * 0.3 : 0),
+                    color: AppColors.success.withValues(
+                      alpha: progress > 0 ? progress * 0.3 : 0,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   alignment: Alignment.centerLeft,
@@ -892,7 +954,11 @@ class _SwipeableRequestCardState extends State<_SwipeableRequestCard> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.success,
+                          size: 28,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Accept',
@@ -910,7 +976,9 @@ class _SwipeableRequestCardState extends State<_SwipeableRequestCard> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: progress < 0 ? -progress * 0.3 : 0),
+                    color: AppColors.error.withValues(
+                      alpha: progress < 0 ? -progress * 0.3 : 0,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   alignment: Alignment.centerRight,
@@ -929,7 +997,11 @@ class _SwipeableRequestCardState extends State<_SwipeableRequestCard> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(Icons.cancel_rounded, color: AppColors.error, size: 28),
+                        Icon(
+                          Icons.cancel_rounded,
+                          color: AppColors.error,
+                          size: 28,
+                        ),
                       ],
                     ),
                   ),
@@ -1025,7 +1097,10 @@ class _RequestCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.success.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
@@ -1056,7 +1131,11 @@ class _RequestCard extends StatelessWidget {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.textSec(brightness)),
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 14,
+                    color: AppColors.textSec(brightness),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     _formatDate(request.gigDate),
@@ -1066,7 +1145,11 @@ class _RequestCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  Icon(Icons.access_time_rounded, size: 14, color: AppColors.textSec(brightness)),
+                  Icon(
+                    Icons.access_time_rounded,
+                    size: 14,
+                    color: AppColors.textSec(brightness),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     _formatTime(request.startTime),
@@ -1117,7 +1200,11 @@ class _RequestCard extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.close_rounded, size: 18, color: AppColors.error),
+                              Icon(
+                                Icons.close_rounded,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 'Decline',
@@ -1148,7 +1235,11 @@ class _RequestCard extends StatelessWidget {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check_rounded, size: 18, color: Colors.white),
+                              Icon(
+                                Icons.check_rounded,
+                                size: 18,
+                                color: Colors.white,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'Accept',
@@ -1174,8 +1265,20 @@ class _RequestCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[date.month - 1]} ${date.day}';
   }
 
@@ -1220,16 +1323,15 @@ class _QuickResponseButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
         decoration: BoxDecoration(
-          color: isOutlined ? Colors.transparent : AppColors.background(brightness),
+          color: isOutlined
+              ? Colors.transparent
+              : AppColors.background(brightness),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppColors.border(brightness)),
         ),
         child: Text(
           text,
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontSize: 13,
-          ),
+          style: TextStyle(color: AppColors.text(brightness), fontSize: 13),
         ),
       ),
     );

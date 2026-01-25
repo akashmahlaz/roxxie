@@ -47,10 +47,7 @@ class ProfileCompletionTracker extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.border(brightness),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.border(brightness), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +78,10 @@ class ProfileCompletionTracker extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: _getStrengthColor().withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -128,26 +128,30 @@ class ProfileCompletionTracker extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            ...missingSteps.take(3).map((step) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.circle,
-                        size: 6,
-                        color: AppColors.textTert(brightness),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        step,
-                        style: TextStyle(
-                          color: AppColors.textSec(brightness),
-                          fontSize: 12,
+            ...missingSteps
+                .take(3)
+                .map(
+                  (step) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 6,
+                          color: AppColors.textTert(brightness),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          step,
+                          style: TextStyle(
+                            color: AppColors.textSec(brightness),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                )),
+                ),
           ],
 
           if (onCompleteProfile != null) ...[
@@ -166,10 +170,7 @@ class ProfileCompletionTracker extends StatelessWidget {
                 ),
                 child: const Text(
                   'Complete Profile',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -186,17 +187,11 @@ class ProfileCompletionTracker extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.border(brightness),
-        ),
+        border: Border.all(color: AppColors.border(brightness)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.lightbulb_rounded,
-            color: AppColors.crimson,
-            size: 20,
-          ),
+          Icon(Icons.lightbulb_rounded, color: AppColors.crimson, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

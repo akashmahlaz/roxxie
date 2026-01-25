@@ -18,12 +18,8 @@ import '../widgets/widgets.dart';
 class FilterScreen extends StatefulWidget {
   final FilterOptions? initialFilters;
   final Function(FilterOptions)? onApply;
-  
-  const FilterScreen({
-    super.key,
-    this.initialFilters,
-    this.onApply,
-  });
+
+  const FilterScreen({super.key, this.initialFilters, this.onApply});
 
   @override
   State<FilterScreen> createState() => _FilterScreenState();
@@ -34,14 +30,34 @@ class _FilterScreenState extends State<FilterScreen> {
   int _matchCount = 47; // Mock count
 
   final List<String> _allGenres = [
-    'Rock', 'Jazz', 'Blues', 'Pop', 'R&B', 'Soul',
-    'Country', 'Electronic', 'Hip Hop', 'Classical',
-    'Folk', 'Reggae', 'Metal', 'Indie', 'Alternative',
+    'Rock',
+    'Jazz',
+    'Blues',
+    'Pop',
+    'R&B',
+    'Soul',
+    'Country',
+    'Electronic',
+    'Hip Hop',
+    'Classical',
+    'Folk',
+    'Reggae',
+    'Metal',
+    'Indie',
+    'Alternative',
   ];
 
   final List<String> _venueTypes = [
-    'Bar', 'Club', 'Restaurant', 'Lounge', 'Concert Hall',
-    'Cafe', 'Hotel', 'Private Event', 'Festival', 'Corporate',
+    'Bar',
+    'Club',
+    'Restaurant',
+    'Lounge',
+    'Concert Hall',
+    'Cafe',
+    'Hotel',
+    'Private Event',
+    'Festival',
+    'Corporate',
   ];
 
   @override
@@ -55,9 +71,11 @@ class _FilterScreenState extends State<FilterScreen> {
     setState(() {
       _filters = newFilters;
       // Simulate recalculating match count
-      _matchCount = (47 - (newFilters.selectedGenres.length * 3) + 
-                   (newFilters.maxDistance / 10).toInt())
-                   .clamp(5, 200);
+      _matchCount =
+          (47 -
+                  (newFilters.selectedGenres.length * 3) +
+                  (newFilters.maxDistance / 10).toInt())
+              .clamp(5, 200);
     });
   }
 
@@ -159,9 +177,7 @@ class _FilterScreenState extends State<FilterScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
-          border: Border(
-            top: BorderSide(color: AppColors.border(brightness)),
-          ),
+          border: Border(top: BorderSide(color: AppColors.border(brightness))),
         ),
         child: SafeArea(
           child: Row(
@@ -249,7 +265,10 @@ class _FilterScreenState extends State<FilterScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface(brightness),
                   borderRadius: BorderRadius.circular(20),
@@ -306,7 +325,10 @@ class _FilterScreenState extends State<FilterScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [AppColors.crimson, Color(0xFFFF6B6B)],
@@ -347,10 +369,12 @@ class _FilterScreenState extends State<FilterScreen> {
               max: 2000,
               divisions: 40,
               onChanged: (values) {
-                _updateFilters(_filters.copyWith(
-                  minPayment: values.start,
-                  maxPayment: values.end,
-                ));
+                _updateFilters(
+                  _filters.copyWith(
+                    minPayment: values.start,
+                    maxPayment: values.end,
+                  ),
+                );
               },
             ),
           ),
@@ -468,7 +492,9 @@ class _FilterScreenState extends State<FilterScreen> {
                           ? AppColors.crimson
                           : AppColors.text(brightness),
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
                   ),
                 ],
@@ -512,7 +538,8 @@ class _FilterScreenState extends State<FilterScreen> {
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
-                  initialDate: _filters.dateTo ?? 
+                  initialDate:
+                      _filters.dateTo ??
                       DateTime.now().add(const Duration(days: 30)),
                   firstDate: _filters.dateFrom ?? DateTime.now(),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
@@ -693,7 +720,9 @@ class _ToggleOption extends StatelessWidget {
               ),
               child: Icon(
                 icon,
-                color: value ? AppColors.crimson : AppColors.textSec(brightness),
+                color: value
+                    ? AppColors.crimson
+                    : AppColors.textSec(brightness),
                 size: 20,
               ),
             ),

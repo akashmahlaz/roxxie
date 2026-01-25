@@ -43,15 +43,15 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
     _tabController = TabController(length: 2, vsync: this);
 
     _particleController = AnimationController(
-       vsync: this,
-       duration: const Duration(seconds: 40),
+      vsync: this,
+      duration: const Duration(seconds: 40),
     )..repeat();
 
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat(reverse: true);
-    
+
     _badgePulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -70,13 +70,15 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
 
   void _initParticles() {
     for (int i = 0; i < 30; i++) {
-      _particles.add(_MatchParticle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble(),
-        size: _random.nextDouble() * 3 + 1,
-        speed: _random.nextDouble() * 0.1 + 0.05,
-        opacity: _random.nextDouble() * 0.4 + 0.1,
-      ));
+      _particles.add(
+        _MatchParticle(
+          x: _random.nextDouble(),
+          y: _random.nextDouble(),
+          size: _random.nextDouble() * 3 + 1,
+          speed: _random.nextDouble() * 0.1 + 0.05,
+          opacity: _random.nextDouble() * 0.4 + 0.1,
+        ),
+      );
     }
   }
 
@@ -93,7 +95,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       extendBodyBehindAppBar: true,
@@ -132,31 +134,36 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
           SafeArea(
             child: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                 _buildSliverAppBar(brightness),
-                 SliverToBoxAdapter(child: const SizedBox(height: 10)),
-                 SliverPersistentHeader(
-                   pinned: true,
-                   delegate: _PremiumTabHeaderDelegate(
-                     tabController: _tabController,
-                     brightness: brightness,
-                   ),
-                 ),
+                _buildSliverAppBar(brightness),
+                SliverToBoxAdapter(child: const SizedBox(height: 10)),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _PremiumTabHeaderDelegate(
+                    tabController: _tabController,
+                    brightness: brightness,
+                  ),
+                ),
               ],
               body: Consumer<MatchProvider>(
                 builder: (context, provider, child) {
-                   if (provider.status == MatchListStatus.loading && provider.matches.isEmpty) {
-                     return const Center(child: CircularProgressIndicator(color: AppColors.crimson));
-                   }
-                   if (provider.matches.isEmpty) {
-                     return _buildEmptyState(brightness);
-                   }
-                   return TabBarView(
-                     controller: _tabController,
-                     children: [
-                       _buildNewMatchesGrid(provider, brightness),
-                       _buildMessagesList(provider, brightness),
-                     ],
-                   );
+                  if (provider.status == MatchListStatus.loading &&
+                      provider.matches.isEmpty) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.crimson,
+                      ),
+                    );
+                  }
+                  if (provider.matches.isEmpty) {
+                    return _buildEmptyState(brightness);
+                  }
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildNewMatchesGrid(provider, brightness),
+                      _buildMessagesList(provider, brightness),
+                    ],
+                  );
                 },
               ),
             ),
@@ -177,7 +184,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
       pinned: true,
       backgroundColor: Colors.transparent,
       elevation: 0,
-       flexibleSpace: ClipRRect(
+      flexibleSpace: ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
@@ -186,25 +193,25 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
         ),
       ),
       title: Row(
-         children: [
-           Container(
-             padding: const EdgeInsets.all(8),
-             decoration: BoxDecoration(
-               color: AppColors.crimson.withValues(alpha: 0.1),
-               shape: BoxShape.circle,
-             ),
-             child: Icon(Icons.favorite_rounded, color: AppColors.crimson),
-           ),
-           const SizedBox(width: 12),
-           Text(
-             'Matches',
-             style: TextStyle(
-               color: AppColors.text(brightness),
-               fontWeight: FontWeight.w800,
-               fontSize: 24,
-             ),
-           ),
-         ],
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.favorite_rounded, color: AppColors.crimson),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Matches',
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontWeight: FontWeight.w800,
+              fontSize: 24,
+            ),
+          ),
+        ],
       ),
       actions: [
         IconButton(
@@ -224,7 +231,11 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
     final matches = provider.newMatches;
 
     if (matches.isEmpty) {
-      return _buildTabEmptyState('No new matches', Icons.favorite_border, brightness);
+      return _buildTabEmptyState(
+        'No new matches',
+        Icons.favorite_border,
+        brightness,
+      );
     }
 
     return RefreshIndicator(
@@ -256,28 +267,32 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildMessagesList(MatchProvider provider, Brightness brightness) {
-     final matches = provider.conversationMatches;
+    final matches = provider.conversationMatches;
 
-     if (matches.isEmpty) {
-       return _buildTabEmptyState('No conversations started', Icons.chat_bubble_outline, brightness);
-     }
+    if (matches.isEmpty) {
+      return _buildTabEmptyState(
+        'No conversations started',
+        Icons.chat_bubble_outline,
+        brightness,
+      );
+    }
 
-     return RefreshIndicator(
-       onRefresh: () => provider.loadMatches(refresh: true),
-       color: AppColors.crimson,
-       child: ListView.builder(
-         padding: const EdgeInsets.symmetric(vertical: 12),
-         itemCount: matches.length,
-         itemBuilder: (context, index) {
-           return _PremiumMessageTile(
-             match: matches[index],
-             brightness: brightness,
-             onTap: () => _openChat(matches[index]),
-             index: index,
-           );
-         },
-       ),
-     );
+    return RefreshIndicator(
+      onRefresh: () => provider.loadMatches(refresh: true),
+      color: AppColors.crimson,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        itemCount: matches.length,
+        itemBuilder: (context, index) {
+          return _PremiumMessageTile(
+            match: matches[index],
+            brightness: brightness,
+            onTap: () => _openChat(matches[index]),
+            index: index,
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildEmptyState(Brightness brightness) {
@@ -285,11 +300,19 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 80, color: AppColors.crimson.withValues(alpha: 0.5)),
+          Icon(
+            Icons.people_outline,
+            size: 80,
+            color: AppColors.crimson.withValues(alpha: 0.5),
+          ),
           const SizedBox(height: 16),
           Text(
             'Keep Swiping',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.text(brightness)),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.text(brightness),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -307,16 +330,24 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-             padding: const EdgeInsets.all(24),
-             decoration: BoxDecoration(
-               color: AppColors.surface(brightness).withValues(alpha: 0.5),
-               shape: BoxShape.circle,
-               border: Border.all(color: AppColors.border(brightness).withValues(alpha: 0.3)),
-             ),
-             child: Icon(icon, size: 40, color: AppColors.textTert(brightness)),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.surface(brightness).withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.border(brightness).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Icon(icon, size: 40, color: AppColors.textTert(brightness)),
           ),
           const SizedBox(height: 16),
-          Text(msg, style: TextStyle(color: AppColors.textSec(brightness), fontSize: 16)),
+          Text(
+            msg,
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 16,
+            ),
+          ),
         ],
       ),
     );
@@ -326,7 +357,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
     HapticFeedback.lightImpact();
     // Assuming Route is setup or direct push
     // Using simple push for now as verified in matches_screen
-     Navigator.pushNamed(context, '/chat/${match.id}');
+    Navigator.pushNamed(context, '/chat/${match.id}');
   }
 }
 
@@ -340,7 +371,12 @@ class _PremiumMatchCard extends StatelessWidget {
   final Brightness brightness;
   final int index;
 
-  const _PremiumMatchCard({required this.match, required this.onTap, required this.brightness, required this.index});
+  const _PremiumMatchCard({
+    required this.match,
+    required this.onTap,
+    required this.brightness,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -358,10 +394,7 @@ class _PremiumMatchCard extends StatelessWidget {
         builder: (context, value, child) {
           return Transform.translate(
             offset: Offset(0, 30 * (1 - value)),
-            child: Opacity(
-              opacity: value,
-              child: child,
-            ),
+            child: Opacity(opacity: value, child: child),
           );
         },
         child: Container(
@@ -384,9 +417,10 @@ class _PremiumMatchCard extends StatelessWidget {
                 Image.network(
                   photo,
                   fit: BoxFit.cover,
-                  errorBuilder: (_,__,___) => Container(color: AppColors.surface(brightness)),
+                  errorBuilder: (_, _, _) =>
+                      Container(color: AppColors.surface(brightness)),
                 ),
-                
+
                 // Gradient Overlay
                 Container(
                   decoration: BoxDecoration(
@@ -411,12 +445,22 @@ class _PremiumMatchCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.crimson,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text('NEW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'NEW',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -447,7 +491,12 @@ class _PremiumMessageTile extends StatelessWidget {
   final VoidCallback onTap;
   final int index;
 
-  const _PremiumMessageTile({required this.match, required this.brightness, required this.onTap, required this.index});
+  const _PremiumMessageTile({
+    required this.match,
+    required this.brightness,
+    required this.onTap,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -467,49 +516,64 @@ class _PremiumMessageTile extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-               padding: const EdgeInsets.all(16),
-               decoration: BoxDecoration(
-                 color: unread ? AppColors.crimson.withValues(alpha: 0.05) : AppColors.surface(brightness).withValues(alpha: 0.6),
-                 borderRadius: BorderRadius.circular(20),
-                 border: Border.all(color: AppColors.border(brightness).withValues(alpha: 0.3)),
-               ),
-               child: Row(
-                 children: [
-                   CircleAvatar(
-                     radius: 28,
-                     backgroundColor: AppColors.surface(brightness), 
-                     backgroundImage: NetworkImage(photo),
-                   ),
-                   const SizedBox(width: 16),
-                   Expanded(
-                     child: Column(
-                       crossAxisAlignment: CrossAxisAlignment.start,
-                       children: [
-                         Text(name, style: TextStyle(
-                           color: AppColors.text(brightness),
-                           fontWeight: FontWeight.bold,
-                           fontSize: 16
-                         )),
-                         const SizedBox(height: 4),
-                         Text(
-                           lastMsg,
-                           maxLines: 1,
-                           overflow: TextOverflow.ellipsis,
-                           style: TextStyle(
-                            color: unread ? AppColors.text(brightness) : AppColors.textSec(brightness),
-                            fontWeight: unread ? FontWeight.w600 : FontWeight.w400
-                           ),
-                         ),
-                       ],
-                     ),
-                   ),
-                   if (unread)
-                     Container(
-                       width: 10, height: 10, 
-                       decoration: const BoxDecoration(color: AppColors.crimson, shape: BoxShape.circle),
-                     ),
-                 ],
-               ),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: unread
+                    ? AppColors.crimson.withValues(alpha: 0.05)
+                    : AppColors.surface(brightness).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.border(brightness).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.surface(brightness),
+                    backgroundImage: NetworkImage(photo),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          lastMsg,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: unread
+                                ? AppColors.text(brightness)
+                                : AppColors.textSec(brightness),
+                            fontWeight: unread
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (unread)
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: AppColors.crimson,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -522,10 +586,17 @@ class _PremiumTabHeaderDelegate extends SliverPersistentHeaderDelegate {
   final TabController tabController;
   final Brightness brightness;
 
-  _PremiumTabHeaderDelegate({required this.tabController, required this.brightness});
+  _PremiumTabHeaderDelegate({
+    required this.tabController,
+    required this.brightness,
+  });
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -533,39 +604,39 @@ class _PremiumTabHeaderDelegate extends SliverPersistentHeaderDelegate {
           color: AppColors.background(brightness).withValues(alpha: 0.8),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           child: Theme(
-             data: Theme.of(context).copyWith(
-               highlightColor: Colors.transparent,
-               splashColor: Colors.transparent,
-             ),
-             child: Container(
-               padding: const EdgeInsets.all(4),
-               decoration: BoxDecoration(
-                 color: AppColors.surface(brightness),
-                 borderRadius: BorderRadius.circular(25),
-               ),
-               child: TabBar(
-                 controller: tabController,
-                 indicator: BoxDecoration(
-                   color: AppColors.crimson,
-                   borderRadius: BorderRadius.circular(20),
-                   boxShadow: [
-                     BoxShadow(
-                       color: AppColors.crimson.withValues(alpha: 0.3),
-                       blurRadius: 8,
-                       offset: const Offset(0, 2),
-                     ),
-                   ],
-                 ),
-                 labelColor: Colors.white,
-                 unselectedLabelColor: AppColors.textSec(brightness),
-                 labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                 tabs: const [
-                   Tab(text: 'New Matches'),
-                   Tab(text: 'Messages'),
-                 ],
-                 dividerColor: Colors.transparent,
-               ),
-             ),
+            data: Theme.of(context).copyWith(
+              highlightColor: Colors.transparent,
+              splashColor: Colors.transparent,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.surface(brightness),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: TabBar(
+                controller: tabController,
+                indicator: BoxDecoration(
+                  color: AppColors.crimson,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.crimson.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: AppColors.textSec(brightness),
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                tabs: const [
+                  Tab(text: 'New Matches'),
+                  Tab(text: 'Messages'),
+                ],
+                dividerColor: Colors.transparent,
+              ),
+            ),
           ),
         ),
       ),
@@ -586,7 +657,13 @@ class _PremiumTabHeaderDelegate extends SliverPersistentHeaderDelegate {
 
 class _MatchParticle {
   double x, y, size, speed, opacity;
-  _MatchParticle({required this.x, required this.y, required this.size, required this.speed, required this.opacity});
+  _MatchParticle({
+    required this.x,
+    required this.y,
+    required this.size,
+    required this.speed,
+    required this.opacity,
+  });
 }
 
 class _MatchParticlePainter extends CustomPainter {
@@ -594,16 +671,27 @@ class _MatchParticlePainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _MatchParticlePainter({required this.particles, required this.progress, required this.color});
+  _MatchParticlePainter({
+    required this.particles,
+    required this.progress,
+    required this.color,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     for (final p in particles) {
       final y = (p.y - progress * p.speed) % 1.0;
       final x = p.x + math.sin(progress * 2 * math.pi + p.x * 10) * 0.02;
-      canvas.drawCircle(Offset(x * size.width, y * size.height), p.size, Paint()..color = color.withValues(alpha: p.opacity * 0.2)..style = PaintingStyle.fill);
+      canvas.drawCircle(
+        Offset(x * size.width, y * size.height),
+        p.size,
+        Paint()
+          ..color = color.withValues(alpha: p.opacity * 0.2)
+          ..style = PaintingStyle.fill,
+      );
     }
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter old) => true;
 }
@@ -614,12 +702,22 @@ class _MatchOrbPainter extends CustomPainter {
   _MatchOrbPainter({required this.progress, required this.isDark});
   @override
   void paint(Canvas canvas, Size size) {
-     final paint = Paint()
-       ..shader = RadialGradient(
-         colors: [Colors.purple.withValues(alpha: isDark ? 0.1 : 0.05), Colors.transparent],
-       ).createShader(Rect.fromCircle(center: Offset(size.width * 0.8, size.height * 0.2), radius: 200));
-     canvas.drawRect(Offset.zero & size, paint);
+    final paint = Paint()
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.purple.withValues(alpha: isDark ? 0.1 : 0.05),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.8, size.height * 0.2),
+              radius: 200,
+            ),
+          );
+    canvas.drawRect(Offset.zero & size, paint);
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter old) => true;
 }

@@ -48,7 +48,7 @@ class _MatchesScreenState extends State<MatchesScreen>
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       appBar: AppBar(
@@ -249,7 +249,7 @@ class _MatchCard extends StatelessWidget {
   final Brightness brightness;
 
   const _MatchCard({
-    required this.match, 
+    required this.match,
     required this.onTap,
     required this.brightness,
   });
@@ -409,7 +409,7 @@ class _ConversationTile extends StatelessWidget {
   final Brightness brightness;
 
   const _ConversationTile({
-    required this.match, 
+    required this.match,
     required this.onTap,
     required this.brightness,
   });
@@ -458,9 +458,14 @@ class _ConversationTile extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 26,
                     backgroundColor: AppColors.surface(brightness),
-                    backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                    backgroundImage: photo.isNotEmpty
+                        ? NetworkImage(photo)
+                        : null,
                     child: photo.isEmpty
-                        ? Icon(Icons.person_rounded, color: AppColors.textSec(brightness))
+                        ? Icon(
+                            Icons.person_rounded,
+                            color: AppColors.textSec(brightness),
+                          )
                         : null,
                   ),
                 ),

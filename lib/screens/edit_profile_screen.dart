@@ -1,5 +1,5 @@
 /// ✏️ GIGMATCH Edit Profile Screen
-/// 
+///
 /// Modern, premium profile editor with:
 /// - Smooth animations and transitions
 /// - Real-time preview
@@ -71,14 +71,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     final venue = auth.venueProfile;
 
     _nameController = TextEditingController(
-      text: auth.isArtist ? (artist?.displayName ?? user?.name) : (venue?.name ?? user?.name),
+      text: auth.isArtist
+          ? (artist?.displayName ?? user?.name)
+          : (venue?.name ?? user?.name),
     );
     _bioController = TextEditingController(
       text: auth.isArtist ? artist?.bio : venue?.description,
     );
-    _stageNameController = TextEditingController(
-      text: artist?.stageName ?? '',
-    );
+    _stageNameController = TextEditingController(text: artist?.stageName ?? '');
     _phoneController = TextEditingController(
       text: '', // Phone not available in Artist/Venue API response
     );
@@ -89,7 +89,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     if (auth.isArtist && artist != null) {
       _selectedGenres = List<String>.from(artist.genres);
     } else if (auth.isVenue && venue != null) {
-      _selectedGenres = List<String>.from(venue.gigPreferences?.preferredGenres ?? []);
+      _selectedGenres = List<String>.from(
+        venue.gigPreferences?.preferredGenres ?? [],
+      );
     }
 
     setState(() {});
@@ -134,7 +136,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       // Upload new photo if selected
       if (_newProfilePhotoPath != null) {
         try {
-          final result = await _uploadService.uploadProfilePhoto(_newProfilePhotoPath!);
+          final result = await _uploadService.uploadProfilePhoto(
+            _newProfilePhotoPath!,
+          );
           uploadedPhotoUrl = result.url;
         } catch (e) {
           debugPrint('Photo upload failed: $e');
@@ -152,22 +156,26 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
       // Update role-specific profile
       if (auth.isArtist) {
-        await auth.updateArtistProfile(UpdateArtistRequest(
-          stageName: _stageNameController.text.trim().isEmpty 
-              ? null 
-              : _stageNameController.text.trim(),
-          bio: _bioController.text.trim(),
-          genres: _selectedGenres,
-        ));
+        await auth.updateArtistProfile(
+          UpdateArtistRequest(
+            stageName: _stageNameController.text.trim().isEmpty
+                ? null
+                : _stageNameController.text.trim(),
+            bio: _bioController.text.trim(),
+            genres: _selectedGenres,
+          ),
+        );
       } else if (auth.isVenue) {
-        await auth.updateVenueProfile(UpdateVenueRequest(
-          venueName: _nameController.text.trim(),
-          description: _bioController.text.trim(),
-          preferredGenres: _selectedGenres,
-          phone: _phoneController.text.trim().isEmpty 
-              ? null 
-              : _phoneController.text.trim(),
-        ));
+        await auth.updateVenueProfile(
+          UpdateVenueRequest(
+            venueName: _nameController.text.trim(),
+            description: _bioController.text.trim(),
+            preferredGenres: _selectedGenres,
+            phone: _phoneController.text.trim().isEmpty
+                ? null
+                : _phoneController.text.trim(),
+          ),
+        );
       }
 
       if (!mounted) return;
@@ -241,7 +249,11 @@ class _EditProfileScreenState extends State<EditProfileScreen>
               const SizedBox(height: 32),
 
               // Basic Info Section
-              _buildSectionHeader('Basic Information', Icons.person_rounded, brightness),
+              _buildSectionHeader(
+                'Basic Information',
+                Icons.person_rounded,
+                brightness,
+              ),
               const SizedBox(height: 16),
               _buildNameField(brightness, auth),
               if (auth.isArtist) ...[
@@ -254,7 +266,11 @@ class _EditProfileScreenState extends State<EditProfileScreen>
               const SizedBox(height: 32),
 
               // Contact Section
-              _buildSectionHeader('Contact', Icons.contact_phone_rounded, brightness),
+              _buildSectionHeader(
+                'Contact',
+                Icons.contact_phone_rounded,
+                brightness,
+              ),
               const SizedBox(height: 16),
               _buildPhoneField(brightness),
               const SizedBox(height: 16),
@@ -365,10 +381,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                     AppColors.wine.withValues(alpha: 0.1),
                   ],
                 ),
-                border: Border.all(
-                  color: AppColors.crimson,
-                  width: 3,
-                ),
+                border: Border.all(color: AppColors.crimson, width: 3),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.crimson.withValues(alpha: 0.3),
@@ -386,14 +399,15 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                         height: 120,
                       )
                     : (currentPhotoUrl != null && currentPhotoUrl.isNotEmpty
-                        ? Image.network(
-                            currentPhotoUrl,
-                            fit: BoxFit.cover,
-                            width: 120,
-                            height: 120,
-                            errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(brightness, auth),
-                          )
-                        : _buildAvatarPlaceholder(brightness, auth)),
+                          ? Image.network(
+                              currentPhotoUrl,
+                              fit: BoxFit.cover,
+                              width: 120,
+                              height: 120,
+                              errorBuilder: (_, _, _) =>
+                                  _buildAvatarPlaceholder(brightness, auth),
+                            )
+                          : _buildAvatarPlaceholder(brightness, auth)),
               ),
             ),
 
@@ -440,7 +454,11 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, Brightness brightness) {
+  Widget _buildSectionHeader(
+    String title,
+    IconData icon,
+    Brightness brightness,
+  ) {
     return Row(
       children: [
         Container(
@@ -597,9 +615,25 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   Widget _buildGenreSelector(Brightness brightness) {
     final allGenres = [
-      'Rock', 'Pop', 'Jazz', 'Blues', 'Country', 'Hip Hop', 'R&B',
-      'Electronic', 'Classical', 'Folk', 'Indie', 'Metal', 'Reggae',
-      'Soul', 'Funk', 'Latin', 'World', 'Alternative', 'Punk',
+      'Rock',
+      'Pop',
+      'Jazz',
+      'Blues',
+      'Country',
+      'Hip Hop',
+      'R&B',
+      'Electronic',
+      'Classical',
+      'Folk',
+      'Indie',
+      'Metal',
+      'Reggae',
+      'Soul',
+      'Funk',
+      'Latin',
+      'World',
+      'Alternative',
+      'Punk',
     ];
 
     return Wrap(
@@ -627,14 +661,18 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                   : AppColors.surface(brightness),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppColors.crimson : AppColors.border(brightness),
+                color: isSelected
+                    ? AppColors.crimson
+                    : AppColors.border(brightness),
                 width: isSelected ? 1.5 : 1,
               ),
             ),
             child: Text(
               genre,
               style: TextStyle(
-                color: isSelected ? AppColors.crimson : AppColors.text(brightness),
+                color: isSelected
+                    ? AppColors.crimson
+                    : AppColors.text(brightness),
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -658,7 +696,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                   colors: [AppColors.crimson, Color(0xFFFF4D6D)],
                 )
               : null,
-          color: _hasChanges && !_isSaving ? null : AppColors.surface(brightness),
+          color: _hasChanges && !_isSaving
+              ? null
+              : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _hasChanges && !_isSaving

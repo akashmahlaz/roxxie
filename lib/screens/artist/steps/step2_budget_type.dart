@@ -4,11 +4,11 @@ import '../../../core/models/artist_models.dart';
 import '../../../core/theme/theme.dart';
 
 /// 🎸 ARTIST STEP 2: PERFORMANCE TYPE & BUDGET
-/// 
+///
 /// Features:
 /// - Performance type selection (Solo, Duo, Band, DJ, etc)
 /// - Budget tier selection (similar to venue)
-/// 
+///
 /// This step is SKIPPABLE - user can proceed without filling
 
 class ArtistStep2BudgetType extends StatefulWidget {
@@ -39,27 +39,55 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
     {'name': 'Duo', 'icon': Icons.people_rounded, 'desc': '2 musicians'},
     {'name': 'Band', 'icon': Icons.groups_rounded, 'desc': '3+ members'},
     {'name': 'DJ', 'icon': Icons.album_rounded, 'desc': 'Electronic/mixing'},
-    {'name': 'Orchestra', 'icon': Icons.piano_rounded, 'desc': 'Large ensemble'},
+    {
+      'name': 'Orchestra',
+      'icon': Icons.piano_rounded,
+      'desc': 'Large ensemble',
+    },
     {'name': 'Other', 'icon': Icons.music_note_rounded, 'desc': 'Other type'},
   ];
 
   // Budget tiers with min/max values
   final List<Map<String, dynamic>> _budgetTiers = [
-    {'name': 'Starting', 'icon': Icons.local_cafe_rounded, 'min': 50.0, 'max': 150.0, 'range': '\$50–150'},
-    {'name': 'Standard', 'icon': Icons.music_note_rounded, 'min': 150.0, 'max': 400.0, 'range': '\$150–400'},
-    {'name': 'Premium', 'icon': Icons.star_rounded, 'min': 400.0, 'max': 800.0, 'range': '\$400–800'},
-    {'name': 'Pro', 'icon': Icons.diamond_rounded, 'min': 800.0, 'max': 2000.0, 'range': '\$800+'},
+    {
+      'name': 'Starting',
+      'icon': Icons.local_cafe_rounded,
+      'min': 50.0,
+      'max': 150.0,
+      'range': '\$50–150',
+    },
+    {
+      'name': 'Standard',
+      'icon': Icons.music_note_rounded,
+      'min': 150.0,
+      'max': 400.0,
+      'range': '\$150–400',
+    },
+    {
+      'name': 'Premium',
+      'icon': Icons.star_rounded,
+      'min': 400.0,
+      'max': 800.0,
+      'range': '\$400–800',
+    },
+    {
+      'name': 'Pro',
+      'icon': Icons.diamond_rounded,
+      'min': 800.0,
+      'max': 2000.0,
+      'range': '\$800+',
+    },
   ];
 
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize from existing data
     _selectedPerformanceType = widget.profileData.bandSize != null
         ? _getPerformanceTypeFromBandSize(widget.profileData.bandSize!)
         : null;
-    
+
     // Determine which tier is selected based on existing budget
     final existingMin = widget.profileData.minPrice;
     final existingMax = widget.profileData.maxPrice;
@@ -83,12 +111,18 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
 
   int _getBandSizeFromType(String type) {
     switch (type) {
-      case 'Solo': return 1;
-      case 'Duo': return 2;
-      case 'Band': return 4;
-      case 'DJ': return 1;
-      case 'Orchestra': return 10;
-      default: return 1;
+      case 'Solo':
+        return 1;
+      case 'Duo':
+        return 2;
+      case 'Band':
+        return 4;
+      case 'DJ':
+        return 1;
+      case 'Orchestra':
+        return 10;
+      default:
+        return 1;
     }
   }
 
@@ -154,7 +188,7 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           Center(
             child: Text(
               'Almost there!',
@@ -184,11 +218,7 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
           // ═══════════════════════════════════════════════════════════════
           Row(
             children: [
-              Icon(
-                Icons.mic_rounded,
-                color: AppColors.crimson,
-                size: 20,
-              ),
+              Icon(Icons.mic_rounded, color: AppColors.crimson, size: 20),
               const SizedBox(width: 8),
               Text(
                 'What type of act?',
@@ -212,7 +242,10 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
                 onTap: () => _selectPerformanceType(type),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     gradient: isSelected
                         ? LinearGradient(
@@ -222,13 +255,13 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
                             ],
                           )
                         : null,
-                    color: isSelected 
-                        ? null 
+                    color: isSelected
+                        ? null
                         : (isDark ? AppColors.graphite : Colors.grey[100]),
                     borderRadius: BorderRadius.circular(50), // Fully rounded
                     border: Border.all(
-                      color: isSelected 
-                          ? AppColors.crimson 
+                      color: isSelected
+                          ? AppColors.crimson
                           : (isDark ? AppColors.slate : Colors.grey[300]!),
                       width: isSelected ? 2 : 1,
                     ),
@@ -248,18 +281,18 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
                       Icon(
                         type['icon'] as IconData,
                         size: 18,
-                        color: isSelected 
-                            ? Colors.white 
-                            : AppColors.crimson,
+                        color: isSelected ? Colors.white : AppColors.crimson,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         type['name'] as String,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected 
-                              ? Colors.white 
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
                               : AppColors.text(brightness),
                         ),
                       ),
@@ -276,11 +309,7 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
           // ═══════════════════════════════════════════════════════════════
           Row(
             children: [
-              Icon(
-                Icons.payments_rounded,
-                color: AppColors.crimson,
-                size: 20,
-              ),
+              Icon(Icons.payments_rounded, color: AppColors.crimson, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Your typical rate',
@@ -319,13 +348,13 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
                             ],
                           )
                         : null,
-                    color: isSelected 
-                        ? null 
+                    color: isSelected
+                        ? null
                         : (isDark ? AppColors.graphite : Colors.grey[50]),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected 
-                          ? AppColors.crimson 
+                      color: isSelected
+                          ? AppColors.crimson
                           : (isDark ? AppColors.slate : Colors.grey[300]!),
                       width: isSelected ? 2 : 1,
                     ),
@@ -345,9 +374,7 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
                       Icon(
                         tier['icon'] as IconData,
                         size: 28,
-                        color: isSelected 
-                            ? Colors.white 
-                            : AppColors.crimson,
+                        color: isSelected ? Colors.white : AppColors.crimson,
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -355,8 +382,8 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: isSelected 
-                              ? Colors.white 
+                          color: isSelected
+                              ? Colors.white
                               : AppColors.text(brightness),
                         ),
                       ),
@@ -366,8 +393,8 @@ class _ArtistStep2BudgetTypeState extends State<ArtistStep2BudgetType> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: isSelected 
-                              ? Colors.white.withValues(alpha: 0.9) 
+                          color: isSelected
+                              ? Colors.white.withValues(alpha: 0.9)
                               : (isDark ? Colors.grey[400] : Colors.grey[600]),
                         ),
                       ),

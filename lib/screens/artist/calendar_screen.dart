@@ -22,18 +22,39 @@ class ArtistCalendarScreen extends StatefulWidget {
 
 class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   final CalendarService _calendarService = CalendarService();
-  
+
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDate = DateTime.now();
-  
+
   CalendarResponse? _calendarData;
   bool _isLoading = true;
   String? _errorMessage;
 
   // Date formatters
-  static const _weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  static const _weekdays = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
   static const _weekdaysShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  static const _months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  static const _months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
 
   @override
   void initState() {
@@ -74,12 +95,16 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   }
 
   String _formatWeekday(DateTime date) => _weekdays[date.weekday % 7];
-  String _formatMonthDay(DateTime date) => '${_months[date.month - 1]} ${date.day}, ${date.year}';
-  String _formatMonthYear(DateTime date) => '${_months[date.month - 1]} ${date.year}';
+  String _formatMonthDay(DateTime date) =>
+      '${_months[date.month - 1]} ${date.day}, ${date.year}';
+  String _formatMonthYear(DateTime date) =>
+      '${_months[date.month - 1]} ${date.year}';
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
@@ -99,12 +124,12 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   List<CalendarEvent> _getEventsForDay(DateTime date) {
     return _calendarData?.getEventsForDate(date) ?? [];
   }
-  
+
   /// Get last week's availability for the same day
   GigTimeSlot? _getLastWeekSlot(DateTime date) {
     final lastWeekDate = date.subtract(const Duration(days: 7));
     final lastWeekEvents = _getEventsForDay(lastWeekDate);
-    
+
     for (final event in lastWeekEvents) {
       if (event.eventType == CalendarEventType.availability) {
         // Convert to GigTimeSlot
@@ -117,38 +142,41 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
     }
     return null;
   }
-  
+
   /// Get existing availability slots for the current date (for conflict detection)
   List<AvailabilitySlot> _getExistingSlotsForDay(DateTime date) {
     final events = _getEventsForDay(date);
     final slots = <AvailabilitySlot>[];
-    
+
     for (final event in events) {
       if (event.eventType == CalendarEventType.availability) {
-        slots.add(AvailabilitySlot(
-          date: date,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          isOvernight: false, // Will be determined by time comparison
-        ));
+        slots.add(
+          AvailabilitySlot(
+            date: date,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            isOvernight: false, // Will be determined by time comparison
+          ),
+        );
       }
     }
     return slots;
   }
-  
+
   /// Parse time string like "10:30 PM" to hour/minute
+  // ignore: unused_element
   Map<String, int>? _parseTimeString(String timeStr) {
     try {
       final clean = timeStr.trim().replaceAll('(Next Day)', '').trim();
       final isPM = clean.toUpperCase().contains('PM');
       final parts = clean.replaceAll(RegExp(r'[APMapm]'), '').trim().split(':');
-      
+
       int hour = int.parse(parts[0].trim());
       int minute = parts.length > 1 ? int.parse(parts[1].trim()) : 0;
-      
+
       if (isPM && hour != 12) hour += 12;
       if (!isPM && hour == 12) hour = 0;
-      
+
       return {'hour': hour, 'minute': minute};
     } catch (_) {
       return null;
@@ -186,12 +214,21 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _StatDot(color: AppColors.success, count: _calendarData!.availableCount),
+                  _StatDot(
+                    color: AppColors.success,
+                    count: _calendarData!.availableCount,
+                  ),
                   const SizedBox(width: 8),
-                  _StatDot(color: AppColors.crimson, count: _calendarData!.bookedCount),
+                  _StatDot(
+                    color: AppColors.crimson,
+                    count: _calendarData!.bookedCount,
+                  ),
                   if (_calendarData!.blockedCount > 0) ...[
                     const SizedBox(width: 8),
-                    _StatDot(color: AppColors.textDisabled, count: _calendarData!.blockedCount),
+                    _StatDot(
+                      color: AppColors.textDisabled,
+                      count: _calendarData!.blockedCount,
+                    ),
                   ],
                 ],
               ),
@@ -228,8 +265,8 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
               child: _isLoading
                   ? _buildLoadingState(brightness)
                   : _errorMessage != null
-                      ? _buildErrorState(brightness)
-                      : _buildEventList(brightness),
+                  ? _buildErrorState(brightness)
+                  : _buildEventList(brightness),
             ),
           ],
         ),
@@ -265,7 +302,10 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
             children: [
               IconButton(
                 onPressed: () => _changeMonth(-1),
-                icon: Icon(Icons.chevron_left_rounded, color: AppColors.text(brightness)),
+                icon: Icon(
+                  Icons.chevron_left_rounded,
+                  color: AppColors.text(brightness),
+                ),
                 tooltip: 'Previous month',
               ),
               GestureDetector(
@@ -288,12 +328,15 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
               ),
               IconButton(
                 onPressed: () => _changeMonth(1),
-                icon: Icon(Icons.chevron_right_rounded, color: AppColors.text(brightness)),
+                icon: Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.text(brightness),
+                ),
                 tooltip: 'Next month',
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
 
           // Weekday Headers
@@ -325,13 +368,16 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   }
 
   Widget _buildDaysGrid(Brightness brightness) {
-    final daysInMonth = DateUtils.getDaysInMonth(_focusedDay.year, _focusedDay.month);
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _focusedDay.year,
+      _focusedDay.month,
+    );
     final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
     final weekdayOffset = firstDayOfMonth.weekday % 7;
-    
+
     final totalCells = daysInMonth + weekdayOffset;
     final rowCount = (totalCells / 7).ceil();
-    
+
     // For checking past dates
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -350,7 +396,11 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 return const SizedBox(width: 36, height: 36);
               }
 
-              final currentDay = DateTime(_focusedDay.year, _focusedDay.month, dayNumber);
+              final currentDay = DateTime(
+                _focusedDay.year,
+                _focusedDay.month,
+                dayNumber,
+              );
               final isSelected = DateUtils.isSameDay(currentDay, _selectedDate);
               final isToday = DateUtils.isSameDay(currentDay, DateTime.now());
               final isPast = currentDay.isBefore(today);
@@ -368,8 +418,8 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                     color: isSelected
                         ? AppColors.crimson
                         : isToday
-                            ? AppColors.crimson.withValues(alpha: 0.1)
-                            : Colors.transparent,
+                        ? AppColors.crimson.withValues(alpha: 0.1)
+                        : Colors.transparent,
                     shape: BoxShape.circle,
                     border: isToday && !isSelected
                         ? Border.all(color: AppColors.crimson, width: 1.5)
@@ -384,10 +434,10 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                           color: isSelected
                               ? Colors.white
                               : isToday
-                                  ? AppColors.crimson
-                                  : isPast
-                                      ? AppColors.textDisabled
-                                      : AppColors.text(brightness),
+                              ? AppColors.crimson
+                              : isPast
+                              ? AppColors.textDisabled
+                              : AppColors.text(brightness),
                           fontWeight: isSelected || isToday
                               ? FontWeight.w700
                               : FontWeight.w400,
@@ -405,7 +455,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                                 Container(
                                   width: 4,
                                   height: 4,
-                                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 1,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.crimson,
                                     shape: BoxShape.circle,
@@ -415,7 +467,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                                 Container(
                                   width: 4,
                                   height: 4,
-                                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 1,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.success,
                                     shape: BoxShape.circle,
@@ -425,7 +479,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                                 Container(
                                   width: 4,
                                   height: 4,
-                                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 1,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.textDisabled,
                                     shape: BoxShape.circle,
@@ -459,7 +515,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _isToday(_selectedDate) ? 'Today' : _formatWeekday(_selectedDate),
+                _isToday(_selectedDate)
+                    ? 'Today'
+                    : _formatWeekday(_selectedDate),
                 style: TextStyle(
                   color: AppColors.text(brightness),
                   fontSize: 20,
@@ -497,7 +555,10 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ),
               if (events.isEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface(brightness),
                     borderRadius: BorderRadius.circular(20),
@@ -550,7 +611,8 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
         shortError = 'Calendar service unavailable';
       } else if (_errorMessage!.contains('401')) {
         shortError = 'Please sign in again';
-      } else if (_errorMessage!.contains('timeout') || _errorMessage!.contains('connect')) {
+      } else if (_errorMessage!.contains('timeout') ||
+          _errorMessage!.contains('connect')) {
         shortError = 'Check your internet connection';
       }
     }
@@ -596,11 +658,15 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
 
   Widget _buildEventList(Brightness brightness) {
     final events = _getEventsForDay(_selectedDate);
-    
+
     // Check if selected date is in the past
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final selectedDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    final selectedDay = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+    );
     final isPastDate = selectedDay.isBefore(today);
 
     if (events.isEmpty) {
@@ -618,7 +684,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isPastDate ? Icons.history_rounded : Icons.event_available_rounded,
+                  isPastDate
+                      ? Icons.history_rounded
+                      : Icons.event_available_rounded,
                   color: AppColors.textTert(brightness),
                   size: 32,
                 ),
@@ -664,10 +732,14 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   }
 
   /// Show event details bottom sheet
-  void _showEventDetails(BuildContext context, CalendarEvent event, Brightness brightness) {
+  void _showEventDetails(
+    BuildContext context,
+    CalendarEvent event,
+    Brightness brightness,
+  ) {
     final isGig = event.isGig;
     final isAvailability = event.eventType == CalendarEventType.availability;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.sheetBackground(brightness),
@@ -695,21 +767,23 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ),
               ),
             ),
-            
+
             // Event Type Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: isGig 
-                    ? AppColors.crimson.withOpacity(0.1)
-                    : AppColors.success.withOpacity(0.1),
+                color: isGig
+                    ? AppColors.crimson.withValues(alpha: 0.1)
+                    : AppColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isGig ? Icons.music_note_rounded : Icons.event_available_rounded,
+                    isGig
+                        ? Icons.music_note_rounded
+                        : Icons.event_available_rounded,
                     size: 16,
                     color: isGig ? AppColors.crimson : AppColors.success,
                   ),
@@ -726,7 +800,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Title
             Text(
               event.title,
@@ -737,11 +811,15 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // Date & Time
             Row(
               children: [
-                Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.textSec(brightness)),
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 16,
+                  color: AppColors.textSec(brightness),
+                ),
                 const SizedBox(width: 8),
                 Text(
                   _formatMonthDay(event.date),
@@ -752,7 +830,11 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.schedule_rounded, size: 16, color: AppColors.textSec(brightness)),
+                Icon(
+                  Icons.schedule_rounded,
+                  size: 16,
+                  color: AppColors.textSec(brightness),
+                ),
                 const SizedBox(width: 8),
                 Text(
                   '${event.displayStartTime} - ${event.displayEndTime}',
@@ -764,13 +846,17 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ),
               ],
             ),
-            
+
             // Venue (for gigs)
             if (event.venueName != null) ...[
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.location_on_rounded, size: 16, color: AppColors.crimson),
+                  Icon(
+                    Icons.location_on_rounded,
+                    size: 16,
+                    color: AppColors.crimson,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     event.venueName!,
@@ -783,13 +869,17 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ],
               ),
             ],
-            
+
             // Payment (for gigs)
             if (event.payment != null) ...[
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.attach_money_rounded, size: 16, color: AppColors.success),
+                  Icon(
+                    Icons.attach_money_rounded,
+                    size: 16,
+                    color: AppColors.success,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     '\$${event.payment!.toStringAsFixed(0)}',
@@ -802,7 +892,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ],
               ),
             ],
-            
+
             // Notes
             if (event.notes != null && event.notes!.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -823,9 +913,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 24),
-            
+
             // Action Buttons
             if (isGig) ...[
               // View Gig Details button for gigs
@@ -861,8 +951,15 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                         Navigator.pop(ctx);
                         _deleteAvailability(event);
                       },
-                      icon: Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
-                      label: Text('Remove', style: TextStyle(color: AppColors.error)),
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: AppColors.error,
+                      ),
+                      label: Text(
+                        'Remove',
+                        style: TextStyle(color: AppColors.error),
+                      ),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: AppColors.error),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -895,7 +992,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ],
               ),
             ],
-            
+
             SizedBox(height: MediaQuery.of(ctx).viewPadding.bottom + 8),
           ],
         ),
@@ -904,7 +1001,11 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   }
 
   /// Show edit availability sheet
-  void _showEditAvailabilitySheet(BuildContext context, CalendarEvent event, Brightness brightness) {
+  void _showEditAvailabilitySheet(
+    BuildContext context,
+    CalendarEvent event,
+    Brightness brightness,
+  ) {
     // Parse existing times
     final startParts = event.startTime.split(':');
     final endParts = event.endTime.split(':');
@@ -912,10 +1013,11 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
     final startMin = int.parse(startParts[1]);
     final endHour = int.parse(endParts[0]);
     final endMin = int.parse(endParts[1]);
-    
+
     // Determine if overnight (if end < start)
-    final isOvernight = endHour < startHour || (endHour == startHour && endMin < startMin);
-    
+    final isOvernight =
+        endHour < startHour || (endHour == startHour && endMin < startMin);
+
     GigTimeSlot timeSlot = GigTimeSlot(
       date: event.date,
       startHour: startHour,
@@ -970,7 +1072,11 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.crimson),
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 14,
+                    color: AppColors.crimson,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     _formatMonthDay(event.date),
@@ -983,7 +1089,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Time Range Picker
               TimeRangePicker(
                 date: event.date,
@@ -1000,9 +1106,13 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: timeSlot.isValid ? () => _updateAvailability(ctx, event, timeSlot) : null,
+                  onPressed: timeSlot.isValid
+                      ? () => _updateAvailability(ctx, event, timeSlot)
+                      : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: timeSlot.isValid ? AppColors.success : AppColors.ash,
+                    backgroundColor: timeSlot.isValid
+                        ? AppColors.success
+                        : AppColors.ash,
                     disabledBackgroundColor: AppColors.ash,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     elevation: timeSlot.isValid ? 2 : 0,
@@ -1011,9 +1121,13 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                     ),
                   ),
                   child: Text(
-                    timeSlot.isValid ? 'Update Availability' : 'Invalid Time Slot',
+                    timeSlot.isValid
+                        ? 'Update Availability'
+                        : 'Invalid Time Slot',
                     style: TextStyle(
-                      color: timeSlot.isValid ? Colors.white : AppColors.textDisabled,
+                      color: timeSlot.isValid
+                          ? Colors.white
+                          : AppColors.textDisabled,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -1028,28 +1142,36 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   }
 
   /// Update existing availability
-  void _updateAvailability(BuildContext context, CalendarEvent existingEvent, GigTimeSlot timeSlot) async {
+  void _updateAvailability(
+    BuildContext context,
+    CalendarEvent existingEvent,
+    GigTimeSlot timeSlot,
+  ) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
-    
+
     try {
       // Delete old and add new (simple update approach)
       await _calendarService.removeAvailability(existingEvent.date);
-      
+
       final slot = AvailabilitySlot.fromTimeSlot(timeSlot);
       await _calendarService.addAvailability(slot);
-      
+
       _loadCalendar();
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text('Availability updated: ${timeSlot.displayStartTime} → ${timeSlot.displayEndTime}'),
+          content: Text(
+            'Availability updated: ${timeSlot.displayStartTime} → ${timeSlot.displayEndTime}',
+          ),
           backgroundColor: AppColors.success,
         ),
       );
     } catch (e) {
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text('Failed to update: ${e.toString().split(':').last.trim()}'),
+          content: Text(
+            'Failed to update: ${e.toString().split(':').last.trim()}',
+          ),
           backgroundColor: AppColors.error,
         ),
       );
@@ -1065,7 +1187,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Availability?'),
-        content: Text('Remove availability for ${_formatMonthDay(event.date)}?'),
+        content: Text(
+          'Remove availability for ${_formatMonthDay(event.date)}?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1104,6 +1228,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _blockDate(Brightness brightness) async {
     try {
       await _calendarService.blockDate(_selectedDate);
@@ -1166,7 +1291,8 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                     Center(
                       child: GestureDetector(
                         onVerticalDragEnd: (details) {
-                          if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+                          if (details.primaryVelocity != null &&
+                              details.primaryVelocity! > 300) {
                             Navigator.pop(context);
                           }
                         },
@@ -1182,79 +1308,85 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                Text(
-                  'Add Availability',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 14,
-                      color: AppColors.crimson,
-                    ),
-                    const SizedBox(width: 6),
                     Text(
-                      _formatMonthDay(_selectedDate),
+                      'Add Availability',
                       style: TextStyle(
-                        color: AppColors.crimson,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        color: AppColors.text(brightness),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 14,
+                          color: AppColors.crimson,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _formatMonthDay(_selectedDate),
+                          style: TextStyle(
+                            color: AppColors.crimson,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Slider-Based Time Picker with conflict detection
+                    TimeRangePicker(
+                      date: _selectedDate,
+                      initialSlot: timeSlot,
+                      brightness: brightness,
+                      existingSlots: _getExistingSlotsForDay(_selectedDate),
+                      lastWeekSlot: _getLastWeekSlot(_selectedDate),
+                      onChanged: (slot) {
+                        setSheetState(() => timeSlot = slot);
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: timeSlot.isValid
+                            ? () => _submitAvailability(context, timeSlot)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: timeSlot.isValid
+                              ? AppColors.crimson
+                              : AppColors.ash,
+                          disabledBackgroundColor: AppColors.ash,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: timeSlot.isValid ? 2 : 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: Text(
+                          timeSlot.isValid
+                              ? 'Add Availability'
+                              : 'Invalid Time Slot',
+                          style: TextStyle(
+                            color: timeSlot.isValid
+                                ? Colors.white
+                                : AppColors.textDisabled,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-
-                // Slider-Based Time Picker with conflict detection
-                TimeRangePicker(
-                  date: _selectedDate,
-                  initialSlot: timeSlot,
-                  brightness: brightness,
-                  existingSlots: _getExistingSlotsForDay(_selectedDate),
-                  lastWeekSlot: _getLastWeekSlot(_selectedDate),
-                  onChanged: (slot) {
-                    setSheetState(() => timeSlot = slot);
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: timeSlot.isValid ? () => _submitAvailability(context, timeSlot) : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: timeSlot.isValid 
-                          ? AppColors.crimson 
-                          : AppColors.ash,
-                      disabledBackgroundColor: AppColors.ash,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      elevation: timeSlot.isValid ? 2 : 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      timeSlot.isValid ? 'Add Availability' : 'Invalid Time Slot',
-                      style: TextStyle(
-                        color: timeSlot.isValid ? Colors.white : AppColors.textDisabled,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
           ),
         ),
       ),
@@ -1287,10 +1419,16 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: AppColors.charcoal,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 28),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.warning,
+                size: 28,
+              ),
               const SizedBox(width: 12),
               const Text(
                 'Time Conflict',
@@ -1307,48 +1445,52 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 style: TextStyle(color: Colors.white70),
               ),
               const SizedBox(height: 12),
-              ...conflictingEvents.map((event) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.obsidian,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _getEventColor(event).withOpacity(0.5)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      event.eventType == CalendarEventType.gig 
-                          ? Icons.music_note 
-                          : Icons.check_circle_outline,
-                      color: _getEventColor(event),
-                      size: 20,
+              ...conflictingEvents.map(
+                (event) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.obsidian,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _getEventColor(event).withValues(alpha: 0.5),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            event.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '${event.startTime} - ${event.endTime}',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        event.eventType == CalendarEventType.gig
+                            ? Icons.music_note
+                            : Icons.check_circle_outline,
+                        color: _getEventColor(event),
+                        size: 20,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              event.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              '${event.startTime} - ${event.endTime}',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              )),
+              ),
               const SizedBox(height: 8),
               Text(
                 'Would you like to add this availability anyway?',
@@ -1398,29 +1540,34 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
     // Store scaffold messenger before popping
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     Navigator.pop(context); // Close bottom sheet
-    
+
     // Create slot using the robust model (includes timezone info)
     final slot = AvailabilitySlot.fromTimeSlot(timeSlot);
 
-    _calendarService.addAvailability(slot).then((_) {
-      _loadCalendar();
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            'Availability added: ${timeSlot.displayStartTime} → ${timeSlot.displayEndTime}'
-            '${timeSlot.isOvernight ? ' (overnight)' : ''}',
-          ),
-          backgroundColor: AppColors.success,
-        ),
-      );
-    }).catchError((e) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text('Failed to add: ${e.toString().split(':').last.trim()}'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    });
+    _calendarService
+        .addAvailability(slot)
+        .then((_) {
+          _loadCalendar();
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Availability added: ${timeSlot.displayStartTime} → ${timeSlot.displayEndTime}'
+                '${timeSlot.isOvernight ? ' (overnight)' : ''}',
+              ),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        })
+        .catchError((e) {
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to add: ${e.toString().split(':').last.trim()}',
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        });
   }
 
   /// Get color for calendar event type
@@ -1530,8 +1677,8 @@ class _EventCard extends StatelessWidget {
     final accentColor = isGig
         ? AppColors.crimson
         : isBlocked
-            ? AppColors.textDisabled
-            : AppColors.success;
+        ? AppColors.textDisabled
+        : AppColors.success;
 
     return Material(
       color: Colors.transparent,
@@ -1544,103 +1691,104 @@ class _EventCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface(brightness),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: accentColor.withOpacity(0.3),
-            ),
+            border: Border.all(color: accentColor.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 5,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
-        children: [
-          // Time Column
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                event.displayStartTime,
-                style: TextStyle(
-                  color: AppColors.text(brightness),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                event.displayEndTime,
-                style: TextStyle(
-                  color: AppColors.textTert(brightness),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 16),
-
-          // Vertical Accent
-          Container(
-            width: 4,
-            height: 44,
-            decoration: BoxDecoration(
-              color: accentColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.title,
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (event.venueName != null)
+              // Time Column
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    '@ ${event.venueName}',
+                    event.displayStartTime,
                     style: TextStyle(
-                      color: AppColors.crimson,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                if (event.payment != null)
-                  Text(
-                    '\$${event.payment!.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      color: AppColors.success,
+                      color: AppColors.text(brightness),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-              ],
-            ),
-          ),
+                  Text(
+                    event.displayEndTime,
+                    style: TextStyle(
+                      color: AppColors.textTert(brightness),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
 
-          // Action
-          if (isGig)
-            Icon(Icons.star_rounded, color: accentColor)
-          else if (onDelete != null)
-            IconButton(
-              onPressed: onDelete,
-              icon: Icon(Icons.delete_outline_rounded, color: AppColors.error),
-              tooltip: 'Remove',
-            )
-          else
-            Icon(
-              isBlocked ? Icons.block_rounded : Icons.check_circle_rounded,
-              color: accentColor,
-            ),
-          ],
+              // Vertical Accent
+              Container(
+                width: 4,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title,
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (event.venueName != null)
+                      Text(
+                        '@ ${event.venueName}',
+                        style: TextStyle(
+                          color: AppColors.crimson,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    if (event.payment != null)
+                      Text(
+                        '\$${event.payment!.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Action
+              if (isGig)
+                Icon(Icons.star_rounded, color: accentColor)
+              else if (onDelete != null)
+                IconButton(
+                  onPressed: onDelete,
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.error,
+                  ),
+                  tooltip: 'Remove',
+                )
+              else
+                Icon(
+                  isBlocked ? Icons.block_rounded : Icons.check_circle_rounded,
+                  color: accentColor,
+                ),
+            ],
           ),
         ),
       ),

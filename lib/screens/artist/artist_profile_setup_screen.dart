@@ -35,10 +35,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
   final ArtistProfileData _profileData = ArtistProfileData();
 
   // Step titles
-  final List<String> _stepTitles = [
-    'Location & Music',
-    'Rate & Type',
-  ];
+  final List<String> _stepTitles = ['Location & Music', 'Rate & Type'];
 
   final List<String> _stepSubtitles = [
     'Help venues find you',
@@ -68,38 +65,40 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
   /// Pre-populate artist setup with data from user signup & existing artist profile
   void _prePopulateFromUserData() {
     if (_isInitialized) return;
-    
+
     final auth = context.read<AuthProvider>();
     final user = auth.user;
     final existingArtist = auth.artistProfile;
-    
+
     debugPrint('🎸 [ArtistSetup] Pre-populating data...');
     debugPrint('   - User: ${user?.name}, ${user?.email}');
     debugPrint('   - Existing artist: ${existingArtist?.stageName}');
-    debugPrint('   - Signup location: ${auth.signupCity}, ${auth.signupCountry}');
-    
+    debugPrint(
+      '   - Signup location: ${auth.signupCity}, ${auth.signupCountry}',
+    );
+
     setState(() {
       // ═══════════════════════════════════════════════════════════════════
       // PRE-POPULATE FROM USER ACCOUNT (signup data)
       // ═══════════════════════════════════════════════════════════════════
-      
+
       // Display name / Stage name from user's name (they entered during signup)
       if (user?.name != null && user!.name.isNotEmpty) {
         _profileData.displayName = user.name;
         _profileData.stageName = user.name;
         debugPrint('✅ Set displayName from user.name: ${user.name}');
       }
-      
+
       // Email from user account
       if (user?.email != null && user!.email.isNotEmpty) {
         _profileData.email = user.email;
       }
-      
+
       // Phone from user account
       if (user?.phone != null && user!.phone!.isNotEmpty) {
         _profileData.phone = user.phone;
       }
-      
+
       // ═══════════════════════════════════════════════════════════════════
       // PRE-POPULATE FROM SIGNUP LOCATION DATA (stored in AuthProvider)
       // ═══════════════════════════════════════════════════════════════════
@@ -116,21 +115,21 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
         _profileData.longitude ??= auth.signupLongitude;
         debugPrint('📍 Pre-filled coordinates from signup');
       }
-      
+
       // ═══════════════════════════════════════════════════════════════════
       // PRE-POPULATE FROM EXISTING ARTIST PROFILE (if any)
       // ═══════════════════════════════════════════════════════════════════
       if (existingArtist != null) {
         debugPrint('🎸 [ArtistSetup] Found existing artist profile!');
-        
+
         _profileData.displayName ??= existingArtist.displayName;
         _profileData.stageName ??= existingArtist.stageName;
         _profileData.bio ??= existingArtist.bio;
-        
+
         if (existingArtist.genres.isNotEmpty) {
           _profileData.genres = List.from(existingArtist.genres);
         }
-        
+
         final location = existingArtist.location;
         if (location != null) {
           _profileData.city ??= location.city;
@@ -141,14 +140,14 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
             _profileData.latitude = coords[1];
           }
         }
-        
+
         _profileData.minPrice = existingArtist.minPrice;
         _profileData.maxPrice = existingArtist.maxPrice;
       }
-      
+
       _isInitialized = true;
     });
-    
+
     debugPrint('✅ Pre-populated artist setup:');
     debugPrint('   - Name: ${_profileData.displayName}');
     debugPrint('   - City: ${_profileData.city}');
@@ -195,7 +194,8 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
 
     try {
       // Upload profile photo if exists and is local
-      if (_profileData.profilePhoto != null && !isRemoteUrl(_profileData.profilePhoto)) {
+      if (_profileData.profilePhoto != null &&
+          !isRemoteUrl(_profileData.profilePhoto)) {
         try {
           final uploadResult = await uploadService.uploadProfilePhoto(
             _profileData.profilePhoto!,
@@ -218,12 +218,14 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
       if (user != null && user.name.isNotEmpty) {
         _profileData.displayName = user.name;
         _profileData.stageName = user.name;
-        debugPrint('🎸 [ArtistSetup] Setting displayName from user.name: ${user.name}');
+        debugPrint(
+          '🎸 [ArtistSetup] Setting displayName from user.name: ${user.name}',
+        );
       } else {
         // Last resort fallback
         final email = user?.email ?? '';
-        _profileData.displayName = email.split('@').first.isNotEmpty 
-            ? email.split('@').first 
+        _profileData.displayName = email.split('@').first.isNotEmpty
+            ? email.split('@').first
             : 'Artist';
         _profileData.stageName = _profileData.displayName;
         debugPrint('⚠️ [ArtistSetup] Using email fallback for displayName');
@@ -232,7 +234,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
 
     // Build the request data
     final requestData = _profileData.toBackendDto();
-    
+
     debugPrint('🎸 [ArtistSetup] DTO keys: ${requestData.keys.toList()}');
     debugPrint('🎸 [ArtistSetup] displayName: ${_profileData.displayName}');
     debugPrint('🎸 [ArtistSetup] Genres: ${_profileData.genres.length}');
@@ -247,13 +249,13 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
       // completeArtistSetupWithData() already sets _status = AuthStatus.authenticated
       // Calling init() would re-fetch user from backend which may have stale data
       // and could reset status to profileIncomplete
-      
+
       if (!mounted) return;
-      
+
       // Navigate to success screen
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => 
+          pageBuilder: (context, animation, secondaryAnimation) =>
               _ArtistSetupSuccessScreen(brightness: brightness),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
@@ -264,10 +266,14 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Setup failed. Please try again.'),
+          content: Text(
+            authProvider.errorMessage ?? 'Setup failed. Please try again.',
+          ),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -294,7 +300,9 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Profile saved! You can complete it later in Settings.'),
+          content: Text(
+            'Profile saved! You can complete it later in Settings.',
+          ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
@@ -308,7 +316,9 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Skipped for now. You can complete your profile later in Settings.'),
+          content: Text(
+            'Skipped for now. You can complete your profile later in Settings.',
+          ),
           backgroundColor: AppColors.crimson,
           behavior: SnackBarBehavior.floating,
         ),
@@ -353,7 +363,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
                 ],
               ),
             ),
-            
+
             // Bottom Navigation Button
             _buildBottomNavigation(brightness),
           ],
@@ -390,7 +400,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
                 )
               else
                 const SizedBox(width: 42),
-              
+
               // Step indicator
               Row(
                 children: List.generate(_totalSteps, (index) {
@@ -401,20 +411,23 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
                     width: isActive ? 32 : 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: isActive || isCompleted 
-                          ? AppColors.crimson 
+                      color: isActive || isCompleted
+                          ? AppColors.crimson
                           : (isDark ? AppColors.slate : Colors.grey[300]),
                       borderRadius: BorderRadius.circular(5),
                     ),
                   );
                 }),
               ),
-              
+
               // Skip button
               GestureDetector(
                 onTap: _skipToEnd,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.graphite : Colors.grey[100],
                     borderRadius: BorderRadius.circular(20),
@@ -432,7 +445,7 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Step title
           Row(
             children: [
@@ -474,7 +487,10 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
               ),
               // Step counter
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface(brightness),
                   borderRadius: BorderRadius.circular(20),
@@ -556,11 +572,12 @@ class _ArtistProfileSetupScreenState extends State<ArtistProfileSetupScreen> {
 
 class _ArtistSetupSuccessScreen extends StatefulWidget {
   final Brightness brightness;
-  
+
   const _ArtistSetupSuccessScreen({required this.brightness});
 
   @override
-  State<_ArtistSetupSuccessScreen> createState() => _ArtistSetupSuccessScreenState();
+  State<_ArtistSetupSuccessScreen> createState() =>
+      _ArtistSetupSuccessScreenState();
 }
 
 class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
@@ -574,32 +591,32 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _mainController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
+
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
-    
+
     _scaleAnimation = CurvedAnimation(
       parent: _mainController,
       curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _mainController,
       curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
     );
-    
+
     _slideAnimation = CurvedAnimation(
       parent: _mainController,
       curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
     );
-    
+
     _mainController.forward();
   }
 
@@ -613,7 +630,7 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = widget.brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: AppColors.background(widget.brightness),
       body: Stack(
@@ -630,7 +647,7 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
               ),
             ),
           ),
-          
+
           // Animated background circles
           Positioned(
             top: -100,
@@ -657,7 +674,7 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
               },
             ),
           ),
-          
+
           Positioned(
             bottom: -150,
             left: -100,
@@ -683,7 +700,7 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
               },
             ),
           ),
-          
+
           // Main content
           SafeArea(
             child: Padding(
@@ -691,7 +708,7 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
               child: Column(
                 children: [
                   const Spacer(flex: 2),
-                  
+
                   // Success Icon
                   ScaleTransition(
                     scale: _scaleAnimation,
@@ -720,9 +737,9 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Title
                   FadeTransition(
                     opacity: _fadeAnimation,
@@ -737,9 +754,9 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Subtitle
                   FadeTransition(
                     opacity: _fadeAnimation,
@@ -753,9 +770,9 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 48),
-                  
+
                   // Features list
                   SlideTransition(
                     position: Tween<Offset>(
@@ -767,13 +784,13 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
                       child: Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: isDark 
-                              ? Colors.white.withValues(alpha: 0.05) 
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
                               : Colors.grey[100],
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: isDark 
-                                ? Colors.white.withValues(alpha: 0.1) 
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
                                 : Colors.grey[200]!,
                           ),
                         ),
@@ -804,9 +821,9 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
                       ),
                     ),
                   ),
-                  
+
                   const Spacer(flex: 2),
-                  
+
                   // CTA Button
                   SlideTransition(
                     position: Tween<Offset>(
@@ -848,7 +865,7 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
                 ],
               ),
@@ -859,7 +876,12 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
     );
   }
 
-  Widget _buildFeatureRow(IconData icon, String title, String subtitle, bool isDark) {
+  Widget _buildFeatureRow(
+    IconData icon,
+    String title,
+    String subtitle,
+    bool isDark,
+  ) {
     return Row(
       children: [
         Container(
@@ -869,11 +891,7 @@ class _ArtistSetupSuccessScreenState extends State<_ArtistSetupSuccessScreen>
             color: AppColors.crimson.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(
-            icon,
-            color: AppColors.crimson,
-            size: 24,
-          ),
+          child: Icon(icon, color: AppColors.crimson, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(

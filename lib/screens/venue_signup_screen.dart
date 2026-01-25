@@ -95,7 +95,8 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      final locationResult = await _locationService.getCurrentLocationWithAddress();
+      final locationResult = await _locationService
+          .getCurrentLocationWithAddress();
 
       if (locationResult != null) {
         if (mounted) {
@@ -111,10 +112,14 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
 
         messenger.showSnackBar(
           SnackBar(
-            content: Text('📍 Location set: ${locationResult.city}, ${locationResult.country}'),
+            content: Text(
+              '📍 Location set: ${locationResult.city}, ${locationResult.country}',
+            ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -124,7 +129,9 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
           content: const Text('📍 Enable location access or enter manually'),
           backgroundColor: AppColors.crimson,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           action: SnackBarAction(
             label: 'Enter Manually',
             textColor: Colors.white,
@@ -144,7 +151,10 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface(Theme.of(context).brightness),
-        title: Text('Enter Location', style: TextStyle(color: AppColors.text(Theme.of(context).brightness))),
+        title: Text(
+          'Enter Location',
+          style: TextStyle(color: AppColors.text(Theme.of(context).brightness)),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -170,7 +180,12 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: AppColors.textTert(Theme.of(context).brightness))),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppColors.textTert(Theme.of(context).brightness),
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -213,7 +228,9 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
           content: const Text('Please accept the Terms & Conditions'),
           backgroundColor: AppColors.crimson,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;
@@ -266,10 +283,14 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
         // Navigate to profile setup wizard
         messenger.showSnackBar(
           SnackBar(
-            content: const Text('✅ Account created! Complete your venue profile'),
+            content: const Text(
+              '✅ Account created! Complete your venue profile',
+            ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
 
@@ -289,7 +310,9 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
           content: Text('⚠️ ${e.message}'),
           backgroundColor: AppColors.crimson,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } catch (e) {
@@ -298,7 +321,9 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
           content: Text('❌ ${e.toString().replaceAll('Exception: ', '')}'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } finally {
@@ -348,17 +373,18 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
           keyboardType: keyboardType,
           obscureText: obscureText,
           maxLines: maxLines,
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontSize: 15,
-          ),
+          style: TextStyle(color: AppColors.text(brightness), fontSize: 15),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(
               color: AppColors.textTert(brightness),
               fontSize: 15,
             ),
-            prefixIcon: Icon(prefixIcon, color: AppColors.textTert(brightness), size: 22),
+            prefixIcon: Icon(
+              prefixIcon,
+              color: AppColors.textTert(brightness),
+              size: 22,
+            ),
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: AppColors.inputFill(brightness),
@@ -382,7 +408,10 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: AppColors.error, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ],
@@ -411,7 +440,9 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
             _buildGPSButton(brightness),
           ],
         ),
-        const SizedBox(height: 16), // ✅ PROPER SPACING (16px) between city and country
+        const SizedBox(
+          height: 16,
+        ), // ✅ PROPER SPACING (16px) between city and country
         // Country field
         _buildTextField(
           controller: _countryController,
@@ -422,14 +453,15 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
+              Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 16,
+              ),
               const SizedBox(width: 6),
               Text(
                 'GPS: $_detectedCity, $_detectedCountry',
-                style: TextStyle(
-                  color: AppColors.success,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.success, fontSize: 12),
               ),
             ],
           ),
@@ -455,9 +487,7 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
               ],
             ),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppColors.crimson.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
           ),
           child: Center(
             child: _isGettingLocation
@@ -533,10 +563,16 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [AppColors.crimson, const Color(0xFFB91C1C)],
+                            colors: [
+                              AppColors.crimson,
+                              const Color(0xFFB91C1C),
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -654,12 +690,10 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                   ),
 
                   const SizedBox(height: 16), // ✅ PROPER SPACING (16px)
-
                   // 2. Location fields (City + GPS + Country)
                   _buildLocationRow(),
 
                   const SizedBox(height: 16), // ✅ PROPER SPACING (16px)
-
                   // 3. Email field
                   _buildTextField(
                     controller: _emailController,
@@ -671,7 +705,9 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                       if (value == null || value.trim().isEmpty) {
                         return 'Enter your email address';
                       }
-                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      final emailRegex = RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      );
                       if (!emailRegex.hasMatch(value)) {
                         return 'Enter a valid email address';
                       }
@@ -680,7 +716,6 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                   ),
 
                   const SizedBox(height: 16), // ✅ PROPER SPACING (16px)
-
                   // 4. Password field
                   _buildTextField(
                     controller: _passwordController,
@@ -736,7 +771,6 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                   ),
 
                   const SizedBox(height: 16), // ✅ PROPER SPACING (16px)
-
                   // 5. Confirm Password field
                   _buildTextField(
                     controller: _confirmPasswordController,
@@ -753,7 +787,10 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         size: 22,
                       ),
                       onPressed: () {
-                        setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                        setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        );
                       },
                     ),
                     validator: (value) {
@@ -784,15 +821,23 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                           height: 24,
                           margin: const EdgeInsets.only(top: 2),
                           decoration: BoxDecoration(
-                            color: _acceptTerms ? AppColors.crimson : Colors.transparent,
+                            color: _acceptTerms
+                                ? AppColors.crimson
+                                : Colors.transparent,
                             border: Border.all(
-                              color: _acceptTerms ? AppColors.crimson : AppColors.border(brightness),
+                              color: _acceptTerms
+                                  ? AppColors.crimson
+                                  : AppColors.border(brightness),
                               width: 2,
                             ),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: _acceptTerms
-                              ? Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                )
                               : null,
                         ),
                       ),
@@ -877,7 +922,11 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.business_rounded, color: Colors.white, size: 20),
+                                  Icon(
+                                    Icons.business_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                   const SizedBox(width: 10),
                                   Text(
                                     'List My Venue',
@@ -913,7 +962,9 @@ class _VenueSignupScreenState extends State<VenueSignupScreen>
                         onTap: () {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
                           );
                         },
                         child: Text(

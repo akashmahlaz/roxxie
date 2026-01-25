@@ -13,24 +13,25 @@ import '../services/error_handling_service.dart';
 class ApiClient {
   static ApiClient? _instance;
   late final Dio _dio;
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 🔐 SECURE STORAGE CONFIGURATION
   // Uses flutter_secure_storage with proper settings for data persistence
   // This fixes the issue where tokens are lost on app restart/reinstall
   // ═══════════════════════════════════════════════════════════════════════════
   late final FlutterSecureStorage _storage;
-  
+
   // Android options to persist tokens across app restarts
   // Note: encryptedSharedPreferences is deprecated in v10, using custom ciphers
   static AndroidOptions _getAndroidOptions() => const AndroidOptions(
     // Use strong encryption algorithms for token storage
-    keyCipherAlgorithm: KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+    keyCipherAlgorithm:
+        KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
     storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
     // Reset storage on error to prevent corrupted state blocking the app
     resetOnError: true,
   );
-  
+
   // iOS options for keychain persistence
   static IOSOptions _getIOSOptions() => const IOSOptions(
     accessibility: KeychainAccessibility.first_unlock_this_device,
@@ -47,7 +48,7 @@ class ApiClient {
       aOptions: _getAndroidOptions(),
       iOptions: _getIOSOptions(),
     );
-    
+
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConfig.baseUrl,
@@ -75,7 +76,7 @@ class ApiClient {
   // 🔑 TOKEN MANAGEMENT
   // All storage operations have try-catch to handle encryption key issues
   // ═══════════════════════════════════════════════════════════════════════════
-  
+
   Future<String?> getAccessToken() async {
     try {
       return await _storage.read(key: ApiConfig.accessTokenKey);
@@ -159,7 +160,7 @@ class ApiClient {
       return null;
     }
   }
-  
+
   /// Handle storage errors by clearing corrupted data
   Future<void> _handleStorageError() async {
     try {
@@ -386,7 +387,7 @@ class _LoggingInterceptor extends Interceptor {
     if (err.response?.data != null) {
       debugPrint('   Response: ${err.response?.data}');
     }
-    
+
     // Log to error handling service
     ErrorHandlingService().logError(
       err,
@@ -397,7 +398,7 @@ class _LoggingInterceptor extends Interceptor {
         'statusCode': err.response?.statusCode,
       },
     );
-    
+
     handler.next(err);
   }
 }
@@ -418,9 +419,11 @@ class _RetryInterceptor extends Interceptor {
     if (shouldRetry && retryCount < _maxRetries) {
       // Calculate exponential backoff delay
       final delay = _initialDelay * (1 << retryCount); // 2^retryCount
-      
-      debugPrint('⏳ Retrying request (${retryCount + 1}/$_maxRetries) after ${delay.inMilliseconds}ms');
-      
+
+      debugPrint(
+        '⏳ Retrying request (${retryCount + 1}/$_maxRetries) after ${delay.inMilliseconds}ms',
+      );
+
       await Future.delayed(delay);
 
       // Increment retry count

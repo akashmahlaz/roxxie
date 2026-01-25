@@ -43,12 +43,15 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
 
   /// Check if email was already set from signup
   bool get _hasEmailFromSignup =>
-      widget.profileData.email != null && widget.profileData.email!.trim().isNotEmpty;
+      widget.profileData.email != null &&
+      widget.profileData.email!.trim().isNotEmpty;
 
   /// Check if city/country was already set from signup
   bool get _hasLocationFromSignup =>
-      (widget.profileData.city != null && widget.profileData.city!.trim().isNotEmpty) ||
-      (widget.profileData.latitude != null && widget.profileData.latitude!.abs() > 0.000001);
+      (widget.profileData.city != null &&
+          widget.profileData.city!.trim().isNotEmpty) ||
+      (widget.profileData.latitude != null &&
+          widget.profileData.latitude!.abs() > 0.000001);
 
   @override
   void initState() {
@@ -262,7 +265,9 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  onPressed: _isGettingLocation ? null : _fillFromCurrentLocation,
+                  onPressed: _isGettingLocation
+                      ? null
+                      : _fillFromCurrentLocation,
                   icon: _isGettingLocation
                       ? SizedBox(
                           width: 16,
@@ -341,7 +346,7 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
         final state = await _locationService.getPermissionState();
         final isPermissionIssue =
             state == LocationPermissionState.deniedForever ||
-                state == LocationPermissionState.denied;
+            state == LocationPermissionState.denied;
 
         messenger.showSnackBar(
           SnackBar(
@@ -868,9 +873,7 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
       decoration: BoxDecoration(
         color: AppColors.crimson.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.crimson.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -916,7 +919,11 @@ class _ContactLocationStepState extends State<ContactLocationStep> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.green, size: 14),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.green,
+                  size: 14,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   badge,

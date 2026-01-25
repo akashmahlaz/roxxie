@@ -8,12 +8,12 @@ import '../../../core/models/venues_models.dart';
 import '../../../core/theme/theme.dart';
 
 /// 🏢 STEP 1: LOCATION & MUSIC PREFERENCES
-/// 
+///
 /// Features:
 /// - GPS auto-detect location (city + country)
 /// - Interactive OpenStreetMap preview
 /// - Preferred genres selection
-/// 
+///
 /// This step is SKIPPABLE - user can proceed without filling
 
 class Step1LocationMusic extends StatefulWidget {
@@ -36,19 +36,32 @@ class Step1LocationMusic extends StatefulWidget {
 
 class _Step1LocationMusicState extends State<Step1LocationMusic> {
   final MapController _mapController = MapController();
-  
+
   // Location state
   bool _isDetectingLocation = false;
   bool _locationDetected = false;
   String? _detectedCity;
   String? _detectedCountry;
   LatLng _currentPosition = const LatLng(40.7128, -74.0060); // Default: NYC
-  
+
   // Available genres for selection
   final List<String> _allGenres = [
-    'Jazz', 'Rock', 'Pop', 'EDM', 'Hip Hop', 'R&B',
-    'Country', 'Blues', 'Classical', 'Indie', 'Folk', 
-    'Reggae', 'Metal', 'Soul', 'Funk', 'Latin',
+    'Jazz',
+    'Rock',
+    'Pop',
+    'EDM',
+    'Hip Hop',
+    'R&B',
+    'Country',
+    'Blues',
+    'Classical',
+    'Indie',
+    'Folk',
+    'Reggae',
+    'Metal',
+    'Soul',
+    'Funk',
+    'Latin',
   ];
 
   @override
@@ -71,10 +84,10 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
 
   Future<void> _detectLocation() async {
     if (_isDetectingLocation) return;
-    
+
     setState(() => _isDetectingLocation = true);
     HapticFeedback.lightImpact();
-    
+
     try {
       // Check permission
       LocationPermission permission = await Geolocator.checkPermission();
@@ -85,12 +98,14 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
           return;
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
-        _showLocationError('Location permission permanently denied. Enable in settings.');
+        _showLocationError(
+          'Location permission permanently denied. Enable in settings.',
+        );
         return;
       }
-      
+
       // Try last known position first (fast)
       final lastKnown = await Geolocator.getLastKnownPosition();
       if (lastKnown != null && mounted) {
@@ -138,7 +153,10 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
         // Update profile data
         widget.profileData.location.city = _detectedCity;
         widget.profileData.location.country = _detectedCountry;
-        widget.profileData.location.coordinates = [position.longitude, position.latitude];
+        widget.profileData.location.coordinates = [
+          position.longitude,
+          position.latitude,
+        ];
       });
 
       _mapController.move(_currentPosition, quick ? 12 : 14);
@@ -149,14 +167,17 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
         _locationDetected = true;
-        widget.profileData.location.coordinates = [position.longitude, position.latitude];
+        widget.profileData.location.coordinates = [
+          position.longitude,
+          position.latitude,
+        ];
       });
 
       _mapController.move(_currentPosition, quick ? 12 : 14);
       widget.onDataChanged();
     }
   }
-  
+
   void _showLocationError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -227,7 +248,7 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           Center(
             child: Text(
               'Where are you located?',
@@ -260,7 +281,7 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: _locationDetected 
+                color: _locationDetected
                     ? AppColors.crimson.withValues(alpha: 0.5)
                     : (isDark ? AppColors.slate : Colors.grey[300]!),
                 width: _locationDetected ? 2 : 1,
@@ -289,7 +310,8 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.gigmatch.roxxie',
                       ),
                       // Location marker
@@ -303,10 +325,15 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
                               decoration: BoxDecoration(
                                 color: AppColors.crimson,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 4),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.crimson.withValues(alpha: 0.4),
+                                    color: AppColors.crimson.withValues(
+                                      alpha: 0.4,
+                                    ),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
@@ -323,7 +350,7 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
                       ),
                     ],
                   ),
-                  
+
                   // Loading overlay
                   if (_isDetectingLocation)
                     Container(
@@ -332,7 +359,9 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const CircularProgressIndicator(color: Colors.white),
+                            const CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               'Detecting location...',
@@ -361,9 +390,7 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
               decoration: BoxDecoration(
                 color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.green.withValues(alpha: 0.3),
-                ),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -523,7 +550,10 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
                 onTap: () => _toggleGenre(genre),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     gradient: isSelected
                         ? LinearGradient(
@@ -533,13 +563,13 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
                             ],
                           )
                         : null,
-                    color: isSelected 
-                        ? null 
+                    color: isSelected
+                        ? null
                         : (isDark ? AppColors.graphite : Colors.grey[100]),
                     borderRadius: BorderRadius.circular(50), // Fully rounded
                     border: Border.all(
-                      color: isSelected 
-                          ? AppColors.crimson 
+                      color: isSelected
+                          ? AppColors.crimson
                           : (isDark ? AppColors.slate : Colors.grey[300]!),
                       width: isSelected ? 2 : 1,
                     ),
@@ -568,9 +598,11 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
                         genre,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected 
-                              ? Colors.white 
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
                               : AppColors.text(brightness),
                         ),
                       ),
@@ -580,7 +612,7 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
               );
             }).toList(),
           ),
-          
+
           // Bottom spacing for button
           const SizedBox(height: 100),
         ],

@@ -61,7 +61,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       appBar: AppBar(
@@ -274,7 +274,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Center(
                 child: Text(
                   'By signing up, you agree to our Terms of Service\nand Privacy Policy',
-                  style: TextStyle(color: AppColors.textTert(brightness), fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.textTert(brightness),
+                    fontSize: 12,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -317,7 +320,9 @@ class _RoleCard extends StatelessWidget {
               : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.crimson : AppColors.border(brightness),
+            color: isSelected
+                ? AppColors.crimson
+                : AppColors.border(brightness),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -327,12 +332,16 @@ class _RoleCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.crimson : AppColors.surfaceSecondary(brightness),
+                color: isSelected
+                    ? AppColors.crimson
+                    : AppColors.surfaceSecondary(brightness),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                color: isSelected ? Colors.white : AppColors.textSec(brightness),
+                color: isSelected
+                    ? Colors.white
+                    : AppColors.textSec(brightness),
                 size: 24,
               ),
             ),
@@ -340,7 +349,9 @@ class _RoleCard extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? AppColors.crimson : AppColors.text(brightness),
+                color: isSelected
+                    ? AppColors.crimson
+                    : AppColors.text(brightness),
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -348,7 +359,10 @@ class _RoleCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               description,
-              style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12),
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 12,
+              ),
             ),
           ],
         ),

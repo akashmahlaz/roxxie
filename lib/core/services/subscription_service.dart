@@ -24,29 +24,13 @@ import '../providers/auth_provider.dart';
 /// ═══════════════════════════════════════════════════════════════════════
 
 /// Subscription tiers available in the app
-enum SubscriptionTier {
-  free,
-  pro,
-  premium,
-}
+enum SubscriptionTier { free, pro, premium }
 
 /// Status of a subscription
-enum SubscriptionStatus {
-  active,
-  pastDue,
-  canceled,
-  unpaid,
-  trialing,
-  paused,
-}
+enum SubscriptionStatus { active, pastDue, canceled, unpaid, trialing, paused }
 
 /// Payment method types
-enum PaymentMethodType {
-  card,
-  bankAccount,
-  applePay,
-  googlePay,
-}
+enum PaymentMethodType { card, bankAccount, applePay, googlePay }
 
 /// ═══════════════════════════════════════════════════════════════════════
 // DATA MODELS
@@ -149,8 +133,7 @@ class UserSubscription {
   });
 
   /// Check if subscription is in trial
-  bool get isInTrial =>
-      trialEnd != null && trialEnd!.isAfter(DateTime.now());
+  bool get isInTrial => trialEnd != null && trialEnd!.isAfter(DateTime.now());
 
   /// Check if subscription will cancel at period end
   bool get willCancelAtPeriodEnd => cancelAtPeriodEnd != null;
@@ -305,9 +288,7 @@ class Invoice {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt']) ?? DateTime.now()
           : DateTime.now(),
-      paidAt: json['paidAt'] != null
-          ? DateTime.tryParse(json['paidAt'])
-          : null,
+      paidAt: json['paidAt'] != null ? DateTime.tryParse(json['paidAt']) : null,
       status: json['status'] ?? 'draft',
       pdfUrl: json['pdfUrl'],
       description: json['description'],
@@ -423,28 +404,20 @@ class SubscriptionException implements Exception {
 }
 
 class PaymentFailedException extends SubscriptionException {
-  const PaymentFailedException(
-    super.message, {
-    super.originalError,
-  }) : super(
-          code: 'PAYMENT_FAILED',
-        );
+  const PaymentFailedException(super.message, {super.originalError})
+    : super(code: 'PAYMENT_FAILED');
 }
 
 class SubscriptionInactiveException extends SubscriptionException {
   const SubscriptionInactiveException([
     super.message = 'Active subscription required',
-  ]) : super(
-          code: 'SUBSCRIPTION_INACTIVE',
-        );
+  ]) : super(code: 'SUBSCRIPTION_INACTIVE');
 }
 
 class FeatureNotAvailableException extends SubscriptionException {
   const FeatureNotAvailableException([
     super.message = 'This feature is not available in your plan',
-  ]) : super(
-          code: 'FEATURE_NOT_AVAILABLE',
-        );
+  ]) : super(code: 'FEATURE_NOT_AVAILABLE');
 }
 
 /// ═══════════════════════════════════════════════════════════════════════
@@ -490,8 +463,7 @@ class SubscriptionService {
       _paymentMethodsStream.stream;
 
   /// Stream for subscription change notifications
-  Stream<bool> get subscriptionChangeStream =>
-      _subscriptionChangeStream.stream;
+  Stream<bool> get subscriptionChangeStream => _subscriptionChangeStream.stream;
 
   /// Current user subscription
   UserSubscription? get currentSubscription => _currentSubscription;
@@ -525,8 +497,8 @@ class SubscriptionService {
   SubscriptionService({
     required ApiClient apiClient,
     AuthProvider? authProvider,
-  })  : _client = apiClient;
-        // _authProvider = authProvider; // Reserved for future use
+  }) : _client = apiClient;
+  // _authProvider = authProvider; // Reserved for future use
 
   /// Initialize subscription service
   /// Call this after authentication
@@ -570,8 +542,9 @@ class SubscriptionService {
         return null;
       }
 
-      _currentSubscription =
-          UserSubscription.fromJson(response.data as Map<String, dynamic>);
+      _currentSubscription = UserSubscription.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Update feature access
       _featureAccess = FeatureAccess.forTier(_currentSubscription!.tier);
@@ -660,8 +633,9 @@ class SubscriptionService {
       if (response.data != null) {
         // Update subscription from restored data
         if (response.data['subscription'] != null) {
-          _currentSubscription =
-              UserSubscription.fromJson(response.data['subscription']);
+          _currentSubscription = UserSubscription.fromJson(
+            response.data['subscription'],
+          );
           _subscriptionStream.add(_currentSubscription);
         }
 
@@ -689,8 +663,9 @@ class SubscriptionService {
       );
 
       if (response.data != null) {
-        _currentSubscription =
-            UserSubscription.fromJson(response.data as Map<String, dynamic>);
+        _currentSubscription = UserSubscription.fromJson(
+          response.data as Map<String, dynamic>,
+        );
         _subscriptionStream.add(_currentSubscription);
         _subscriptionChangeStream.add(true);
 
@@ -713,8 +688,9 @@ class SubscriptionService {
       final response = await _client.post(Endpoints.subscriptionResume);
 
       if (response.data != null) {
-        _currentSubscription =
-            UserSubscription.fromJson(response.data as Map<String, dynamic>);
+        _currentSubscription = UserSubscription.fromJson(
+          response.data as Map<String, dynamic>,
+        );
         _subscriptionStream.add(_currentSubscription);
         _subscriptionChangeStream.add(true);
 
@@ -748,8 +724,9 @@ class SubscriptionService {
       );
 
       if (response.data != null) {
-        _currentSubscription =
-            UserSubscription.fromJson(response.data as Map<String, dynamic>);
+        _currentSubscription = UserSubscription.fromJson(
+          response.data as Map<String, dynamic>,
+        );
         _featureAccess = FeatureAccess.forTier(_currentSubscription!.tier);
         _subscriptionStream.add(_currentSubscription);
         _subscriptionChangeStream.add(true);
@@ -776,8 +753,9 @@ class SubscriptionService {
       );
 
       if (response.data != null) {
-        _currentSubscription =
-            UserSubscription.fromJson(response.data as Map<String, dynamic>);
+        _currentSubscription = UserSubscription.fromJson(
+          response.data as Map<String, dynamic>,
+        );
         _featureAccess = FeatureAccess.forTier(_currentSubscription!.tier);
         _subscriptionStream.add(_currentSubscription);
         _subscriptionChangeStream.add(true);
@@ -920,7 +898,8 @@ class SubscriptionService {
         return [];
       }
 
-      final data = response.data['data'] ??
+      final data =
+          response.data['data'] ??
           response.data['paymentMethods'] ??
           response.data;
 
@@ -961,8 +940,9 @@ class SubscriptionService {
         throw SubscriptionException('Failed to add payment method');
       }
 
-      final paymentMethod =
-          PaymentMethod.fromJson(response.data as Map<String, dynamic>);
+      final paymentMethod = PaymentMethod.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Update local cache
       _paymentMethods ??= [];
@@ -992,19 +972,17 @@ class SubscriptionService {
       );
 
       // Update local cache
-      for (final method in _paymentMethods!) {
-        _paymentMethods = _paymentMethods!.map((m) {
-          return PaymentMethod(
-            id: m.id,
-            type: m.type,
-            brand: m.brand,
-            last4: m.last4,
-            expiryMonth: m.expiryMonth,
-            expiryYear: m.expiryYear,
-            isDefault: m.id == paymentMethodId,
-          );
-        }).toList();
-      }
+      _paymentMethods = _paymentMethods!.map((m) {
+        return PaymentMethod(
+          id: m.id,
+          type: m.type,
+          brand: m.brand,
+          last4: m.last4,
+          expiryMonth: m.expiryMonth,
+          expiryYear: m.expiryYear,
+          isDefault: m.id == paymentMethodId,
+        );
+      }).toList();
 
       // Emit to stream
       _paymentMethodsStream.add(_paymentMethods!);
@@ -1020,13 +998,14 @@ class SubscriptionService {
   /// Remove payment method
   Future<bool> removePaymentMethod(String paymentMethodId) async {
     try {
-      debugPrint('💰 [SubscriptionService] Removing payment method: $paymentMethodId');
+      debugPrint(
+        '💰 [SubscriptionService] Removing payment method: $paymentMethodId',
+      );
 
       await _client.delete('${Endpoints.paymentMethods}/$paymentMethodId');
 
       // Update local cache
-      _paymentMethods
-          ?.removeWhere((m) => m.id == paymentMethodId);
+      _paymentMethods?.removeWhere((m) => m.id == paymentMethodId);
 
       // Emit to stream
       _paymentMethodsStream.add(_paymentMethods ?? []);
@@ -1050,10 +1029,7 @@ class SubscriptionService {
 
       final response = await _client.get(
         Endpoints.invoices,
-        queryParameters: {
-          'page': page.toString(),
-          'limit': limit.toString(),
-        },
+        queryParameters: {'page': page.toString(), 'limit': limit.toString()},
       );
 
       if (response.data == null) {
@@ -1061,15 +1037,16 @@ class SubscriptionService {
         return [];
       }
 
-      final data = response.data['data'] ??
-          response.data['invoices'] ??
-          response.data;
+      final data =
+          response.data['data'] ?? response.data['invoices'] ?? response.data;
 
       _invoices = (data as List).map((item) {
         return Invoice.fromJson(item as Map<String, dynamic>);
       }).toList();
 
-      debugPrint('💰 [SubscriptionService] Loaded ${_invoices!.length} invoices');
+      debugPrint(
+        '💰 [SubscriptionService] Loaded ${_invoices!.length} invoices',
+      );
       return _invoices!;
     } catch (e) {
       debugPrint('❌ [SubscriptionService] Failed to load invoices: $e');
@@ -1080,8 +1057,9 @@ class SubscriptionService {
   /// Get invoice PDF URL
   Future<String?> getInvoicePdfUrl(String invoiceId) async {
     try {
-      final response = await _client
-          .get('${Endpoints.invoices}/$invoiceId/pdf');
+      final response = await _client.get(
+        '${Endpoints.invoices}/$invoiceId/pdf',
+      );
 
       return response.data['url'] as String?;
     } catch (e) {
@@ -1095,9 +1073,7 @@ class SubscriptionService {
   // ═══════════════════════════════════════════════════════════════════════
 
   /// Create billing portal session
-  Future<String> createBillingPortalSession({
-    required String returnUrl,
-  }) async {
+  Future<String> createBillingPortalSession({required String returnUrl}) async {
     try {
       debugPrint('💰 [SubscriptionService] Creating billing portal session...');
 
@@ -1271,7 +1247,9 @@ class SubscriptionService {
   /// Sync subscription from backend (called after webhook)
   Future<void> syncSubscriptionFromBackend() async {
     try {
-      debugPrint('💰 [SubscriptionService] Syncing subscription from backend...');
+      debugPrint(
+        '💰 [SubscriptionService] Syncing subscription from backend...',
+      );
       await refreshSubscription();
     } catch (e) {
       debugPrint('⚠️ [SubscriptionService] Sync failed: $e');

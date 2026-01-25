@@ -56,11 +56,13 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
 
   /// Check if city was already set from signup
   bool get _hasCityFromSignup =>
-      widget.profileData.city != null && widget.profileData.city!.trim().isNotEmpty;
+      widget.profileData.city != null &&
+      widget.profileData.city!.trim().isNotEmpty;
 
   /// Check if email was already set from signup
   bool get _hasEmailFromSignup =>
-      widget.profileData.email != null && widget.profileData.email!.trim().isNotEmpty;
+      widget.profileData.email != null &&
+      widget.profileData.email!.trim().isNotEmpty;
 
   /// Check if we have valid coordinates (either from signup or auto-fetch)
   bool get _hasLocationFromSignup =>
@@ -86,9 +88,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
     // Initialize operating hours if empty
     if (widget.profileData.operatingHours.isEmpty) {
       for (final day in _weekDays) {
-        widget.profileData.operatingHours.add(
-          OperatingHours(dayOfWeek: day),
-        );
+        widget.profileData.operatingHours.add(OperatingHours(dayOfWeek: day));
       }
     }
   }
@@ -106,7 +106,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
     if (widget.profileData.address != _addressController.text) {
       _addressController.text = widget.profileData.address ?? '';
     }
-    
+
     // ═══════════════════════════════════════════════════════════════════════
     // AUTO-FETCH LOCATION: If no coordinates set, get current location
     // ═══════════════════════════════════════════════════════════════════════
@@ -114,7 +114,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       _autoFetchLocationIfNeeded();
     });
   }
-  
+
   /// Auto-fetch current location if no valid coordinates are set
   Future<void> _autoFetchLocationIfNeeded() async {
     // Skip if we already have valid coordinates
@@ -122,14 +122,14 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       debugPrint('📍 Location already set, skipping auto-fetch');
       return;
     }
-    
+
     // Skip if address is already filled (user may have entered manually)
-    if (widget.profileData.address?.isNotEmpty == true && 
+    if (widget.profileData.address?.isNotEmpty == true &&
         widget.profileData.city?.isNotEmpty == true) {
       debugPrint('📍 Address already filled, skipping auto-fetch');
       return;
     }
-    
+
     debugPrint('📍 Auto-fetching location for venue...');
     final brightness = Theme.of(context).brightness;
     await _fillFromCurrentLocation(brightness);
@@ -150,7 +150,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       widget.profileData.address?.isNotEmpty == true &&
       widget.profileData.city?.isNotEmpty == true;
 
-    bool get _hasCoords =>
+  bool get _hasCoords =>
       widget.profileData.location.latitude.abs() > 0.000001 &&
       widget.profileData.location.longitude.abs() > 0.000001;
 
@@ -258,7 +258,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
-              onPressed: _isGettingLocation ? null : () => _fillFromCurrentLocation(brightness),
+              onPressed: _isGettingLocation
+                  ? null
+                  : () => _fillFromCurrentLocation(brightness),
               icon: _isGettingLocation
                   ? SizedBox(
                       width: 16,
@@ -323,9 +325,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       decoration: BoxDecoration(
         color: AppColors.crimson.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.crimson.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -335,7 +335,11 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
               color: AppColors.crimson.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.location_on_rounded, color: AppColors.crimson, size: 20),
+            child: const Icon(
+              Icons.location_on_rounded,
+              color: AppColors.crimson,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -390,7 +394,8 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   }
 
   Widget _buildMapPreview(Brightness brightness) {
-    final hasLocationText = (_cityController.text.trim().isNotEmpty ||
+    final hasLocationText =
+        (_cityController.text.trim().isNotEmpty ||
         (widget.profileData.country?.trim().isNotEmpty ?? false));
 
     return Container(
@@ -460,7 +465,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            _hasCoords ? Icons.location_on_rounded : Icons.map_rounded,
+                            _hasCoords
+                                ? Icons.location_on_rounded
+                                : Icons.map_rounded,
                             color: AppColors.crimson,
                             size: 18,
                           ),
@@ -512,7 +519,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
               children: [
                 Expanded(
                   child: TextButton.icon(
-                    onPressed: _isResolvingAddress ? null : () => _resolveFromAddress(brightness),
+                    onPressed: _isResolvingAddress
+                        ? null
+                        : () => _resolveFromAddress(brightness),
                     icon: _isResolvingAddress
                         ? SizedBox(
                             width: 16,
@@ -533,7 +542,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: _isGettingLocation ? null : () => _fillFromCurrentLocation(brightness),
+                    onPressed: _isGettingLocation
+                        ? null
+                        : () => _fillFromCurrentLocation(brightness),
                     icon: _isGettingLocation
                         ? SizedBox(
                             width: 16,
@@ -544,7 +555,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                             ),
                           )
                         : const Icon(Icons.my_location_rounded, size: 18),
-                    label: Text(_hasCoords ? 'Refresh location' : 'Use current location'),
+                    label: Text(
+                      _hasCoords ? 'Refresh location' : 'Use current location',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.crimson,
                       foregroundColor: Colors.white,
@@ -615,7 +628,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
 
     setState(() => _isResolvingAddress = true);
     try {
-      final locations = await _locationService.getCoordinatesFromAddress(addressParts);
+      final locations = await _locationService.getCoordinatesFromAddress(
+        addressParts,
+      );
       if (locations.isNotEmpty) {
         final first = locations.first;
         widget.profileData.location.lat = first.latitude;
@@ -644,7 +659,8 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       final result = await _locationService.getCurrentLocationWithAddress();
       if (result == null) {
         final state = await _locationService.getPermissionState();
-        final isPermissionIssue = state == LocationPermissionState.deniedForever ||
+        final isPermissionIssue =
+            state == LocationPermissionState.deniedForever ||
             state == LocationPermissionState.denied;
 
         messenger.showSnackBar(
@@ -762,7 +778,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                 ),
               ),
               Switch(
-                value: widget.profileData.showPhone ?? false,
+                value: widget.profileData.showPhone,
                 onChanged: (value) {
                   setState(() {
                     widget.profileData.showPhone = value;
@@ -806,9 +822,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       decoration: BoxDecoration(
         color: AppColors.crimson.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.crimson.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -818,7 +832,11 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
               color: AppColors.crimson.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.email_rounded, color: AppColors.crimson, size: 20),
+            child: const Icon(
+              Icons.email_rounded,
+              color: AppColors.crimson,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -964,7 +982,10 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                 widget.onDataChanged();
               },
               child: Ink(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: hours.isOpen
                       ? AppColors.crimson.withValues(alpha: 0.15)
@@ -1070,7 +1091,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       return;
     }
     final hours = widget.profileData.operatingHours[dayIndex];
-    
+
     // Parse the time string to TimeOfDay
     TimeOfDay parseTimeString(String? timeStr) {
       if (timeStr == null || timeStr.isEmpty) {
@@ -1089,7 +1110,7 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
       }
       return const TimeOfDay(hour: 18, minute: 0);
     }
-    
+
     final initialTime = isOpenTime
         ? parseTimeString(hours.openTime)
         : parseTimeString(hours.closeTime);
@@ -1112,7 +1133,8 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
 
     if (picked != null) {
       setState(() {
-        final timeString = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+        final timeString =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
         if (isOpenTime) {
           hours.openTime = timeString;
         } else {
@@ -1174,8 +1196,19 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
   Widget _buildCountrySelector(Brightness brightness) {
     // Map of display names to possible stored values
     final countryMap = {
-      'United States': ['United States', 'US', 'USA', 'United States of America'],
-      'United Kingdom': ['United Kingdom', 'UK', 'GB', 'Great Britain', 'England'],
+      'United States': [
+        'United States',
+        'US',
+        'USA',
+        'United States of America',
+      ],
+      'United Kingdom': [
+        'United Kingdom',
+        'UK',
+        'GB',
+        'Great Britain',
+        'England',
+      ],
       'Canada': ['Canada', 'CA'],
       'Australia': ['Australia', 'AU'],
       'India': ['India', 'IN'],
@@ -1187,14 +1220,18 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
     // Find the display name for current stored value
     String? selectedDisplayName;
     for (final entry in countryMap.entries) {
-      if (entry.value.any((v) => v.toLowerCase() == (widget.profileData.country ?? '').toLowerCase())) {
+      if (entry.value.any(
+        (v) =>
+            v.toLowerCase() == (widget.profileData.country ?? '').toLowerCase(),
+      )) {
         selectedDisplayName = entry.key;
         break;
       }
     }
 
     // If current country doesn't match any mapped value, check if it's a valid custom entry
-    if (selectedDisplayName == null && (widget.profileData.country?.isNotEmpty ?? false)) {
+    if (selectedDisplayName == null &&
+        (widget.profileData.country?.isNotEmpty ?? false)) {
       selectedDisplayName = 'Other';
     }
 
@@ -1318,7 +1355,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                   color: _isValid ? null : AppColors.surface(brightness),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: _isValid ? Colors.transparent : AppColors.border(brightness),
+                    color: _isValid
+                        ? Colors.transparent
+                        : AppColors.border(brightness),
                   ),
                   boxShadow: _isValid
                       ? [
@@ -1336,7 +1375,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                     Text(
                       'Continue',
                       style: TextStyle(
-                        color: _isValid ? Colors.white : AppColors.textSec(brightness),
+                        color: _isValid
+                            ? Colors.white
+                            : AppColors.textSec(brightness),
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1344,7 +1385,9 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                     const SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: _isValid ? Colors.white : AppColors.textSec(brightness),
+                      color: _isValid
+                          ? Colors.white
+                          : AppColors.textSec(brightness),
                       size: 20,
                     ),
                   ],

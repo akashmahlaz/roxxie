@@ -77,8 +77,8 @@ class _VerificationScreenState extends State<VerificationScreen>
                 child: _status == VerificationStatus.notStarted
                     ? _buildStartScreen(brightness)
                     : _status == VerificationStatus.inProgress
-                        ? _buildVerificationSteps(brightness)
-                        : _buildStatusScreen(brightness),
+                    ? _buildVerificationSteps(brightness)
+                    : _buildStatusScreen(brightness),
               ),
             ],
           ),
@@ -318,10 +318,7 @@ class _VerificationScreenState extends State<VerificationScreen>
               ),
               child: const Text(
                 'Start Verification',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -462,8 +459,8 @@ class _VerificationScreenState extends State<VerificationScreen>
               color: isCompleted
                   ? AppColors.crimson
                   : isActive
-                      ? AppColors.crimson.withValues(alpha: 0.2)
-                      : AppColors.surface(brightness),
+                  ? AppColors.crimson.withValues(alpha: 0.2)
+                  : AppColors.surface(brightness),
               border: Border.all(
                 color: isActive || isCompleted
                     ? AppColors.crimson
@@ -473,7 +470,11 @@ class _VerificationScreenState extends State<VerificationScreen>
             ),
             child: Center(
               child: isCompleted
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
+                  ? const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    )
                   : Text(
                       '${stepIndex + 1}',
                       style: TextStyle(
@@ -506,10 +507,7 @@ class _VerificationScreenState extends State<VerificationScreen>
         const SizedBox(height: 8),
         Text(
           'Please upload a clear photo of your government-issued ID',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 15,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 15),
         ),
         const SizedBox(height: 24),
 
@@ -609,10 +607,7 @@ class _VerificationScreenState extends State<VerificationScreen>
         const SizedBox(height: 8),
         Text(
           'We need to verify that you match your ID photo',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 15,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 15),
         ),
         const SizedBox(height: 24),
 
@@ -769,10 +764,7 @@ class _VerificationScreenState extends State<VerificationScreen>
         const SizedBox(height: 8),
         Text(
           'Upload a document showing your current address',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 15,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 15),
         ),
         const SizedBox(height: 24),
 
@@ -904,7 +896,9 @@ class _VerificationScreenState extends State<VerificationScreen>
               ),
               child: Icon(
                 icon,
-                color: selected ? AppColors.crimson : AppColors.textSec(brightness),
+                color: selected
+                    ? AppColors.crimson
+                    : AppColors.textSec(brightness),
                 size: 22,
               ),
             ),
@@ -958,10 +952,7 @@ class _VerificationScreenState extends State<VerificationScreen>
         const SizedBox(height: 8),
         Text(
           'Please review your documents before submitting',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 15,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 15),
         ),
         const SizedBox(height: 24),
 
@@ -1136,7 +1127,9 @@ class _VerificationScreenState extends State<VerificationScreen>
               : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isUploaded ? AppColors.success : AppColors.border(brightness),
+            color: isUploaded
+                ? AppColors.success
+                : AppColors.border(brightness),
             width: isUploaded ? 2 : 1,
           ),
         ),
@@ -1152,7 +1145,9 @@ class _VerificationScreenState extends State<VerificationScreen>
               ),
               child: Icon(
                 isUploaded ? Icons.check_rounded : icon,
-                color: isUploaded ? AppColors.success : AppColors.textSec(brightness),
+                color: isUploaded
+                    ? AppColors.success
+                    : AppColors.textSec(brightness),
                 size: 28,
               ),
             ),
@@ -1212,33 +1207,35 @@ class _VerificationScreenState extends State<VerificationScreen>
             ],
           ),
           const SizedBox(height: 12),
-          ...tips.map((tip) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 6),
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+          ...tips.map(
+            (tip) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.textSec(brightness),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      tip,
+                      style: TextStyle(
                         color: AppColors.textSec(brightness),
+                        fontSize: 13,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        tip,
-                        style: TextStyle(
-                          color: AppColors.textSec(brightness),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1249,9 +1246,7 @@ class _VerificationScreenState extends State<VerificationScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        border: Border(
-          top: BorderSide(color: AppColors.border(brightness)),
-        ),
+        border: Border(top: BorderSide(color: AppColors.border(brightness))),
       ),
       child: Row(
         children: [
@@ -1272,10 +1267,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                 ),
                 child: const Text(
                   'Back',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -1345,11 +1337,7 @@ class _VerificationScreenState extends State<VerificationScreen>
               shape: BoxShape.circle,
               color: statusConfig.color.withValues(alpha: 0.1),
             ),
-            child: Icon(
-              statusConfig.icon,
-              color: statusConfig.color,
-              size: 56,
-            ),
+            child: Icon(statusConfig.icon, color: statusConfig.color, size: 56),
           ),
 
           const SizedBox(height: 24),
@@ -1404,10 +1392,7 @@ class _VerificationScreenState extends State<VerificationScreen>
                 ),
                 child: const Text(
                   'Resubmit Verification',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -1536,40 +1521,36 @@ class _VerificationScreenState extends State<VerificationScreen>
     );
   }
 
-  ({
-    IconData icon,
-    Color color,
-    String title,
-    String message
-  }) _getStatusConfig() {
+  ({IconData icon, Color color, String title, String message})
+  _getStatusConfig() {
     return switch (_status) {
       VerificationStatus.pending => (
-          icon: Icons.schedule_rounded,
-          color: Colors.amber,
-          title: 'Verification Pending',
-          message:
-              'Your documents are being reviewed. This usually takes 24-48 hours.',
-        ),
+        icon: Icons.schedule_rounded,
+        color: Colors.amber,
+        title: 'Verification Pending',
+        message:
+            'Your documents are being reviewed. This usually takes 24-48 hours.',
+      ),
       VerificationStatus.verified => (
-          icon: Icons.verified_rounded,
-          color: AppColors.success,
-          title: 'You\'re Verified!',
-          message:
-              'Congratulations! Your identity has been verified. Enjoy your verified badge!',
-        ),
+        icon: Icons.verified_rounded,
+        color: AppColors.success,
+        title: 'You\'re Verified!',
+        message:
+            'Congratulations! Your identity has been verified. Enjoy your verified badge!',
+      ),
       VerificationStatus.rejected => (
-          icon: Icons.error_outline_rounded,
-          color: AppColors.error,
-          title: 'Verification Failed',
-          message:
-              'We couldn\'t verify your identity. Please check your documents and try again.',
-        ),
+        icon: Icons.error_outline_rounded,
+        color: AppColors.error,
+        title: 'Verification Failed',
+        message:
+            'We couldn\'t verify your identity. Please check your documents and try again.',
+      ),
       _ => (
-          icon: Icons.info_outline_rounded,
-          color: AppColors.textSec(Brightness.light),
-          title: '',
-          message: '',
-        ),
+        icon: Icons.info_outline_rounded,
+        color: AppColors.textSec(Brightness.light),
+        title: '',
+        message: '',
+      ),
     };
   }
 
@@ -1785,10 +1766,4 @@ class _VerificationScreenState extends State<VerificationScreen>
 // 📦 DATA MODELS
 // ═══════════════════════════════════════════════════════════════════════════
 
-enum VerificationStatus {
-  notStarted,
-  inProgress,
-  pending,
-  verified,
-  rejected,
-}
+enum VerificationStatus { notStarted, inProgress, pending, verified, rejected }

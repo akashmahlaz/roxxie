@@ -40,10 +40,7 @@ class AboutScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.crimson,
-                    Colors.purple.shade600,
-                  ],
+                  colors: [AppColors.crimson, Colors.purple.shade600],
                 ),
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
@@ -180,26 +177,18 @@ class AboutScreen extends StatelessWidget {
                   onPressed: () => Navigator.pushNamed(context, '/terms'),
                   child: Text(
                     'Terms',
-                    style: TextStyle(
-                      color: AppColors.crimson,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: AppColors.crimson, fontSize: 12),
                   ),
                 ),
                 Text(
                   '•',
-                  style: TextStyle(
-                    color: AppColors.textTert(brightness),
-                  ),
+                  style: TextStyle(color: AppColors.textTert(brightness)),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/privacy'),
                   child: Text(
                     'Privacy',
-                    style: TextStyle(
-                      color: AppColors.crimson,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: AppColors.crimson, fontSize: 12),
                   ),
                 ),
               ],
@@ -254,11 +243,7 @@ class AboutScreen extends StatelessWidget {
             color: AppColors.crimson.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
-            color: AppColors.crimson,
-            size: 24,
-          ),
+          child: Icon(icon, color: AppColors.crimson, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -301,15 +286,9 @@ class AboutScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.border(brightness),
-          ),
+          border: Border.all(color: AppColors.border(brightness)),
         ),
-        child: Icon(
-          icon,
-          color: AppColors.text(brightness),
-          size: 20,
-        ),
+        child: Icon(icon, color: AppColors.text(brightness), size: 20),
       ),
     );
   }

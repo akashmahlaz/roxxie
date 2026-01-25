@@ -72,14 +72,16 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
 
   void _initParticles() {
     for (int i = 0; i < 50; i++) {
-      _particles.add(_Particle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble(),
-        size: _random.nextDouble() * 3 + 1,
-        speed: _random.nextDouble() * 0.3 + 0.1,
-        opacity: _random.nextDouble() * 0.6 + 0.2,
-        depth: _random.nextDouble(),
-      ));
+      _particles.add(
+        _Particle(
+          x: _random.nextDouble(),
+          y: _random.nextDouble(),
+          size: _random.nextDouble() * 3 + 1,
+          speed: _random.nextDouble() * 0.3 + 0.1,
+          opacity: _random.nextDouble() * 0.6 + 0.2,
+          depth: _random.nextDouble(),
+        ),
+      );
     }
   }
 
@@ -130,7 +132,10 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
       duration: const Duration(milliseconds: 1500),
     );
     _textRevealAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _textRevealController, curve: Curves.easeOutCubic),
+      CurvedAnimation(
+        parent: _textRevealController,
+        curve: Curves.easeOutCubic,
+      ),
     );
 
     // Start entrance animations
@@ -160,18 +165,21 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const ArtistSignupScreenV2(),
-        transitionsBuilder: (_, animation, __, child) {
+        pageBuilder: (_, _, _) => const ArtistSignupScreenV2(),
+        transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(
             opacity: animation,
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.05, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0.05, 0),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ),
               child: child,
             ),
           );
@@ -186,18 +194,21 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const VenueSignupScreenV2(),
-        transitionsBuilder: (_, animation, __, child) {
+        pageBuilder: (_, _, _) => const VenueSignupScreenV2(),
+        transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(
             opacity: animation,
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.05, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0.05, 0),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ),
               child: child,
             ),
           );
@@ -212,8 +223,8 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const LoginScreen(),
-        transitionsBuilder: (_, animation, __, child) {
+        pageBuilder: (_, _, _) => const LoginScreen(),
+        transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 400),
@@ -242,7 +253,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
         backgroundColor: AppColors.background(brightness),
         body: Stack(
           children: [
-              // Layer 1: Animated particle starfield
+            // Layer 1: Animated particle starfield
             AnimatedBuilder(
               animation: _particleController,
               builder: (context, _) {
@@ -426,11 +437,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.equalizer_rounded,
-                color: Colors.white,
-                size: 36,
-              ),
+              Icon(Icons.equalizer_rounded, color: Colors.white, size: 36),
               const SizedBox(width: 12),
               Text(
                 'GigMatch',
@@ -474,10 +481,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
             children: [
               // "Welcome " in crimson
               TextSpan(
-                text: title1.substring(
-                  0,
-                  visibleChars.clamp(0, title1.length),
-                ),
+                text: title1.substring(0, visibleChars.clamp(0, title1.length)),
                 style: TextStyle(color: AppColors.crimson),
               ),
               // "to the stage" in text color
@@ -495,7 +499,10 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
                   text: '|',
                   style: TextStyle(
                     color: AppColors.crimson.withValues(
-                      alpha: (math.sin(_particleController.value * math.pi * 4) + 1) / 2,
+                      alpha:
+                          (math.sin(_particleController.value * math.pi * 4) +
+                              1) /
+                          2,
                     ),
                   ),
                 ),
@@ -517,7 +524,10 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
         return Opacity(
           opacity: ((_textRevealAnimation.value - 0.5) * 2).clamp(0.0, 1.0),
           child: Transform.translate(
-            offset: Offset(0, (1 - _textRevealAnimation.value.clamp(0.5, 1.0)) * 20),
+            offset: Offset(
+              0,
+              (1 - _textRevealAnimation.value.clamp(0.5, 1.0)) * 20,
+            ),
             child: Text(
               'Select your role to get started',
               style: TextStyle(
@@ -570,19 +580,19 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark 
-                    ? AppColors.graphite
-                    : Colors.white,
+                color: isDark ? AppColors.graphite : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isHovered
                       ? accentColor
-                      : isDark ? AppColors.slate : Colors.grey[300]!,
+                      : isDark
+                      ? AppColors.slate
+                      : Colors.grey[300]!,
                   width: isHovered ? 2 : 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: isHovered 
+                    color: isHovered
                         ? accentColor.withValues(alpha: 0.3)
                         : Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
                     blurRadius: isHovered ? 30 : 15,
@@ -617,11 +627,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
                         ),
                       ],
                     ),
-                    child: Icon(
-                      icon,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                    child: Icon(icon, color: Colors.white, size: 24),
                   ),
 
                   const SizedBox(width: 14),
@@ -653,29 +659,31 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
                         ),
                         const SizedBox(height: 8),
                         // Feature bullets
-                        ...features.map((feature) => Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.check_circle_rounded,
-                                color: accentColor,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  feature,
-                                  style: TextStyle(
-                                    color: AppColors.textSec(brightness),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                        ...features.map(
+                          (feature) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: accentColor,
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    feature,
+                                    style: TextStyle(
+                                      color: AppColors.textSec(brightness),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        )),
+                        ),
                       ],
                     ),
                   ),
@@ -692,7 +700,7 @@ class _RoleSelectionScreenV3State extends State<RoleSelectionScreenV3>
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: isHovered 
+                        color: isHovered
                             ? accentColor.withValues(alpha: 0.15)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
@@ -819,13 +827,15 @@ class _ParticleFieldPainter extends CustomPainter {
     for (final particle in particles) {
       // Move particles upward
       final y = (particle.y - progress * particle.speed) % 1.0;
-      
+
       // Parallax effect based on depth
-      final parallaxOffset = math.sin(progress * math.pi * 2) * 20 * particle.depth;
+      final parallaxOffset =
+          math.sin(progress * math.pi * 2) * 20 * particle.depth;
       final x = (particle.x * size.width + parallaxOffset) % size.width;
 
       // Twinkle effect
-      final twinkle = 0.5 + 0.5 * math.sin(progress * math.pi * 4 + particle.x * 10);
+      final twinkle =
+          0.5 + 0.5 * math.sin(progress * math.pi * 4 + particle.x * 10);
 
       final paint = Paint()
         ..color = color.withValues(alpha: particle.opacity * twinkle * 0.6)
@@ -851,10 +861,7 @@ class _GradientOrbPainter extends CustomPainter {
   final double progress;
   final bool isDark;
 
-  _GradientOrbPainter({
-    required this.progress,
-    required this.isDark,
-  });
+  _GradientOrbPainter({required this.progress, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -863,12 +870,15 @@ class _GradientOrbPainter extends CustomPainter {
     final orb1Y = size.height * 0.2 + math.sin(progress * math.pi * 2) * 30;
 
     final orb1Paint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.crimson.withValues(alpha: 0.25),
-          AppColors.crimson.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(orb1X, orb1Y), radius: 180));
+      ..shader =
+          RadialGradient(
+            colors: [
+              AppColors.crimson.withValues(alpha: 0.25),
+              AppColors.crimson.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(center: Offset(orb1X, orb1Y), radius: 180),
+          );
 
     canvas.drawCircle(Offset(orb1X, orb1Y), 180, orb1Paint);
 
@@ -877,12 +887,15 @@ class _GradientOrbPainter extends CustomPainter {
     final orb2Y = size.height * 0.7 + math.cos(progress * math.pi * 2) * 50;
 
     final orb2Paint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.blueAccent.withValues(alpha: 0.15),
-          Colors.blueAccent.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(orb2X, orb2Y), radius: 150));
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.blueAccent.withValues(alpha: 0.15),
+              Colors.blueAccent.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(center: Offset(orb2X, orb2Y), radius: 150),
+          );
 
     canvas.drawCircle(Offset(orb2X, orb2Y), 150, orb2Paint);
 
@@ -891,12 +904,15 @@ class _GradientOrbPainter extends CustomPainter {
     final orb3Y = size.height * 0.5 + math.sin(progress * math.pi) * 40;
 
     final orb3Paint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.purple.withValues(alpha: 0.1),
-          Colors.purple.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(orb3X, orb3Y), radius: 200));
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.purple.withValues(alpha: 0.1),
+              Colors.purple.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(center: Offset(orb3X, orb3Y), radius: 200),
+          );
 
     canvas.drawCircle(Offset(orb3X, orb3Y), 200, orb3Paint);
   }

@@ -1,5 +1,5 @@
 /// 🏠 GIGMATCH Dashboard Screen
-/// 
+///
 /// 2026 Design Principles Applied:
 /// - Liquid Glass UI effects
 /// - Micro-interactions on all touch targets
@@ -116,14 +116,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
 
               // Activity Feed
-              SliverToBoxAdapter(
-                child: _buildActivitySection(brightness),
-              ),
+              SliverToBoxAdapter(child: _buildActivitySection(brightness)),
 
               // Bottom padding for nav bar
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 100),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
         ),
@@ -193,9 +189,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               color: AppColors.surface(brightness),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.border(brightness),
-              ),
+              border: Border.all(color: AppColors.border(brightness)),
             ),
             child: Stack(
               children: [
@@ -317,7 +311,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildRecentMatches(Brightness brightness, MatchProvider matchProvider) {
+  Widget _buildRecentMatches(
+    Brightness brightness,
+    MatchProvider matchProvider,
+  ) {
     final recentMatches = matchProvider.newMatches.take(5).toList();
 
     return Padding(
@@ -369,9 +366,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.border(brightness),
-          ),
+          border: Border.all(color: AppColors.border(brightness)),
         ),
         child: Row(
           children: [
@@ -520,7 +515,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Parse the value for animated counter
     final numericValue = int.tryParse(value) ?? 0;
-    
+
     return AnimatedTapFeedback(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -757,11 +752,7 @@ class _ActivityItem extends StatelessWidget {
         ),
         if (isPositive) ...[
           const SizedBox(width: 4),
-          const Icon(
-            Icons.trending_up_rounded,
-            color: Colors.green,
-            size: 16,
-          ),
+          const Icon(Icons.trending_up_rounded, color: Colors.green, size: 16),
         ],
       ],
     );

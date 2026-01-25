@@ -4,11 +4,11 @@ import '../../../core/models/venues_models.dart';
 import '../../../core/theme/theme.dart';
 
 /// 🏢 STEP 2: VENUE TYPE & BUDGET
-/// 
+///
 /// Collecting:
 /// - Venue Type (required for matching)
 /// - Min-Max budget slider (for price-based matching)
-/// 
+///
 /// This step is SKIPPABLE - user can proceed without filling
 
 class Step2Budget extends StatefulWidget {
@@ -35,10 +35,34 @@ class _Step2BudgetState extends State<Step2Budget> {
 
   // Budget tiers with min/max values
   final List<Map<String, dynamic>> _budgetTiers = [
-    {'name': 'Casual', 'icon': Icons.local_cafe_rounded, 'min': 50.0, 'max': 150.0, 'range': '\$50–150'},
-    {'name': 'Standard', 'icon': Icons.music_note_rounded, 'min': 150.0, 'max': 400.0, 'range': '\$150–400'},
-    {'name': 'Premium', 'icon': Icons.star_rounded, 'min': 400.0, 'max': 800.0, 'range': '\$400–800'},
-    {'name': 'VIP', 'icon': Icons.diamond_rounded, 'min': 800.0, 'max': 2000.0, 'range': '\$800+'},
+    {
+      'name': 'Casual',
+      'icon': Icons.local_cafe_rounded,
+      'min': 50.0,
+      'max': 150.0,
+      'range': '\$50–150',
+    },
+    {
+      'name': 'Standard',
+      'icon': Icons.music_note_rounded,
+      'min': 150.0,
+      'max': 400.0,
+      'range': '\$150–400',
+    },
+    {
+      'name': 'Premium',
+      'icon': Icons.star_rounded,
+      'min': 400.0,
+      'max': 800.0,
+      'range': '\$400–800',
+    },
+    {
+      'name': 'VIP',
+      'icon': Icons.diamond_rounded,
+      'min': 800.0,
+      'max': 2000.0,
+      'range': '\$800+',
+    },
   ];
 
   // Popular venue types shown first
@@ -63,10 +87,10 @@ class _Step2BudgetState extends State<Step2Budget> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize venue type if already set
     _selectedVenueType = widget.profileData.venueType;
-    
+
     // Determine which tier is selected based on existing budget
     final existingMin = widget.profileData.gigPreferences.minBudget;
     final existingMax = widget.profileData.gigPreferences.maxBudget;
@@ -142,7 +166,7 @@ class _Step2BudgetState extends State<Step2Budget> {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           Center(
             child: Text(
               'Almost there!',
@@ -172,11 +196,7 @@ class _Step2BudgetState extends State<Step2Budget> {
           // ═══════════════════════════════════════════════════════════════
           Row(
             children: [
-              Icon(
-                Icons.category_rounded,
-                color: AppColors.crimson,
-                size: 20,
-              ),
+              Icon(Icons.category_rounded, color: AppColors.crimson, size: 20),
               const SizedBox(width: 8),
               Text(
                 'What type of venue?',
@@ -200,7 +220,10 @@ class _Step2BudgetState extends State<Step2Budget> {
                 onTap: () => _selectVenueType(type),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     gradient: isSelected
                         ? LinearGradient(
@@ -210,13 +233,13 @@ class _Step2BudgetState extends State<Step2Budget> {
                             ],
                           )
                         : null,
-                    color: isSelected 
-                        ? null 
+                    color: isSelected
+                        ? null
                         : (isDark ? AppColors.graphite : Colors.grey[100]),
                     borderRadius: BorderRadius.circular(50), // Fully rounded
                     border: Border.all(
-                      color: isSelected 
-                          ? AppColors.crimson 
+                      color: isSelected
+                          ? AppColors.crimson
                           : (isDark ? AppColors.slate : Colors.grey[300]!),
                       width: isSelected ? 2 : 1,
                     ),
@@ -245,9 +268,11 @@ class _Step2BudgetState extends State<Step2Budget> {
                         type.displayName,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected 
-                              ? Colors.white 
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
                               : AppColors.text(brightness),
                         ),
                       ),
@@ -264,11 +289,7 @@ class _Step2BudgetState extends State<Step2Budget> {
           // ═══════════════════════════════════════════════════════════════
           Row(
             children: [
-              Icon(
-                Icons.payments_rounded,
-                color: AppColors.crimson,
-                size: 20,
-              ),
+              Icon(Icons.payments_rounded, color: AppColors.crimson, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Budget per gig',
@@ -307,13 +328,13 @@ class _Step2BudgetState extends State<Step2Budget> {
                             ],
                           )
                         : null,
-                    color: isSelected 
-                        ? null 
+                    color: isSelected
+                        ? null
                         : (isDark ? AppColors.graphite : Colors.grey[50]),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected 
-                          ? AppColors.crimson 
+                      color: isSelected
+                          ? AppColors.crimson
                           : (isDark ? AppColors.slate : Colors.grey[300]!),
                       width: isSelected ? 2 : 1,
                     ),
@@ -333,9 +354,7 @@ class _Step2BudgetState extends State<Step2Budget> {
                       Icon(
                         tier['icon'] as IconData,
                         size: 28,
-                        color: isSelected 
-                            ? Colors.white 
-                            : AppColors.crimson,
+                        color: isSelected ? Colors.white : AppColors.crimson,
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -343,8 +362,8 @@ class _Step2BudgetState extends State<Step2Budget> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: isSelected 
-                              ? Colors.white 
+                          color: isSelected
+                              ? Colors.white
                               : AppColors.text(brightness),
                         ),
                       ),
@@ -354,8 +373,8 @@ class _Step2BudgetState extends State<Step2Budget> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: isSelected 
-                              ? Colors.white.withValues(alpha: 0.9) 
+                          color: isSelected
+                              ? Colors.white.withValues(alpha: 0.9)
                               : (isDark ? Colors.grey[400] : Colors.grey[600]),
                         ),
                       ),

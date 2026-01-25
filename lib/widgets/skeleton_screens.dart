@@ -26,8 +26,6 @@ class HomeSkeletonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    
     return ShimmerLoading(
       child: SafeArea(
         child: Padding(
@@ -50,9 +48,9 @@ class HomeSkeletonScreen extends StatelessWidget {
                   const SkeletonCircle(size: 44),
                 ],
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Stats row skeleton
               Row(
                 children: [
@@ -63,13 +61,13 @@ class HomeSkeletonScreen extends StatelessWidget {
                   Expanded(child: _StatCardSkeleton()),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Section title
               SkeletonBox(width: 120, height: 18),
               const SizedBox(height: 12),
-              
+
               // Action cards skeleton
               Row(
                 children: [
@@ -78,9 +76,9 @@ class HomeSkeletonScreen extends StatelessWidget {
                   Expanded(child: _ActionCardSkeleton()),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Recent matches section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -90,15 +88,15 @@ class HomeSkeletonScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Match previews
               SizedBox(
                 height: 100,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: 5,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, __) => const _MatchPreviewSkeleton(),
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (_, _) => const _MatchPreviewSkeleton(),
                 ),
               ),
             ],
@@ -157,7 +155,7 @@ class _ActionCardSkeleton extends StatelessWidget {
 
 class _MatchPreviewSkeleton extends StatelessWidget {
   const _MatchPreviewSkeleton();
-  
+
   @override
   Widget build(BuildContext context) {
     return const SizedBox(
@@ -202,9 +200,9 @@ class DiscoverySkeletonScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Main card skeleton
               Expanded(
                 child: Container(
@@ -226,11 +224,23 @@ class DiscoverySkeletonScreen extends StatelessWidget {
                             SizedBox(height: 16),
                             Row(
                               children: [
-                                SkeletonBox(width: 80, height: 32, borderRadius: 16),
+                                SkeletonBox(
+                                  width: 80,
+                                  height: 32,
+                                  borderRadius: 16,
+                                ),
                                 SizedBox(width: 8),
-                                SkeletonBox(width: 80, height: 32, borderRadius: 16),
+                                SkeletonBox(
+                                  width: 80,
+                                  height: 32,
+                                  borderRadius: 16,
+                                ),
                                 SizedBox(width: 8),
-                                SkeletonBox(width: 80, height: 32, borderRadius: 16),
+                                SkeletonBox(
+                                  width: 80,
+                                  height: 32,
+                                  borderRadius: 16,
+                                ),
                               ],
                             ),
                           ],
@@ -240,9 +250,9 @@ class DiscoverySkeletonScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Action buttons skeleton
               const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -273,8 +283,8 @@ class ChatListSkeletonScreen extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: 8,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => const _ChatItemSkeleton(),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (_, _) => const _ChatItemSkeleton(),
       ),
     );
   }
@@ -282,7 +292,7 @@ class ChatListSkeletonScreen extends StatelessWidget {
 
 class _ChatItemSkeleton extends StatelessWidget {
   const _ChatItemSkeleton();
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -335,15 +345,15 @@ class ProfileSkeletonScreen extends StatelessWidget {
               // Avatar
               const SkeletonCircle(size: 100),
               const SizedBox(height: 16),
-              
+
               // Name
               SkeletonBox(width: 150, height: 24),
               const SizedBox(height: 8),
-              
+
               // Role badge
               SkeletonBox(width: 60, height: 24, borderRadius: 12),
               const SizedBox(height: 24),
-              
+
               // Stats
               Container(
                 padding: const EdgeInsets.all(20),
@@ -360,9 +370,9 @@ class ProfileSkeletonScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Menu items
               ...List.generate(5, (_) => const _MenuItemSkeleton()),
             ],
@@ -375,7 +385,7 @@ class ProfileSkeletonScreen extends StatelessWidget {
 
 class _StatItemSkeleton extends StatelessWidget {
   const _StatItemSkeleton();
-  
+
   @override
   Widget build(BuildContext context) {
     return const Column(
@@ -392,7 +402,7 @@ class _StatItemSkeleton extends StatelessWidget {
 
 class _MenuItemSkeleton extends StatelessWidget {
   const _MenuItemSkeleton();
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -438,13 +448,13 @@ class CalendarSkeletonScreen extends StatelessWidget {
                   const SkeletonCircle(size: 44),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Calendar header
               Center(child: SkeletonBox(width: 140, height: 20)),
               const SizedBox(height: 16),
-              
+
               // Calendar grid
               Container(
                 padding: const EdgeInsets.all(16),
@@ -469,31 +479,34 @@ class CalendarSkeletonScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     // Calendar days
-                    ...List.generate(5, (_) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          SkeletonCircle(size: 32),
-                          SkeletonCircle(size: 32),
-                          SkeletonCircle(size: 32),
-                          SkeletonCircle(size: 32),
-                          SkeletonCircle(size: 32),
-                          SkeletonCircle(size: 32),
-                          SkeletonCircle(size: 32),
-                        ],
+                    ...List.generate(
+                      5,
+                      (_) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            SkeletonCircle(size: 32),
+                            SkeletonCircle(size: 32),
+                            SkeletonCircle(size: 32),
+                            SkeletonCircle(size: 32),
+                            SkeletonCircle(size: 32),
+                            SkeletonCircle(size: 32),
+                            SkeletonCircle(size: 32),
+                          ],
+                        ),
                       ),
-                    )),
+                    ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Upcoming section
               SkeletonBox(width: 100, height: 18),
               const SizedBox(height: 12),
-              
+
               // Gig cards
               ...List.generate(3, (_) => const _GigCardSkeleton()),
             ],
@@ -506,7 +519,7 @@ class CalendarSkeletonScreen extends StatelessWidget {
 
 class _GigCardSkeleton extends StatelessWidget {
   const _GigCardSkeleton();
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -558,7 +571,7 @@ class MatchGridSkeletonScreen extends StatelessWidget {
           childAspectRatio: 0.8,
         ),
         itemCount: 8,
-        itemBuilder: (_, __) => const _MatchCardSkeleton(),
+        itemBuilder: (_, _) => const _MatchCardSkeleton(),
       ),
     );
   }
@@ -566,7 +579,7 @@ class MatchGridSkeletonScreen extends StatelessWidget {
 
 class _MatchCardSkeleton extends StatelessWidget {
   const _MatchCardSkeleton();
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(

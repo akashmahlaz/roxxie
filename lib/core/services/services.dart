@@ -18,3 +18,5 @@ export 'push_notification_service.dart';
 export 'subscription_service.dart';
 export 'error_handling_service.dart';
 export 'calendar_service.dart';
+export 'review_service.dart';
+export 'notification_history_service.dart';

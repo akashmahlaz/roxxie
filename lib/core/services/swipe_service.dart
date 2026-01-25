@@ -66,11 +66,12 @@ class SwipeService {
   Future<SwipeResponse> _swipe(SwipeRequest request) async {
     try {
       // Backend expects POST /swipes/:targetId with body {direction: 'right'|'left'}
-      final direction = request.action == SwipeAction.like || 
-                       request.action == SwipeAction.superLike 
-                       ? 'right' 
-                       : 'left';
-      
+      final direction =
+          request.action == SwipeAction.like ||
+              request.action == SwipeAction.superLike
+          ? 'right'
+          : 'left';
+
       final response = await _client.post(
         '${Endpoints.swipe}/${request.targetId}',
         data: {

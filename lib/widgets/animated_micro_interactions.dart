@@ -55,17 +55,11 @@ class _AnimatedTapFeedbackState extends State<AnimatedTapFeedback>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: widget.scaleDownTo,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -76,11 +70,11 @@ class _AnimatedTapFeedbackState extends State<AnimatedTapFeedback>
 
   Future<void> _handleTap() async {
     if (!widget.enabled) return;
-    
+
     if (widget.hapticFeedback) {
       HapticFeedback.lightImpact();
     }
-    
+
     await _controller.forward();
     await _controller.reverse();
     widget.onTap?.call();
@@ -108,10 +102,7 @@ class _AnimatedTapFeedbackState extends State<AnimatedTapFeedback>
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
   }
 }
@@ -130,7 +121,7 @@ class AnimatedSuccessCheck extends StatefulWidget {
 
   const AnimatedSuccessCheck({
     super.key,
-    this.show = true,  // Default to true for simpler usage
+    this.show = true, // Default to true for simpler usage
     this.size = 24,
     this.color = AppColors.success,
     this.duration = const Duration(milliseconds: 400),
@@ -150,31 +141,28 @@ class _AnimatedSuccessCheckState extends State<AnimatedSuccessCheck>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+
     _circleAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(0, 0.5, curve: Curves.easeOut),
       ),
     );
-    
+
     _checkAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(0.4, 1.0, curve: Curves.elasticOut),
       ),
     );
-    
+
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         widget.onComplete?.call();
       }
     });
-    
+
     if (widget.show) {
       _controller.forward();
     }
@@ -232,14 +220,14 @@ class _SuccessCheckPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 2;
-    
+
     // Draw circle
     if (circleProgress > 0) {
       final circlePaint = Paint()
         ..color = color.withValues(alpha: 0.2)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(center, radius * circleProgress, circlePaint);
-      
+
       final strokePaint = Paint()
         ..color = color
         ..style = PaintingStyle.stroke
@@ -253,7 +241,7 @@ class _SuccessCheckPainter extends CustomPainter {
         strokePaint,
       );
     }
-    
+
     // Draw check mark
     if (checkProgress > 0) {
       final checkPaint = Paint()
@@ -262,7 +250,7 @@ class _SuccessCheckPainter extends CustomPainter {
         ..strokeWidth = 2.5
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round;
-      
+
       final path = Path();
       final startX = size.width * 0.25;
       final startY = size.height * 0.5;
@@ -270,7 +258,7 @@ class _SuccessCheckPainter extends CustomPainter {
       final midY = size.height * 0.65;
       final endX = size.width * 0.75;
       final endY = size.height * 0.35;
-      
+
       path.moveTo(startX, startY);
       if (checkProgress < 0.5) {
         final progress = checkProgress * 2;
@@ -286,7 +274,7 @@ class _SuccessCheckPainter extends CustomPainter {
           midY + (endY - midY) * progress,
         );
       }
-      
+
       canvas.drawPath(path, checkPaint);
     }
   }
@@ -294,7 +282,7 @@ class _SuccessCheckPainter extends CustomPainter {
   @override
   bool shouldRepaint(_SuccessCheckPainter oldDelegate) {
     return circleProgress != oldDelegate.circleProgress ||
-           checkProgress != oldDelegate.checkProgress;
+        checkProgress != oldDelegate.checkProgress;
   }
 }
 
@@ -327,11 +315,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    )..repeat();
-    
+    _controller = AnimationController(vsync: this, duration: widget.duration)
+      ..repeat();
+
     _animation = Tween<double>(begin: -2, end: 2).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
     );
@@ -346,9 +332,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
   @override
   Widget build(BuildContext context) {
     if (!widget.isLoading) return widget.child;
-    
+
     final brightness = Theme.of(context).brightness;
-    
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -369,11 +355,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
                       Colors.grey.shade100,
                       Colors.grey.shade200,
                     ],
-              stops: [
-                0.0,
-                0.5 + _animation.value * 0.25,
-                1.0,
-              ],
+              stops: [0.0, 0.5 + _animation.value * 0.25, 1.0],
             ).createShader(bounds);
           },
           child: widget.child,
@@ -399,7 +381,7 @@ class SkeletonBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       width: width,
       height: height,
@@ -421,7 +403,7 @@ class SkeletonCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       width: size,
       height: size,
@@ -443,15 +425,15 @@ class SkeletonCircle extends StatelessWidget {
 /// Shows immediate feedback while async operation runs in background
 class OptimisticButton extends StatefulWidget {
   final String? text;
-  final String? label;  // Alias for text
+  final String? label; // Alias for text
   final String? successText;
   final IconData? icon;
   final IconData? successIcon;
   final Future<bool> Function()? onPressed;
-  final VoidCallback? onTap;  // Simple callback alternative
+  final VoidCallback? onTap; // Simple callback alternative
   final Color? color;
   final Color? successColor;
-  final bool isLoading;  // External loading state
+  final bool isLoading; // External loading state
 
   const OptimisticButton({
     super.key,
@@ -481,7 +463,7 @@ class _OptimisticButtonState extends State<OptimisticButton>
   bool _isSuccess = false;
   bool _isLoading = false;
   bool _hasError = false;
-  
+
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -492,9 +474,10 @@ class _OptimisticButtonState extends State<OptimisticButton>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1, end: 1.05).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -505,17 +488,17 @@ class _OptimisticButtonState extends State<OptimisticButton>
 
   Future<void> _handleTap() async {
     if (_isSuccess || _isLoading || widget.isLoading) return;
-    
+
     // Simple callback path
     if (widget.onTap != null) {
       HapticFeedback.mediumImpact();
       widget.onTap!();
       return;
     }
-    
+
     // Optimistic callback path
     if (widget.onPressed == null) return;
-    
+
     // Optimistic: Show success immediately
     HapticFeedback.mediumImpact();
     setState(() {
@@ -523,7 +506,7 @@ class _OptimisticButtonState extends State<OptimisticButton>
       _isLoading = true;
     });
     _controller.forward().then((_) => _controller.reverse());
-    
+
     try {
       final result = await widget.onPressed!();
       if (!result) {
@@ -533,7 +516,7 @@ class _OptimisticButtonState extends State<OptimisticButton>
           _isSuccess = false;
           _hasError = true;
         });
-        
+
         // Show error briefly
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) {
@@ -546,7 +529,7 @@ class _OptimisticButtonState extends State<OptimisticButton>
         _isSuccess = false;
         _hasError = true;
       });
-      
+
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) {
         setState(() => _hasError = false);
@@ -560,11 +543,10 @@ class _OptimisticButtonState extends State<OptimisticButton>
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     final baseColor = widget.color ?? AppColors.crimson;
     final successColor = widget.successColor ?? AppColors.success;
     final isCurrentlyLoading = widget.isLoading || _isLoading;
-    
+
     return ScaleTransition(
       scale: _scaleAnimation,
       child: AnimatedContainer(
@@ -580,20 +562,23 @@ class _OptimisticButtonState extends State<OptimisticButton>
                 color: _hasError
                     ? AppColors.error.withValues(alpha: 0.15)
                     : _isSuccess
-                        ? successColor.withValues(alpha: 0.15)
-                        : baseColor.withValues(alpha: 0.15),
+                    ? successColor.withValues(alpha: 0.15)
+                    : baseColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _hasError
                       ? AppColors.error
                       : _isSuccess
-                          ? successColor
-                          : baseColor,
+                      ? successColor
+                      : baseColor,
                   width: 1.5,
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 child: isCurrentlyLoading
                     ? const SizedBox(
                         width: 20,
@@ -610,14 +595,14 @@ class _OptimisticButtonState extends State<OptimisticButton>
                               _hasError
                                   ? Icons.error_outline_rounded
                                   : _isSuccess
-                                      ? widget.displaySuccessIcon
-                                      : widget.displayIcon,
+                                  ? widget.displaySuccessIcon
+                                  : widget.displayIcon,
                               key: ValueKey(_isSuccess),
                               color: _hasError
                                   ? AppColors.error
                                   : _isSuccess
-                                      ? successColor
-                                      : baseColor,
+                                  ? successColor
+                                  : baseColor,
                               size: 20,
                             ),
                           ),
@@ -628,15 +613,15 @@ class _OptimisticButtonState extends State<OptimisticButton>
                               _hasError
                                   ? 'Failed'
                                   : _isSuccess
-                                      ? widget.displaySuccessText
-                                      : widget.displayText,
+                                  ? widget.displaySuccessText
+                                  : widget.displayText,
                               key: ValueKey(_isSuccess),
                               style: TextStyle(
                                 color: _hasError
                                     ? AppColors.error
                                     : _isSuccess
-                                        ? successColor
-                                        : baseColor,
+                                    ? successColor
+                                    : baseColor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -699,7 +684,7 @@ class LiquidGlassContainer extends StatelessWidget {
   final double borderRadius;
   final double blur;
   final Color? tintColor;
-  final Color? glowColor;  // Custom glow color
+  final Color? glowColor; // Custom glow color
   final double tintOpacity;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
@@ -727,10 +712,11 @@ class LiquidGlassContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final effectiveTint = tintColor ?? 
+    final effectiveTint =
+        tintColor ??
         (brightness == Brightness.dark ? Colors.white : Colors.black);
     final effectiveGlow = glowColor ?? AppColors.crimson;
-    
+
     return Container(
       width: width,
       height: height,
@@ -788,7 +774,7 @@ class LiquidGlassContainer extends StatelessWidget {
 /// Returns context-aware greeting based on time of day
 String getContextualGreeting() {
   final hour = DateTime.now().hour;
-  
+
   if (hour < 5) return 'Night owl mode';
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
@@ -799,7 +785,7 @@ String getContextualGreeting() {
 /// Returns emoji for time of day (for contextual UI)
 IconData getTimeOfDayIcon() {
   final hour = DateTime.now().hour;
-  
+
   if (hour < 6 || hour >= 20) return Icons.nightlight_rounded;
   if (hour < 12) return Icons.wb_sunny_rounded;
   if (hour < 17) return Icons.wb_cloudy_rounded;
@@ -829,7 +815,7 @@ class ShimmerBase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Container(
       width: width,
       height: height,

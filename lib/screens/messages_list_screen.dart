@@ -43,7 +43,8 @@ class _MessagesListScreenState extends State<MessagesListScreen>
       id: '1',
       participantName: 'The Velvet Lounge',
       participantImage: '',
-      lastMessage: 'Looking forward to your performance this Saturday! Let us know if you need anything.',
+      lastMessage:
+          'Looking forward to your performance this Saturday! Let us know if you need anything.',
       lastMessageTime: DateTime.now().subtract(const Duration(minutes: 5)),
       unreadCount: 2,
       isOnline: true,
@@ -158,9 +159,13 @@ class _MessagesListScreenState extends State<MessagesListScreen>
   List<Conversation> get _filteredConversations {
     if (_searchQuery.isEmpty) return _conversations;
     return _conversations
-        .where((c) =>
-            c.participantName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            c.lastMessage.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (c) =>
+              c.participantName.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ||
+              c.lastMessage.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -179,14 +184,10 @@ class _MessagesListScreenState extends State<MessagesListScreen>
           _buildAppBar(brightness),
 
           // Search Bar
-          SliverToBoxAdapter(
-            child: _buildSearchBar(brightness),
-          ),
+          SliverToBoxAdapter(child: _buildSearchBar(brightness)),
 
           // Filter Chips
-          SliverToBoxAdapter(
-            child: _buildFilterChips(brightness),
-          ),
+          SliverToBoxAdapter(child: _buildFilterChips(brightness)),
 
           // Tab Bar
           SliverPersistentHeader(
@@ -201,16 +202,8 @@ class _MessagesListScreenState extends State<MessagesListScreen>
         body: TabBarView(
           controller: _tabController,
           children: [
-            _buildConversationsList(
-              brightness,
-              _filteredConversations,
-              false,
-            ),
-            _buildConversationsList(
-              brightness,
-              _archivedConversations,
-              true,
-            ),
+            _buildConversationsList(brightness, _filteredConversations, false),
+            _buildConversationsList(brightness, _archivedConversations, true),
           ],
         ),
       ),
@@ -235,11 +228,7 @@ class _MessagesListScreenState extends State<MessagesListScreen>
               ),
             ],
           ),
-          child: const Icon(
-            Icons.edit_rounded,
-            color: Colors.white,
-            size: 26,
-          ),
+          child: const Icon(Icons.edit_rounded, color: Colors.white, size: 26),
         ),
       ),
     );
@@ -363,9 +352,7 @@ class _MessagesListScreenState extends State<MessagesListScreen>
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Search conversations...',
-                  hintStyle: TextStyle(
-                    color: AppColors.textTert(brightness),
-                  ),
+                  hintStyle: TextStyle(color: AppColors.textTert(brightness)),
                 ),
               ),
             ),
@@ -409,7 +396,7 @@ class _MessagesListScreenState extends State<MessagesListScreen>
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final filter = filters[index];
           final isSelected = index == 0;
@@ -448,7 +435,9 @@ class _MessagesListScreenState extends State<MessagesListScreen>
                           ? AppColors.crimson
                           : AppColors.text(brightness),
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
                   ),
                 ],
@@ -519,7 +508,9 @@ class _MessagesListScreenState extends State<MessagesListScreen>
               border: Border.all(color: AppColors.border(brightness)),
             ),
             child: Icon(
-              isArchived ? Icons.archive_rounded : Icons.chat_bubble_outline_rounded,
+              isArchived
+                  ? Icons.archive_rounded
+                  : Icons.chat_bubble_outline_rounded,
               size: 48,
               color: AppColors.textTert(brightness),
             ),
@@ -682,10 +673,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
         indicatorSize: TabBarIndicatorSize.label,
         labelColor: AppColors.crimson,
         unselectedLabelColor: AppColors.textSec(brightness),
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-        ),
+        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         unselectedLabelStyle: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
@@ -699,7 +687,10 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
                 if (unreadCount > 0) ...[
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.crimson,
                       borderRadius: BorderRadius.circular(8),
@@ -757,8 +748,16 @@ class _ConversationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key(conversation.id),
-      background: _buildSwipeBackground(Colors.orange, Icons.archive_rounded, Alignment.centerLeft),
-      secondaryBackground: _buildSwipeBackground(AppColors.error, Icons.delete_rounded, Alignment.centerRight),
+      background: _buildSwipeBackground(
+        Colors.orange,
+        Icons.archive_rounded,
+        Alignment.centerLeft,
+      ),
+      secondaryBackground: _buildSwipeBackground(
+        AppColors.error,
+        Icons.delete_rounded,
+        Alignment.centerRight,
+      ),
       confirmDismiss: (direction) async {
         HapticFeedback.mediumImpact();
         if (direction == DismissDirection.startToEnd) {
@@ -952,7 +951,11 @@ class _ConversationTile extends StatelessWidget {
     );
   }
 
-  Widget _buildSwipeBackground(Color color, IconData icon, Alignment alignment) {
+  Widget _buildSwipeBackground(
+    Color color,
+    IconData icon,
+    Alignment alignment,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       decoration: BoxDecoration(
@@ -1034,7 +1037,9 @@ class _TypingIndicatorState extends State<_TypingIndicator>
                 width: 4,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.crimson.withValues(alpha: 0.3 + offset * 0.7),
+                  color: AppColors.crimson.withValues(
+                    alpha: 0.3 + offset * 0.7,
+                  ),
                   shape: BoxShape.circle,
                 ),
               );
@@ -1184,9 +1189,7 @@ class _NewMessageSheet extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
-                          style: TextStyle(
-                            color: AppColors.text(brightness),
-                          ),
+                          style: TextStyle(color: AppColors.text(brightness)),
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Search matches...',

@@ -35,20 +35,27 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
   void initState() {
     super.initState();
     _addressController = TextEditingController(
-      text: widget.profileData.location.formattedAddress ?? 
-            widget.profileData.location.streetAddress ?? '',
+      text:
+          widget.profileData.location.formattedAddress ??
+          widget.profileData.location.streetAddress ??
+          '',
     );
     _parkingAvailable = widget.profileData.amenities.contains('parking');
-    _publicTransportAccess = widget.profileData.amenities.contains('public_transport');
+    _publicTransportAccess = widget.profileData.amenities.contains(
+      'public_transport',
+    );
   }
 
   @override
   void didUpdateWidget(VenueLocationStep oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Sync when data updates asynchronously
-    final currentAddress = widget.profileData.location.formattedAddress ?? 
-                           widget.profileData.location.streetAddress ?? '';
-    if (currentAddress.isNotEmpty && _addressController.text != currentAddress) {
+    final currentAddress =
+        widget.profileData.location.formattedAddress ??
+        widget.profileData.location.streetAddress ??
+        '';
+    if (currentAddress.isNotEmpty &&
+        _addressController.text != currentAddress) {
       _addressController.text = currentAddress;
     }
   }
@@ -63,14 +70,14 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
     final amenities = <String>[];
     if (_parkingAvailable) amenities.add('parking');
     if (_publicTransportAccess) amenities.add('public_transport');
-    
+
     // Preserve other amenities
     for (final amenity in widget.profileData.amenities) {
       if (amenity != 'parking' && amenity != 'public_transport') {
         amenities.add(amenity);
       }
     }
-    
+
     widget.profileData.amenities = amenities;
     widget.onDataChanged();
   }
@@ -169,7 +176,9 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
                     decoration: InputDecoration(
                       hintText: 'Street, City, Postcode',
                       hintStyle: TextStyle(
-                        color: isDark ? Colors.grey[500] : const Color(0xFF876464),
+                        color: isDark
+                            ? Colors.grey[500]
+                            : const Color(0xFF876464),
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -190,7 +199,9 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
                     margin: const EdgeInsets.only(right: 12),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.crimson.withValues(alpha: isDark ? 0.2 : 0.1),
+                      color: AppColors.crimson.withValues(
+                        alpha: isDark ? 0.2 : 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -330,7 +341,9 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
           _buildLogisticsOption(
             icon: Icons.local_parking_rounded,
             iconColor: Colors.blue,
-            iconBgColor: isDark ? Colors.blue.withValues(alpha: 0.2) : Colors.blue.withValues(alpha: 0.1),
+            iconBgColor: isDark
+                ? Colors.blue.withValues(alpha: 0.2)
+                : Colors.blue.withValues(alpha: 0.1),
             title: 'Parking available',
             subtitle: 'Dedicated space for load-in',
             isChecked: _parkingAvailable,
@@ -347,7 +360,9 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
           _buildLogisticsOption(
             icon: Icons.directions_bus_rounded,
             iconColor: Colors.green,
-            iconBgColor: isDark ? Colors.green.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.1),
+            iconBgColor: isDark
+                ? Colors.green.withValues(alpha: 0.2)
+                : Colors.green.withValues(alpha: 0.1),
             title: 'Public transport',
             subtitle: 'Easy access for guests',
             isChecked: _publicTransportAccess,
@@ -358,7 +373,7 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
               _updateAmenities();
             },
           ),
-          
+
           // Bottom padding for safe area
           const SizedBox(height: 120),
         ],
@@ -406,7 +421,7 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
           color: isDark ? AppColors.graphite : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isChecked 
+            color: isChecked
                 ? AppColors.crimson.withValues(alpha: 0.5)
                 : (isDark ? AppColors.slate : const Color(0xFFE5DCDC)),
             width: isChecked ? 2 : 1,
@@ -434,7 +449,9 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.text(isDark ? Brightness.dark : Brightness.light),
+                      color: AppColors.text(
+                        isDark ? Brightness.dark : Brightness.light,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -442,7 +459,9 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.grey[500] : const Color(0xFF876464).withValues(alpha: 0.7),
+                      color: isDark
+                          ? Colors.grey[500]
+                          : const Color(0xFF876464).withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -456,12 +475,18 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
                 color: isChecked ? AppColors.crimson : Colors.transparent,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isChecked ? AppColors.crimson : (isDark ? AppColors.slate : const Color(0xFFE5DCDC)),
+                  color: isChecked
+                      ? AppColors.crimson
+                      : (isDark ? AppColors.slate : const Color(0xFFE5DCDC)),
                   width: 2,
                 ),
               ),
               child: isChecked
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                  ? const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    )
                   : null,
             ),
           ],

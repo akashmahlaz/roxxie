@@ -322,12 +322,13 @@ class DiscoveryResponse {
 
   factory DiscoveryResponse.fromJson(Map<String, dynamic> json) {
     // Backend returns 'gigs' for artists, 'artists' for venues, or 'profiles'/'data' as fallback
-    final rawProfiles = json['profiles'] ?? 
-                        json['artists'] ?? 
-                        json['gigs'] ?? 
-                        json['data'] ?? 
-                        [];
-    
+    final rawProfiles =
+        json['profiles'] ??
+        json['artists'] ??
+        json['gigs'] ??
+        json['data'] ??
+        [];
+
     return DiscoveryResponse(
       profiles: (rawProfiles as List)
           .map<DiscoveryCard>((e) => DiscoveryCard.fromJson(e))
@@ -335,7 +336,9 @@ class DiscoveryResponse {
       page: json['page'] ?? 1,
       limit: json['limit'] ?? 20,
       total: json['total'] ?? 0,
-      hasMore: json['hasMore'] ?? ((json['total'] ?? 0) > (json['page'] ?? 1) * (json['limit'] ?? 20)),
+      hasMore:
+          json['hasMore'] ??
+          ((json['total'] ?? 0) > (json['page'] ?? 1) * (json['limit'] ?? 20)),
     );
   }
 }

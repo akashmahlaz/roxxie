@@ -66,14 +66,18 @@ class VenueService {
         throw ValidationException('Invalid response format: expected array');
       }
 
-      final venues = data.map((e) {
-        try {
-          return Venue.fromJson(e as Map<String, dynamic>);
-        } catch (e) {
-          debugPrint('⚠️ [VenueService] Failed to parse venue: $e');
-          return null;
-        }
-      }).where((venue) => venue != null).cast<Venue>().toList();
+      final venues = data
+          .map((e) {
+            try {
+              return Venue.fromJson(e as Map<String, dynamic>);
+            } catch (e) {
+              debugPrint('⚠️ [VenueService] Failed to parse venue: $e');
+              return null;
+            }
+          })
+          .where((venue) => venue != null)
+          .cast<Venue>()
+          .toList();
 
       debugPrint('🏢 [VenueService] Found ${venues.length} venues');
       return venues;
@@ -82,9 +86,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Search failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceError(
-        'Unexpected error during search: $e',
-      );
+      final error = VenueServiceError('Unexpected error during search: $e');
       debugPrint('❌ [VenueService] Search failed: ${error.message}');
       throw error;
     } finally {
@@ -97,9 +99,7 @@ class VenueService {
     try {
       debugPrint('🏢 [VenueService] Fetching venue: $venueId');
 
-      final response = await _client.get(
-        Endpoints.venueById(venueId),
-      );
+      final response = await _client.get(Endpoints.venueById(venueId));
 
       if (response.data == null) {
         throw NotFoundException('Venue not found');
@@ -113,9 +113,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Get venue failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceError(
-        'Unexpected error getting venue: $e',
-      );
+      final error = VenueServiceError('Unexpected error getting venue: $e');
       debugPrint('❌ [VenueService] Get venue failed: ${error.message}');
       throw error;
     }
@@ -157,9 +155,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Get profile failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceError(
-        'Unexpected error getting profile: $e',
-      );
+      final error = VenueServiceError('Unexpected error getting profile: $e');
       debugPrint('❌ [VenueService] Get profile failed: ${error.message}');
       throw error;
     } finally {
@@ -184,12 +180,11 @@ class VenueService {
       await _checkConnectivity();
 
       final requestData = request.toJson();
-      debugPrint('🏢 [VenueService] Update data keys: ${requestData.keys.toList()}');
-
-      final response = await _client.put(
-        Endpoints.venuesMe,
-        data: requestData,
+      debugPrint(
+        '🏢 [VenueService] Update data keys: ${requestData.keys.toList()}',
       );
+
+      final response = await _client.put(Endpoints.venuesMe, data: requestData);
 
       debugPrint(
         '🏢 [VenueService] Profile updated in ${stopwatch.elapsedMilliseconds}ms',
@@ -211,9 +206,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Update failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceError(
-        'Unexpected error updating profile: $e',
-      );
+      final error = VenueServiceError('Unexpected error updating profile: $e');
       debugPrint('❌ [VenueService] Update failed: ${error.message}');
       throw error;
     } finally {
@@ -285,9 +278,7 @@ class VenueService {
       if (result == null) {
         throw lastError != null
             ? _handleDioError(lastError as DioException, 'complete setup')
-            : VenueServiceError(
-                'Setup failed after $_maxRetries attempts',
-              );
+            : VenueServiceError('Setup failed after $_maxRetries attempts');
       }
 
       debugPrint(
@@ -297,9 +288,7 @@ class VenueService {
     } catch (e) {
       final error = e is VenueServiceError
           ? e
-          : VenueServiceError(
-              'Unexpected error during setup: $e',
-            );
+          : VenueServiceError('Unexpected error during setup: $e');
       debugPrint('❌ [VenueService] Setup failed: ${error.message}');
       throw error;
     } finally {
@@ -370,9 +359,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Create gig failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceError(
-        'Unexpected error creating gig: $e',
-      );
+      final error = VenueServiceError('Unexpected error creating gig: $e');
       debugPrint('❌ [VenueService] Create gig failed: ${error.message}');
       throw error;
     } finally {
@@ -400,9 +387,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Get gigs failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceError(
-        'Unexpected error getting gigs: $e',
-      );
+      final error = VenueServiceError('Unexpected error getting gigs: $e');
       debugPrint('❌ [VenueService] Get gigs failed: ${error.message}');
       throw error;
     }
@@ -432,9 +417,7 @@ class VenueService {
       debugPrint('❌ [VenueService] Discover gigs failed: ${error.message}');
       throw error;
     } catch (e) {
-      final error = VenueServiceError(
-        'Unexpected error discovering gigs: $e',
-      );
+      final error = VenueServiceError('Unexpected error discovering gigs: $e');
       debugPrint('❌ [VenueService] Discover gigs failed: ${error.message}');
       throw error;
     }
@@ -514,7 +497,9 @@ class VenueService {
         throw NetworkException('No internet connection');
       }
     } on SocketException {
-      throw NetworkException('No internet connection. Please check your network.');
+      throw NetworkException(
+        'No internet connection. Please check your network.',
+      );
     }
   }
 
@@ -589,10 +574,7 @@ class VenueService {
         );
 
       case DioExceptionType.cancel:
-        return VenueServiceError(
-          'Request was cancelled',
-          originalError: e,
-        );
+        return VenueServiceError('Request was cancelled', originalError: e);
 
       case DioExceptionType.connectionError:
         if (e.message?.contains('SocketException') ?? false) {
@@ -737,7 +719,9 @@ class UpdateVenueRequest {
 
     // Preferences
     if (preferredGenres != null) json['preferredGenres'] = preferredGenres;
-    if (gigPreferences != null) json['gigPreferences'] = gigPreferences!.toJson();
+    if (gigPreferences != null) {
+      json['gigPreferences'] = gigPreferences!.toJson();
+    }
 
     // Contact
     if (phone != null) json['phone'] = phone;

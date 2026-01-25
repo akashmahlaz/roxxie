@@ -140,47 +140,47 @@ class NotificationChannels {
 
   /// Create all notification channels
   static List<AndroidNotificationChannel> getChannels() => [
-        AndroidNotificationChannel(
-          messages,
-          'Messages & Chats',
-          description: 'Notifications for new messages and chat activity',
-          importance: Importance.high,
-          enableVibration: true,
-          enableLights: true,
-        ),
-        AndroidNotificationChannel(
-          gigOpportunities,
-          'Gig Opportunities',
-          description: 'Notifications for new gig postings and bookings',
-          importance: Importance.high,
-          enableVibration: true,
-          enableLights: true,
-        ),
-        AndroidNotificationChannel(
-          general,
-          'General Notifications',
-          description: 'General app notifications and tips',
-          importance: Importance.defaultImportance,
-          enableVibration: true,
-          enableLights: false,
-        ),
-        AndroidNotificationChannel(
-          updates,
-          'App Updates',
-          description: 'Background updates and sync notifications',
-          importance: Importance.min,
-          enableVibration: false,
-          enableLights: false,
-        ),
-        AndroidNotificationChannel(
-          bookingReminder,
-          'Booking Reminders',
-          description: 'Reminders for upcoming gigs',
-          importance: Importance.high,
-          enableVibration: true,
-          enableLights: true,
-        ),
-      ];
+    AndroidNotificationChannel(
+      messages,
+      'Messages & Chats',
+      description: 'Notifications for new messages and chat activity',
+      importance: Importance.high,
+      enableVibration: true,
+      enableLights: true,
+    ),
+    AndroidNotificationChannel(
+      gigOpportunities,
+      'Gig Opportunities',
+      description: 'Notifications for new gig postings and bookings',
+      importance: Importance.high,
+      enableVibration: true,
+      enableLights: true,
+    ),
+    AndroidNotificationChannel(
+      general,
+      'General Notifications',
+      description: 'General app notifications and tips',
+      importance: Importance.defaultImportance,
+      enableVibration: true,
+      enableLights: false,
+    ),
+    AndroidNotificationChannel(
+      updates,
+      'App Updates',
+      description: 'Background updates and sync notifications',
+      importance: Importance.min,
+      enableVibration: false,
+      enableLights: false,
+    ),
+    AndroidNotificationChannel(
+      bookingReminder,
+      'Booking Reminders',
+      description: 'Reminders for upcoming gigs',
+      importance: Importance.high,
+      enableVibration: true,
+      enableLights: true,
+    ),
+  ];
 }
 
 /// ═══════════════════════════════════════════════════════════════════════
@@ -239,8 +239,8 @@ class PushNotificationService {
   PushNotificationService({
     required ApiClient apiClient,
     AuthProvider? authProvider,
-  })  : _apiClient = apiClient,
-        _authProvider = authProvider;
+  }) : _apiClient = apiClient,
+       _authProvider = authProvider;
 
   /// Initialize push notification service
   /// Call this from main() or app initialization
@@ -280,7 +280,9 @@ class PushNotificationService {
       FirebaseMessaging.onMessage.listen(_firebaseForegroundHandler);
 
       // Handle when app is opened from notification
-      FirebaseMessaging.onMessageOpenedApp.listen(_firebaseMessageOpenedHandler);
+      FirebaseMessaging.onMessageOpenedApp.listen(
+        _firebaseMessageOpenedHandler,
+      );
 
       // Request permission and get token
       if (shouldRequestPermission) {
@@ -294,7 +296,6 @@ class PushNotificationService {
         '🔔 [PushNotificationService] Initialized in ${stopwatch.elapsedMilliseconds}ms',
       );
       return true;
-
     } catch (e) {
       debugPrint('❌ [PushNotificationService] Initialization failed: $e');
       return false;
@@ -328,7 +329,9 @@ class PushNotificationService {
 
       debugPrint('🔔 [PushNotificationService] Local notifications configured');
     } catch (e) {
-      debugPrint('⚠️ [PushNotificationService] Local notifications setup failed: $e');
+      debugPrint(
+        '⚠️ [PushNotificationService] Local notifications setup failed: $e',
+      );
     }
   }
 
@@ -339,9 +342,13 @@ class PushNotificationService {
         for (final channel in NotificationChannels.getChannels()) {
           // Note: Channel creation is handled by the system
           // This method ensures channels are registered
-          debugPrint('🔔 [PushNotificationService] Channel created: ${channel.id}');
+          debugPrint(
+            '🔔 [PushNotificationService] Channel created: ${channel.id}',
+          );
         }
-        debugPrint('🔔 [PushNotificationService] Notification channels configured');
+        debugPrint(
+          '🔔 [PushNotificationService] Notification channels configured',
+        );
       }
     } catch (e) {
       debugPrint('⚠️ [PushNotificationService] Channel setup failed: $e');
@@ -360,7 +367,8 @@ class PushNotificationService {
       // Use the current Firebase Messaging API
       final settings = await _firebaseMessaging.requestPermission();
 
-      _permissionGranted = settings.authorizationStatus == AuthorizationStatus.authorized;
+      _permissionGranted =
+          settings.authorizationStatus == AuthorizationStatus.authorized;
 
       debugPrint(
         '🔔 [PushNotificationService] Permission: ${settings.authorizationStatus}',
@@ -371,7 +379,6 @@ class PushNotificationService {
       }
 
       return _permissionGranted;
-
     } catch (e) {
       debugPrint('❌ [PushNotificationService] Permission request failed: $e');
       _permissionGranted = false;
@@ -407,7 +414,9 @@ class PushNotificationService {
     try {
       // Note: There's no direct method to open notification settings in FirebaseMessaging
       // In a real app, you would use platform-specific code to open settings
-      debugPrint('🔔 [PushNotificationService] Open settings - implement platform-specific code');
+      debugPrint(
+        '🔔 [PushNotificationService] Open settings - implement platform-specific code',
+      );
     } catch (e) {
       debugPrint('⚠️ [PushNotificationService] Cannot open settings: $e');
     }
@@ -531,7 +540,8 @@ class PushNotificationService {
       await _apiClient.post(
         Endpoints.notificationsUpdateSettings,
         data: {
-          'notificationsEnabled': settings.authorizationStatus == AuthorizationStatus.authorized,
+          'notificationsEnabled':
+              settings.authorizationStatus == AuthorizationStatus.authorized,
           'alertEnabled': alertEnabled,
           'badgeEnabled': badgeEnabled,
           'soundEnabled': soundEnabled,
@@ -607,7 +617,9 @@ class PushNotificationService {
       //   await unsubscribeFromTopic('genre_$genre');
       // }
     } catch (e) {
-      debugPrint('⚠️ [PushNotificationService] Discovery unsubscribe failed: $e');
+      debugPrint(
+        '⚠️ [PushNotificationService] Discovery unsubscribe failed: $e',
+      );
     }
   }
 
@@ -659,7 +671,9 @@ class PushNotificationService {
 
       await _handleNotificationType(payload);
     } catch (e) {
-      debugPrint('❌ [PushNotificationService] Background open handling failed: $e');
+      debugPrint(
+        '❌ [PushNotificationService] Background open handling failed: $e',
+      );
     }
   }
 
@@ -819,8 +833,8 @@ class PushNotificationService {
       final body = daysUntil == 0
           ? 'Your gig "$gigTitle" is today at $venueName!'
           : daysUntil == 1
-              ? 'Your gig "$gigTitle" is tomorrow at $venueName!'
-              : 'Your gig "$gigTitle" is in $daysUntil days at $venueName!';
+          ? 'Your gig "$gigTitle" is tomorrow at $venueName!'
+          : 'Your gig "$gigTitle" is in $daysUntil days at $venueName!';
 
       const androidDetails = AndroidNotificationDetails(
         NotificationChannels.bookingReminder,
@@ -885,7 +899,9 @@ class PushNotificationService {
         // Note: iOS badge management requires native implementation
         debugPrint('🔔 [PushNotificationService] Badge count: $count');
       }
-      debugPrint('🔔 [PushNotificationService] Badge updated (platform: ${Platform.operatingSystem})');
+      debugPrint(
+        '🔔 [PushNotificationService] Badge updated (platform: ${Platform.operatingSystem})',
+      );
     } catch (e) {
       debugPrint('⚠️ [PushNotificationService] Badge update failed: $e');
     }
@@ -923,7 +939,9 @@ class PushNotificationService {
       try {
         _notificationStream.add(notification);
       } catch (e) {
-        debugPrint('⚠️ [PushNotificationService] Failed to process notification: $e');
+        debugPrint(
+          '⚠️ [PushNotificationService] Failed to process notification: $e',
+        );
         _pendingNotifications.add(notification); // Re-queue
       }
     }
@@ -955,17 +973,11 @@ class PushNotificationService {
   }
 
   /// Get all notifications
-  Future<List<dynamic>> getNotifications({
-    int page = 1,
-    int limit = 20,
-  }) async {
+  Future<List<dynamic>> getNotifications({int page = 1, int limit = 20}) async {
     try {
       final response = await _apiClient.get(
         Endpoints.notifications,
-        queryParameters: {
-          'page': page.toString(),
-          'limit': limit.toString(),
-        },
+        queryParameters: {'page': page.toString(), 'limit': limit.toString()},
       );
       return response.data['data'] ?? [];
     } catch (e) {
@@ -1013,14 +1025,14 @@ class PushNotificationService {
 extension NotificationPayloadExtension on NotificationPayload {
   /// Convert to map for storage
   Map<String, dynamic> toMap() => {
-        'type': type.toString(),
-        'title': title,
-        'body': body,
-        'deepLink': deepLink,
-        'data': data,
-        'priority': priority.toString(),
-        'imageUrl': imageUrl,
-      };
+    'type': type.toString(),
+    'title': title,
+    'body': body,
+    'deepLink': deepLink,
+    'data': data,
+    'priority': priority.toString(),
+    'imageUrl': imageUrl,
+  };
 }
 
 /// Background message handler (must be top-level)

@@ -31,21 +31,52 @@ class VenueIdentityStep extends StatefulWidget {
 
 class _VenueIdentityStepState extends State<VenueIdentityStep> {
   final ImagePicker _picker = ImagePicker();
-  
+
   // Vibe options
   final List<String> _vibeOptions = [
-    'Intimate', 'Rowdy', 'Upscale', 'Underground', 
-    'Cozy', 'Industrial', 'Dark', 'Elegant', 'Casual'
+    'Intimate',
+    'Rowdy',
+    'Upscale',
+    'Underground',
+    'Cozy',
+    'Industrial',
+    'Dark',
+    'Elegant',
+    'Casual',
   ];
-  
+
   // Amenity options with icons
   final List<_AmenityOption> _amenityOptions = [
-    _AmenityOption(id: 'pa_system', title: 'In-house PA System', icon: Icons.speaker_group_rounded),
-    _AmenityOption(id: 'stage', title: 'Dedicated Stage', icon: Icons.theater_comedy_rounded),
-    _AmenityOption(id: 'green_room', title: 'Artist Hospitality/Green Room', icon: Icons.emoji_food_beverage_rounded),
-    _AmenityOption(id: 'lighting', title: 'Professional Lighting Rig', icon: Icons.lightbulb_rounded),
-    _AmenityOption(id: 'parking', title: 'Parking Available', icon: Icons.local_parking_rounded),
-    _AmenityOption(id: 'sound_engineer', title: 'Sound Engineer', icon: Icons.headphones_rounded),
+    _AmenityOption(
+      id: 'pa_system',
+      title: 'In-house PA System',
+      icon: Icons.speaker_group_rounded,
+    ),
+    _AmenityOption(
+      id: 'stage',
+      title: 'Dedicated Stage',
+      icon: Icons.theater_comedy_rounded,
+    ),
+    _AmenityOption(
+      id: 'green_room',
+      title: 'Artist Hospitality/Green Room',
+      icon: Icons.emoji_food_beverage_rounded,
+    ),
+    _AmenityOption(
+      id: 'lighting',
+      title: 'Professional Lighting Rig',
+      icon: Icons.lightbulb_rounded,
+    ),
+    _AmenityOption(
+      id: 'parking',
+      title: 'Parking Available',
+      icon: Icons.local_parking_rounded,
+    ),
+    _AmenityOption(
+      id: 'sound_engineer',
+      title: 'Sound Engineer',
+      icon: Icons.headphones_rounded,
+    ),
   ];
 
   final Set<String> _selectedVibes = {};
@@ -62,7 +93,7 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
     if (widget.profileData.capacity == 0) {
       widget.profileData.capacity = 150;
     }
-    
+
     // Load vibes from amenities (we store vibes in a special format)
     for (final amenity in widget.profileData.amenities) {
       if (amenity.startsWith('vibe_')) {
@@ -71,13 +102,23 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
         _selectedAmenities.add(amenity);
       }
     }
-    
+
     // Load equipment as amenities
-    if (widget.profileData.equipment.hasSoundSystem) _selectedAmenities.add('pa_system');
-    if (widget.profileData.equipment.hasStage) _selectedAmenities.add('stage');
-    if (widget.profileData.equipment.hasDressingRoom) _selectedAmenities.add('green_room');
-    if (widget.profileData.equipment.hasLighting) _selectedAmenities.add('lighting');
-    if (widget.profileData.equipment.hasParking) _selectedAmenities.add('parking');
+    if (widget.profileData.equipment.hasSoundSystem) {
+      _selectedAmenities.add('pa_system');
+    }
+    if (widget.profileData.equipment.hasStage) {
+      _selectedAmenities.add('stage');
+    }
+    if (widget.profileData.equipment.hasDressingRoom) {
+      _selectedAmenities.add('green_room');
+    }
+    if (widget.profileData.equipment.hasLighting) {
+      _selectedAmenities.add('lighting');
+    }
+    if (widget.profileData.equipment.hasParking) {
+      _selectedAmenities.add('parking');
+    }
   }
 
   void _saveData() {
@@ -88,14 +129,24 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
     }
     allAmenities.addAll(_selectedAmenities);
     widget.profileData.amenities = allAmenities;
-    
+
     // Save equipment
-    widget.profileData.equipment.hasSoundSystem = _selectedAmenities.contains('pa_system');
-    widget.profileData.equipment.hasStage = _selectedAmenities.contains('stage');
-    widget.profileData.equipment.hasDressingRoom = _selectedAmenities.contains('green_room');
-    widget.profileData.equipment.hasLighting = _selectedAmenities.contains('lighting');
-    widget.profileData.equipment.hasParking = _selectedAmenities.contains('parking');
-    
+    widget.profileData.equipment.hasSoundSystem = _selectedAmenities.contains(
+      'pa_system',
+    );
+    widget.profileData.equipment.hasStage = _selectedAmenities.contains(
+      'stage',
+    );
+    widget.profileData.equipment.hasDressingRoom = _selectedAmenities.contains(
+      'green_room',
+    );
+    widget.profileData.equipment.hasLighting = _selectedAmenities.contains(
+      'lighting',
+    );
+    widget.profileData.equipment.hasParking = _selectedAmenities.contains(
+      'parking',
+    );
+
     widget.onDataChanged();
   }
 
@@ -255,7 +306,9 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
             margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.graphite.withValues(alpha: 0.3) : Colors.grey[50],
+              color: isDark
+                  ? AppColors.graphite.withValues(alpha: 0.3)
+                  : Colors.grey[50],
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -336,7 +389,7 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
         );
       }
     }
-    
+
     return Container(
       color: Colors.black.withValues(alpha: 0.4),
       child: Icon(
@@ -359,7 +412,9 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.text(isDark ? Brightness.dark : Brightness.light),
+                color: AppColors.text(
+                  isDark ? Brightness.dark : Brightness.light,
+                ),
               ),
             ),
             Container(
@@ -406,16 +461,18 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: ['20', '100', '250', '500+'].map((label) => 
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.grey[500] : Colors.grey[600],
-                ),
-              ),
-            ).toList(),
+            children: ['20', '100', '250', '500+']
+                .map(
+                  (label) => Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.grey[500] : Colors.grey[600],
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ),
       ],
@@ -454,12 +511,19 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.crimson.withValues(alpha: 0.1) : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.crimson.withValues(alpha: 0.1)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: isSelected ? AppColors.crimson : (isDark ? AppColors.slate : Colors.grey[300]!),
+                    color: isSelected
+                        ? AppColors.crimson
+                        : (isDark ? AppColors.slate : Colors.grey[300]!),
                     width: 1.5,
                   ),
                 ),
@@ -468,7 +532,11 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: isSelected ? AppColors.crimson : AppColors.text(isDark ? Brightness.dark : Brightness.light),
+                    color: isSelected
+                        ? AppColors.crimson
+                        : AppColors.text(
+                            isDark ? Brightness.dark : Brightness.light,
+                          ),
                   ),
                 ),
               ),
@@ -495,7 +563,7 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
         ...List.generate(_amenityOptions.length, (index) {
           final amenity = _amenityOptions[index];
           final isSelected = _selectedAmenities.contains(amenity.id);
-          
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: GestureDetector(
@@ -513,21 +581,19 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.white,
+                  color: isDark
+                      ? AppColors.graphite.withValues(alpha: 0.5)
+                      : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected 
+                    color: isSelected
                         ? AppColors.crimson.withValues(alpha: 0.5)
                         : (isDark ? AppColors.slate : Colors.grey[200]!),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      amenity.icon,
-                      color: AppColors.crimson,
-                      size: 24,
-                    ),
+                    Icon(amenity.icon, color: AppColors.crimson, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -535,7 +601,9 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.text(isDark ? Brightness.dark : Brightness.light),
+                          color: AppColors.text(
+                            isDark ? Brightness.dark : Brightness.light,
+                          ),
                         ),
                       ),
                     ),
@@ -543,17 +611,23 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.crimson : Colors.transparent,
+                        color: isSelected
+                            ? AppColors.crimson
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                          color: isSelected 
-                              ? AppColors.crimson 
+                          color: isSelected
+                              ? AppColors.crimson
                               : (isDark ? AppColors.slate : Colors.grey[300]!),
                           width: 2,
                         ),
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                          ? const Icon(
+                              Icons.check_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            )
                           : null,
                     ),
                   ],
@@ -572,9 +646,5 @@ class _AmenityOption {
   final String title;
   final IconData icon;
 
-  _AmenityOption({
-    required this.id,
-    required this.title,
-    required this.icon,
-  });
+  _AmenityOption({required this.id, required this.title, required this.icon});
 }

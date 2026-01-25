@@ -1,5 +1,5 @@
 /// 👤 GIGMATCH Profile Screen
-/// 
+///
 /// 2026 Design Principles Applied:
 /// - Liquid Glass effects for cards
 /// - Micro-interactions on all tap targets
@@ -23,7 +23,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    
+
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       body: SafeArea(
@@ -52,10 +52,17 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Bio Section
-                  if (auth.isArtist && artist?.bio != null && artist!.bio!.isNotEmpty)
+                  if (auth.isArtist &&
+                      artist?.bio != null &&
+                      artist!.bio!.isNotEmpty)
                     _BioSection(bio: artist.bio!, brightness: brightness)
-                  else if (auth.isVenue && venue?.description != null && venue!.description!.isNotEmpty)
-                    _BioSection(bio: venue.description!, brightness: brightness),
+                  else if (auth.isVenue &&
+                      venue?.description != null &&
+                      venue!.description!.isNotEmpty)
+                    _BioSection(
+                      bio: venue.description!,
+                      brightness: brightness,
+                    ),
 
                   const SizedBox(height: 20),
 
@@ -66,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
                     _VenueStats(venue: venue, brightness: brightness),
 
                   const SizedBox(height: 24),
-                  
+
                   // Contact & Location Info (Venue Only)
                   if (auth.isVenue && venue != null)
                     _VenueContactSection(venue: venue, brightness: brightness),
@@ -404,7 +411,7 @@ class _StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     // Try to parse numeric value for animation
     final numericValue = double.tryParse(value.replaceAll(',', ''));
-    
+
     return AnimatedTapFeedback(
       onTap: () => HapticFeedback.selectionClick(),
       child: Column(
@@ -480,12 +487,13 @@ class _MenuItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface(brightness),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppColors.border(brightness),
-            ),
+            border: Border.all(color: AppColors.border(brightness)),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -501,10 +509,12 @@ class _MenuItem extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            trailing: trailing ?? Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textSec(brightness),
-            ),
+            trailing:
+                trailing ??
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textSec(brightness),
+                ),
           ),
         ),
       ),
@@ -582,9 +592,11 @@ class _ArtistMediaSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasAudio = artist.audioSamples != null && (artist.audioSamples as List).isNotEmpty;
-    final hasPhotos = artist.galleryUrls != null && (artist.galleryUrls as List).isNotEmpty;
-    
+    final hasAudio =
+        artist.audioSamples != null && (artist.audioSamples as List).isNotEmpty;
+    final hasPhotos =
+        artist.galleryUrls != null && (artist.galleryUrls as List).isNotEmpty;
+
     if (!hasAudio && !hasPhotos) return const SizedBox.shrink();
 
     return Column(
@@ -671,7 +683,9 @@ class _ArtistMediaSection extends StatelessWidget {
             height: 100,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: (artist.galleryUrls as List).length > 5 ? 5 : (artist.galleryUrls as List).length,
+              itemCount: (artist.galleryUrls as List).length > 5
+                  ? 5
+                  : (artist.galleryUrls as List).length,
               separatorBuilder: (context, index) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final photo = (artist.galleryUrls as List)[index];
@@ -719,16 +733,25 @@ class _VenueContactSection extends StatelessWidget {
   Widget build(BuildContext context) {
     // Gather available contact info
     final hasPhone = venue.phone != null && venue.phone.isNotEmpty;
-    final hasEmail = venue.contactEmail != null && venue.contactEmail.isNotEmpty;
-    final hasAddress = venue.location?.streetAddress != null || 
-                       venue.location?.city != null ||
-                       venue.displayLocation != null;
+    final hasEmail =
+        venue.contactEmail != null && venue.contactEmail.isNotEmpty;
+    final hasAddress =
+        venue.location?.streetAddress != null ||
+        venue.location?.city != null ||
+        venue.displayLocation != null;
     final hasWebsite = venue.socialLinks?.website != null;
     final hasInstagram = venue.socialLinks?.instagram != null;
-    final hasOperatingHours = venue.operatingHours != null && (venue.operatingHours as List).isNotEmpty;
-    
+    final hasOperatingHours =
+        venue.operatingHours != null &&
+        (venue.operatingHours as List).isNotEmpty;
+
     // Don't render if no contact info available
-    if (!hasPhone && !hasEmail && !hasAddress && !hasWebsite && !hasInstagram && !hasOperatingHours) {
+    if (!hasPhone &&
+        !hasEmail &&
+        !hasAddress &&
+        !hasWebsite &&
+        !hasInstagram &&
+        !hasOperatingHours) {
       return const SizedBox.shrink();
     }
 
@@ -768,7 +791,7 @@ class _VenueContactSection extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Phone
                 if (hasPhone)
                   _ContactRow(
@@ -776,7 +799,7 @@ class _VenueContactSection extends StatelessWidget {
                     value: venue.phone!,
                     brightness: brightness,
                   ),
-                
+
                 // Email
                 if (hasEmail)
                   _ContactRow(
@@ -784,7 +807,7 @@ class _VenueContactSection extends StatelessWidget {
                     value: venue.contactEmail!,
                     brightness: brightness,
                   ),
-                
+
                 // Address
                 if (hasAddress)
                   _ContactRow(
@@ -792,7 +815,7 @@ class _VenueContactSection extends StatelessWidget {
                     value: _buildAddressString(venue),
                     brightness: brightness,
                   ),
-                
+
                 // Website
                 if (hasWebsite)
                   _ContactRow(
@@ -801,7 +824,7 @@ class _VenueContactSection extends StatelessWidget {
                     brightness: brightness,
                     isLink: true,
                   ),
-                
+
                 // Instagram
                 if (hasInstagram)
                   _ContactRow(
@@ -813,7 +836,7 @@ class _VenueContactSection extends StatelessWidget {
               ],
             ),
           ),
-        
+
         // Operating Hours Card
         if (hasOperatingHours) ...[
           const SizedBox(height: 16),
@@ -848,7 +871,7 @@ class _VenueContactSection extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Hours list
                 ...(venue.operatingHours as List).map<Widget>((hours) {
                   return Padding(
@@ -869,7 +892,7 @@ class _VenueContactSection extends StatelessWidget {
                               ? '${hours.openTime ?? '--:--'} - ${hours.closeTime ?? '--:--'}'
                               : 'Closed',
                           style: TextStyle(
-                            color: hours.isOpen 
+                            color: hours.isOpen
                                 ? AppColors.textSec(brightness)
                                 : AppColors.crimson,
                             fontSize: 14,
@@ -886,11 +909,12 @@ class _VenueContactSection extends StatelessWidget {
       ],
     );
   }
-  
+
   String _buildAddressString(dynamic venue) {
     final parts = <String>[];
-    
-    if (venue.location?.streetAddress != null && venue.location.streetAddress.isNotEmpty) {
+
+    if (venue.location?.streetAddress != null &&
+        venue.location.streetAddress.isNotEmpty) {
       parts.add(venue.location.streetAddress);
     }
     if (venue.location?.city != null && venue.location.city.isNotEmpty) {
@@ -899,11 +923,11 @@ class _VenueContactSection extends StatelessWidget {
     if (venue.location?.country != null && venue.location.country.isNotEmpty) {
       parts.add(venue.location.country);
     }
-    
+
     if (parts.isEmpty && venue.displayLocation != null) {
       return venue.displayLocation;
     }
-    
+
     return parts.join(', ');
   }
 }
@@ -972,8 +996,9 @@ class _VenueGallerySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhotos = venue.galleryUrls != null && (venue.galleryUrls as List).isNotEmpty;
-    
+    final hasPhotos =
+        venue.galleryUrls != null && (venue.galleryUrls as List).isNotEmpty;
+
     if (!hasPhotos) return const SizedBox.shrink();
 
     return Column(
@@ -990,7 +1015,9 @@ class _VenueGallerySection extends StatelessWidget {
           height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: (venue.galleryUrls as List).length > 5 ? 5 : (venue.galleryUrls as List).length,
+            itemCount: (venue.galleryUrls as List).length > 5
+                ? 5
+                : (venue.galleryUrls as List).length,
             separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final photo = (venue.galleryUrls as List)[index];

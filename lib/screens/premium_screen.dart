@@ -146,10 +146,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                       const SizedBox(height: 4),
                       const Text(
                         'Supercharge your gig matching',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
                       ),
                     ],
                   ),
@@ -298,12 +295,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.crimson.withValues(alpha: 0.05) 
+          color: isSelected
+              ? AppColors.crimson.withValues(alpha: 0.05)
               : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.crimson : AppColors.border(brightness),
+            color: isSelected
+                ? AppColors.crimson
+                : AppColors.border(brightness),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
@@ -329,7 +328,9 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? AppColors.crimson : AppColors.border(brightness),
+                        color: isSelected
+                            ? AppColors.crimson
+                            : AppColors.border(brightness),
                         width: 2,
                       ),
                     ),
@@ -468,11 +469,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
             color: AppColors.crimson.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            feature.icon,
-            color: AppColors.crimson,
-            size: 24,
-          ),
+          child: Icon(feature.icon, color: AppColors.crimson, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -509,9 +506,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
         content: const Text('Subscription feature coming soon!'),
         backgroundColor: AppColors.crimson,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

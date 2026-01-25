@@ -31,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showOnlineStatus = true;
   bool _showDistance = true;
   int _maxDistance = 50;
+  // ignore: unused_field
   bool _isSaving = false;
 
   @override
@@ -90,152 +91,137 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSection(
-              'Notifications',
-              [
-                _buildSwitchTile(
-                  'Push Notifications',
-                  'Receive notifications on your device',
-                  Icons.notifications_rounded,
-                  _pushNotifications,
-                  (value) {
-                    setState(() => _pushNotifications = value);
-                    _saveNotificationSettings();
-                  },
-                  brightness,
-                ),
-                _buildSwitchTile(
-                  'Email Notifications',
-                  'Receive updates via email',
-                  Icons.email_rounded,
-                  _emailNotifications,
-                  (value) {
-                    setState(() => _emailNotifications = value);
-                    _saveNotificationSettings();
-                  },
-                  brightness,
-                ),
-                _buildSwitchTile(
-                  'New Matches',
-                  'Get notified when you match',
-                  Icons.favorite_rounded,
-                  _matchNotifications,
-                  (value) => setState(() => _matchNotifications = value),
-                  brightness,
-                ),
-                _buildSwitchTile(
-                  'New Messages',
-                  'Get notified for new messages',
-                  Icons.chat_bubble_rounded,
-                  _messageNotifications,
-                  (value) => setState(() => _messageNotifications = value),
-                  brightness,
-                ),
-                _buildSwitchTile(
-                  'Gig Reminders',
-                  'Reminders for upcoming gigs',
-                  Icons.event_rounded,
-                  _gigReminders,
-                  (value) => setState(() => _gigReminders = value),
-                  brightness,
-                ),
-              ],
-            ),
+            _buildSection('Notifications', [
+              _buildSwitchTile(
+                'Push Notifications',
+                'Receive notifications on your device',
+                Icons.notifications_rounded,
+                _pushNotifications,
+                (value) {
+                  setState(() => _pushNotifications = value);
+                  _saveNotificationSettings();
+                },
+                brightness,
+              ),
+              _buildSwitchTile(
+                'Email Notifications',
+                'Receive updates via email',
+                Icons.email_rounded,
+                _emailNotifications,
+                (value) {
+                  setState(() => _emailNotifications = value);
+                  _saveNotificationSettings();
+                },
+                brightness,
+              ),
+              _buildSwitchTile(
+                'New Matches',
+                'Get notified when you match',
+                Icons.favorite_rounded,
+                _matchNotifications,
+                (value) => setState(() => _matchNotifications = value),
+                brightness,
+              ),
+              _buildSwitchTile(
+                'New Messages',
+                'Get notified for new messages',
+                Icons.chat_bubble_rounded,
+                _messageNotifications,
+                (value) => setState(() => _messageNotifications = value),
+                brightness,
+              ),
+              _buildSwitchTile(
+                'Gig Reminders',
+                'Reminders for upcoming gigs',
+                Icons.event_rounded,
+                _gigReminders,
+                (value) => setState(() => _gigReminders = value),
+                brightness,
+              ),
+            ]),
 
             const SizedBox(height: 24),
 
-            _buildSection(
-              'Privacy',
-              [
-                _buildSwitchTile(
-                  'Show Online Status',
-                  'Let others see when you\'re online',
-                  Icons.circle,
-                  _showOnlineStatus,
-                  (value) => setState(() => _showOnlineStatus = value),
-                  brightness,
-                ),
-                _buildSwitchTile(
-                  'Show Distance',
-                  'Display distance on your profile',
-                  Icons.location_on_rounded,
-                  _showDistance,
-                  (value) => setState(() => _showDistance = value),
-                  brightness,
-                ),
-              ],
-            ),
+            _buildSection('Privacy', [
+              _buildSwitchTile(
+                'Show Online Status',
+                'Let others see when you\'re online',
+                Icons.circle,
+                _showOnlineStatus,
+                (value) => setState(() => _showOnlineStatus = value),
+                brightness,
+              ),
+              _buildSwitchTile(
+                'Show Distance',
+                'Display distance on your profile',
+                Icons.location_on_rounded,
+                _showDistance,
+                (value) => setState(() => _showDistance = value),
+                brightness,
+              ),
+            ]),
 
             const SizedBox(height: 24),
 
-            _buildSection(
-              'Discovery',
-              [
-                _buildSliderTile(
-                  'Maximum Distance',
-                  '$_maxDistance miles',
-                  Icons.explore_rounded,
-                  _maxDistance.toDouble(),
-                  5,
-                  100,
-                  (value) => setState(() => _maxDistance = value.toInt()),
-                  brightness,
-                ),
-              ],
-            ),
+            _buildSection('Discovery', [
+              _buildSliderTile(
+                'Maximum Distance',
+                '$_maxDistance miles',
+                Icons.explore_rounded,
+                _maxDistance.toDouble(),
+                5,
+                100,
+                (value) => setState(() => _maxDistance = value.toInt()),
+                brightness,
+              ),
+            ]),
 
             const SizedBox(height: 24),
 
-            _buildSection(
-              'Account',
-              [
-                _buildNavigationTile(
-                  'Change Password',
-                  Icons.lock_rounded,
-                  () => _showChangePasswordDialog(),
-                  brightness,
-                ),
-                _buildNavigationTile(
-                  'Blocked Users',
-                  Icons.block_rounded,
-                  () => Navigator.pushNamed(context, '/blocked-users'),
-                  brightness,
-                ),
-                _buildNavigationTile(
-                  'Delete Account',
-                  Icons.delete_forever_rounded,
-                  () => _showDeleteAccountDialog(),
-                  brightness,
-                  isDestructive: true,
-                ),
-              ],
-            ),
+            _buildSection('Account', [
+              _buildNavigationTile(
+                'Change Password',
+                Icons.lock_rounded,
+                () => _showChangePasswordDialog(),
+                brightness,
+              ),
+              _buildNavigationTile(
+                'Blocked Users',
+                Icons.block_rounded,
+                () => Navigator.pushNamed(context, '/blocked-users'),
+                brightness,
+              ),
+              _buildNavigationTile(
+                'Delete Account',
+                Icons.delete_forever_rounded,
+                () => _showDeleteAccountDialog(),
+                brightness,
+                isDestructive: true,
+              ),
+            ]),
 
             const SizedBox(height: 24),
 
-            _buildSection(
-              'Legal',
-              [
-                _buildNavigationTile(
-                  'Terms of Service',
-                  Icons.description_rounded,
-                  () => Navigator.pushNamed(context, '/terms'),
-                  brightness,
-                ),
-                _buildNavigationTile(
-                  'Privacy Policy',
-                  Icons.privacy_tip_rounded,
-                  () => Navigator.pushNamed(context, '/privacy'),
-                  brightness,
-                ),
-                _buildNavigationTile(
-                  'Licenses',
-                  Icons.info_rounded,
-                  () => showLicensePage(context: context),
-                  brightness,
-                ),
-              ],
-            ),
+            _buildSection('Legal', [
+              _buildNavigationTile(
+                'Terms of Service',
+                Icons.description_rounded,
+                () => Navigator.pushNamed(context, '/terms'),
+                brightness,
+              ),
+              _buildNavigationTile(
+                'Privacy Policy',
+                Icons.privacy_tip_rounded,
+                () => Navigator.pushNamed(context, '/privacy'),
+                brightness,
+              ),
+              _buildNavigationTile(
+                'Licenses',
+                Icons.info_rounded,
+                () => showLicensePage(context: context),
+                brightness,
+              ),
+            ]),
 
             const SizedBox(height: 32),
 
@@ -312,10 +298,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          color: AppColors.textSec(brightness),
-          fontSize: 13,
-        ),
+        style: TextStyle(color: AppColors.textSec(brightness), fontSize: 13),
       ),
       trailing: Switch(
         value: value,
@@ -405,9 +388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: const Text('Settings saved successfully'),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -478,9 +459,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.crimson,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson),
             child: const Text('Change Password'),
           ),
         ],
@@ -520,9 +499,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete Account'),
           ),
         ],

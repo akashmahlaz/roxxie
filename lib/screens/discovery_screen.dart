@@ -25,7 +25,6 @@ import '../../core/theme/theme.dart';
 
 import 'chat_screen.dart';
 
-
 /// 🎯 Discovery Screen - Main Widget
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({super.key});
@@ -153,7 +152,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     final swipeThreshold = screenWidth * 0.35;
     final velocityThreshold = 800.0;
 
-    if (_dragOffset.dx.abs() > swipeThreshold || velocity.dx.abs() > velocityThreshold) {
+    if (_dragOffset.dx.abs() > swipeThreshold ||
+        velocity.dx.abs() > velocityThreshold) {
       final isLike = _dragOffset.dx > 0;
       _animateSwipe(isLike);
     } else {
@@ -170,9 +170,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     final cards = provider.cards;
 
     if (cards.isEmpty) return;
-
-    final currentCard = cards[_currentCardIndex];
-    final swipeType = isLike ? SwipeAction.like : SwipeAction.pass;
 
     // Animate card off screen
     _cardController.reset();
@@ -281,9 +278,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         content: Text(message),
         backgroundColor: AppColors.crimson,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
           label: 'Retry',
           textColor: Colors.white,
@@ -323,7 +318,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
                 // Main content area
                 Expanded(
-                  child: _buildContent(cards, isLoading, error ?? '', brightness),
+                  child: _buildContent(
+                    cards,
+                    isLoading,
+                    error ?? '',
+                    brightness,
+                  ),
                 ),
 
                 // Action buttons
@@ -345,7 +345,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   PreferredSizeWidget _buildAppBar(Brightness brightness, bool isArtist) {
     final hasPriceFilter = _priceRange.start > 0 || _priceRange.end < 1000;
     final hasRatingFilter = _minRating > 0;
-    final activeFilterCount = _selectedGenres.length +
+    final activeFilterCount =
+        _selectedGenres.length +
         (_useLocationFilter ? 1 : 0) +
         (hasPriceFilter ? 1 : 0) +
         (hasRatingFilter ? 1 : 0);
@@ -397,10 +398,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       actions: [
         // Boost button
         IconButton(
-          icon: Icon(
-            Icons.rocket_launch_rounded,
-            color: AppColors.crimson,
-          ),
+          icon: Icon(Icons.rocket_launch_rounded, color: AppColors.crimson),
           onPressed: _showBoostDialog,
           tooltip: 'Boost visibility',
         ),
@@ -519,14 +517,20 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     }
 
     // Build card stack
-    final remainingCards = cards.length - _currentCardIndex;
-    final displayCards = cards.skip(_currentCardIndex).take(3).toList().reversed.toList();
+    final displayCards = cards
+        .skip(_currentCardIndex)
+        .take(3)
+        .toList()
+        .reversed
+        .toList();
 
     return Stack(
       fit: StackFit.expand,
       children: [
         // Background cards (already swiped)
-        ...cards.take(_currentCardIndex).map((item) => _buildCard(item, brightness, opacity: 0)),
+        ...cards
+            .take(_currentCardIndex)
+            .map((item) => _buildCard(item, brightness, opacity: 0)),
 
         // Current and upcoming cards
         ...displayCards.asMap().entries.map((entry) {
@@ -554,7 +558,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
@@ -574,11 +581,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-
-
-
-  Widget _buildCard(DiscoveryCard card, Brightness brightness, {double opacity = 1}) {
-
+  Widget _buildCard(
+    DiscoveryCard card,
+    Brightness brightness, {
+    double opacity = 1,
+  }) {
     final discoveryProvider = context.read<DiscoveryProvider>();
 
     final item = DiscoveryItem.fromCard(card);
@@ -587,30 +594,21 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
     final cardHeight = MediaQuery.of(context).size.height * 0.65;
 
-
-
     return VisibilityDetector(
-
       key: Key('card_${card.id}'),
 
       onVisibilityChanged: (info) {
-
-
         final lastIndex = discoveryProvider.cards.length - 1;
         final shouldLoadMore =
-
-            info.visibleFraction < 0.3 && lastIndex >= 0 && _currentCardIndex >= lastIndex;
+            info.visibleFraction < 0.3 &&
+            lastIndex >= 0 &&
+            _currentCardIndex >= lastIndex;
         if (shouldLoadMore) {
-
-
           _loadMoreCards();
-
         }
-
       },
 
       child: GestureDetector(
-
         onPanStart: _onPanStart,
 
         onPanUpdate: _onPanUpdate,
@@ -618,83 +616,63 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         onPanEnd: _onPanEnd,
 
         child: Transform.rotate(
-
           angle: _dragAngle,
 
           child: Transform.translate(
-
             offset: _dragOffset,
 
             child: Opacity(
-
               opacity: opacity,
 
               child: Container(
-
-                margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
 
                 width: cardWidth,
 
                 height: cardHeight,
 
                 decoration: BoxDecoration(
-
                   borderRadius: BorderRadius.circular(24),
 
                   boxShadow: [
-
                     BoxShadow(
-
                       color: Colors.black.withValues(alpha: 0.15),
 
                       blurRadius: 20,
 
                       offset: const Offset(0, 10),
-
                     ),
-
                   ],
-
                 ),
 
                 child: ClipRRect(
-
                   borderRadius: BorderRadius.circular(24),
 
                   child: Stack(
-
                     fit: StackFit.expand,
 
                     children: [
-
                       _buildCardBackground(item, brightness),
 
                       Positioned.fill(
-
                         child: Container(
-
                           decoration: BoxDecoration(
-
                             gradient: LinearGradient(
-
                               begin: Alignment.topCenter,
 
                               end: Alignment.bottomCenter,
 
                               colors: [
-
                                 Colors.transparent,
 
                                 Colors.black.withValues(alpha: 0.8),
-
                               ],
-
                             ),
-
                           ),
-
                         ),
-
                       ),
 
                       _buildBadges(item, brightness),
@@ -702,35 +680,23 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                       _buildCardContent(item, brightness),
 
                       _buildSwipeIndicators(brightness),
-
                     ],
-
                   ),
-
                 ),
-
               ),
-
             ),
-
           ),
-
         ),
-
       ),
-
     );
-
   }
-
-
 
   Widget _buildCardBackground(DiscoveryItem item, Brightness brightness) {
     if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: item.imageUrl!,
         fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => _buildPlaceholderGradient(brightness),
+        errorWidget: (_, _, _) => _buildPlaceholderGradient(brightness),
       );
     }
 
@@ -753,48 +719,35 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-
   Widget _buildBadges(DiscoveryItem item, Brightness brightness) {
-
     final badges = <Widget>[];
 
-
-
     if (item.isBoosted) {
-
       badges.add(
-
         Positioned(
-
           top: 16,
 
           left: 16,
 
           child: Container(
-
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
 
             decoration: BoxDecoration(
-
               color: Colors.amber.shade600,
 
               borderRadius: BorderRadius.circular(20),
-
             ),
 
             child: Row(
-
               mainAxisSize: MainAxisSize.min,
 
               children: const [
-
                 Icon(
                   Icons.rocket_launch_rounded,
 
                   color: Colors.white,
 
                   size: 16,
-
                 ),
 
                 SizedBox(width: 4),
@@ -803,51 +756,34 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   'BOOSTED',
 
                   style: TextStyle(
-
                     color: Colors.white,
 
                     fontSize: 11,
 
                     fontWeight: FontWeight.w700,
-
                   ),
-
                 ),
-
               ],
-
             ),
-
           ),
-
         ),
-
       );
-
     }
 
-
-
     if (item.isVerified) {
-
       badges.add(
-
         Positioned(
-
           top: 16,
 
           right: 16,
 
           child: Container(
-
             padding: const EdgeInsets.all(6),
 
             decoration: const BoxDecoration(
-
               color: Colors.white,
 
               shape: BoxShape.circle,
-
             ),
             child: const Icon(
               Icons.verified_rounded,
@@ -866,38 +802,42 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     return Stack(children: badges);
   }
 
-
   Widget _buildCardContent(DiscoveryItem item, Brightness brightness) {
     final infoChips = <Widget>[];
 
     if (item.city != null && item.city!.isNotEmpty) {
-      infoChips.add(_buildInfoChip(
-        icon: Icons.location_on_rounded,
-        label: item.city!,
-      ));
+      infoChips.add(
+        _buildInfoChip(icon: Icons.location_on_rounded, label: item.city!),
+      );
     }
 
     if (item.distanceMiles > 0) {
-      infoChips.add(_buildInfoChip(
-        icon: Icons.directions_walk_rounded,
-        label: '${item.distanceMiles.toStringAsFixed(0)} mi',
-      ));
+      infoChips.add(
+        _buildInfoChip(
+          icon: Icons.directions_walk_rounded,
+          label: '${item.distanceMiles.toStringAsFixed(0)} mi',
+        ),
+      );
     }
 
     if (item.rating != null && item.rating! > 0) {
-      infoChips.add(_buildInfoChip(
-        icon: Icons.star_rounded,
-        iconColor: Colors.amber.shade400,
-        label: item.rating!.toStringAsFixed(1),
-      ));
+      infoChips.add(
+        _buildInfoChip(
+          icon: Icons.star_rounded,
+          iconColor: Colors.amber.shade400,
+          label: item.rating!.toStringAsFixed(1),
+        ),
+      );
     }
 
     if (item.priceMin != null) {
-      infoChips.add(_buildInfoChip(
-        icon: Icons.attach_money_rounded,
-        iconColor: Colors.white,
-        label: '${item.priceMin!.toStringAsFixed(0)}+',
-      ));
+      infoChips.add(
+        _buildInfoChip(
+          icon: Icons.attach_money_rounded,
+          iconColor: Colors.white,
+          label: '${item.priceMin!.toStringAsFixed(0)}+',
+        ),
+      );
     }
 
     return Positioned(
@@ -915,9 +855,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: Text(
                 item.typeLabel.toUpperCase(),
@@ -955,16 +893,15 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             ],
             if (infoChips.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: infoChips,
-              ),
+              Wrap(spacing: 8, runSpacing: 8, children: infoChips),
             ],
             if (item.recommendationScore > 0) ...[
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -1010,11 +947,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: iconColor,
-            size: 16,
-          ),
+          Icon(icon, color: iconColor, size: 16),
           const SizedBox(width: 6),
           Text(
             label,
@@ -1048,10 +981,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             right: 24,
             child: Transform.rotate(
               angle: 0.3,
-              child: _buildSwipeLabel(
-                text: 'LIKE',
-                color: Colors.green,
-              ),
+              child: _buildSwipeLabel(text: 'LIKE', color: Colors.green),
             ),
           ),
         if (showNope)
@@ -1060,10 +990,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             left: 24,
             child: Transform.rotate(
               angle: -0.3,
-              child: _buildSwipeLabel(
-                text: 'NOPE',
-                color: AppColors.crimson,
-              ),
+              child: _buildSwipeLabel(text: 'NOPE', color: AppColors.crimson),
             ),
           ),
       ],
@@ -1095,17 +1022,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            color: AppColors.crimson,
-            strokeWidth: 3,
-          ),
+          CircularProgressIndicator(color: AppColors.crimson, strokeWidth: 3),
           const SizedBox(height: 24),
           Text(
             'Finding matches...',
-            style: TextStyle(
-              color: AppColors.text(brightness),
-              fontSize: 16,
-            ),
+            style: TextStyle(color: AppColors.text(brightness), fontSize: 16),
           ),
         ],
       ),
@@ -1148,8 +1069,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               onPressed: _loadDiscoveryFeed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.crimson,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 14,
+                ),
               ),
               child: const Text(
                 'Try Again',
@@ -1168,7 +1091,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Widget _buildEmptyState(Brightness brightness) {
     final auth = context.watch<AuthProvider>();
     final isArtist = auth.isArtist;
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -1198,7 +1121,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             ),
             const SizedBox(height: 12),
             Text(
-              isArtist 
+              isArtist
                   ? 'Gigs in your area will appear here.\nWe\'re growing fast — check back soon!'
                   : 'Artists in your area will appear here.\nWe\'re growing fast — check back soon!',
               textAlign: TextAlign.center,
@@ -1216,7 +1139,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.crimson,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -1266,8 +1192,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           OutlinedButton(
             onPressed: _loadDiscoveryFeed,
             style: OutlinedButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               side: BorderSide(color: AppColors.crimson),
             ),
             child: Text(
@@ -1355,11 +1280,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                 ),
               ],
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: size * 0.6,
-            ),
+            child: Icon(icon, color: color, size: size * 0.6),
           ),
           if (label != null) ...[
             const SizedBox(height: 6),
@@ -1429,13 +1350,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         final panelWidth = MediaQuery.of(context).size.width * 0.85;
         final hasPriceFilter = _priceRange.start > 0 || _priceRange.end < 1000;
         final hasRatingFilter = _minRating > 0;
-        final appliedCount = _selectedGenres.length +
+        final appliedCount =
+            _selectedGenres.length +
             (_useLocationFilter ? 1 : 0) +
             (hasPriceFilter ? 1 : 0) +
             (hasRatingFilter ? 1 : 0);
-        final offset = _showFilters
-            ? Offset.zero
-            : Offset(-panelWidth, 0);
+        final offset = _showFilters ? Offset.zero : Offset(-panelWidth, 0);
 
         return Transform.translate(
           offset: offset,
@@ -1517,29 +1437,18 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                     child: ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       children: [
-                        _buildFilterSection(
-                          'Location',
-                          [
-                            _buildFilterOption(
-                              'Use my location',
-                              Icons.my_location_rounded,
-                              _useLocationFilter,
-                              _onLocationFilterChanged,
-                            ),
-                          ],
-                        ),
-                        _buildFilterSection(
-                          'Price Range',
-                          [
-                            _buildPriceRangeSlider(),
-                          ],
-                        ),
-                        _buildFilterSection(
-                          'Rating',
-                          [
-                            _buildRatingFilter(),
-                          ],
-                        ),
+                        _buildFilterSection('Location', [
+                          _buildFilterOption(
+                            'Use my location',
+                            Icons.my_location_rounded,
+                            _useLocationFilter,
+                            _onLocationFilterChanged,
+                          ),
+                        ]),
+                        _buildFilterSection('Price Range', [
+                          _buildPriceRangeSlider(),
+                        ]),
+                        _buildFilterSection('Rating', [_buildRatingFilter()]),
                       ],
                     ),
                   ),
@@ -1556,8 +1465,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.crimson,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: const Text(
                           'Apply Filters',
@@ -1584,10 +1492,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
         const SizedBox(height: 12),
         ...children,
@@ -1726,10 +1631,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   const SizedBox(height: 8),
                   Text(
                     'You and ${_pendingMatch?.getOtherPartyName(context.read<AuthProvider>().isArtist)} liked each other',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 18),
                   ),
                   const SizedBox(height: 40),
                   // Profile photos
@@ -1775,7 +1677,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.crimson,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 48, vertical: 16),
+                            horizontal: 48,
+                            vertical: 16,
+                          ),
                         ),
                         child: const Text(
                           'Send Message',
@@ -1792,9 +1696,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                     onPressed: _hideMatchDialog,
                     child: Text(
                       'Keep Swiping',
-                      style: TextStyle(
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(color: Colors.white70),
                     ),
                   ),
                 ],
@@ -1813,20 +1715,28 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 3),
-        image: _pendingMatch?.getOtherPartyPhoto(context.read<AuthProvider>().isArtist) != null
+        image:
+            _pendingMatch?.getOtherPartyPhoto(
+                  context.read<AuthProvider>().isArtist,
+                ) !=
+                null
             ? DecorationImage(
-                image: NetworkImage(_pendingMatch!.getOtherPartyPhoto(context.read<AuthProvider>().isArtist)),
+                image: NetworkImage(
+                  _pendingMatch!.getOtherPartyPhoto(
+                    context.read<AuthProvider>().isArtist,
+                  ),
+                ),
                 fit: BoxFit.cover,
               )
             : null,
         color: AppColors.crimson.withValues(alpha: 0.3),
       ),
-      child: _pendingMatch?.getOtherPartyPhoto(context.read<AuthProvider>().isArtist) == null
-          ? Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 40,
-            )
+      child:
+          _pendingMatch?.getOtherPartyPhoto(
+                context.read<AuthProvider>().isArtist,
+              ) ==
+              null
+          ? Icon(Icons.person_rounded, color: Colors.white, size: 40)
           : null,
     );
   }
@@ -1834,7 +1744,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   // ═══════════════════════════════════════════════════════
   // HELPER METHODS
   // ═══════════════════════════════════════════════════════
-
 
   void _onLocationFilterChanged(bool enabled) {
     // Get current location and update filters
@@ -1867,8 +1776,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       _minRating = 0;
     });
   }
-
-
 
   Future<void> _undoLastSwipe() async {
     final provider = context.read<DiscoveryProvider>();
@@ -1905,13 +1812,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             const SizedBox(height: 24),
             Row(
               children: [
-                Expanded(
-                  child: _buildBoostOption('24 hours', '\$4.99'),
-                ),
+                Expanded(child: _buildBoostOption('24 hours', '\$4.99')),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildBoostOption('7 days', '\$24.99'),
-                ),
+                Expanded(child: _buildBoostOption('7 days', '\$24.99')),
               ],
             ),
           ],
@@ -1931,9 +1834,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               // Process boost purchase
               Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.crimson,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson),
             child: const Text('Boost Now'),
           ),
         ],
@@ -1954,12 +1855,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           children: [
             Icon(Icons.rocket_launch_rounded, color: AppColors.crimson),
             const SizedBox(height: 8),
-            Text(
-              duration,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(duration, style: const TextStyle(fontWeight: FontWeight.w600)),
             Text(
               price,
               style: TextStyle(
@@ -1974,9 +1870,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-
   Color _getScoreColor(double score) {
-
     if (score >= 80) return Colors.green.shade400;
 
     if (score >= 60) return Colors.amber.shade400;
@@ -1984,9 +1878,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     if (score >= 40) return Colors.orange.shade400;
 
     return Colors.red.shade400;
-
   }
-
 }
 
 class DiscoveryItem {
@@ -2026,11 +1918,11 @@ class DiscoveryItem {
         : (card.galleryUrls.isNotEmpty ? card.galleryUrls.first : null);
 
     final double? priceMin =
-      artist?.minPrice ?? venue?.gigPreferences?.minBudget ?? gig?.budget;
+        artist?.minPrice ?? venue?.gigPreferences?.minBudget ?? gig?.budget;
 
     final String? subtitle = card.genres.isNotEmpty
-      ? card.genres.take(3).join(' • ')
-      : (card.bio ?? gig?.description);
+        ? card.genres.take(3).join(' • ')
+        : (card.bio ?? gig?.description);
 
     final double recommendationScore = card.isBoosted
         ? 95

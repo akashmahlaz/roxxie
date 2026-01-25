@@ -151,7 +151,10 @@ class ArtistProfileData {
     }
 
     // Location (required for completion)
-    if (city != null && country != null && latitude != null && longitude != null) {
+    if (city != null &&
+        country != null &&
+        latitude != null &&
+        longitude != null) {
       dto['location'] = {
         'city': city!,
         'country': country!,
@@ -171,7 +174,10 @@ class ArtistProfileData {
       socialLinks['instagram'] = _normalizeUrl(instagram!, 'instagram.com');
     }
     if (spotify != null && spotify!.isNotEmpty) {
-      socialLinks['spotify'] = _normalizeUrl(spotify!, 'open.spotify.com/artist');
+      socialLinks['spotify'] = _normalizeUrl(
+        spotify!,
+        'open.spotify.com/artist',
+      );
     }
     if (youtube != null && youtube!.isNotEmpty) {
       socialLinks['youtube'] = _normalizeUrl(youtube!, 'youtube.com/@');
@@ -213,7 +219,8 @@ class ArtistProfileData {
           'date': slot['date'], // Already in ISO8601 string format
           'startTime': slot['startTime'],
           'endTime': slot['endTime'],
-          'isAvailable': slot['isBooked'] != true, // Invert isBooked to isAvailable
+          'isAvailable':
+              slot['isBooked'] != true, // Invert isBooked to isAvailable
         };
       }).toList();
     }
@@ -262,11 +269,11 @@ class ArtistProfileData {
   /// Check if profile has any social links
   bool _hasSocialLinks() {
     return (instagram?.isNotEmpty ?? false) ||
-           (spotify?.isNotEmpty ?? false) ||
-           (youtube?.isNotEmpty ?? false) ||
-           (website?.isNotEmpty ?? false) ||
-           (soundcloud?.isNotEmpty ?? false) ||
-           (tiktok?.isNotEmpty ?? false);
+        (spotify?.isNotEmpty ?? false) ||
+        (youtube?.isNotEmpty ?? false) ||
+        (website?.isNotEmpty ?? false) ||
+        (soundcloud?.isNotEmpty ?? false) ||
+        (tiktok?.isNotEmpty ?? false);
   }
 
   /// Check if profile is complete enough for setup
@@ -445,6 +452,16 @@ class Artist {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  // NEW: Stats from backend
+  final double averageRating;
+  final int totalReviews;
+  final int completedGigs;
+  final int reliabilityScore;
+  final int profileViews;
+  final String subscriptionTier;
+  final int profileCompletionPercent;
+  final bool hasCompletedSetup;
+
   // Price range getters for compatibility with UI
   double get minPrice => priceRange?.min ?? 100.0;
   double get maxPrice => priceRange?.max ?? 1000.0;
@@ -480,6 +497,14 @@ class Artist {
     this.reviewCount = 0,
     required this.createdAt,
     required this.updatedAt,
+    this.averageRating = 0.0,
+    this.totalReviews = 0,
+    this.completedGigs = 0,
+    this.reliabilityScore = 100,
+    this.profileViews = 0,
+    this.subscriptionTier = 'free',
+    this.profileCompletionPercent = 0,
+    this.hasCompletedSetup = false,
   });
 
   factory Artist.fromJson(Map<String, dynamic> json) {
@@ -528,6 +553,18 @@ class Artist {
       reviewCount: json['reviewCount'] ?? 0,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
+      // NEW stats fields
+      averageRating:
+          (json['averageRating'] as num?)?.toDouble() ??
+          (json['rating'] as num?)?.toDouble() ??
+          0.0,
+      totalReviews: json['totalReviews'] ?? json['reviewCount'] ?? 0,
+      completedGigs: json['completedGigs'] ?? 0,
+      reliabilityScore: json['reliabilityScore'] ?? 100,
+      profileViews: json['profileViews'] ?? 0,
+      subscriptionTier: json['subscriptionTier'] ?? 'free',
+      profileCompletionPercent: json['profileCompletionPercent'] ?? 0,
+      hasCompletedSetup: json['hasCompletedSetup'] ?? false,
     );
   }
 
@@ -560,7 +597,8 @@ class Artist {
   };
 
   /// Primary photo - prefer profilePhoto, then first gallery photo
-  String get primaryPhoto => profilePhoto ?? (galleryUrls.isNotEmpty ? galleryUrls.first : '');
+  String get primaryPhoto =>
+      profilePhoto ?? (galleryUrls.isNotEmpty ? galleryUrls.first : '');
   String get displayLocation =>
       location?.city ?? location?.formattedAddress ?? 'Location not set';
 }

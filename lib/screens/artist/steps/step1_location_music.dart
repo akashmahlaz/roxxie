@@ -8,12 +8,12 @@ import '../../../core/models/artist_models.dart';
 import '../../../core/theme/theme.dart';
 
 /// 🎸 ARTIST STEP 1: LOCATION & MUSIC PREFERENCES
-/// 
+///
 /// Features:
 /// - GPS auto-detect location (city + country)
 /// - Interactive OpenStreetMap preview
 /// - Preferred genres selection (what you play)
-/// 
+///
 /// This step is SKIPPABLE - user can proceed without filling
 
 class ArtistStep1LocationMusic extends StatefulWidget {
@@ -31,31 +31,48 @@ class ArtistStep1LocationMusic extends StatefulWidget {
   });
 
   @override
-  State<ArtistStep1LocationMusic> createState() => _ArtistStep1LocationMusicState();
+  State<ArtistStep1LocationMusic> createState() =>
+      _ArtistStep1LocationMusicState();
 }
 
 class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
   final MapController _mapController = MapController();
-  
+
   // Location state
   bool _isDetectingLocation = false;
   bool _locationDetected = false;
   String? _detectedCity;
   String? _detectedCountry;
   LatLng _currentPosition = const LatLng(40.7128, -74.0060); // Default: NYC
-  
+
   // Available genres for selection
   final List<String> _allGenres = [
-    'Rock', 'Jazz', 'Pop', 'Hip-Hop', 'R&B', 'Country',
-    'Electronic', 'Classical', 'Folk', 'Indie', 'Metal',
-    'Blues', 'Reggae', 'Soul', 'Funk', 'Latin', 'Punk', 'Alternative',
+    'Rock',
+    'Jazz',
+    'Pop',
+    'Hip-Hop',
+    'R&B',
+    'Country',
+    'Electronic',
+    'Classical',
+    'Folk',
+    'Indie',
+    'Metal',
+    'Blues',
+    'Reggae',
+    'Soul',
+    'Funk',
+    'Latin',
+    'Punk',
+    'Alternative',
   ];
 
   @override
   void initState() {
     super.initState();
     // Check if location already exists in profile
-    if (widget.profileData.latitude != null && widget.profileData.longitude != null) {
+    if (widget.profileData.latitude != null &&
+        widget.profileData.longitude != null) {
       _currentPosition = LatLng(
         widget.profileData.latitude!,
         widget.profileData.longitude!,
@@ -71,10 +88,10 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
 
   Future<void> _detectLocation() async {
     if (_isDetectingLocation) return;
-    
+
     setState(() => _isDetectingLocation = true);
     HapticFeedback.lightImpact();
-    
+
     try {
       // Check permission
       LocationPermission permission = await Geolocator.checkPermission();
@@ -85,12 +102,14 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
           return;
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
-        _showLocationError('Location permission permanently denied. Enable in settings.');
+        _showLocationError(
+          'Location permission permanently denied. Enable in settings.',
+        );
         return;
       }
-      
+
       // Get current position
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -98,32 +117,33 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
           timeLimit: Duration(seconds: 10),
         ),
       );
-      
+
       // Reverse geocode to get city & country
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-      
+
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-        
+
         setState(() {
           _currentPosition = LatLng(position.latitude, position.longitude);
-          _detectedCity = place.locality ?? place.subAdministrativeArea ?? 'Unknown';
+          _detectedCity =
+              place.locality ?? place.subAdministrativeArea ?? 'Unknown';
           _detectedCountry = place.country ?? 'Unknown';
           _locationDetected = true;
-          
+
           // Update profile data
           widget.profileData.city = _detectedCity;
           widget.profileData.country = _detectedCountry;
           widget.profileData.latitude = position.latitude;
           widget.profileData.longitude = position.longitude;
         });
-        
+
         // Move map to detected location
         _mapController.move(_currentPosition, 14);
-        
+
         widget.onDataChanged();
         HapticFeedback.mediumImpact();
       }
@@ -133,7 +153,7 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
       if (mounted) setState(() => _isDetectingLocation = false);
     }
   }
-  
+
   void _showLocationError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -154,7 +174,8 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
       if (genres.contains(genre)) {
         genres.remove(genre);
       } else {
-        if (genres.length < 5) { // Max 5 genres for artists
+        if (genres.length < 5) {
+          // Max 5 genres for artists
           genres.add(genre);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -162,7 +183,9 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
               content: const Text('Maximum 5 genres allowed'),
               backgroundColor: AppColors.crimson,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
@@ -215,7 +238,7 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           Center(
             child: Text(
               "Where do you perform?",
@@ -274,7 +297,8 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.gigmatch.app',
                       ),
                       MarkerLayer(
@@ -287,10 +311,15 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
                               decoration: BoxDecoration(
                                 color: AppColors.crimson,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 3,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.crimson.withValues(alpha: 0.4),
+                                    color: AppColors.crimson.withValues(
+                                      alpha: 0.4,
+                                    ),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -307,7 +336,7 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
                       ),
                     ],
                   ),
-                  
+
                   // Loading overlay
                   if (_isDetectingLocation)
                     Container(
@@ -351,9 +380,7 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
               decoration: BoxDecoration(
                 color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Colors.green.withValues(alpha: 0.3),
-                ),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -459,7 +486,10 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
                 onTap: () => _toggleGenre(genre),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     gradient: isSelected
                         ? LinearGradient(
@@ -469,13 +499,13 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
                             ],
                           )
                         : null,
-                    color: isSelected 
-                        ? null 
+                    color: isSelected
+                        ? null
                         : (isDark ? AppColors.graphite : Colors.grey[100]),
                     borderRadius: BorderRadius.circular(50), // Fully rounded
                     border: Border.all(
-                      color: isSelected 
-                          ? AppColors.crimson 
+                      color: isSelected
+                          ? AppColors.crimson
                           : (isDark ? AppColors.slate : Colors.grey[300]!),
                       width: isSelected ? 2 : 1,
                     ),
@@ -504,9 +534,11 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
                         genre,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected 
-                              ? Colors.white 
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
                               : AppColors.text(brightness),
                         ),
                       ),
@@ -516,7 +548,7 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
               );
             }).toList(),
           ),
-          
+
           // Selected count
           if (selectedGenres.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -531,7 +563,7 @@ class _ArtistStep1LocationMusicState extends State<ArtistStep1LocationMusic> {
               ),
             ),
           ],
-          
+
           // Bottom spacing for button
           const SizedBox(height: 100),
         ],

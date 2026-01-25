@@ -93,7 +93,8 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
 
     // If auth hasn't decided yet, show a safe placeholder.
     // (Splash handles routing normally; this is defensive for direct entry.)
-    if (auth.status == AuthStatus.initial || auth.status == AuthStatus.loading) {
+    if (auth.status == AuthStatus.initial ||
+        auth.status == AuthStatus.loading) {
       return Scaffold(
         backgroundColor: AppColors.background(brightness),
         body: Center(
@@ -109,8 +110,10 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
         _didRedirectAuth = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          Navigator.of(context, rootNavigator: true)
-              .pushNamedAndRemoveUntil('/login', (route) => false);
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamedAndRemoveUntil('/login', (route) => false);
         });
       }
       return Scaffold(
@@ -130,8 +133,10 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
         _didRedirectAuth = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          Navigator.of(context, rootNavigator: true)
-              .pushNamedAndRemoveUntil('/profile-setup', (route) => false);
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamedAndRemoveUntil('/profile-setup', (route) => false);
         });
       }
       return Scaffold(
@@ -154,17 +159,16 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
         child: IndexedStack(
           index: _index,
           children: [
-            _TabNavigator(
-              navigatorKey: _homeNavKey,
-              root: const HomeScreen(),
-            ),
+            _TabNavigator(navigatorKey: _homeNavKey, root: const HomeScreen()),
             _TabNavigator(
               navigatorKey: _discoverNavKey,
               root: const DiscoveryScreen(),
             ),
             _TabNavigator(
               navigatorKey: _roleNavKey,
-              root: isArtist ? const ArtistCalendarScreen() : const GigsScreen(),
+              root: isArtist
+                  ? const ArtistCalendarScreen()
+                  : const GigsScreen(),
             ),
             _TabNavigator(
               navigatorKey: _messagesNavKey,
@@ -227,8 +231,12 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
                   ),
                   _buildNavItem(
                     index: 2,
-                    icon: isArtist ? Icons.calendar_month_outlined : Icons.work_outline_rounded,
-                    activeIcon: isArtist ? Icons.calendar_month_rounded : Icons.work_rounded,
+                    icon: isArtist
+                        ? Icons.calendar_month_outlined
+                        : Icons.work_outline_rounded,
+                    activeIcon: isArtist
+                        ? Icons.calendar_month_rounded
+                        : Icons.work_rounded,
                     label: isArtist ? 'Calendar' : 'Gigs',
                     brightness: brightness,
                     badgeCount: isArtist ? 0 : _pendingRequests,
@@ -315,13 +323,18 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
                         return Transform.scale(
                           scale: scale,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.crimson,
                               borderRadius: BorderRadius.circular(10),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.crimson.withValues(alpha: 0.4),
+                                  color: AppColors.crimson.withValues(
+                                    alpha: 0.4,
+                                  ),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -385,10 +398,7 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
 }
 
 class _TabNavigator extends StatelessWidget {
-  const _TabNavigator({
-    required this.navigatorKey,
-    required this.root,
-  });
+  const _TabNavigator({required this.navigatorKey, required this.root});
 
   final GlobalKey<NavigatorState> navigatorKey;
   final Widget root;

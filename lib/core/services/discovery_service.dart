@@ -37,8 +37,6 @@ import '../api/api.dart';
 import '../models/models.dart';
 import '../exceptions.dart';
 
-
-
 /// ═══════════════════════════════════════════════════════════════════════
 /// SWIPE DIRECTION ENUM
 /// ═══════════════════════════════════════════════════════════════════════
@@ -120,7 +118,9 @@ class DiscoveryItem {
       id: artist.id,
       type: 'artist',
       title: artist.displayName,
-      subtitle: artist.genres.isNotEmpty ? artist.genres.take(3).join(', ') : null,
+      subtitle: artist.genres.isNotEmpty
+          ? artist.genres.take(3).join(', ')
+          : null,
       imageUrl: artist.primaryPhoto,
       rating: artist.rating,
       reviewCount: artist.reviewCount,
@@ -191,7 +191,8 @@ class DiscoveryItem {
 
   factory DiscoveryItem.fromJson(Map<String, dynamic> json) {
     final type = json['type'] ?? json['itemType'] ?? 'unknown';
-    final distance = (json['distanceMiles'] ?? json['distance'] ?? 0.0).toDouble();
+    final distance = (json['distanceMiles'] ?? json['distance'] ?? 0.0)
+        .toDouble();
 
     switch (type) {
       case 'artist':
@@ -199,12 +200,15 @@ class DiscoveryItem {
           id: json['id'] ?? json['_id'] ?? '',
           type: type,
           title: json['displayName'] ?? json['title'] ?? '',
-          subtitle: json['genres'] != null && (json['genres'] as List).isNotEmpty
+          subtitle:
+              json['genres'] != null && (json['genres'] as List).isNotEmpty
               ? (json['genres'] as List).take(3).join(', ')
               : null,
           imageUrl: json['profilePhotoUrl'] ?? json['photo'],
-          rating: (json['reviewStats']?['averageRating'] ?? json['rating'])?.toDouble(),
-          reviewCount: json['reviewStats']?['totalReviews'] ?? json['reviewCount'],
+          rating: (json['reviewStats']?['averageRating'] ?? json['rating'])
+              ?.toDouble(),
+          reviewCount:
+              json['reviewStats']?['totalReviews'] ?? json['reviewCount'],
           city: json['location']?['city'],
           country: json['location']?['country'],
           genres: List<String>.from(json['genres'] ?? []),
@@ -222,7 +226,8 @@ class DiscoveryItem {
           id: json['id'] ?? json['_id'] ?? '',
           type: type,
           title: json['venueName'] ?? json['title'] ?? '',
-          subtitle: json['preferredGenres'] != null &&
+          subtitle:
+              json['preferredGenres'] != null &&
                   (json['preferredGenres'] as List).isNotEmpty
               ? (json['preferredGenres'] as List).take(3).join(', ')
               : null,
@@ -231,7 +236,9 @@ class DiscoveryItem {
           reviewCount: json['reviewStats']?['totalReviews'],
           city: json['location']?['city'],
           country: json['location']?['country'],
-          genres: List<String>.from(json['preferredGenres'] ?? json['genres'] ?? []),
+          genres: List<String>.from(
+            json['preferredGenres'] ?? json['genres'] ?? [],
+          ),
           priceMin: null,
           priceMax: null,
           currency: null,
@@ -246,7 +253,8 @@ class DiscoveryItem {
           id: json['id'] ?? json['_id'] ?? '',
           type: type,
           title: json['title'] ?? 'Gig Opportunity',
-          subtitle: json['genres'] != null && (json['genres'] as List).isNotEmpty
+          subtitle:
+              json['genres'] != null && (json['genres'] as List).isNotEmpty
               ? (json['genres'] as List).take(3).join(', ')
               : null,
           imageUrl: null,
@@ -290,25 +298,25 @@ class DiscoveryItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type,
-        'title': title,
-        'subtitle': subtitle,
-        'imageUrl': imageUrl,
-        'rating': rating,
-        'reviewCount': reviewCount,
-        'city': city,
-        'country': country,
-        'genres': genres,
-        'priceMin': priceMin,
-        'priceMax': priceMax,
-        'currency': currency,
-        'distanceMiles': distanceMiles,
-        'recommendationScore': recommendationScore,
-        'isVerified': isVerified,
-        'isBoosted': isBoosted,
-        if (date != null) 'date': date!.toIso8601String(),
-      };
+    'id': id,
+    'type': type,
+    'title': title,
+    'subtitle': subtitle,
+    'imageUrl': imageUrl,
+    'rating': rating,
+    'reviewCount': reviewCount,
+    'city': city,
+    'country': country,
+    'genres': genres,
+    'priceMin': priceMin,
+    'priceMax': priceMax,
+    'currency': currency,
+    'distanceMiles': distanceMiles,
+    'recommendationScore': recommendationScore,
+    'isVerified': isVerified,
+    'isBoosted': isBoosted,
+    if (date != null) 'date': date!.toIso8601String(),
+  };
 }
 
 /// ═══════════════════════════════════════════════════════════════════════
@@ -351,18 +359,17 @@ class SwipeRecord {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'itemId': itemId,
-        'itemType': itemType,
-        'direction': direction.backendValue,
-        'createdAt': createdAt.toIso8601String(),
-        'createdMatch': createdMatch,
-        if (matchId != null) 'matchId': matchId,
-      };
+    'id': id,
+    'itemId': itemId,
+    'itemType': itemType,
+    'direction': direction.backendValue,
+    'createdAt': createdAt.toIso8601String(),
+    'createdMatch': createdMatch,
+    if (matchId != null) 'matchId': matchId,
+  };
 }
 
 /// ═══════════════════════════════════════════════════════════════════════
-
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// DISCOVERY FILTERS
@@ -539,7 +546,6 @@ class DiscoveryFilters {
 class DiscoveryService {
   final ApiClient _client = ApiClient();
 
-
   // Local cache for swipe queue (for undo functionality)
   final List<DiscoveryItem> _swipeQueue = [];
   final List<SwipeRecord> _recentSwipes = [];
@@ -582,20 +588,28 @@ class DiscoveryService {
         throw ValidationException('Empty discovery feed response');
       }
 
-      final data = response.data['data'] ?? response.data['items'] ?? response.data ?? [];
+      final data =
+          response.data['data'] ??
+          response.data['items'] ??
+          response.data ??
+          [];
 
       if (data is! List) {
         throw ValidationException('Invalid discovery feed format');
       }
 
-      final items = data.map((item) {
-        try {
-          return DiscoveryItem.fromJson(item as Map<String, dynamic>);
-        } catch (e) {
-          debugPrint('⚠️ [DiscoveryService] Failed to parse item: $e');
-          return null;
-        }
-      }).where((item) => item != null).cast<DiscoveryItem>().toList();
+      final items = data
+          .map((item) {
+            try {
+              return DiscoveryItem.fromJson(item as Map<String, dynamic>);
+            } catch (e) {
+              debugPrint('⚠️ [DiscoveryService] Failed to parse item: $e');
+              return null;
+            }
+          })
+          .where((item) => item != null)
+          .cast<DiscoveryItem>()
+          .toList();
 
       // Cache items for swipe functionality
       _swipeQueue.clear();
@@ -603,7 +617,6 @@ class DiscoveryService {
 
       debugPrint('🔍 [DiscoveryService] Found ${items.length} items in feed');
       return items;
-
     } on DioException catch (e) {
       final error = _handleDioError(e, 'get discovery feed');
       debugPrint('❌ [DiscoveryService] Feed fetch failed: ${error.message}');
@@ -631,7 +644,6 @@ class DiscoveryService {
       final freshFilters = filters.copyWith(page: 1);
 
       return await getDiscoveryFeed(freshFilters);
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Feed refresh failed: $e');
       rethrow;
@@ -661,20 +673,23 @@ class DiscoveryService {
         return [];
       }
 
-      final items = data.map((item) {
-        try {
-          return DiscoveryItem.fromJson(item as Map<String, dynamic>);
-        } catch (e) {
-          return null;
-        }
-      }).where((item) => item != null).cast<DiscoveryItem>().toList();
+      final items = data
+          .map((item) {
+            try {
+              return DiscoveryItem.fromJson(item as Map<String, dynamic>);
+            } catch (e) {
+              return null;
+            }
+          })
+          .where((item) => item != null)
+          .cast<DiscoveryItem>()
+          .toList();
 
       // Add to local cache
       _swipeQueue.addAll(items);
 
       debugPrint('🔍 [DiscoveryService] Loaded ${items.length} more items');
       return items;
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Load more failed: $e');
       rethrow;
@@ -771,11 +786,8 @@ class DiscoveryService {
         createdMatch: false,
         newItem: _swipeQueue.isNotEmpty ? _swipeQueue.first : null,
       );
-
     } catch (e) {
-      final error = DiscoveryServiceError(
-        'Swipe failed: $e',
-      );
+      final error = DiscoveryServiceError('Swipe failed: $e');
       debugPrint('❌ [DiscoveryService] Swipe failed: ${error.message}');
       throw error;
     } finally {
@@ -819,7 +831,9 @@ class DiscoveryService {
       try {
         await _deleteSwipe(lastSwipe.id);
       } catch (e) {
-        debugPrint('⚠️ [DiscoveryService] Failed to delete swipe from backend: $e');
+        debugPrint(
+          '⚠️ [DiscoveryService] Failed to delete swipe from backend: $e',
+        );
         // Continue anyway - item is back in queue
       }
 
@@ -830,7 +844,6 @@ class DiscoveryService {
             ? 'Swipe undone. Item restored to feed.'
             : 'Swipe undone but item details could not be recovered.',
       );
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Undo failed: $e');
       rethrow;
@@ -858,7 +871,6 @@ class DiscoveryService {
       return data.map((item) {
         return SwipeRecord.fromJson(item as Map<String, dynamic>);
       }).toList();
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Failed to get swipe history: $e');
       // Return local history as fallback
@@ -888,7 +900,6 @@ class DiscoveryService {
       return data.map((item) {
         return Match.fromJson(item as Map<String, dynamic>);
       }).toList();
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Failed to get matches: $e');
       throw DiscoveryServiceError('Failed to get matches: $e');
@@ -909,7 +920,6 @@ class DiscoveryService {
       }
 
       return Match.fromJson(response.data);
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Failed to get match: $e');
       rethrow;
@@ -927,7 +937,6 @@ class DiscoveryService {
 
       debugPrint('🔓 [DiscoveryService] Unmatched successfully');
       return true;
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Unmatch failed: $e');
       throw DiscoveryServiceError('Failed to unmatch: $e');
@@ -944,7 +953,6 @@ class DiscoveryService {
       final response = await _client.get(Endpoints.matchesUnreadCount);
 
       return response.data['count'] ?? response.data['unreadCount'] ?? 0;
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Failed to get unread count: $e');
       return 0;
@@ -987,7 +995,9 @@ class DiscoveryService {
     }
 
     // Distance Score (0-25 points)
-    if (userLatitude != null && userLongitude != null && item.distanceMiles > 0) {
+    if (userLatitude != null &&
+        userLongitude != null &&
+        item.distanceMiles > 0) {
       if (item.distanceMiles <= maxDistance) {
         final distanceRatio = 1 - (item.distanceMiles / maxDistance);
         score += distanceRatio * 25;
@@ -1018,7 +1028,8 @@ class DiscoveryService {
         final itemAvgPrice = (item.priceMin! + item.priceMax!) / 2;
         if (userMinBudget <= itemAvgPrice && userMaxBudget >= itemAvgPrice) {
           score += 10;
-        } else if (userMinBudget <= item.priceMax! && userMaxBudget >= item.priceMin!) {
+        } else if (userMinBudget <= item.priceMax! &&
+            userMaxBudget >= item.priceMin!) {
           score += 5; // Partial overlap
         }
       }
@@ -1078,10 +1089,11 @@ class DiscoveryService {
       }).toList();
 
       // Sort by recommendation score (descending)
-      scoredItems.sort((a, b) => b.recommendationScore.compareTo(a.recommendationScore));
+      scoredItems.sort(
+        (a, b) => b.recommendationScore.compareTo(a.recommendationScore),
+      );
 
       return scoredItems;
-
     } catch (e) {
       debugPrint('❌ [DiscoveryService] Failed to get recommendations: $e');
       rethrow;
@@ -1145,10 +1157,7 @@ class DiscoveryService {
 
   Future<void> _persistSwipe(SwipeRecord record) async {
     try {
-      await _client.post(
-        Endpoints.swipe,
-        data: record.toJson(),
-      );
+      await _client.post(Endpoints.swipe, data: record.toJson());
       debugPrint('👆 [DiscoveryService] Swipe persisted to backend');
     } catch (e) {
       debugPrint('⚠️ [DiscoveryService] Failed to persist swipe: $e');
@@ -1171,10 +1180,7 @@ class DiscoveryService {
       // Check if the other party has already swiped right on us
       final response = await _client.post(
         '${Endpoints.swipe}/check-match',
-        data: {
-          'itemId': item.id,
-          'itemType': item.type,
-        },
+        data: {'itemId': item.id, 'itemType': item.type},
       );
 
       if (response.data == null || response.data['isMatch'] != true) {
@@ -1184,10 +1190,7 @@ class DiscoveryService {
       // Create match
       final matchResponse = await _client.post(
         Endpoints.matchesList,
-        data: {
-          'participantId': item.id,
-          'participantType': item.type,
-        },
+        data: {'participantId': item.id, 'participantType': item.type},
       );
 
       if (matchResponse.data == null) {
@@ -1195,11 +1198,7 @@ class DiscoveryService {
       }
 
       final match = Match.fromJson(matchResponse.data);
-      return MatchCheckResult(
-        createdMatch: true,
-        match: match,
-      );
-
+      return MatchCheckResult(createdMatch: true, match: match);
     } catch (e) {
       debugPrint('⚠️ [DiscoveryService] Match check failed: $e');
       return MatchCheckResult(createdMatch: false);
@@ -1260,10 +1259,7 @@ class DiscoveryService {
           );
         }
         if (statusCode == 404) {
-          return NotFoundException(
-            'Resource not found.',
-            originalError: e,
-          );
+          return NotFoundException('Resource not found.', originalError: e);
         }
         if (statusCode == 422) {
           final message = data?['message'] ?? 'Validation error';
@@ -1294,10 +1290,7 @@ class DiscoveryService {
         );
 
       case DioExceptionType.cancel:
-        return DiscoveryServiceError(
-          'Request was cancelled',
-          originalError: e,
-        );
+        return DiscoveryServiceError('Request was cancelled', originalError: e);
 
       case DioExceptionType.unknown:
         if (e.message?.contains('SocketException') ?? false) {
@@ -1340,10 +1333,7 @@ class MatchCheckResult {
   final bool createdMatch;
   final Match? match;
 
-  MatchCheckResult({
-    required this.createdMatch,
-    this.match,
-  });
+  MatchCheckResult({required this.createdMatch, this.match});
 }
 
 /// Result of an undo action

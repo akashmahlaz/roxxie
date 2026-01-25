@@ -33,13 +33,13 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _mainController;
   late AnimationController _pulseController;
   late AnimationController _loadingController;
-  
+
   late Animation<double> _logoScale;
   late Animation<double> _logoOpacity;
   late Animation<double> _textOpacity;
   late Animation<Offset> _textSlide;
   late Animation<double> _taglineOpacity;
-  
+
   bool _disposed = false;
 
   @override
@@ -91,15 +91,13 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _mainController,
-        curve: const Interval(0.3, 0.7, curve: Curves.easeOutCubic),
-      ),
-    );
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _mainController,
+            curve: const Interval(0.3, 0.7, curve: Curves.easeOutCubic),
+          ),
+        );
 
     // Tagline animation
     _taglineOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -112,15 +110,15 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _startSequence() async {
     HapticFeedback.lightImpact();
-    
+
     await Future.delayed(const Duration(milliseconds: 100));
     if (_disposed) return;
-    
+
     _mainController.forward();
-    
+
     await Future.delayed(const Duration(milliseconds: 600));
     if (_disposed) return;
-    
+
     await _waitForAuthAndNavigate();
   }
 
@@ -171,11 +169,12 @@ class _SplashScreenState extends State<SplashScreen>
         // Check if user has seen onboarding before
         final apiClient = ApiClient();
         final hasSeenOnboarding = await apiClient.getHasSeenOnboarding();
-        destination = hasSeenOnboarding 
+        destination = hasSeenOnboarding
             ? const RoleSelectionScreenV3()
             : const OnboardingScreen();
     }
 
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => destination,
@@ -214,7 +213,7 @@ class _SplashScreenState extends State<SplashScreen>
         children: [
           // Subtle gradient background
           _buildBackground(isDark, size),
-          
+
           // Main content
           SafeArea(
             child: Center(
@@ -222,25 +221,25 @@ class _SplashScreenState extends State<SplashScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(flex: 3),
-                  
+
                   // Logo
                   _buildLogo(isDark),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Brand name
                   _buildBrandName(brightness),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Tagline
                   _buildTagline(brightness),
-                  
+
                   const Spacer(flex: 3),
-                  
+
                   // Loading indicator
                   _buildLoadingIndicator(),
-                  
+
                   const SizedBox(height: 48),
                 ],
               ),
@@ -260,14 +259,8 @@ class _SplashScreenState extends State<SplashScreen>
           center: const Alignment(0, -0.3),
           radius: 1.2,
           colors: isDark
-              ? [
-                  const Color(0xFF1A0A10),
-                  const Color(0xFF0A0A0A),
-                ]
-              : [
-                  const Color(0xFFFFF5F7),
-                  Colors.white,
-                ],
+              ? [const Color(0xFF1A0A10), const Color(0xFF0A0A0A)]
+              : [const Color(0xFFFFF5F7), Colors.white],
         ),
       ),
       child: AnimatedBuilder(
@@ -312,7 +305,9 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.crimson.withValues(alpha: isDark ? 0.5 : 0.35),
+                    color: AppColors.crimson.withValues(
+                      alpha: isDark ? 0.5 : 0.35,
+                    ),
                     blurRadius: 40,
                     spreadRadius: 0,
                     offset: const Offset(0, 8),
@@ -490,10 +485,7 @@ class _LoadingPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _LoadingPainter({
-    required this.progress,
-    required this.color,
-  });
+  _LoadingPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {

@@ -155,11 +155,9 @@ class _ChatScreenState extends State<ChatScreen> {
         imageQuality: 85,
       );
       if (image != null) {
+        if (!mounted) return;
         final chatProvider = context.read<ChatProvider>();
-        await chatProvider.sendMessage(
-          image.path,
-          type: MessageType.image,
-        );
+        await chatProvider.sendMessage(image.path, type: MessageType.image);
         await _loadMessages();
       }
     } on PlatformException catch (e) {
@@ -179,8 +177,7 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: _buildAppBar(brightness, currentUserId),
       body: Column(
         children: [
-          if (_participantTyping)
-            _buildTypingIndicator(brightness),
+          if (_participantTyping) _buildTypingIndicator(brightness),
           Expanded(
             child: _messages.isEmpty
                 ? _buildEmptyChat(brightness)
@@ -192,7 +189,10 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(Brightness brightness, String? currentUserId) {
+  PreferredSizeWidget _buildAppBar(
+    Brightness brightness,
+    String? currentUserId,
+  ) {
     return AppBar(
       backgroundColor: AppColors.surface(brightness),
       elevation: 0,
@@ -216,7 +216,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 Text(
                   _participantOnline ? 'Online' : 'Offline',
                   style: TextStyle(
-                    color: _participantOnline ? Colors.green : AppColors.textTert(brightness),
+                    color: _participantOnline
+                        ? Colors.green
+                        : AppColors.textTert(brightness),
                     fontSize: 12,
                   ),
                 ),
@@ -241,7 +243,10 @@ class _ChatScreenState extends State<ChatScreen> {
               width: 2,
             ),
             image: _participantPhoto != null
-                ? DecorationImage(image: NetworkImage(_participantPhoto!), fit: BoxFit.cover)
+                ? DecorationImage(
+                    image: NetworkImage(_participantPhoto!),
+                    fit: BoxFit.cover,
+                  )
                 : null,
             color: AppColors.crimson.withValues(alpha: 0.2),
           ),
@@ -259,7 +264,10 @@ class _ChatScreenState extends State<ChatScreen> {
               decoration: BoxDecoration(
                 color: Colors.green,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.surface(Theme.of(context).brightness), width: 2),
+                border: Border.all(
+                  color: AppColors.surface(Theme.of(context).brightness),
+                  width: 2,
+                ),
               ),
             ),
           ),
@@ -281,9 +289,19 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
                 const SizedBox(width: 8),
-                Text('typing...', style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12)),
+                Text(
+                  'typing...',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -327,7 +345,11 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(dynamic message, Brightness brightness, bool isOwnMessage) {
+  Widget _buildMessageBubble(
+    dynamic message,
+    Brightness brightness,
+    bool isOwnMessage,
+  ) {
     return Align(
       alignment: isOwnMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -344,9 +366,13 @@ class _ChatScreenState extends State<ChatScreen> {
             topRight: const Radius.circular(16.0),
           ),
         ),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         child: Column(
-          crossAxisAlignment: isOwnMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isOwnMessage
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             _buildMessageContent(message, brightness),
             const SizedBox(height: 4),
@@ -356,7 +382,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 Text(
                   _formatTime(message.createdAt),
                   style: TextStyle(
-                    color: (isOwnMessage ? Colors.white70 : AppColors.textTert(brightness)).withValues(alpha: 0.7),
+                    color:
+                        (isOwnMessage
+                                ? Colors.white70
+                                : AppColors.textTert(brightness))
+                            .withValues(alpha: 0.7),
                     fontSize: 11,
                   ),
                 ),
@@ -386,18 +416,28 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
     if (message.type == 'image' || message.type == MessageType.image) {
-      final imageUrl = message.attachments?.isNotEmpty == true ? message.attachments.first : message.content;
+      final imageUrl = message.attachments?.isNotEmpty == true
+          ? message.attachments.first
+          : message.content;
       if (imageUrl?.isNotEmpty == true) {
         return GestureDetector(
           onTap: () {},
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(imageUrl!, width: 200, height: 150, fit: BoxFit.cover),
+            child: Image.network(
+              imageUrl!,
+              width: 200,
+              height: 150,
+              fit: BoxFit.cover,
+            ),
           ),
         );
       }
     }
-    return Text(message.content, style: TextStyle(color: AppColors.textSec(brightness)));
+    return Text(
+      message.content,
+      style: TextStyle(color: AppColors.textSec(brightness)),
+    );
   }
 
   Widget _buildMessageInput(Brightness brightness) {
@@ -407,7 +447,11 @@ class _ChatScreenState extends State<ChatScreen> {
         color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
@@ -435,7 +479,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   height: 48,
                   child: Padding(
                     padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.crimson),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.crimson,
+                    ),
                   ),
                 )
               : IconButton(
@@ -445,7 +492,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         ? AppColors.textTert(brightness)
                         : AppColors.crimson,
                   ),
-                  onPressed: _messageController.text.trim().isEmpty ? null : _sendMessage,
+                  onPressed: _messageController.text.trim().isEmpty
+                      ? null
+                      : _sendMessage,
                 ),
         ],
       ),
@@ -462,24 +511,42 @@ class _ChatScreenState extends State<ChatScreen> {
             height: 80,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.crimson, AppColors.crimson.withValues(alpha: 0.7)],
+                colors: [
+                  AppColors.crimson,
+                  AppColors.crimson.withValues(alpha: 0.7),
+                ],
               ),
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: AppColors.crimson.withValues(alpha: 0.4), blurRadius: 24, offset: const Offset(0, 8)),
+                BoxShadow(
+                  color: AppColors.crimson.withValues(alpha: 0.4),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
               ],
             ),
-            child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 40),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: Colors.white,
+              size: 40,
+            ),
           ),
           const SizedBox(height: 24),
           Text(
             'Start a conversation',
-            style: TextStyle(color: AppColors.text(brightness), fontSize: 20, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Send a message to start chatting',
-            style: TextStyle(color: AppColors.textSec(brightness), fontSize: 14),
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 14,
+            ),
           ),
         ],
       ),

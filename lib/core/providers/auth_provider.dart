@@ -30,7 +30,7 @@ class AuthProvider extends ChangeNotifier {
   String? _errorMessage;
   bool _isLoading = false;
   bool _onboardingSkipped = false;
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SIGNUP DATA: Store location data from signup for profile setup
   // This is needed because backend may not create venue profile immediately
@@ -44,7 +44,7 @@ class AuthProvider extends ChangeNotifier {
   AuthStatus get status => _status;
   User? get user => _user;
   Artist? get artistProfile => _artistProfile;
-  
+
   // Signup location getters - for use in profile setup
   String? get signupCity => _signupCity;
   String? get signupCountry => _signupCountry;
@@ -57,7 +57,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isArtist => _user?.role == UserRole.artist;
   bool get isVenue => _user?.role == UserRole.venue;
   bool get isProfileComplete => _user?.isProfileComplete ?? false;
-  
+
   /// 🎯 Has completed onboarding (venue/artist profile exists)
   /// This is separate from isProfileComplete which is for full Me tab completion
   bool get hasCompletedOnboarding {
@@ -75,12 +75,12 @@ class AuthProvider extends ChangeNotifier {
     try {
       final isLoggedIn = await _authService.isLoggedIn();
       debugPrint('🔐 isLoggedIn check: $isLoggedIn');
-      
+
       if (isLoggedIn) {
         // Try to get cached user first
         _user = await _authService.getCachedUser();
         debugPrint('🔐 Cached user: ${_user?.email ?? "null"}');
-        
+
         _onboardingSkipped = await _authService.getOnboardingSkipped();
         final cachedProfileComplete = _user?.isProfileComplete ?? false;
 
@@ -89,7 +89,7 @@ class AuthProvider extends ChangeNotifier {
           debugPrint('🔐 Fetching fresh profile from server...');
           final updatedUser = await _authService.getProfile();
           debugPrint('🔐 Server profile fetched: ${updatedUser.email}');
-          
+
           await _loadRoleProfile();
           // If cached user says complete, do not downgrade on stale backend data
           _user = cachedProfileComplete && !updatedUser.isProfileComplete
@@ -106,7 +106,7 @@ class AuthProvider extends ChangeNotifier {
           // Token might be expired, try refresh
           final refreshed = await _authService.refreshTokens();
           debugPrint('🔐 Token refresh result: $refreshed');
-          
+
           if (refreshed) {
             final updatedUser = await _authService.getProfile();
             await _loadRoleProfile();
@@ -169,7 +169,7 @@ class AuthProvider extends ChangeNotifier {
 
       _user = response.user;
       _status = AuthStatus.profileIncomplete;
-      
+
       // ═══════════════════════════════════════════════════════════════════════
       // STORE SIGNUP LOCATION DATA: Keep for profile setup screens
       // Backend may not create venue/artist profile immediately, so we store
@@ -179,14 +179,16 @@ class AuthProvider extends ChangeNotifier {
       _signupCountry = country;
       _signupLatitude = latitude;
       _signupLongitude = longitude;
-      debugPrint('📍 Stored signup location: $city, $country ($latitude, $longitude)');
-      
+      debugPrint(
+        '📍 Stored signup location: $city, $country ($latitude, $longitude)',
+      );
+
       // ═══════════════════════════════════════════════════════════════════════
       // LOAD ROLE PROFILE: Load the initial profile created with signup data
       // This ensures city/country/location from signup is available in setup
       // ═══════════════════════════════════════════════════════════════════════
       await _loadRoleProfile();
-      
+
       notifyListeners();
       return true;
     } on DioException catch (e) {
@@ -244,7 +246,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final result = await _socialAuthService.signInWithGoogle(role: role);
-      
+
       if (!result.success) {
         _setError(result.errorMessage ?? 'Google sign-in failed');
         return false;
@@ -278,7 +280,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final result = await _socialAuthService.signInWithApple(role: role);
-      
+
       if (!result.success) {
         _setError(result.errorMessage ?? 'Apple sign-in failed');
         return false;
@@ -426,7 +428,9 @@ class AuthProvider extends ChangeNotifier {
       // Cache the user with isProfileComplete = true so app restart works correctly
       if (_user != null) {
         await _authService.cacheUser(_user!);
-        debugPrint('💾 [ArtistSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}');
+        debugPrint(
+          '💾 [ArtistSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}',
+        );
       }
 
       // Clear local onboarding skipped flag on success
@@ -471,7 +475,9 @@ class AuthProvider extends ChangeNotifier {
       // Cache the user with isProfileComplete = true so app restart works correctly
       if (_user != null) {
         await _authService.cacheUser(_user!);
-        debugPrint('💾 [ArtistSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}');
+        debugPrint(
+          '💾 [ArtistSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}',
+        );
       }
 
       _status = AuthStatus.authenticated;
@@ -525,7 +531,9 @@ class AuthProvider extends ChangeNotifier {
       // Cache the user with isProfileComplete = true so app restart works correctly
       if (_user != null) {
         await _authService.cacheUser(_user!);
-        debugPrint('💾 [VenueSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}');
+        debugPrint(
+          '💾 [VenueSetup] Cached user with isProfileComplete: ${_user!.isProfileComplete}',
+        );
       }
 
       // Clear local onboarding skipped flag on success

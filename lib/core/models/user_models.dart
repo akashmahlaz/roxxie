@@ -137,8 +137,10 @@ class User {
       phone: phone ?? this.phone,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
-      pushNotificationsEnabled: pushNotificationsEnabled ?? this.pushNotificationsEnabled,
-      emailNotificationsEnabled: emailNotificationsEnabled ?? this.emailNotificationsEnabled,
+      pushNotificationsEnabled:
+          pushNotificationsEnabled ?? this.pushNotificationsEnabled,
+      emailNotificationsEnabled:
+          emailNotificationsEnabled ?? this.emailNotificationsEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       artistId: artistId ?? this.artistId,

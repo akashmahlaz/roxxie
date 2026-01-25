@@ -229,9 +229,7 @@ class _ExploreScreenState extends State<ExploreScreen>
 
             // Quick Filters
             if (!_showResults)
-              SliverToBoxAdapter(
-                child: _buildQuickFilters(brightness),
-              ),
+              SliverToBoxAdapter(child: _buildQuickFilters(brightness)),
 
             // Content
             if (_showResults)
@@ -240,25 +238,17 @@ class _ExploreScreenState extends State<ExploreScreen>
               _buildSearchSuggestions(brightness)
             else ...[
               // Trending Section
-              SliverToBoxAdapter(
-                child: _buildTrendingSection(brightness),
-              ),
+              SliverToBoxAdapter(child: _buildTrendingSection(brightness)),
 
               // Categories
-              SliverToBoxAdapter(
-                child: _buildCategoriesSection(brightness),
-              ),
+              SliverToBoxAdapter(child: _buildCategoriesSection(brightness)),
 
               // Recent Searches
               if (_recentSearches.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: _buildRecentSearches(brightness),
-                ),
+                SliverToBoxAdapter(child: _buildRecentSearches(brightness)),
 
               // Bottom padding
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 100),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ],
         ),
@@ -406,7 +396,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppColors.textTert(brightness).withValues(alpha: 0.2),
+                            color: AppColors.textTert(
+                              brightness,
+                            ).withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -444,7 +436,7 @@ class _ExploreScreenState extends State<ExploreScreen>
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final filter = filters[index];
           return AnimatedTapFeedback(
@@ -458,11 +450,7 @@ class _ExploreScreenState extends State<ExploreScreen>
               ),
               child: Row(
                 children: [
-                  Icon(
-                    filter.$2,
-                    size: 16,
-                    color: AppColors.crimson,
-                  ),
+                  Icon(filter.$2, size: 16, color: AppColors.crimson),
                   const SizedBox(width: 6),
                   Text(
                     filter.$1,
@@ -516,7 +504,7 @@ class _ExploreScreenState extends State<ExploreScreen>
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: _trending.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final item = _trending[index];
               return _TrendingCard(item: item, brightness: brightness);
@@ -700,60 +688,57 @@ class _ExploreScreenState extends State<ExploreScreen>
     ];
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Text(
-                'Suggestions',
-                style: TextStyle(
-                  color: AppColors.textSec(brightness),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            );
-          }
-
-          final suggestion = suggestions[index - 1];
-          return AnimatedTapFeedback(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              _searchController.text = suggestion;
-              _performSearch(suggestion);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search_rounded,
-                    color: AppColors.textSec(brightness),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      suggestion,
-                      style: TextStyle(
-                        color: AppColors.text(brightness),
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.north_west_rounded,
-                    color: AppColors.textTert(brightness),
-                    size: 18,
-                  ),
-                ],
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text(
+              'Suggestions',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
           );
-        },
-        childCount: suggestions.length + 1,
-      ),
+        }
+
+        final suggestion = suggestions[index - 1];
+        return AnimatedTapFeedback(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            _searchController.text = suggestion;
+            _performSearch(suggestion);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  color: AppColors.textSec(brightness),
+                  size: 20,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    suggestion,
+                    style: TextStyle(
+                      color: AppColors.text(brightness),
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.north_west_rounded,
+                  color: AppColors.textTert(brightness),
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        );
+      }, childCount: suggestions.length + 1),
     );
   }
 
@@ -763,56 +748,50 @@ class _ExploreScreenState extends State<ExploreScreen>
 
   Widget _buildSearchResults(Brightness brightness) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${_mockResults.length} results for "$_searchQuery"',
-                    style: TextStyle(
-                      color: AppColors.textSec(brightness),
-                      fontSize: 13,
-                    ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${_mockResults.length} results for "$_searchQuery"',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 13,
                   ),
-                  AnimatedTapFeedback(
-                    onTap: () => HapticFeedback.selectionClick(),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.sort_rounded,
+                ),
+                AnimatedTapFeedback(
+                  onTap: () => HapticFeedback.selectionClick(),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.sort_rounded,
+                        color: AppColors.textSec(brightness),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Sort',
+                        style: TextStyle(
                           color: AppColors.textSec(brightness),
-                          size: 16,
+                          fontSize: 13,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Sort',
-                          style: TextStyle(
-                            color: AppColors.textSec(brightness),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }
-
-          if (index > _mockResults.length) return null;
-
-          final result = _mockResults[index - 1];
-          return _SearchResultCard(
-            result: result,
-            brightness: brightness,
+                ),
+              ],
+            ),
           );
-        },
-        childCount: _mockResults.length + 2,
-      ),
+        }
+
+        if (index > _mockResults.length) return null;
+
+        final result = _mockResults[index - 1];
+        return _SearchResultCard(result: result, brightness: brightness);
+      }, childCount: _mockResults.length + 2),
     );
   }
 
@@ -1030,11 +1009,7 @@ class _CategoryCard extends StatelessWidget {
                 color: category.color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                category.icon,
-                color: category.color,
-                size: 22,
-              ),
+              child: Icon(category.icon, color: category.color, size: 22),
             ),
             const SizedBox(height: 8),
             Text(
@@ -1134,11 +1109,7 @@ class _SearchResultCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(
-                        Icons.star_rounded,
-                        color: Colors.amber,
-                        size: 16,
-                      ),
+                      Icon(Icons.star_rounded, color: Colors.amber, size: 16),
                       const SizedBox(width: 4),
                       Text(
                         '${result.rating}',
@@ -1338,7 +1309,8 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                     final rating = i + 1;
                     return Expanded(
                       child: AnimatedTapFeedback(
-                        onTap: () => setState(() => _minRating = rating.toDouble()),
+                        onTap: () =>
+                            setState(() => _minRating = rating.toDouble()),
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           padding: const EdgeInsets.symmetric(vertical: 12),

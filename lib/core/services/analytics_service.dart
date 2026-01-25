@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../api/api.dart';
+import '../models/user_models.dart';
 import '../providers/auth_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
@@ -78,7 +79,8 @@ class ProfileViewAnalytics {
       viewsByDay: Map<String, int>.from(json['viewsByDay'] ?? {}),
       viewsBySource: Map<String, int>.from(json['viewsBySource'] ?? {}),
       avgTimeOnProfile: (json['avgTimeOnProfile'] ?? 0).toDouble(),
-      topViewers: (json['topViewers'] as List?)
+      topViewers:
+          (json['topViewers'] as List?)
               ?.map((e) => TopViewer.fromJson(e))
               .toList() ??
           [],
@@ -111,8 +113,9 @@ class TopViewer {
       userPhoto: json['userPhoto'],
       userType: json['userType'] ?? 'artist',
       viewCount: json['viewCount'] ?? 0,
-      lastViewed:
-          json['lastViewed'] != null ? DateTime.tryParse(json['lastViewed']) : null,
+      lastViewed: json['lastViewed'] != null
+          ? DateTime.tryParse(json['lastViewed'])
+          : null,
     );
   }
 }
@@ -153,9 +156,11 @@ class DiscoveryAnalytics {
       swipesByGenre: Map<String, int>.from(json['swipesByGenre'] ?? {}),
       matchesByGenre: Map<String, int>.from(json['matchesByGenre'] ?? {}),
       boostCount: json['boostCount'] ?? 0,
-      lastSwipeAt:
-          json['lastSwipeAt'] != null ? DateTime.tryParse(json['lastSwipeAt']) : null,
-      recentSessions: (json['recentSessions'] as List?)
+      lastSwipeAt: json['lastSwipeAt'] != null
+          ? DateTime.tryParse(json['lastSwipeAt'])
+          : null,
+      recentSessions:
+          (json['recentSessions'] as List?)
               ?.map((e) => SwipeSession.fromJson(e))
               .toList() ??
           [],
@@ -186,8 +191,9 @@ class SwipeSession {
       startedAt: json['startedAt'] != null
           ? DateTime.tryParse(json['startedAt']) ?? DateTime.now()
           : DateTime.now(),
-      endedAt:
-          json['endedAt'] != null ? DateTime.tryParse(json['endedAt']) : null,
+      endedAt: json['endedAt'] != null
+          ? DateTime.tryParse(json['endedAt'])
+          : null,
       swipesRight: json['swipesRight'] ?? 0,
       swipesLeft: json['swipesLeft'] ?? 0,
       matches: json['matches'] ?? 0,
@@ -287,7 +293,8 @@ class GigAnalytics {
       totalEarnings: (json['totalEarnings'] ?? 0).toDouble(),
       earningsByMonth: Map<String, double>.from(json['earningsByMonth'] ?? {}),
       gigsByVenueType: Map<String, int>.from(json['gigsByVenueType'] ?? {}),
-      recentGigs: (json['recentGigs'] as List?)
+      recentGigs:
+          (json['recentGigs'] as List?)
               ?.map((e) => RecentGig.fromJson(e))
               .toList() ??
           [],
@@ -321,8 +328,9 @@ class RecentGig {
       gigTitle: json['gigTitle'] ?? '',
       venueName: json['venueName'] ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
-      date:
-          json['date'] != null ? DateTime.tryParse(json['date']) ?? DateTime.now() : DateTime.now(),
+      date: json['date'] != null
+          ? DateTime.tryParse(json['date']) ?? DateTime.now()
+          : DateTime.now(),
       status: json['status'] ?? 'pending',
       rating: json['rating']?.toDouble(),
     );
@@ -360,7 +368,8 @@ class EarningsSummary {
       totalGigs: json['totalGigs'] ?? 0,
       earningsByMonth: Map<String, double>.from(json['earningsByMonth'] ?? {}),
       earningsByVenue: Map<String, double>.from(json['earningsByVenue'] ?? {}),
-      recentPayouts: (json['recentPayouts'] as List?)
+      recentPayouts:
+          (json['recentPayouts'] as List?)
               ?.map((e) => Payout.fromJson(e))
               .toList() ??
           [],
@@ -397,8 +406,7 @@ class Payout {
       processedAt: json['processedAt'] != null
           ? DateTime.tryParse(json['processedAt'])
           : null,
-      paidAt:
-          json['paidAt'] != null ? DateTime.tryParse(json['paidAt']) : null,
+      paidAt: json['paidAt'] != null ? DateTime.tryParse(json['paidAt']) : null,
     );
   }
 }
@@ -436,8 +444,7 @@ class AnalyticsOverview {
       engagement: json['engagement'] != null
           ? EngagementAnalytics.fromJson(json['engagement'])
           : null,
-      gigs:
-          json['gigs'] != null ? GigAnalytics.fromJson(json['gigs']) : null,
+      gigs: json['gigs'] != null ? GigAnalytics.fromJson(json['gigs']) : null,
       earnings: json['earnings'] != null
           ? EarningsSummary.fromJson(json['earnings'])
           : null,
@@ -453,14 +460,7 @@ class AnalyticsOverview {
 }
 
 /// Analytics period options
-enum AnalyticsPeriod {
-  today,
-  week,
-  month,
-  quarter,
-  year,
-  allTime,
-}
+enum AnalyticsPeriod { today, week, month, quarter, year, allTime }
 
 /// ═══════════════════════════════════════════════════════════════════════
 // ANALYTICS SERVICE
@@ -542,11 +542,9 @@ class AnalyticsService {
   // INITIALIZATION
   // ═══════════════════════════════════════════════════════════════════════
 
-  AnalyticsService({
-    required ApiClient apiClient,
-    AuthProvider? authProvider,
-  })  : _client = apiClient,
-        _authProvider = authProvider;
+  AnalyticsService({required ApiClient apiClient, AuthProvider? authProvider})
+    : _client = apiClient,
+      _authProvider = authProvider;
 
   /// Initialize analytics service
   Future<bool> initialize() async {
@@ -590,7 +588,9 @@ class AnalyticsService {
         throw AnalyticsException('Failed to load analytics overview');
       }
 
-      _overview = AnalyticsOverview.fromJson(response.data as Map<String, dynamic>);
+      _overview = AnalyticsOverview.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Emit to stream
       _overviewStream.add(_overview!);
@@ -617,7 +617,7 @@ class AnalyticsService {
         getDiscoveryAnalytics(),
         getEngagementAnalytics(),
         getGigAnalytics(),
-        if (_authProvider?.user?.role == 'artist') getEarningsSummary(),
+        if (_authProvider?.user?.role == UserRole.artist) getEarningsSummary(),
       ]);
 
       debugPrint('📊 [AnalyticsService] All analytics refreshed');
@@ -651,8 +651,9 @@ class AnalyticsService {
         throw AnalyticsException('Failed to load profile views');
       }
 
-      _profileViews =
-          ProfileViewAnalytics.fromJson(response.data as Map<String, dynamic>);
+      _profileViews = ProfileViewAnalytics.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Emit to stream
       _profileViewsStream.add(_profileViews!);
@@ -712,8 +713,9 @@ class AnalyticsService {
         throw AnalyticsException('Failed to load discovery analytics');
       }
 
-      _discovery =
-          DiscoveryAnalytics.fromJson(response.data as Map<String, dynamic>);
+      _discovery = DiscoveryAnalytics.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Emit to stream
       _discoveryStream.add(_discovery!);
@@ -733,10 +735,11 @@ class AnalyticsService {
     String? genre,
   }) async {
     final event = {
-      'type': (isRightSwipe
-              ? AnalyticsEventType.swipeRight
-              : AnalyticsEventType.swipeLeft)
-          .name,
+      'type':
+          (isRightSwipe
+                  ? AnalyticsEventType.swipeRight
+                  : AnalyticsEventType.swipeLeft)
+              .name,
       'targetUserId': targetUserId,
       'targetUserType': targetUserType,
       'genre': genre,
@@ -777,8 +780,9 @@ class AnalyticsService {
         throw AnalyticsException('Failed to load engagement analytics');
       }
 
-      _engagement =
-          EngagementAnalytics.fromJson(response.data as Map<String, dynamic>);
+      _engagement = EngagementAnalytics.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Emit to stream
       _engagementStream.add(_engagement!);
@@ -924,8 +928,9 @@ class AnalyticsService {
         throw AnalyticsException('Failed to load earnings');
       }
 
-      _earnings =
-          EarningsSummary.fromJson(response.data as Map<String, dynamic>);
+      _earnings = EarningsSummary.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       return _earnings!;
     } catch (e) {
@@ -1169,10 +1174,7 @@ class AnalyticsService {
 
       final response = await _client.get(
         Endpoints.analyticsExport,
-        queryParameters: {
-          'period': _periodToString(period),
-          'format': format,
-        },
+        queryParameters: {'period': _periodToString(period), 'format': format},
       );
 
       if (response.data != null) {
@@ -1196,10 +1198,7 @@ class AnalyticsService {
 
       final response = await _client.post(
         '/analytics/report',
-        data: {
-          'period': _periodToString(period),
-          'sections': sections,
-        },
+        data: {'period': _periodToString(period), 'sections': sections},
       );
 
       if (response.data != null) {
@@ -1296,10 +1295,7 @@ class AnalyticsException implements Exception {
   final String message;
   final dynamic originalError;
 
-  const AnalyticsException(
-    this.message, {
-    this.originalError,
-  });
+  const AnalyticsException(this.message, {this.originalError});
 
   @override
   String toString() => 'AnalyticsException: $message';

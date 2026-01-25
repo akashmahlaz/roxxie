@@ -115,7 +115,9 @@ class Gig {
       status: mapStatus(apiGig.status),
       applicationsCount: apiGig.applicationCount,
       viewsCount: apiGig.viewCount,
-      bookedArtistId: apiGig.bookedArtists.isNotEmpty ? apiGig.bookedArtists.first : null,
+      bookedArtistId: apiGig.bookedArtists.isNotEmpty
+          ? apiGig.bookedArtists.first
+          : null,
       equipmentProvided: apiGig.perks?.providesFood ?? false,
       mealIncluded: apiGig.perks?.providesDrinks ?? false,
       createdAt: apiGig.createdAt ?? DateTime.now(),
@@ -138,6 +140,7 @@ class _GigsScreenState extends State<GigsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
+  // ignore: unused_field
   String? _errorMessage;
   List<Gig> _gigs = [];
   final GigsService _gigsService = GigsService();
@@ -164,7 +167,7 @@ class _GigsScreenState extends State<GigsScreen>
     try {
       // Load from real API
       final response = await _gigsService.getMyGigs(page: 1, limit: 50);
-      
+
       setState(() {
         _gigs = response.items.map((apiGig) => Gig.fromApi(apiGig)).toList();
         _isLoading = false;
@@ -179,13 +182,13 @@ class _GigsScreenState extends State<GigsScreen>
     }
   }
 
-  List<Gig> get _activeGigs => 
+  List<Gig> get _activeGigs =>
       _gigs.where((g) => g.status == GigStatus.active && !g.isPast).toList();
-  
-  List<Gig> get _draftGigs => 
+
+  List<Gig> get _draftGigs =>
       _gigs.where((g) => g.status == GigStatus.draft).toList();
-  
-  List<Gig> get _pastGigs => 
+
+  List<Gig> get _pastGigs =>
       _gigs.where((g) => g.status == GigStatus.completed || g.isPast).toList();
 
   Future<void> _navigateToCreateGig() async {
@@ -206,9 +209,7 @@ class _GigsScreenState extends State<GigsScreen>
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       appBar: _buildAppBar(brightness),
-      body: _isLoading
-          ? _buildSkeleton(brightness)
-          : _buildContent(brightness),
+      body: _isLoading ? _buildSkeleton(brightness) : _buildContent(brightness),
       floatingActionButton: _buildFAB(brightness),
     );
   }
@@ -327,9 +328,11 @@ class _GigsScreenState extends State<GigsScreen>
   Widget _buildStatsHeader(List<Gig> gigs, String type, Brightness brightness) {
     if (type == 'active') {
       final totalApplications = gigs.fold<int>(
-          0, (sum, g) => sum + g.applicationsCount);
+        0,
+        (sum, g) => sum + g.applicationsCount,
+      );
       final bookedCount = gigs.where((g) => g.isBooked).length;
-      
+
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Row(
@@ -362,7 +365,7 @@ class _GigsScreenState extends State<GigsScreen>
 
   Widget _buildEmptyState(String type, Brightness brightness) {
     final config = _getEmptyStateConfig(type);
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -427,19 +430,22 @@ class _GigsScreenState extends State<GigsScreen>
         return {
           'icon': Icons.event_available_rounded,
           'title': 'No Active Gigs',
-          'subtitle': 'Create your first gig to start receiving applications from talented artists.',
+          'subtitle':
+              'Create your first gig to start receiving applications from talented artists.',
         };
       case 'draft':
         return {
           'icon': Icons.edit_note_rounded,
           'title': 'No Drafts',
-          'subtitle': 'Start a draft when you\'re planning ahead. Publish when you\'re ready!',
+          'subtitle':
+              'Start a draft when you\'re planning ahead. Publish when you\'re ready!',
         };
       case 'past':
         return {
           'icon': Icons.history_rounded,
           'title': 'No Past Gigs',
-          'subtitle': 'Your completed gigs will appear here for easy reference and artist reviews.',
+          'subtitle':
+              'Your completed gigs will appear here for easy reference and artist reviews.',
         };
       default:
         return {'icon': Icons.event, 'title': 'No Gigs', 'subtitle': ''};
@@ -514,7 +520,9 @@ class _GigsScreenState extends State<GigsScreen>
         final brightness = Theme.of(context).brightness;
         return AlertDialog(
           backgroundColor: AppColors.surface(brightness),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Text(
             'Delete Gig?',
             style: TextStyle(color: AppColors.text(brightness)),
@@ -650,7 +658,10 @@ class _GigCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.success.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
@@ -665,24 +676,31 @@ class _GigCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  ...gig.genres.take(2).map((genre) => Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.crimson.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        genre,
-                        style: TextStyle(
-                          color: AppColors.crimson,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                  ...gig.genres
+                      .take(2)
+                      .map(
+                        (genre) => Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.crimson.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              genre,
+                              style: TextStyle(
+                                color: AppColors.crimson,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  )),
                   if (gig.genres.length > 2)
                     Text(
                       '+${gig.genres.length - 2}',
@@ -772,7 +790,7 @@ class _GigCard extends StatelessWidget {
   Widget _buildStatusBadge() {
     Color color;
     String label;
-    
+
     switch (gig.status) {
       case GigStatus.active:
         color = gig.isBooked ? AppColors.success : AppColors.info;
@@ -831,10 +849,7 @@ class _GigCard extends StatelessWidget {
 
   Widget _buildMoreMenu() {
     return PopupMenuButton<String>(
-      icon: Icon(
-        Icons.more_vert_rounded,
-        color: AppColors.textSec(brightness),
-      ),
+      icon: Icon(Icons.more_vert_rounded, color: AppColors.textSec(brightness)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: AppColors.surface(brightness),
       onSelected: (value) {
@@ -855,7 +870,11 @@ class _GigCard extends StatelessWidget {
           value: 'edit',
           child: Row(
             children: [
-              Icon(Icons.edit_rounded, size: 18, color: AppColors.text(brightness)),
+              Icon(
+                Icons.edit_rounded,
+                size: 18,
+                color: AppColors.text(brightness),
+              ),
               const SizedBox(width: 12),
               Text('Edit', style: TextStyle(color: AppColors.text(brightness))),
             ],
@@ -865,9 +884,16 @@ class _GigCard extends StatelessWidget {
           value: 'duplicate',
           child: Row(
             children: [
-              Icon(Icons.copy_rounded, size: 18, color: AppColors.text(brightness)),
+              Icon(
+                Icons.copy_rounded,
+                size: 18,
+                color: AppColors.text(brightness),
+              ),
               const SizedBox(width: 12),
-              Text('Duplicate', style: TextStyle(color: AppColors.text(brightness))),
+              Text(
+                'Duplicate',
+                style: TextStyle(color: AppColors.text(brightness)),
+              ),
             ],
           ),
         ),
@@ -876,7 +902,11 @@ class _GigCard extends StatelessWidget {
           value: 'delete',
           child: Row(
             children: [
-              const Icon(Icons.delete_rounded, size: 18, color: AppColors.error),
+              const Icon(
+                Icons.delete_rounded,
+                size: 18,
+                color: AppColors.error,
+              ),
               const SizedBox(width: 12),
               const Text('Delete', style: TextStyle(color: AppColors.error)),
             ],
@@ -904,8 +934,20 @@ class _GigCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
@@ -916,7 +958,7 @@ class _GigCard extends StatelessWidget {
       final period = t.period == DayPeriod.am ? 'AM' : 'PM';
       return '$hour:${t.minute.toString().padLeft(2, '0')} $period';
     }
-    
+
     if (gig.endTime != null) {
       return '${formatTime(gig.startTime)} - ${formatTime(gig.endTime!)}';
     }

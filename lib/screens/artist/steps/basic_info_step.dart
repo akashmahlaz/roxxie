@@ -59,8 +59,11 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
       return _availableGenres;
     }
     return _availableGenres
-        .where((genre) =>
-            genre.toLowerCase().contains(_genreSearchController.text.toLowerCase()))
+        .where(
+          (genre) => genre.toLowerCase().contains(
+            _genreSearchController.text.toLowerCase(),
+          ),
+        )
         .toList();
   }
 
@@ -261,7 +264,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               brightness,
             ),
             const SizedBox(height: 12),
-            
+
             // Genre search bar
             Container(
               decoration: BoxDecoration(
@@ -272,7 +275,10 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               child: TextField(
                 controller: _genreSearchController,
                 onChanged: (value) => setState(() {}),
-                style: TextStyle(color: AppColors.text(brightness), fontSize: 14),
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
                   hintText: '🔍 Search genres...',
                   hintStyle: TextStyle(
@@ -306,7 +312,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             _buildGenreChips(brightness),
 
             const SizedBox(height: 24),
@@ -443,7 +449,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
 
   Widget _buildGenreChips(Brightness brightness) {
     final genresToShow = _filteredGenres;
-    
+
     if (genresToShow.isEmpty) {
       return Center(
         child: Padding(
@@ -458,7 +464,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
         ),
       );
     }
-    
+
     return Wrap(
       spacing: 8,
       runSpacing: 10,
@@ -644,9 +650,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
       decoration: BoxDecoration(
         color: AppColors.crimson.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.crimson.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -716,17 +720,11 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
       decoration: BoxDecoration(
         color: AppColors.crimson.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.crimson.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 16,
-            color: AppColors.crimson,
-          ),
+          Icon(Icons.info_outline_rounded, size: 16, color: AppColors.crimson),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

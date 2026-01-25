@@ -37,7 +37,9 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.crimson : AppColors.surface(brightness),
+        backgroundColor: isError
+            ? AppColors.crimson
+            : AppColors.surface(brightness),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -429,7 +431,10 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: AppColors.surface(brightness),
-                child: const Icon(Icons.broken_image_rounded, color: AppColors.crimson),
+                child: const Icon(
+                  Icons.broken_image_rounded,
+                  color: AppColors.crimson,
+                ),
               ),
             ),
             Positioned(

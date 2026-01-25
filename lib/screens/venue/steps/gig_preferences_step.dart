@@ -1,11 +1,9 @@
-
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/music_genres.dart';
 import '../../../core/models/venues_models.dart';
 import '../../../core/theme/theme.dart';
 import '../venue_profile_setup_screen.dart';
-
 
 /// 🎵 STEP 4: GIG PREFERENCES
 ///
@@ -167,17 +165,20 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
           spacing: 10,
           runSpacing: 10,
           children: MusicGenres.genres.map((genre) {
-            final isSelected = widget.profileData.gigPreferences.preferredGenres.contains(
-              genre,
-            );
+            final isSelected = widget.profileData.gigPreferences.preferredGenres
+                .contains(genre);
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
                 setState(() {
                   if (isSelected) {
-                    widget.profileData.gigPreferences.preferredGenres.remove(genre);
+                    widget.profileData.gigPreferences.preferredGenres.remove(
+                      genre,
+                    );
                   } else {
-                    widget.profileData.gigPreferences.preferredGenres.add(genre);
+                    widget.profileData.gigPreferences.preferredGenres.add(
+                      genre,
+                    );
                   }
                 });
                 widget.onDataChanged();
@@ -265,7 +266,8 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                     }).toList(),
                     onChanged: (value) {
                       setState(() {
-                        widget.profileData.gigPreferences.currency = value ?? 'USD';
+                        widget.profileData.gigPreferences.currency =
+                            value ?? 'USD';
                       });
                       widget.onDataChanged();
                     },

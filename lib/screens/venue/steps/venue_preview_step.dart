@@ -620,7 +620,9 @@ class VenuePreviewStep extends StatelessWidget {
                   child: Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: profileData.gigPreferences.preferredGenres.map((genre) {
+                    children: profileData.gigPreferences.preferredGenres.map((
+                      genre,
+                    ) {
                       return Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -707,7 +709,9 @@ class VenuePreviewStep extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

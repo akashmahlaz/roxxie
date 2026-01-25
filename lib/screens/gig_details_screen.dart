@@ -6,6 +6,7 @@
 /// - Optimistic booking state
 /// - Animated countdown timer
 /// - Rich media gallery
+/// - REAL API integration for gig data
 ///
 /// Complete gig/booking details with actions
 library;
@@ -13,11 +14,13 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
+import '../core/services/services.dart';
+import '../core/models/models.dart' as models;
 import '../widgets/widgets.dart';
 
 class GigDetailsScreen extends StatefulWidget {
   final String? gigId;
-  
+
   const GigDetailsScreen({super.key, this.gigId});
 
   @override
@@ -28,37 +31,20 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
-  bool _isLoading = false;
-  bool _isAccepted = false;
 
-  // Mock data - would come from provider
-  final _gig = GigDetails(
-    id: '1',
-    venueName: 'The Velvet Lounge',
-    venueImage: '',
-    location: '123 Jazz Street, Downtown',
-    date: DateTime.now().add(const Duration(days: 3)),
-    startTime: '8:00 PM',
-    endTime: '11:00 PM',
-    genre: 'Jazz / Soul',
-    payment: 350,
-    description: 'Looking for a talented jazz performer for our Saturday night showcase. We have a grand piano and professional sound system. House is usually packed with 150+ guests.',
-    requirements: [
-      'Must bring own instruments (except piano)',
-      '2 x 45-minute sets with 15-minute break',
-      'Sound check at 6:00 PM',
-      'Professional attire required',
-    ],
-    amenities: [
-      'Grand Piano',
-      'Professional PA',
-      'Green Room',
-      'Free Parking',
-      'Meal Included',
-    ],
-    status: GigStatus.pending,
-  );
+  final GigsService _gigsService = GigsService();
+
+  bool _isLoading = true;
+  // ignore: unused_field
+  bool _isActionLoading = false;
+  bool _isAccepted = false;
+  String? _errorMessage;
+
+  // Real gig data from API
+  models.Gig? _apiGig;
+
+  // Local display model (maps from API gig)
+  GigDetails? _gig;
 
   @override
   void initState() {
@@ -71,7 +57,104 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
       parent: _animationController,
       curve: Curves.easeOut,
     );
-    _animationController.forward();
+    _loadGigDetails();
+  }
+
+  Future<void> _loadGigDetails() async {
+    if (widget.gigId == null) {
+      setState(() {
+        _errorMessage = 'No gig ID provided';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final gig = await _gigsService.getGigById(widget.gigId!);
+
+      setState(() {
+        _apiGig = gig;
+        _gig = _mapGigToDetails(gig);
+        _isLoading = false;
+      });
+
+      _animationController.forward();
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load gig details';
+        _isLoading = false;
+      });
+      debugPrint('Error loading gig: $e');
+    }
+  }
+
+  GigDetails _mapGigToDetails(models.Gig gig) {
+    // Map perks to amenities
+    List<String> amenities = [];
+    if (gig.perks != null) {
+      if (gig.perks!.providesFood) amenities.add('Meal Included');
+      if (gig.perks!.providesDrinks) amenities.add('Drinks Included');
+      if (gig.perks!.providesTransport) amenities.add('Transport Provided');
+      if (gig.perks!.providesAccommodation) amenities.add('Accommodation');
+      if (gig.perks!.additionalPerks.isNotEmpty) {
+        amenities.addAll(gig.perks!.additionalPerks);
+      }
+    }
+
+    // Map requirements
+    List<String> requirements = [];
+    if (gig.specificRequirements != null &&
+        gig.specificRequirements!.isNotEmpty) {
+      requirements.add(gig.specificRequirements!);
+    }
+    if (gig.numberOfSets > 0) {
+      requirements.add(
+        '${gig.numberOfSets} set${gig.numberOfSets > 1 ? 's' : ''}',
+      );
+    }
+    requirements.add('Duration: ${gig.durationMinutes} minutes');
+
+    // Map status
+    GigStatus status;
+    switch (gig.status) {
+      case models.GigStatus.open:
+        status = GigStatus.pending;
+        break;
+      case models.GigStatus.filled:
+        status = GigStatus.confirmed;
+        break;
+      case models.GigStatus.completed:
+        status = GigStatus.completed;
+        break;
+      case models.GigStatus.cancelled:
+        status = GigStatus.cancelled;
+        break;
+      default:
+        status = GigStatus.pending;
+    }
+
+    return GigDetails(
+      id: gig.id,
+      venueName: gig.venue?.venueName ?? 'Unknown Venue',
+      venueImage: gig.venue?.coverPhoto ?? '',
+      location: gig.location.cityCountry,
+      date: gig.date,
+      startTime: gig.startTime,
+      endTime: gig.endTime ?? '',
+      genre: gig.requiredGenres.isNotEmpty
+          ? gig.requiredGenres.join(' / ')
+          : 'Various',
+      payment: gig.budget.toInt(),
+      description: gig.description ?? gig.title,
+      requirements: requirements,
+      amenities: amenities,
+      status: status,
+    );
   }
 
   @override
@@ -81,63 +164,101 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
   }
 
   Future<void> _acceptGig() async {
+    if (_apiGig == null) return;
+
     HapticFeedback.mediumImpact();
     setState(() {
-      _isLoading = true;
+      _isActionLoading = true;
       _isAccepted = true; // Optimistic update
     });
-    
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-    
-    setState(() => _isLoading = false);
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const AnimatedSuccessCheck(size: 20, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Gig accepted! Check your calendar.'),
-            ],
+
+    try {
+      await _gigsService.acceptGig(_apiGig!.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const AnimatedSuccessCheck(size: 20, color: Colors.white),
+                const SizedBox(width: 12),
+                const Text('Gig accepted! Check your calendar.'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
           ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isAccepted = false; // Rollback optimistic update
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to accept gig: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isActionLoading = false);
+      }
     }
   }
 
   void _declineGig() {
     HapticFeedback.lightImpact();
+    final stateContext = context;
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface(Theme.of(context).brightness),
+      context: stateContext,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surface(Theme.of(dialogContext).brightness),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Decline this gig?',
-          style: TextStyle(color: AppColors.text(Theme.of(context).brightness)),
+          style: TextStyle(
+            color: AppColors.text(Theme.of(dialogContext).brightness),
+          ),
         ),
         content: Text(
           'You can always apply again if you change your mind.',
-          style: TextStyle(color: AppColors.textSec(Theme.of(context).brightness)),
+          style: TextStyle(
+            color: AppColors.textSec(Theme.of(dialogContext).brightness),
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(
               'Cancel',
-              style: TextStyle(color: AppColors.textSec(Theme.of(context).brightness)),
+              style: TextStyle(
+                color: AppColors.textSec(Theme.of(dialogContext).brightness),
+              ),
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              if (_apiGig != null) {
+                try {
+                  await _gigsService.declineGig(_apiGig!.id);
+                } catch (e) {
+                  debugPrint('Decline error: $e');
+                }
+              }
+              if (mounted && stateContext.mounted) Navigator.pop(stateContext);
             },
             child: const Text(
               'Decline',
@@ -152,7 +273,80 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final daysUntil = _gig.date.difference(DateTime.now()).inDays;
+
+    // Loading state
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: AppColors.text(brightness)),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Error state
+    if (_errorMessage != null || _gig == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: AppColors.text(brightness)),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.event_busy_rounded,
+                  size: 64,
+                  color: AppColors.textSec(brightness),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _errorMessage ?? 'Gig not found',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSec(brightness),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadGigDetails,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Try Again'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.crimson,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final daysUntil = _gig!.date.difference(DateTime.now()).inDays;
 
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
@@ -176,7 +370,10 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                     color: Colors.black.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               actions: [
@@ -189,7 +386,11 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                       color: Colors.black.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.share_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],
@@ -203,10 +404,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF1E3A5F),
-                            Color(0xFF0D1B2A),
-                          ],
+                          colors: [Color(0xFF1E3A5F), Color(0xFF0D1B2A)],
                         ),
                       ),
                       child: Center(
@@ -246,11 +444,11 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: _getStatusColor(_gig.status),
+                              color: _getStatusColor(_gig!.status),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              _getStatusText(_gig.status),
+                              _getStatusText(_gig!.status),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -260,7 +458,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            _gig.venueName,
+                            _gig!.venueName,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 28,
@@ -278,7 +476,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  _gig.location,
+                                  _gig!.location,
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 14,
@@ -309,7 +507,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                           child: _InfoCard(
                             icon: Icons.calendar_today_rounded,
                             label: 'Date',
-                            value: _formatDate(_gig.date),
+                            value: _formatDate(_gig!.date),
                             highlight: daysUntil <= 3,
                             brightness: brightness,
                           ),
@@ -319,7 +517,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                           child: _InfoCard(
                             icon: Icons.access_time_rounded,
                             label: 'Time',
-                            value: '${_gig.startTime} - ${_gig.endTime}',
+                            value: '${_gig!.startTime} - ${_gig!.endTime}',
                             brightness: brightness,
                           ),
                         ),
@@ -328,7 +526,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                           child: _InfoCard(
                             icon: Icons.attach_money_rounded,
                             label: 'Payment',
-                            value: '\$${_gig.payment}',
+                            value: '\$${_gig!.payment}',
                             highlight: true,
                             brightness: brightness,
                           ),
@@ -351,7 +549,9 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.crimson.withValues(alpha: 0.1),
+                                  color: AppColors.crimson.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -366,7 +566,9 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      daysUntil == 0 ? 'Today!' : '$daysUntil days to go',
+                                      daysUntil == 0
+                                          ? 'Today!'
+                                          : '$daysUntil days to go',
                                       style: TextStyle(
                                         color: AppColors.text(brightness),
                                         fontSize: 18,
@@ -415,7 +617,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                _gig.genre,
+                                _gig!.genre,
                                 style: TextStyle(
                                   color: AppColors.crimson,
                                   fontWeight: FontWeight.w600,
@@ -431,11 +633,14 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                   const SizedBox(height: 24),
 
                   // Description
-                  _SectionHeader(title: 'About This Gig', brightness: brightness),
+                  _SectionHeader(
+                    title: 'About This Gig',
+                    brightness: brightness,
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
-                      _gig.description,
+                      _gig!.description,
                       style: TextStyle(
                         color: AppColors.textSec(brightness),
                         fontSize: 15,
@@ -451,33 +656,37 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
-                      children: _gig.requirements.map((req) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(top: 6),
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: AppColors.crimson,
-                                borderRadius: BorderRadius.circular(3),
+                      children: _gig!.requirements
+                          .map(
+                            (req) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 6),
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.crimson,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      req,
+                                      style: TextStyle(
+                                        color: AppColors.text(brightness),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                req,
-                                style: TextStyle(
-                                  color: AppColors.text(brightness),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )).toList(),
+                          )
+                          .toList(),
                     ),
                   ),
 
@@ -490,35 +699,41 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: _gig.amenities.map((amenity) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface(brightness),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.border(brightness)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.success,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              amenity,
-                              style: TextStyle(
-                                color: AppColors.text(brightness),
-                                fontSize: 13,
+                      children: _gig!.amenities
+                          .map(
+                            (amenity) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface(brightness),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.border(brightness),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.success,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    amenity,
+                                    style: TextStyle(
+                                      color: AppColors.text(brightness),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      )).toList(),
+                          )
+                          .toList(),
                     ),
                   ),
 
@@ -530,7 +745,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
         ),
       ),
       // Bottom Action Bar
-      bottomNavigationBar: _gig.status == GigStatus.pending
+      bottomNavigationBar: _gig!.status == GigStatus.pending
           ? Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -561,10 +776,12 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                     // Accept button
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _isLoading || _isAccepted ? null : _acceptGig,
+                        onPressed: _isLoading || _isAccepted
+                            ? null
+                            : _acceptGig,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _isAccepted 
-                              ? AppColors.success 
+                          backgroundColor: _isAccepted
+                              ? AppColors.success
                               : AppColors.crimson,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -584,9 +801,11 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(_isAccepted 
-                                      ? Icons.check_rounded 
-                                      : Icons.check_circle_outline_rounded),
+                                  Icon(
+                                    _isAccepted
+                                        ? Icons.check_rounded
+                                        : Icons.check_circle_outline_rounded,
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
                                     _isAccepted ? 'Accepted!' : 'Accept Gig',
@@ -626,8 +845,20 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
   }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[date.month - 1]} ${date.day}';
   }
 }
@@ -672,7 +903,9 @@ class _InfoCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: highlight ? AppColors.crimson : AppColors.textSec(brightness),
+              color: highlight
+                  ? AppColors.crimson
+                  : AppColors.textSec(brightness),
               size: 20,
             ),
             const SizedBox(height: 8),

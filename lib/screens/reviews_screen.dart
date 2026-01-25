@@ -8,12 +8,15 @@
 /// - Photo review gallery
 /// - Reply functionality
 ///
-/// View and manage all reviews
+/// View and manage all reviews - NOW WITH REAL API DATA
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/services/services.dart' as services;
+import '../core/providers/providers.dart';
 import '../widgets/widgets.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -31,103 +34,26 @@ class _ReviewsScreenState extends State<ReviewsScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
-  bool _isLoading = false;
+
+  final services.ReviewService _reviewService = services.ReviewService();
+
+  bool _isLoading = true;
+  String? _errorMessage;
   String _selectedFilter = 'all';
 
-  // Mock data
-  final _stats = ReviewStats(
-    averageRating: 4.8,
-    totalReviews: 127,
-    fiveStarCount: 98,
-    fourStarCount: 21,
-    threeStarCount: 5,
-    twoStarCount: 2,
-    oneStarCount: 1,
-    responseRate: 0.95,
-    averageResponseTime: '2 hours',
+  ReviewStats _stats = const ReviewStats(
+    averageRating: 0,
+    totalReviews: 0,
+    fiveStarCount: 0,
+    fourStarCount: 0,
+    threeStarCount: 0,
+    twoStarCount: 0,
+    oneStarCount: 0,
+    responseRate: 0,
+    averageResponseTime: 'N/A',
   );
 
-  final List<Review> _reviews = [
-    Review(
-      id: '1',
-      authorName: 'The Velvet Lounge',
-      authorImage: '',
-      rating: 5,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      content: 'Absolutely incredible performance! The jazz set was perfectly curated for our Saturday night crowd. Professional, punctual, and talented beyond words. Will definitely book again!',
-      sentiment: ReviewSentiment.positive,
-      hasResponse: true,
-      response: 'Thank you so much! It was a pleasure performing at your venue. Looking forward to the next one!',
-      responseDate: DateTime.now().subtract(const Duration(hours: 12)),
-      photos: [],
-      isVerified: true,
-    ),
-    Review(
-      id: '2',
-      authorName: 'Grand Hotel Ballroom',
-      authorImage: '',
-      rating: 5,
-      date: DateTime.now().subtract(const Duration(days: 5)),
-      content: 'We hired them for our corporate gala and received nothing but compliments from our guests. The music selection was sophisticated and the energy was perfect. Highly recommend!',
-      sentiment: ReviewSentiment.positive,
-      hasResponse: false,
-      photos: [],
-      isVerified: true,
-    ),
-    Review(
-      id: '3',
-      authorName: 'Riverside Café',
-      authorImage: '',
-      rating: 4,
-      date: DateTime.now().subtract(const Duration(days: 8)),
-      content: 'Great musician with excellent stage presence. Only giving 4 stars because the set ran slightly over time, but overall a fantastic brunch session.',
-      sentiment: ReviewSentiment.positive,
-      hasResponse: true,
-      response: 'Thank you for the feedback! I apologize for running over - I got carried away with the amazing energy from your guests. Will be more mindful next time!',
-      responseDate: DateTime.now().subtract(const Duration(days: 7)),
-      photos: [],
-      isVerified: false,
-    ),
-    Review(
-      id: '4',
-      authorName: 'Electric Dreams',
-      authorImage: '',
-      rating: 5,
-      date: DateTime.now().subtract(const Duration(days: 12)),
-      content: 'This DJ knows how to read a room! Kept the dance floor packed all night. The transition between tracks was seamless. Definitely one of the best we\'ve had!',
-      sentiment: ReviewSentiment.positive,
-      hasResponse: false,
-      photos: [],
-      isVerified: true,
-    ),
-    Review(
-      id: '5',
-      authorName: 'Blue Note',
-      authorImage: '',
-      rating: 3,
-      date: DateTime.now().subtract(const Duration(days: 20)),
-      content: 'The music was good but arrived 15 minutes late for sound check. Communication could have been better. The performance itself was solid though.',
-      sentiment: ReviewSentiment.neutral,
-      hasResponse: true,
-      response: 'I sincerely apologize for the delay - there was unexpected traffic. I\'ve since started leaving earlier for gigs to ensure punctuality. Thank you for the honest feedback!',
-      responseDate: DateTime.now().subtract(const Duration(days: 19)),
-      photos: [],
-      isVerified: true,
-    ),
-    Review(
-      id: '6',
-      authorName: 'Sunset Rooftop Bar',
-      authorImage: '',
-      rating: 5,
-      date: DateTime.now().subtract(const Duration(days: 25)),
-      content: 'Perfect sunset vibes! The acoustic set was exactly what our venue needed. Guests were mesmerized. Already booked for next month!',
-      sentiment: ReviewSentiment.positive,
-      hasResponse: false,
-      photos: [],
-      isVerified: true,
-    ),
-  ];
+  List<Review> _reviews = [];
 
   @override
   void initState() {
@@ -140,7 +66,102 @@ class _ReviewsScreenState extends State<ReviewsScreen>
       parent: _animationController,
       curve: Curves.easeOut,
     );
-    _animationController.forward();
+    _loadReviews();
+  }
+
+  Future<void> _loadReviews() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final auth = context.read<AuthProvider>();
+      final userId = auth.artistProfile?.id ?? auth.venueProfile?.id;
+      final isArtist = auth.isArtist;
+
+      if (userId == null) {
+        setState(() {
+          _errorMessage = 'Please complete your profile first';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Fetch reviews and stats based on user role
+      if (isArtist) {
+        final reviewsResponse = await _reviewService.getArtistReviews(
+          userId,
+          limit: 50,
+        );
+        final statsResponse = await _reviewService.getArtistStats(userId);
+
+        _mapReviewsAndStats(reviewsResponse, statsResponse);
+      } else {
+        final reviewsResponse = await _reviewService.getVenueReviews(
+          userId,
+          limit: 50,
+        );
+        final statsResponse = await _reviewService.getVenueStats(userId);
+
+        _mapReviewsAndStats(reviewsResponse, statsResponse);
+      }
+
+      _animationController.forward();
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load reviews. Please try again.';
+        _isLoading = false;
+      });
+      debugPrint('Error loading reviews: $e');
+    }
+  }
+
+  void _mapReviewsAndStats(
+    services.ReviewsResponse reviewsResponse,
+    services.ReviewStats statsResponse,
+  ) {
+    setState(() {
+      // Map API reviews to local Review model
+      _reviews = reviewsResponse.reviews.map((r) {
+        final sentiment = _determineSentiment(r.overallRating.toDouble());
+        return Review(
+          id: r.id,
+          authorName: r.reviewerName,
+          authorImage: r.reviewerPhoto ?? '',
+          rating: r.overallRating,
+          date: r.createdAt,
+          content: r.content,
+          sentiment: sentiment,
+          hasResponse: r.response != null,
+          response: r.response,
+          responseDate: r.responseDate,
+          photos: r.photos,
+          isVerified: r.isVerifiedBooking,
+        );
+      }).toList();
+
+      // Map stats
+      _stats = ReviewStats(
+        averageRating: statsResponse.averageRating,
+        totalReviews: statsResponse.totalReviews,
+        fiveStarCount: statsResponse.ratingDistribution[5] ?? 0,
+        fourStarCount: statsResponse.ratingDistribution[4] ?? 0,
+        threeStarCount: statsResponse.ratingDistribution[3] ?? 0,
+        twoStarCount: statsResponse.ratingDistribution[2] ?? 0,
+        oneStarCount: statsResponse.ratingDistribution[1] ?? 0,
+        responseRate: 0.9, // TODO: Add to backend stats
+        averageResponseTime: '< 24 hours', // TODO: Add to backend stats
+      );
+
+      _isLoading = false;
+    });
+  }
+
+  ReviewSentiment _determineSentiment(double rating) {
+    if (rating >= 4) return ReviewSentiment.positive;
+    if (rating >= 3) return ReviewSentiment.neutral;
+    return ReviewSentiment.negative;
   }
 
   @override
@@ -151,9 +172,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
 
   Future<void> refresh() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
+    await _loadReviews();
   }
 
   List<Review> get _filteredReviews {
@@ -179,6 +198,65 @@ class _ReviewsScreenState extends State<ReviewsScreen>
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
 
+    if (_errorMessage != null && !_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: AppColors.text(brightness)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            'My Reviews',
+            style: TextStyle(color: AppColors.text(brightness)),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.star_border_rounded,
+                  size: 64,
+                  color: AppColors.textSec(brightness),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSec(brightness),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadReviews,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Try Again'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.crimson,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       body: FadeTransition(
@@ -189,53 +267,40 @@ class _ReviewsScreenState extends State<ReviewsScreen>
             _buildAppBar(brightness),
 
             // Stats Card
-            SliverToBoxAdapter(
-              child: _buildStatsCard(brightness),
-            ),
+            SliverToBoxAdapter(child: _buildStatsCard(brightness)),
 
             // Rating Breakdown
-            SliverToBoxAdapter(
-              child: _buildRatingBreakdown(brightness),
-            ),
+            SliverToBoxAdapter(child: _buildRatingBreakdown(brightness)),
 
             // Filter Chips
-            SliverToBoxAdapter(
-              child: _buildFilterChips(brightness),
-            ),
+            SliverToBoxAdapter(child: _buildFilterChips(brightness)),
 
             // Reviews List
             _isLoading
-                ? SliverToBoxAdapter(
-                    child: _ReviewSkeletonList(),
-                  )
+                ? SliverToBoxAdapter(child: _ReviewSkeletonList())
                 : _filteredReviews.isEmpty
-                    ? SliverFillRemaining(
-                        child: _buildEmptyState(brightness),
-                      )
-                    : SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index == _filteredReviews.length) {
-                              return const SizedBox(height: 100);
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 6,
-                              ),
-                              child: _ReviewCard(
-                                review: _filteredReviews[index],
-                                brightness: brightness,
-                                onReply: () => _showReplySheet(
-                                  _filteredReviews[index],
-                                  brightness,
-                                ),
-                              ),
-                            );
-                          },
-                          childCount: _filteredReviews.length + 1,
+                ? SliverFillRemaining(child: _buildEmptyState(brightness))
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      if (index == _filteredReviews.length) {
+                        return const SizedBox(height: 100);
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 6,
                         ),
-                      ),
+                        child: _ReviewCard(
+                          review: _filteredReviews[index],
+                          brightness: brightness,
+                          onReply: () => _showReplySheet(
+                            _filteredReviews[index],
+                            brightness,
+                          ),
+                        ),
+                      );
+                    }, childCount: _filteredReviews.length + 1),
+                  ),
           ],
         ),
       ),
@@ -312,10 +377,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.amber.shade600,
-            Colors.orange.shade700,
-          ],
+          colors: [Colors.amber.shade600, Colors.orange.shade700],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -355,8 +417,8 @@ class _ReviewsScreenState extends State<ReviewsScreen>
                         i < _stats.averageRating.floor()
                             ? Icons.star_rounded
                             : (i < _stats.averageRating
-                                ? Icons.star_half_rounded
-                                : Icons.star_outline_rounded),
+                                  ? Icons.star_half_rounded
+                                  : Icons.star_outline_rounded),
                         color: Colors.white,
                         size: 14,
                       );
@@ -547,7 +609,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final filter = filters[index];
           final isSelected = _selectedFilter == filter.$1;
@@ -646,6 +708,10 @@ class _ReviewsScreenState extends State<ReviewsScreen>
       builder: (context) => _ReplySheet(
         review: review,
         brightness: brightness,
+        onReplySuccess: () {
+          // Refresh the reviews list after successful reply
+          _loadReviews();
+        },
       ),
     );
   }
@@ -752,7 +818,10 @@ class _ReviewCard extends StatelessWidget {
 
               // Rating
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -760,7 +829,11 @@ class _ReviewCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber,
+                      size: 16,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${review.rating}',
@@ -889,7 +962,10 @@ class _ReviewCard extends StatelessWidget {
             AnimatedTapFeedback(
               onTap: onReply,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.crimson),
                   borderRadius: BorderRadius.circular(12),
@@ -897,7 +973,11 @@ class _ReviewCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.reply_rounded, color: AppColors.crimson, size: 18),
+                    Icon(
+                      Icons.reply_rounded,
+                      color: AppColors.crimson,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Reply',
@@ -926,8 +1006,18 @@ class _ReviewCard extends StatelessWidget {
     if (diff.inDays < 7) return '${diff.inDays}d ago';
 
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
@@ -940,10 +1030,12 @@ class _ReviewCard extends StatelessWidget {
 class _ReplySheet extends StatefulWidget {
   final Review review;
   final Brightness brightness;
+  final VoidCallback? onReplySuccess;
 
   const _ReplySheet({
     required this.review,
     required this.brightness,
+    this.onReplySuccess,
   });
 
   @override
@@ -952,6 +1044,7 @@ class _ReplySheet extends StatefulWidget {
 
 class _ReplySheetState extends State<_ReplySheet> {
   final _controller = TextEditingController();
+  final services.ReviewService _reviewService = services.ReviewService();
   bool _isLoading = false;
 
   @override
@@ -966,24 +1059,46 @@ class _ReplySheetState extends State<_ReplySheet> {
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
 
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const AnimatedSuccessCheck(size: 20, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Reply sent!'),
-            ],
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+    try {
+      await _reviewService.respondToReview(
+        widget.review.id,
+        _controller.text.trim(),
       );
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onReplySuccess?.call();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const AnimatedSuccessCheck(size: 20, color: Colors.white),
+                const SizedBox(width: 12),
+                const Text('Reply sent!'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send reply: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -1067,7 +1182,9 @@ class _ReplySheetState extends State<_ReplySheet> {
                   decoration: BoxDecoration(
                     color: AppColors.background(widget.brightness),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border(widget.brightness)),
+                    border: Border.all(
+                      color: AppColors.border(widget.brightness),
+                    ),
                   ),
                   child: TextField(
                     controller: _controller,

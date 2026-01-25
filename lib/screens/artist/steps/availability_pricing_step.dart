@@ -42,9 +42,7 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
       final slotMap = slot;
       final dateString = slotMap['date'] as String;
       final date = DateTime.parse(dateString);
-      _selectedDates.add(
-        DateTime(date.year, date.month, date.day),
-      );
+      _selectedDates.add(DateTime(date.year, date.month, date.day));
     }
   }
 
@@ -53,16 +51,14 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
       final normalizedDate = DateTime(date.year, date.month, date.day);
       if (_selectedDates.contains(normalizedDate)) {
         _selectedDates.remove(normalizedDate);
-        widget.profileData.availability.removeWhere(
-          (slot) {
-            final slotMap = slot;
-            final slotDateString = slotMap['date'] as String;
-            final slotDate = DateTime.parse(slotDateString);
-            return slotDate.year == date.year &&
-                slotDate.month == date.month &&
-                slotDate.day == date.day;
-          },
-        );
+        widget.profileData.availability.removeWhere((slot) {
+          final slotMap = slot;
+          final slotDateString = slotMap['date'] as String;
+          final slotDate = DateTime.parse(slotDateString);
+          return slotDate.year == date.year &&
+              slotDate.month == date.month &&
+              slotDate.day == date.day;
+        });
       } else {
         _selectedDates.add(normalizedDate);
         widget.profileData.availability.add({

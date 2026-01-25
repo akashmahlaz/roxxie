@@ -113,7 +113,9 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      color: isDark ? Colors.grey[400] : const Color(0xFF876464),
+                      color: isDark
+                          ? Colors.grey[400]
+                          : const Color(0xFF876464),
                     ),
                   ),
                 ),
@@ -145,7 +147,9 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                       '$_descriptionLength/$_maxDescriptionLength',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.grey[500] : const Color(0xFF876464),
+                        color: isDark
+                            ? Colors.grey[500]
+                            : const Color(0xFF876464),
                       ),
                     ),
                   ],
@@ -153,14 +157,18 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                 const SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.white,
+                    color: isDark
+                        ? AppColors.graphite.withValues(alpha: 0.5)
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.2 : 0.05,
+                        ),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -176,9 +184,12 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                       height: 1.5,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Tell musicians about your house rules, technical gear (PA, lighting), stage size, and the general vibe of your venue...',
+                      hintText:
+                          'Tell musicians about your house rules, technical gear (PA, lighting), stage size, and the general vibe of your venue...',
                       hintStyle: TextStyle(
-                        color: isDark ? Colors.grey[500] : const Color(0xFF876464),
+                        color: isDark
+                            ? Colors.grey[500]
+                            : const Color(0xFF876464),
                         fontSize: 14,
                       ),
                       border: InputBorder.none,
@@ -216,14 +227,18 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                 const SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.white,
+                    color: isDark
+                        ? AppColors.graphite.withValues(alpha: 0.5)
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.2 : 0.05,
+                        ),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -235,7 +250,9 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                         padding: const EdgeInsets.only(left: 16),
                         child: Icon(
                           Icons.person_outline_rounded,
-                          color: isDark ? Colors.grey[400] : const Color(0xFF876464),
+                          color: isDark
+                              ? Colors.grey[400]
+                              : const Color(0xFF876464),
                           size: 24,
                         ),
                       ),
@@ -249,7 +266,9 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                           decoration: InputDecoration(
                             hintText: 'e.g. John Smith',
                             hintStyle: TextStyle(
-                              color: isDark ? Colors.grey[500] : const Color(0xFF876464),
+                              color: isDark
+                                  ? Colors.grey[500]
+                                  : const Color(0xFF876464),
                             ),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
@@ -299,7 +318,9 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                       text: TextSpan(
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? Colors.grey[300] : AppColors.text(brightness),
+                          color: isDark
+                              ? Colors.grey[300]
+                              : AppColors.text(brightness),
                           height: 1.4,
                         ),
                         children: [
@@ -311,7 +332,8 @@ class _VenueFinalDetailsStepState extends State<VenueFinalDetailsStep> {
                             ),
                           ),
                           const TextSpan(
-                            text: 'Venues with detailed technical specs get matched with the right talent 40% faster.',
+                            text:
+                                'Venues with detailed technical specs get matched with the right talent 40% faster.',
                           ),
                         ],
                       ),

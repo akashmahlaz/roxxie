@@ -50,10 +50,7 @@ class SocialAuthResult {
   }
 
   factory SocialAuthResult.failure(String message) {
-    return SocialAuthResult(
-      success: false,
-      errorMessage: message,
-    );
+    return SocialAuthResult(success: false, errorMessage: message);
   }
 }
 
@@ -65,27 +62,29 @@ class SocialAuthService {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// Sign in with Google
-  /// 
+  ///
   /// If [role] is provided, it will be used for new user registration.
   /// If not provided and user is new, needsRoleSelection will be true.
   Future<SocialAuthResult> signInWithGoogle({UserRole? role}) async {
     try {
       // google_sign_in v7 uses singleton pattern
       final googleSignIn = GoogleSignIn.instance;
-      
+
       // Web Client ID from Google Cloud Console (used for backend token verification)
-      const serverClientId = '591438057904-vel7lra283ge5lnf4bv7ui3vp1pnommm.apps.googleusercontent.com';
-      
+      const serverClientId =
+          '591438057904-vel7lra283ge5lnf4bv7ui3vp1pnommm.apps.googleusercontent.com';
+
       // Initialize must be called first with serverClientId
       await googleSignIn.initialize(
         clientId: null, // Not needed for Android/iOS
-        serverClientId: serverClientId, // Web OAuth client ID from Google Cloud Console
+        serverClientId:
+            serverClientId, // Web OAuth client ID from Google Cloud Console
       );
-      
+
       // Use authenticate() for v7 (replaces signIn())
       // First try lightweight authentication
       GoogleSignInAccount? googleUser;
-      
+
       // Check if we can use authenticate (not supported on web)
       if (googleSignIn.supportsAuthenticate()) {
         googleUser = await googleSignIn.authenticate();
@@ -96,7 +95,7 @@ class SocialAuthService {
           googleUser = await futureOrNull;
         }
       }
-      
+
       if (googleUser == null) {
         return SocialAuthResult.failure('Google sign-in was cancelled');
       }
@@ -123,7 +122,9 @@ class SocialAuthService {
       if (e.code == GoogleSignInExceptionCode.canceled) {
         return SocialAuthResult.failure('Google sign-in was cancelled');
       }
-      return SocialAuthResult.failure('Google sign-in failed: ${e.description ?? e.code.name}');
+      return SocialAuthResult.failure(
+        'Google sign-in failed: ${e.description ?? e.code.name}',
+      );
     } catch (e) {
       debugPrint('Google sign-in error: $e');
       return SocialAuthResult.failure('Google sign-in failed: ${e.toString()}');
@@ -150,7 +151,7 @@ class SocialAuthService {
   }
 
   /// Sign in with Apple
-  /// 
+  ///
   /// If [role] is provided, it will be used for new user registration.
   /// If not provided and user is new, needsRoleSelection will be true.
   Future<SocialAuthResult> signInWithApple({UserRole? role}) async {
@@ -169,7 +170,7 @@ class SocialAuthService {
       );
 
       final String? identityToken = credential.identityToken;
-      final String? authorizationCode = credential.authorizationCode;
+      final String authorizationCode = credential.authorizationCode;
 
       if (identityToken == null) {
         return SocialAuthResult.failure('Failed to get Apple identity token');
@@ -178,9 +179,10 @@ class SocialAuthService {
       // Build name from Apple credential (only available on first sign-in)
       String? name;
       if (credential.givenName != null || credential.familyName != null) {
-        name = [credential.givenName, credential.familyName]
-            .where((n) => n != null && n.isNotEmpty)
-            .join(' ');
+        name = [
+          credential.givenName,
+          credential.familyName,
+        ].where((n) => n != null && n.isNotEmpty).join(' ');
       }
 
       // Send to backend
@@ -195,7 +197,7 @@ class SocialAuthService {
       );
     } catch (e) {
       debugPrint('Apple sign-in error: $e');
-      
+
       if (e is SignInWithAppleAuthorizationException) {
         switch (e.code) {
           case AuthorizationErrorCode.canceled:
@@ -207,7 +209,9 @@ class SocialAuthService {
           case AuthorizationErrorCode.notHandled:
             return SocialAuthResult.failure('Apple sign-in not handled');
           case AuthorizationErrorCode.notInteractive:
-            return SocialAuthResult.failure('Apple sign-in requires interaction');
+            return SocialAuthResult.failure(
+              'Apple sign-in requires interaction',
+            );
           case AuthorizationErrorCode.unknown:
             return SocialAuthResult.failure('Unknown Apple sign-in error');
           case AuthorizationErrorCode.credentialExport:
@@ -218,7 +222,7 @@ class SocialAuthService {
             return SocialAuthResult.failure('Apple credential excluded');
         }
       }
-      
+
       return SocialAuthResult.failure('Apple sign-in failed: ${e.toString()}');
     }
   }
@@ -260,8 +264,7 @@ class SocialAuthService {
       await _client.saveUser(jsonEncode(loginResponse.user.toJson()));
 
       // Check if user needs role selection (new social user without role)
-      final needsRole = loginResponse.user.role == null || 
-                        response.data['needsRoleSelection'] == true;
+      final needsRole = response.data['needsRoleSelection'] == true;
 
       return SocialAuthResult.success(
         user: loginResponse.user,
@@ -271,7 +274,9 @@ class SocialAuthService {
       );
     } catch (e) {
       debugPrint('Backend auth error: $e');
-      return SocialAuthResult.failure('Authentication failed. Please try again.');
+      return SocialAuthResult.failure(
+        'Authentication failed. Please try again.',
+      );
     }
   }
 
@@ -295,9 +300,13 @@ class SocialAuthService {
 
   /// Generate a random nonce for Apple Sign-In
   String _generateNonce([int length = 32]) {
-    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
     final random = Random.secure();
-    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
   }
 
   /// SHA256 hash of a string

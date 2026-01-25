@@ -25,14 +25,15 @@ class VenueScheduleBudgetStep extends StatefulWidget {
   });
 
   @override
-  State<VenueScheduleBudgetStep> createState() => _VenueScheduleBudgetStepState();
+  State<VenueScheduleBudgetStep> createState() =>
+      _VenueScheduleBudgetStepState();
 }
 
 class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
   late TextEditingController _descriptionController;
   late TextEditingController _contactNameController;
   late TextEditingController _phoneController;
-  
+
   bool _agreedToTerms = false;
   DateTime _selectedMonth = DateTime.now();
   final Set<int> _selectedDays = {};
@@ -40,8 +41,18 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
   // Day name mapping
   final List<String> _weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   final List<String> _monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   @override
@@ -56,13 +67,13 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
     _phoneController = TextEditingController(
       text: widget.profileData.phone ?? '',
     );
-    
+
     // Initialize budget if not set
     if (widget.profileData.gigPreferences.minBudget == 0) {
       widget.profileData.gigPreferences.minBudget = 150;
       widget.profileData.gigPreferences.maxBudget = 500;
     }
-    
+
     // Initialize selected days from typical event nights
     _initSelectedDays();
   }
@@ -117,11 +128,11 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
-    final minBudget = widget.profileData.gigPreferences.minBudget > 0 
-        ? widget.profileData.gigPreferences.minBudget 
+    final minBudget = widget.profileData.gigPreferences.minBudget > 0
+        ? widget.profileData.gigPreferences.minBudget
         : 150.0;
-    final maxBudget = widget.profileData.gigPreferences.maxBudget > 0 
-        ? widget.profileData.gigPreferences.maxBudget 
+    final maxBudget = widget.profileData.gigPreferences.maxBudget > 0
+        ? widget.profileData.gigPreferences.maxBudget
         : 500.0;
 
     return SingleChildScrollView(
@@ -164,7 +175,9 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.white,
+                color: isDark
+                    ? AppColors.graphite.withValues(alpha: 0.5)
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -187,8 +200,8 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: isDark 
-                                ? AppColors.charcoal 
+                            color: isDark
+                                ? AppColors.charcoal
                                 : Colors.grey[100],
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -213,8 +226,8 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: isDark 
-                                ? AppColors.charcoal 
+                            color: isDark
+                                ? AppColors.charcoal
                                 : Colors.grey[100],
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -299,7 +312,9 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.white,
+                color: isDark
+                    ? AppColors.graphite.withValues(alpha: 0.5)
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -314,13 +329,23 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildBudgetLabel('Min', minBudget.round(), brightness, isDark),
+                      _buildBudgetLabel(
+                        'Min',
+                        minBudget.round(),
+                        brightness,
+                        isDark,
+                      ),
                       Container(
                         width: 40,
                         height: 2,
                         color: isDark ? AppColors.slate : Colors.grey[300],
                       ),
-                      _buildBudgetLabel('Max', maxBudget.round(), brightness, isDark),
+                      _buildBudgetLabel(
+                        'Max',
+                        maxBudget.round(),
+                        brightness,
+                        isDark,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -328,7 +353,9 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                   SliderTheme(
                     data: SliderThemeData(
                       activeTrackColor: AppColors.crimson,
-                      inactiveTrackColor: isDark ? AppColors.slate : Colors.grey[200],
+                      inactiveTrackColor: isDark
+                          ? AppColors.slate
+                          : Colors.grey[200],
                       thumbColor: AppColors.crimson,
                       overlayColor: AppColors.crimson.withValues(alpha: 0.2),
                       trackHeight: 8,
@@ -336,18 +363,25 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                         enabledThumbRadius: 14,
                         elevation: 4,
                       ),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 24,
+                      ),
                     ),
                     child: RangeSlider(
-                      values: RangeValues(minBudget.toDouble(), maxBudget.toDouble()),
+                      values: RangeValues(
+                        minBudget.toDouble(),
+                        maxBudget.toDouble(),
+                      ),
                       min: 50,
                       max: 2000,
                       divisions: 39,
                       onChanged: (values) {
                         HapticFeedback.selectionClick();
                         setState(() {
-                          widget.profileData.gigPreferences.minBudget = values.start;
-                          widget.profileData.gigPreferences.maxBudget = values.end;
+                          widget.profileData.gigPreferences.minBudget =
+                              values.start;
+                          widget.profileData.gigPreferences.maxBudget =
+                              values.end;
                         });
                         widget.onDataChanged();
                       },
@@ -434,7 +468,9 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.grey[100],
+                    color: isDark
+                        ? AppColors.graphite.withValues(alpha: 0.5)
+                        : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: TextField(
@@ -445,7 +481,8 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                       color: AppColors.text(brightness),
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Describe your venue, its atmosphere, typical crowd...',
+                      hintText:
+                          'Describe your venue, its atmosphere, typical crowd...',
                       hintStyle: TextStyle(
                         color: isDark ? Colors.grey[500] : Colors.grey[400],
                       ),
@@ -481,7 +518,9 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                 Container(
                   height: 56,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.grey[100],
+                    color: isDark
+                        ? AppColors.graphite.withValues(alpha: 0.5)
+                        : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -504,10 +543,14 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                           decoration: InputDecoration(
                             hintText: 'Name of booking manager',
                             hintStyle: TextStyle(
-                              color: isDark ? Colors.grey[500] : Colors.grey[400],
+                              color: isDark
+                                  ? Colors.grey[500]
+                                  : Colors.grey[400],
                             ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
                           ),
                           onChanged: (value) {
                             widget.profileData.contactPerson = value;
@@ -541,7 +584,9 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                 Container(
                   height: 56,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.grey[100],
+                    color: isDark
+                        ? AppColors.graphite.withValues(alpha: 0.5)
+                        : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -565,10 +610,14 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                           decoration: InputDecoration(
                             hintText: '+1 (555) 123-4567',
                             hintStyle: TextStyle(
-                              color: isDark ? Colors.grey[500] : Colors.grey[400],
+                              color: isDark
+                                  ? Colors.grey[500]
+                                  : Colors.grey[400],
                             ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
                           ),
                           onChanged: (value) {
                             widget.profileData.phone = value;
@@ -600,13 +649,13 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: _agreedToTerms 
-                          ? AppColors.crimson 
+                      color: _agreedToTerms
+                          ? AppColors.crimson
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: _agreedToTerms 
-                            ? AppColors.crimson 
+                        color: _agreedToTerms
+                            ? AppColors.crimson
                             : (isDark ? AppColors.slate : Colors.grey[300]!),
                         width: 2,
                       ),
@@ -676,15 +725,16 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
             children: List.generate(7, (colIndex) {
               final cellIndex = rowIndex * 7 + colIndex;
               final day = cellIndex - firstWeekday + 1;
-              
+
               if (day < 1 || day > daysInMonth) {
                 return const SizedBox(width: 36, height: 36);
               }
 
               final isSelected = _selectedDays.contains(day);
-              final isToday = DateTime.now().day == day && 
-                             DateTime.now().month == _selectedMonth.month &&
-                             DateTime.now().year == _selectedMonth.year;
+              final isToday =
+                  DateTime.now().day == day &&
+                  DateTime.now().month == _selectedMonth.month &&
+                  DateTime.now().year == _selectedMonth.year;
 
               return GestureDetector(
                 onTap: () => _toggleDay(day),
@@ -693,28 +743,32 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: isSelected 
-                        ? AppColors.crimson 
-                        : (isToday 
-                            ? (isDark ? AppColors.slate : Colors.grey[200])
-                            : Colors.transparent),
+                    color: isSelected
+                        ? AppColors.crimson
+                        : (isToday
+                              ? (isDark ? AppColors.slate : Colors.grey[200])
+                              : Colors.transparent),
                     shape: BoxShape.circle,
-                    boxShadow: isSelected ? [
-                      BoxShadow(
-                        color: AppColors.crimson.withValues(alpha: 0.4),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ] : null,
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.crimson.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Center(
                     child: Text(
                       '$day',
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected 
-                            ? Colors.white 
+                        fontWeight: isSelected || isToday
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
                             : AppColors.text(brightness),
                       ),
                     ),
@@ -728,7 +782,12 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
     );
   }
 
-  Widget _buildBudgetLabel(String label, int value, Brightness brightness, bool isDark) {
+  Widget _buildBudgetLabel(
+    String label,
+    int value,
+    Brightness brightness,
+    bool isDark,
+  ) {
     return Column(
       children: [
         Text(
@@ -744,9 +803,7 @@ class _VenueScheduleBudgetStepState extends State<VenueScheduleBudgetStep> {
           decoration: BoxDecoration(
             color: isDark ? AppColors.charcoal : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.crimson.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
           ),
           child: Text(
             '\$$value',

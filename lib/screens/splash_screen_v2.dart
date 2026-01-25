@@ -202,33 +202,35 @@ class _SplashScreenV2State extends State<SplashScreenV2>
   /// Properly waits for AuthProvider to finish initialization before navigating
   Future<void> _waitForAuthAndNavigate() async {
     final authProvider = context.read<AuthProvider>();
-    
+
     // Minimum splash duration for branding (animations already ran ~1.9s)
     const minSplashDuration = Duration(milliseconds: 800);
     final startTime = DateTime.now();
-    
+
     // Wait for auth to complete (max 10 seconds timeout)
     int attempts = 0;
     const maxAttempts = 100; // 100 * 100ms = 10 seconds max
-    
-    while (authProvider.status == AuthStatus.initial || 
-           authProvider.status == AuthStatus.loading) {
+
+    while (authProvider.status == AuthStatus.initial ||
+        authProvider.status == AuthStatus.loading) {
       await Future.delayed(const Duration(milliseconds: 100));
       if (_disposed) return;
-      
+
       attempts++;
       if (attempts >= maxAttempts) {
-        debugPrint('Auth initialization timeout - proceeding with current state');
+        debugPrint(
+          'Auth initialization timeout - proceeding with current state',
+        );
         break;
       }
     }
-    
+
     // Ensure minimum splash duration is met
     final elapsed = DateTime.now().difference(startTime);
     if (elapsed < minSplashDuration) {
       await Future.delayed(minSplashDuration - elapsed);
     }
-    
+
     if (_disposed) return;
     if (mounted) {
       _navigateBasedOnAuthState();
@@ -239,7 +241,7 @@ class _SplashScreenV2State extends State<SplashScreenV2>
     final authProvider = context.read<AuthProvider>();
 
     Widget destination;
-    
+
     debugPrint('🚀 Splash navigating - Auth status: ${authProvider.status}');
     debugPrint('   User: ${authProvider.user?.email ?? "null"}');
     debugPrint('   Profile complete: ${authProvider.isProfileComplete}');

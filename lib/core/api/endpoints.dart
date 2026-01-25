@@ -198,7 +198,7 @@ class Endpoints {
 
   /// Swipe on profile (POST /swipes/:targetId with {direction: 'right'|'left'})
   static const String swipe = '/swipes';
-  
+
   /// Swipe on specific target
   static String swipeTarget(String targetId) => '/swipes/$targetId';
 
@@ -270,7 +270,8 @@ class Endpoints {
   static String conversationById(String id) => '/messages/conversations/$id';
 
   /// Get or create conversation
-  static const String conversationGetOrCreate = '/messages/conversations/get-or-create';
+  static const String conversationGetOrCreate =
+      '/messages/conversations/get-or-create';
 
   /// Archive conversation
   static String archiveConversation(String id) =>
@@ -284,13 +285,16 @@ class Endpoints {
   static String pinConversation(String id) => '/messages/conversations/$id/pin';
 
   /// Unpin conversation
-  static String unpinConversation(String id) => '/messages/conversations/$id/unpin';
+  static String unpinConversation(String id) =>
+      '/messages/conversations/$id/unpin';
 
   /// Mute conversation
-  static String muteConversation(String id) => '/messages/conversations/$id/mute';
+  static String muteConversation(String id) =>
+      '/messages/conversations/$id/mute';
 
   /// Unmute conversation
-  static String unmuteConversation(String id) => '/messages/conversations/$id/unmute';
+  static String unmuteConversation(String id) =>
+      '/messages/conversations/$id/unmute';
 
   /// Delete conversation
   static String deleteConversation(String id) => '/messages/conversations/$id';
@@ -318,7 +322,7 @@ class Endpoints {
   static const String messagesSearch = '/messages/search';
 
   /// Get unread message count
-    static const String messagesUnreadCount = '/messages/unread-count';
+  static const String messagesUnreadCount = '/messages/unread-count';
 
   // ═══════════════════════════════════════════════════════════════════════
   // GIGS / BOOKINGS
@@ -394,10 +398,12 @@ class Endpoints {
   static const String myBookings = '/bookings/my';
 
   /// Get venue's bookings
-  static String venueBookingsList(String venueId) => '/venues/$venueId/bookings';
+  static String venueBookingsList(String venueId) =>
+      '/venues/$venueId/bookings';
 
   /// Get artist's bookings
-  static String artistBookingsList(String artistId) => '/artists/$artistId/bookings';
+  static String artistBookingsList(String artistId) =>
+      '/artists/$artistId/bookings';
 
   // ═══════════════════════════════════════════════════════════════════════
   // REVIEWS
@@ -497,7 +503,8 @@ class Endpoints {
   static const String paymentMethodsAdd = '/subscription/payment-methods/add';
 
   /// Set default payment method
-  static const String paymentMethodsSetDefault = '/subscription/payment-methods/default';
+  static const String paymentMethodsSetDefault =
+      '/subscription/payment-methods/default';
 
   /// Remove payment method
   static String removePaymentMethod(String id) =>
@@ -570,10 +577,12 @@ class Endpoints {
   static const String forums = '/community/forums';
 
   /// Get forum posts
-  static String forumPosts(String forumId) => '/community/forums/$forumId/posts';
+  static String forumPosts(String forumId) =>
+      '/community/forums/$forumId/posts';
 
   /// Create forum post
-  static String createForumPost(String forumId) => '/community/forums/$forumId/posts';
+  static String createForumPost(String forumId) =>
+      '/community/forums/$forumId/posts';
 
   /// Get networking events
   static const String networkingEvents = '/community/events';

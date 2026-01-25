@@ -21,21 +21,16 @@ class GeoPoint {
   /// Coordinates in [longitude, latitude]
   final List<double> coordinates;
 
-  const GeoPoint({
-    required this.type,
-    required this.coordinates,
-  });
+  const GeoPoint({required this.type, required this.coordinates});
 
   factory GeoPoint.fromJson(Map<String, dynamic> json) =>
       _$GeoPointFromJson(json);
 
   Map<String, dynamic> toJson() => _$GeoPointToJson(this);
 
-  double? get longitude =>
-      coordinates.isNotEmpty ? coordinates[0] : null;
+  double? get longitude => coordinates.isNotEmpty ? coordinates[0] : null;
 
-  double? get latitude =>
-      coordinates.length > 1 ? coordinates[1] : null;
+  double? get latitude => coordinates.length > 1 ? coordinates[1] : null;
 }
 
 /// Gig location used for discovery and display.

@@ -92,15 +92,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   void _initParticles() {
     for (int i = 0; i < 80; i++) {
-      _particles.add(_NebulaParticle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble(),
-        size: _random.nextDouble() * 4 + 1,
-        speed: _random.nextDouble() * 0.2 + 0.05,
-        opacity: _random.nextDouble() * 0.5 + 0.2,
-        hue: _random.nextDouble() * 60 - 30, // Red-orange range
-        depth: _random.nextDouble(),
-      ));
+      _particles.add(
+        _NebulaParticle(
+          x: _random.nextDouble(),
+          y: _random.nextDouble(),
+          size: _random.nextDouble() * 4 + 1,
+          speed: _random.nextDouble() * 0.2 + 0.05,
+          opacity: _random.nextDouble() * 0.5 + 0.2,
+          hue: _random.nextDouble() * 60 - 30, // Red-orange range
+          depth: _random.nextDouble(),
+        ),
+      );
     }
   }
 
@@ -196,27 +198,30 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   void _goToRoleSelection() async {
     HapticFeedback.mediumImpact();
-    
+
     // Save that user has seen onboarding
     final apiClient = ApiClient();
     await apiClient.saveHasSeenOnboarding(true);
-    
+
     if (!mounted) return;
-    
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const RoleSelectionScreenV3(),
-        transitionsBuilder: (_, animation, __, child) {
+        pageBuilder: (_, _, _) => const RoleSelectionScreenV3(),
+        transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(
             opacity: animation,
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.03),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0.03),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ),
               child: child,
             ),
           );
@@ -317,7 +322,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     transform: Matrix4.identity()
                       ..setEntry(3, 2, 0.001)
                       ..rotateY(pageOffset * 0.3)
-                      ..translate(parallax, _floatAnimation.value * (1 - pageOffset.abs().clamp(0, 1))),
+                      ..translateByDouble(
+                        parallax,
+                        _floatAnimation.value *
+                            (1 - pageOffset.abs().clamp(0, 1)),
+                        0,
+                        0,
+                      ),
                     alignment: Alignment.center,
                     child: Opacity(
                       opacity: opacity.clamp(0.0, 1.0),
@@ -354,7 +365,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // HERO IMAGE
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildHeroImage(_OnboardingContent content, Brightness brightness, int index) {
+  Widget _buildHeroImage(
+    _OnboardingContent content,
+    Brightness brightness,
+    int index,
+  ) {
     final isDark = brightness == Brightness.dark;
 
     return Container(
@@ -378,7 +393,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             Image.asset(
               content.image,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -406,7 +421,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   colors: [
                     Colors.transparent,
                     Colors.transparent,
-                    (isDark ? Colors.black : Colors.white).withValues(alpha: 0.7),
+                    (isDark ? Colors.black : Colors.white).withValues(
+                      alpha: 0.7,
+                    ),
                   ],
                   stops: const [0.0, 0.5, 1.0],
                 ),
@@ -443,11 +460,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           ),
                         ],
                       ),
-                      child: Icon(
-                        content.icon,
-                        color: Colors.white,
-                        size: 26,
-                      ),
+                      child: Icon(content.icon, color: Colors.white, size: 26),
                     ),
                   );
                 },
@@ -463,7 +476,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
@@ -493,7 +509,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // CONTENT SECTION
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildContentSection(_OnboardingContent content, Brightness brightness, int index) {
+  Widget _buildContentSection(
+    _OnboardingContent content,
+    Brightness brightness,
+    int index,
+  ) {
     final isActive = _currentPage == index;
 
     return Column(
@@ -503,7 +523,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         AnimatedBuilder(
           animation: _shimmerController,
           builder: (context, _) {
-            final shimmerValue = (_shimmerController.value * 3 - 1).clamp(0.0, 1.0);
+            final shimmerValue = (_shimmerController.value * 3 - 1).clamp(
+              0.0,
+              1.0,
+            );
 
             return ShaderMask(
               shaderCallback: isActive
@@ -522,8 +545,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       ).createShader(bounds);
                     }
                   : (bounds) => LinearGradient(
-                        colors: [AppColors.crimson, AppColors.crimson],
-                      ).createShader(bounds),
+                      colors: [AppColors.crimson, AppColors.crimson],
+                    ).createShader(bounds),
               child: RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
@@ -535,15 +558,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   children: [
                     TextSpan(
                       text: content.titleHighlight,
-                      style: TextStyle(
-                        color: Colors.white,
-                      ),
+                      style: TextStyle(color: Colors.white),
                     ),
                     TextSpan(
                       text: content.titleNormal,
-                      style: TextStyle(
-                        color: AppColors.text(brightness),
-                      ),
+                      style: TextStyle(color: AppColors.text(brightness)),
                     ),
                   ],
                 ),
@@ -680,8 +699,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildCTAButton(Brightness brightness) {
     final isLastPage = _currentPage == 2;
-    // All buttons are red filled for consistency
-    final isRedButton = true;
+    // All buttons use red filled style for consistency
 
     return GestureDetector(
       onTap: _nextPage,
@@ -696,41 +714,34 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: isRedButton
-                    ? [
-                        AppColors.crimson,
-                        AppColors.crimson.withValues(alpha: 0.8),
-                      ]
-                    : [
-                        AppColors.crimson.withValues(alpha: 0.15),
-                        AppColors.crimson.withValues(alpha: 0.05),
-                      ],
+                colors: [
+                  AppColors.crimson,
+                  AppColors.crimson.withValues(alpha: 0.8),
+                ],
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppColors.crimson.withValues(alpha: isRedButton ? 0.0 : 0.3),
+                color: AppColors.crimson.withValues(alpha: 0.0),
                 width: 1.5,
               ),
-              boxShadow: isRedButton
-                  ? [
-                      BoxShadow(
-                        color: AppColors.crimson.withValues(
-                          alpha: 0.4 * _pulseAnimation.value,
-                        ),
-                        blurRadius: 25,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.crimson.withValues(
+                    alpha: 0.4 * _pulseAnimation.value,
+                  ),
+                  blurRadius: 25,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   isLastPage ? 'Get Started' : 'Continue',
-                  style: TextStyle(
-                    color: isRedButton ? Colors.white : AppColors.crimson,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.3,
@@ -738,8 +749,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 ),
                 const SizedBox(width: 10),
                 Icon(
-                  isLastPage ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
-                  color: isRedButton ? Colors.white : AppColors.crimson,
+                  isLastPage
+                      ? Icons.rocket_launch_rounded
+                      : Icons.arrow_forward_rounded,
+                  color: Colors.white,
                   size: 22,
                 ),
               ],
@@ -770,16 +783,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.border(brightness),
-            width: 1,
-          ),
+          border: Border.all(color: AppColors.border(brightness), width: 1),
         ),
-        child: Icon(
-          icon,
-          color: AppColors.text(brightness),
-          size: 22,
-        ),
+        child: Icon(icon, color: AppColors.text(brightness), size: 22),
       ),
     );
   }
@@ -879,7 +885,8 @@ class _NebulaFieldPainter extends CustomPainter {
       final parallaxY = y * size.height;
 
       // Twinkle effect
-      final twinkle = 0.5 + 0.5 * math.sin(progress * math.pi * 6 + particle.x * 20);
+      final twinkle =
+          0.5 + 0.5 * math.sin(progress * math.pi * 6 + particle.x * 20);
 
       // Color based on particle hue (red-orange spectrum)
       final color = HSVColor.fromAHSV(
@@ -942,12 +949,15 @@ class _MorphingMeshPainter extends CustomPainter {
     final orb2Y = size.height * 0.8 + math.cos(progress * math.pi * 2) * 30;
 
     final orb2Paint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.deepPurple.withValues(alpha: isDark ? 0.12 : 0.08),
-          Colors.deepPurple.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(orb2X, orb2Y), radius: 180));
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.deepPurple.withValues(alpha: isDark ? 0.12 : 0.08),
+              Colors.deepPurple.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(center: Offset(orb2X, orb2Y), radius: 180),
+          );
 
     canvas.drawCircle(Offset(orb2X, orb2Y), 180, orb2Paint);
   }

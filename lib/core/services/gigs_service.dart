@@ -19,6 +19,65 @@ class GigsService {
 
   GigsService({ApiClient? client}) : _client = client ?? ApiClient();
 
+  /// ✅ Get gig by ID
+  ///
+  /// Fetch full details of a specific gig
+  Future<Gig> getGigById(String gigId) async {
+    try {
+      final response = await _client.get('/gigs/$gigId');
+      return Gig.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Get gig by ID error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Accept a gig offer (Artist)
+  Future<Gig> acceptGig(String gigId) async {
+    try {
+      final response = await _client.post('/gigs/$gigId/accept');
+      return Gig.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Accept gig error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Decline a gig offer (Artist)
+  Future<void> declineGig(String gigId, {String? reason}) async {
+    try {
+      await _client.post(
+        '/gigs/$gigId/decline',
+        data: reason != null ? {'reason': reason} : null,
+      );
+    } catch (e) {
+      debugPrint('Decline gig error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Apply to a gig (Artist)
+  Future<Gig> applyToGig(
+    String gigId, {
+    String? coverMessage,
+    int? proposedRate,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (coverMessage != null) data['message'] = coverMessage;
+      if (proposedRate != null) data['proposedRate'] = proposedRate;
+
+      final response = await _client.post(
+        '/gigs/$gigId/apply',
+        data: data.isNotEmpty ? data : null,
+      );
+      return Gig.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Apply to gig error: $e');
+      rethrow;
+    }
+  }
+
   /// ✅ Create gig (Venue only)
   ///
   /// Backend enforces:
@@ -49,10 +108,7 @@ class GigsService {
     String? status,
   }) async {
     try {
-      final qp = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
+      final qp = <String, dynamic>{'page': page, 'limit': limit};
       if (status != null && status.trim().isNotEmpty) {
         qp['status'] = status.trim();
       }

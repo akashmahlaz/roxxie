@@ -22,7 +22,8 @@ class VenueSetupSuccessScreen extends StatefulWidget {
   const VenueSetupSuccessScreen({super.key, required this.venueName});
 
   @override
-  State<VenueSetupSuccessScreen> createState() => _VenueSetupSuccessScreenState();
+  State<VenueSetupSuccessScreen> createState() =>
+      _VenueSetupSuccessScreenState();
 }
 
 class _VenueSetupSuccessScreenState extends State<VenueSetupSuccessScreen>
@@ -44,7 +45,7 @@ class _VenueSetupSuccessScreenState extends State<VenueSetupSuccessScreen>
   @override
   void initState() {
     super.initState();
-    
+
     HapticFeedback.heavyImpact();
 
     // Initialize particles
@@ -68,10 +69,7 @@ class _VenueSetupSuccessScreenState extends State<VenueSetupSuccessScreen>
     );
 
     _checkmarkRotation = Tween<double>(begin: -0.5, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _checkmarkController,
-        curve: Curves.easeOutBack,
-      ),
+      CurvedAnimation(parent: _checkmarkController, curve: Curves.easeOutBack),
     );
 
     // Content animation
@@ -85,13 +83,13 @@ class _VenueSetupSuccessScreenState extends State<VenueSetupSuccessScreen>
       curve: Curves.easeOut,
     );
 
-    _contentSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _contentController,
-      curve: Curves.easeOutCubic,
-    ));
+    _contentSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _contentController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     // Shimmer animation
     _shimmerController = AnimationController(
@@ -232,12 +230,17 @@ class _VenueSetupSuccessScreenState extends State<VenueSetupSuccessScreen>
                               height: 120,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [AppColors.crimson, Color(0xFFFF4D6D)],
+                                  colors: [
+                                    AppColors.crimson,
+                                    Color(0xFFFF4D6D),
+                                  ],
                                 ),
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.crimson.withValues(alpha: 0.5),
+                                    color: AppColors.crimson.withValues(
+                                      alpha: 0.5,
+                                    ),
                                     blurRadius: 30,
                                     spreadRadius: 5,
                                   ),
@@ -310,12 +313,16 @@ class _VenueSetupSuccessScreenState extends State<VenueSetupSuccessScreen>
                                 gradient: LinearGradient(
                                   colors: [
                                     AppColors.crimson.withValues(alpha: 0.2),
-                                    const Color(0xFFFF4D6D).withValues(alpha: 0.2),
+                                    const Color(
+                                      0xFFFF4D6D,
+                                    ).withValues(alpha: 0.2),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: AppColors.crimson.withValues(alpha: 0.3),
+                                  color: AppColors.crimson.withValues(
+                                    alpha: 0.3,
+                                  ),
                                 ),
                               ),
                               child: Text(
@@ -430,11 +437,7 @@ class _VenueSetupSuccessScreenState extends State<VenueSetupSuccessScreen>
           ),
           child: Column(
             children: [
-              Icon(
-                icon,
-                color: AppColors.crimson,
-                size: 28,
-              ),
+              Icon(icon, color: AppColors.crimson, size: 28),
               const SizedBox(height: 8),
               Text(
                 value,
@@ -493,11 +496,7 @@ class _VenueSetupSuccessScreenState extends State<VenueSetupSuccessScreen>
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.explore_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
+                    Icon(Icons.explore_rounded, color: Colors.white, size: 22),
                     SizedBox(width: 10),
                     Text(
                       'Start Discovering Artists',
@@ -582,11 +581,10 @@ class _ConfettiPainter extends CustomPainter {
         ..style = PaintingStyle.fill;
 
       canvas.save();
-      canvas.translate(
-        particle.x * size.width,
-        wrappedY * size.height,
+      canvas.translate(particle.x * size.width, wrappedY * size.height);
+      canvas.rotate(
+        particle.rotation + animation * particle.rotationSpeed * 10,
       );
-      canvas.rotate(particle.rotation + animation * particle.rotationSpeed * 10);
 
       // Draw particle as rotated rectangle
       canvas.drawRRect(
@@ -618,7 +616,8 @@ class _SuccessOrbPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
+    final paint = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
 
     // Orb 1
     final orb1Offset = Offset(

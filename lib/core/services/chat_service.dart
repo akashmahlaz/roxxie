@@ -35,12 +35,7 @@ import '../exceptions.dart';
 /// ═══════════════════════════════════════════════════════════════════════
 
 /// Filter options for conversations
-enum ConversationFilter {
-  all,
-  unread,
-  archived,
-  pinned,
-}
+enum ConversationFilter { all, unread, archived, pinned }
 
 /// Extension methods for MessageType
 extension MessageTypeExtension on MessageType {
@@ -136,7 +131,8 @@ class ChatMessage {
       id: json['id'] ?? json['_id'] ?? '',
       conversationId: json['conversationId'] ?? json['conversation'] ?? '',
       senderId: json['senderId'] ?? json['sender']?['id'] ?? '',
-      senderName: json['senderName'] ??
+      senderName:
+          json['senderName'] ??
           json['sender']?['displayName'] ??
           json['sender']?['venueName'] ??
           'Unknown',
@@ -150,9 +146,7 @@ class ChatMessage {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt']) ?? DateTime.now()
           : DateTime.now(),
-      readAt: json['readAt'] != null
-          ? DateTime.tryParse(json['readAt'])
-          : null,
+      readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt']) : null,
       isEdited: json['isEdited'] ?? false,
       editedAt: json['editedAt'] != null
           ? DateTime.tryParse(json['editedAt'])
@@ -184,13 +178,13 @@ class ChatMessage {
 
   /// Convert to JSON for API
   Map<String, dynamic> toJson() => {
-        'conversationId': conversationId,
-        'type': type.backendValue,
-        'content': content,
-        if (attachments.isNotEmpty) 'attachments': attachments,
-        if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
-        if (metadata != null) 'metadata': metadata,
-      };
+    'conversationId': conversationId,
+    'type': type.backendValue,
+    'content': content,
+    if (attachments.isNotEmpty) 'attachments': attachments,
+    if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+    if (metadata != null) 'metadata': metadata,
+  };
 
   /// Check if message can be edited
   bool get canBeEdited {
@@ -220,16 +214,16 @@ class ChatMessage {
       return createdAt.weekday == DateTime.monday
           ? 'Mon'
           : createdAt.weekday == DateTime.tuesday
-              ? 'Tue'
-              : createdAt.weekday == DateTime.wednesday
-                  ? 'Wed'
-                  : createdAt.weekday == DateTime.thursday
-                      ? 'Thu'
-                      : createdAt.weekday == DateTime.friday
-                          ? 'Fri'
-                          : createdAt.weekday == DateTime.saturday
-                              ? 'Sat'
-                              : 'Sun';
+          ? 'Tue'
+          : createdAt.weekday == DateTime.wednesday
+          ? 'Wed'
+          : createdAt.weekday == DateTime.thursday
+          ? 'Thu'
+          : createdAt.weekday == DateTime.friday
+          ? 'Fri'
+          : createdAt.weekday == DateTime.saturday
+          ? 'Sat'
+          : 'Sun';
     }
     return '${createdAt.month}/${createdAt.day}/${createdAt.year}';
   }
@@ -273,19 +267,23 @@ class Conversation {
   factory Conversation.fromJson(Map<String, dynamic> json) {
     return Conversation(
       id: json['id'] ?? json['_id'] ?? '',
-      participantId: json['participantId'] ??
+      participantId:
+          json['participantId'] ??
           json['participant']?['id'] ??
           json['otherUser']?['id'] ??
           '',
-      participantName: json['participantName'] ??
+      participantName:
+          json['participantName'] ??
           json['participant']?['displayName'] ??
           json['participant']?['venueName'] ??
           json['otherUser']?['displayName'] ??
           'Unknown',
-      participantPhoto: json['participantPhoto'] ??
+      participantPhoto:
+          json['participantPhoto'] ??
           json['participant']?['profilePhotoUrl'] ??
           json['otherUser']?['profilePhotoUrl'],
-      participantType: json['participantType'] ??
+      participantType:
+          json['participantType'] ??
           json['participant']?['type'] ??
           json['otherUser']?['role'] ??
           'artist',
@@ -311,12 +309,12 @@ class Conversation {
 
   /// Convert to JSON for API
   Map<String, dynamic> toJson() => {
-        'participantId': participantId,
-        'participantType': participantType,
-        if (isPinned) 'isPinned': true,
-        if (isArchived) 'isArchived': true,
-        if (isMuted) 'isMuted': true,
-      };
+    'participantId': participantId,
+    'participantType': participantType,
+    if (isPinned) 'isPinned': true,
+    if (isArchived) 'isArchived': true,
+    if (isMuted) 'isMuted': true,
+  };
 
   /// Get display name
   String get displayName => participantName;
@@ -351,11 +349,7 @@ class PresenceState {
   final bool isOnline;
   final DateTime? lastSeen;
 
-  PresenceState({
-    required this.userId,
-    required this.isOnline,
-    this.lastSeen,
-  });
+  PresenceState({required this.userId, required this.isOnline, this.lastSeen});
 }
 
 /// ═══════════════════════════════════════════════════════════════════════
@@ -457,7 +451,8 @@ class ChatService {
         return [];
       }
 
-      final data = response.data['data'] ??
+      final data =
+          response.data['data'] ??
           response.data['conversations'] ??
           response.data;
 
@@ -465,14 +460,18 @@ class ChatService {
         return [];
       }
 
-      final conversations = data.map((item) {
-        try {
-          return Conversation.fromJson(item as Map<String, dynamic>);
-        } catch (e) {
-          debugPrint('⚠️ [ChatService] Failed to parse conversation: $e');
-          return null;
-        }
-      }).where((c) => c != null).cast<Conversation>().toList();
+      final conversations = data
+          .map((item) {
+            try {
+              return Conversation.fromJson(item as Map<String, dynamic>);
+            } catch (e) {
+              debugPrint('⚠️ [ChatService] Failed to parse conversation: $e');
+              return null;
+            }
+          })
+          .where((c) => c != null)
+          .cast<Conversation>()
+          .toList();
 
       // Update local cache
       for (final conv in conversations) {
@@ -490,16 +489,19 @@ class ChatService {
         '💬 [ChatService] Found ${conversations.length} conversations',
       );
       return conversations;
-
     } on DioException catch (e) {
       final error = _handleDioError(e, 'get conversations');
-      debugPrint('❌ [ChatService] Failed to get conversations: ${error.message}');
+      debugPrint(
+        '❌ [ChatService] Failed to get conversations: ${error.message}',
+      );
       throw error;
     } catch (e) {
       final error = ChatServiceError(
         'Unexpected error getting conversations: $e',
       );
-      debugPrint('❌ [ChatService] Failed to get conversations: ${error.message}');
+      debugPrint(
+        '❌ [ChatService] Failed to get conversations: ${error.message}',
+      );
       throw error;
     } finally {
       stopwatch.stop();
@@ -521,14 +523,14 @@ class ChatService {
         throw NotFoundException('Conversation not found');
       }
 
-      final conversation =
-          Conversation.fromJson(response.data as Map<String, dynamic>);
+      final conversation = Conversation.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Update cache
       _conversationCache[conversationId] = conversation;
 
       return conversation;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to get conversation: $e');
       rethrow;
@@ -559,14 +561,14 @@ class ChatService {
         throw ChatServiceError('Failed to create conversation');
       }
 
-      final conversation =
-          Conversation.fromJson(response.data as Map<String, dynamic>);
+      final conversation = Conversation.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Update cache
       _conversationCache[conversation.id] = conversation;
 
       return conversation;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to get/create conversation: $e');
       rethrow;
@@ -586,13 +588,13 @@ class ChatService {
 
       // Update cache
       if (_conversationCache.containsKey(conversationId)) {
-        final updated = _conversationCache[conversationId]!
-            .copyWith(isArchived: true);
+        final updated = _conversationCache[conversationId]!.copyWith(
+          isArchived: true,
+        );
         _conversationCache[conversationId] = updated;
       }
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to archive conversation: $e');
       throw ChatServiceError('Failed to archive conversation: $e');
@@ -612,13 +614,13 @@ class ChatService {
 
       // Update cache
       if (_conversationCache.containsKey(conversationId)) {
-        final updated = _conversationCache[conversationId]!
-            .copyWith(isArchived: false);
+        final updated = _conversationCache[conversationId]!.copyWith(
+          isArchived: false,
+        );
         _conversationCache[conversationId] = updated;
       }
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to unarchive conversation: $e');
       throw ChatServiceError('Failed to unarchive conversation: $e');
@@ -638,13 +640,13 @@ class ChatService {
 
       // Update cache
       if (_conversationCache.containsKey(conversationId)) {
-        final updated = _conversationCache[conversationId]!
-            .copyWith(isPinned: true);
+        final updated = _conversationCache[conversationId]!.copyWith(
+          isPinned: true,
+        );
         _conversationCache[conversationId] = updated;
       }
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to pin conversation: $e');
       throw ChatServiceError('Failed to pin conversation: $e');
@@ -664,13 +666,13 @@ class ChatService {
 
       // Update cache
       if (_conversationCache.containsKey(conversationId)) {
-        final updated = _conversationCache[conversationId]!
-            .copyWith(isPinned: false);
+        final updated = _conversationCache[conversationId]!.copyWith(
+          isPinned: false,
+        );
         _conversationCache[conversationId] = updated;
       }
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to unpin conversation: $e');
       throw ChatServiceError('Failed to unpin conversation: $e');
@@ -690,13 +692,13 @@ class ChatService {
 
       // Update cache
       if (_conversationCache.containsKey(conversationId)) {
-        final updated = _conversationCache[conversationId]!
-            .copyWith(isMuted: true);
+        final updated = _conversationCache[conversationId]!.copyWith(
+          isMuted: true,
+        );
         _conversationCache[conversationId] = updated;
       }
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to mute conversation: $e');
       throw ChatServiceError('Failed to mute conversation: $e');
@@ -716,13 +718,13 @@ class ChatService {
 
       // Update cache
       if (_conversationCache.containsKey(conversationId)) {
-        final updated = _conversationCache[conversationId]!
-            .copyWith(isMuted: false);
+        final updated = _conversationCache[conversationId]!.copyWith(
+          isMuted: false,
+        );
         _conversationCache[conversationId] = updated;
       }
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to unmute conversation: $e');
       throw ChatServiceError('Failed to unmute conversation: $e');
@@ -745,7 +747,6 @@ class ChatService {
       _messageCache.remove(conversationId);
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to delete conversation: $e');
       throw ChatServiceError('Failed to delete conversation: $e');
@@ -800,22 +801,25 @@ class ChatService {
         return [];
       }
 
-      final data = response.data['data'] ??
-          response.data['messages'] ??
-          response.data;
+      final data =
+          response.data['data'] ?? response.data['messages'] ?? response.data;
 
       if (data is! List) {
         return [];
       }
 
-      final messages = data.map((item) {
-        try {
-          return ChatMessage.fromJson(item as Map<String, dynamic>);
-        } catch (e) {
-          debugPrint('⚠️ [ChatService] Failed to parse message: $e');
-          return null;
-        }
-      }).where((m) => m != null).cast<ChatMessage>().toList();
+      final messages = data
+          .map((item) {
+            try {
+              return ChatMessage.fromJson(item as Map<String, dynamic>);
+            } catch (e) {
+              debugPrint('⚠️ [ChatService] Failed to parse message: $e');
+              return null;
+            }
+          })
+          .where((m) => m != null)
+          .cast<ChatMessage>()
+          .toList();
 
       // Sort by creation time (oldest first for chat)
       messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -827,15 +831,12 @@ class ChatService {
 
       debugPrint('💬 [ChatService] Found ${messages.length} messages');
       return messages;
-
     } on DioException catch (e) {
       final error = _handleDioError(e, 'get messages');
       debugPrint('❌ [ChatService] Failed to get messages: ${error.message}');
       throw error;
     } catch (e) {
-      final error = ChatServiceError(
-        'Unexpected error getting messages: $e',
-      );
+      final error = ChatServiceError('Unexpected error getting messages: $e');
       debugPrint('❌ [ChatService] Failed to get messages: ${error.message}');
       throw error;
     } finally {
@@ -896,14 +897,16 @@ class ChatService {
             data: {
               'type': 'text',
               'content': content.trim(),
-              if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+              if (replyToMessageId != null)
+                'replyToMessageId': replyToMessageId,
               if (metadata != null) 'metadata': metadata,
             },
           );
 
           if (response.data != null) {
-            sentMessage =
-                ChatMessage.fromJson(response.data as Map<String, dynamic>);
+            sentMessage = ChatMessage.fromJson(
+              response.data as Map<String, dynamic>,
+            );
             break;
           }
         } catch (e) {
@@ -940,7 +943,6 @@ class ChatService {
         '💬 [ChatService] Message sent in ${stopwatch.elapsedMilliseconds}ms',
       );
       return sentMessage;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to send message: $e');
       rethrow;
@@ -980,8 +982,9 @@ class ChatService {
         throw ChatServiceError('Failed to send image');
       }
 
-      final message =
-          ChatMessage.fromJson(response.data as Map<String, dynamic>);
+      final message = ChatMessage.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Add to cache
       _addToLocalCache(conversationId, message);
@@ -990,7 +993,6 @@ class ChatService {
       _messageStream.add(message);
 
       return message;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to send image: $e');
       throw ChatServiceError('Failed to send image: $e');
@@ -1010,8 +1012,7 @@ class ChatService {
       await _client.patch(
         '${Endpoints.messages}/$conversationId/read',
         data: {
-          if (lastReadMessageId != null)
-            'lastReadMessageId': lastReadMessageId,
+          if (lastReadMessageId != null) 'lastReadMessageId': lastReadMessageId,
         },
       );
 
@@ -1022,7 +1023,6 @@ class ChatService {
       _updateUnreadCount(conversationId, 0);
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to mark as read: $e');
       return false;
@@ -1042,23 +1042,21 @@ class ChatService {
 
       final response = await _client.patch(
         '${Endpoints.messages}/$conversationId/$messageId',
-        data: {
-          'content': newContent,
-        },
+        data: {'content': newContent},
       );
 
       if (response.data == null) {
         throw ChatServiceError('Failed to edit message');
       }
 
-      final message =
-          ChatMessage.fromJson(response.data as Map<String, dynamic>);
+      final message = ChatMessage.fromJson(
+        response.data as Map<String, dynamic>,
+      );
 
       // Update cache
       _replaceInLocalCache(conversationId, messageId, message);
 
       return message;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to edit message: $e');
       throw ChatServiceError('Failed to edit message: $e');
@@ -1078,16 +1076,13 @@ class ChatService {
 
       await _client.delete(
         '${Endpoints.messages}/$conversationId/$messageId',
-        data: {
-          'forEveryone': forEveryone,
-        },
+        data: {'forEveryone': forEveryone},
       );
 
       // Remove from cache
       _removeFromCache(conversationId, messageId);
 
       return true;
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to delete message: $e');
       throw ChatServiceError('Failed to delete message: $e');
@@ -1120,9 +1115,8 @@ class ChatService {
         return [];
       }
 
-      final data = response.data['data'] ??
-          response.data['messages'] ??
-          response.data;
+      final data =
+          response.data['data'] ?? response.data['messages'] ?? response.data;
 
       if (data is! List) {
         return [];
@@ -1131,7 +1125,6 @@ class ChatService {
       return data.map((item) {
         return ChatMessage.fromJson(item as Map<String, dynamic>);
       }).toList();
-
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to search messages: $e');
       throw ChatServiceError('Failed to search messages: $e');
@@ -1150,12 +1143,14 @@ class ChatService {
     try {
       if (!_isConnected) return;
 
-      _webSocket?.sink.add(jsonEncode({
-        'type': 'typing',
-        'conversationId': conversationId,
-        'isTyping': isTyping,
-        'timestamp': DateTime.now().toIso8601String(),
-      }));
+      _webSocket?.sink.add(
+        jsonEncode({
+          'type': 'typing',
+          'conversationId': conversationId,
+          'isTyping': isTyping,
+          'timestamp': DateTime.now().toIso8601String(),
+        }),
+      );
     } catch (e) {
       debugPrint('⚠️ [ChatService] Failed to send typing indicator: $e');
     }
@@ -1206,10 +1201,12 @@ class ChatService {
       debugPrint('💬 [ChatService] WebSocket connected');
 
       // Send connection confirmation
-      _webSocket?.sink.add(jsonEncode({
-        'type': 'connect',
-        'timestamp': DateTime.now().toIso8601String(),
-      }));
+      _webSocket?.sink.add(
+        jsonEncode({
+          'type': 'connect',
+          'timestamp': DateTime.now().toIso8601String(),
+        }),
+      );
     } catch (e) {
       debugPrint('❌ [ChatService] WebSocket connection failed: $e');
       _isConnected = false;
@@ -1222,10 +1219,12 @@ class ChatService {
       debugPrint('💬 [ChatService] Disconnecting WebSocket');
 
       // Send disconnect notification
-      _webSocket?.sink.add(jsonEncode({
-        'type': 'disconnect',
-        'timestamp': DateTime.now().toIso8601String(),
-      }));
+      _webSocket?.sink.add(
+        jsonEncode({
+          'type': 'disconnect',
+          'timestamp': DateTime.now().toIso8601String(),
+        }),
+      );
 
       await _webSocket?.sink.close();
       _webSocket = null;
@@ -1252,30 +1251,35 @@ class ChatService {
 
       switch (type) {
         case 'message':
-          final chatMessage =
-              ChatMessage.fromJson(data['message'] as Map<String, dynamic>);
+          final chatMessage = ChatMessage.fromJson(
+            data['message'] as Map<String, dynamic>,
+          );
           _messageStream.add(chatMessage);
           _addToLocalCache(chatMessage.conversationId, chatMessage);
           break;
 
         case 'typing':
-          _typingStream.add(TypingIndicator(
-            conversationId: data['conversationId'] ?? '',
-            userId: data['userId'] ?? '',
-            userName: data['userName'] ?? '',
-            isTyping: data['isTyping'] ?? false,
-            timestamp: DateTime.now(),
-          ));
+          _typingStream.add(
+            TypingIndicator(
+              conversationId: data['conversationId'] ?? '',
+              userId: data['userId'] ?? '',
+              userName: data['userName'] ?? '',
+              isTyping: data['isTyping'] ?? false,
+              timestamp: DateTime.now(),
+            ),
+          );
           break;
 
         case 'presence':
-          _presenceStream.add(PresenceState(
-            userId: data['userId'] ?? '',
-            isOnline: data['isOnline'] ?? false,
-            lastSeen: data['lastSeen'] != null
-                ? DateTime.tryParse(data['lastSeen'])
-                : null,
-          ));
+          _presenceStream.add(
+            PresenceState(
+              userId: data['userId'] ?? '',
+              isOnline: data['isOnline'] ?? false,
+              lastSeen: data['lastSeen'] != null
+                  ? DateTime.tryParse(data['lastSeen'])
+                  : null,
+            ),
+          );
           break;
 
         case 'read':
@@ -1352,8 +1356,9 @@ class ChatService {
   ) {
     if (!_messageCache.containsKey(conversationId)) return;
 
-    final index = _messageCache[conversationId]!
-        .indexWhere((m) => m.id == oldMessageId);
+    final index = _messageCache[conversationId]!.indexWhere(
+      (m) => m.id == oldMessageId,
+    );
     if (index >= 0) {
       _messageCache[conversationId]![index] = newMessage;
     }
@@ -1362,8 +1367,7 @@ class ChatService {
   void _removeFromCache(String conversationId, String messageId) {
     if (!_messageCache.containsKey(conversationId)) return;
 
-    _messageCache[conversationId]!
-        .removeWhere((m) => m.id == messageId);
+    _messageCache[conversationId]!.removeWhere((m) => m.id == messageId);
   }
 
   void _markCacheAsRead(String conversationId) {
@@ -1398,8 +1402,9 @@ class ChatService {
   ) {
     if (!_messageCache.containsKey(conversationId)) return;
 
-    final index = _messageCache[conversationId]!
-        .indexWhere((m) => m.id == messageId);
+    final index = _messageCache[conversationId]!.indexWhere(
+      (m) => m.id == messageId,
+    );
     if (index >= 0) {
       final message = _messageCache[conversationId]![index];
       _messageCache[conversationId]![index] = ChatMessage(
@@ -1473,7 +1478,9 @@ class ChatService {
         throw NetworkException('No internet connection');
       }
     } on SocketException {
-      throw NetworkException('No internet connection. Please check your network.');
+      throw NetworkException(
+        'No internet connection. Please check your network.',
+      );
     }
   }
 
@@ -1510,10 +1517,7 @@ class ChatService {
           );
         }
         if (statusCode == 404) {
-          return NotFoundException(
-            'Resource not found',
-            code: 'NOT_FOUND',
-          );
+          return NotFoundException('Resource not found', code: 'NOT_FOUND');
         }
         if (statusCode == 429) {
           return NetworkException(

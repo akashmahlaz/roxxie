@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/theme.dart';
 
 /// 🔄 Professional Setup Loading Overlay
-/// 
+///
 /// A clean, modern loading overlay for profile setup screens.
 /// Shows an animated icon, title, subtitle, and progress indicator.
 class SetupLoadingOverlay extends StatelessWidget {
@@ -51,7 +51,7 @@ class SetupLoadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = brightness == Brightness.dark;
-    
+
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 40),
@@ -73,7 +73,7 @@ class SetupLoadingOverlay extends StatelessWidget {
             // Icon with glow
             _AnimatedIcon(icon: icon, isDark: isDark),
             const SizedBox(height: 24),
-            
+
             // Title
             Text(
               title,
@@ -86,7 +86,7 @@ class SetupLoadingOverlay extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // Subtitle
             Text(
               subtitle,
@@ -97,7 +97,7 @@ class SetupLoadingOverlay extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            
+
             // Progress indicator
             SizedBox(
               width: 140,
@@ -106,7 +106,9 @@ class SetupLoadingOverlay extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: null,
                   backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.crimson),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.crimson,
+                  ),
                   minHeight: 4,
                 ),
               ),
@@ -142,9 +144,10 @@ class _AnimatedIconState extends State<_AnimatedIcon>
       vsync: this,
     )..repeat(reverse: true);
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.08,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -178,11 +181,7 @@ class _AnimatedIconState extends State<_AnimatedIcon>
                 ),
               ],
             ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: 36,
-            ),
+            child: Icon(widget.icon, color: Colors.white, size: 36),
           ),
         );
       },
@@ -209,10 +208,7 @@ class MinimalLoadingOverlay extends StatelessWidget {
       barrierDismissible: false,
       builder: (context) => PopScope(
         canPop: false,
-        child: MinimalLoadingOverlay(
-          message: message,
-          brightness: brightness,
-        ),
+        child: MinimalLoadingOverlay(message: message, brightness: brightness),
       ),
     );
   }
@@ -220,7 +216,7 @@ class MinimalLoadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = brightness == Brightness.dark;
-    
+
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),

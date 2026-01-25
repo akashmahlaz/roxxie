@@ -82,7 +82,10 @@ class AuthService {
   /// ✏️ Update user profile
   Future<User> updateProfile(Map<String, dynamic> updates) async {
     try {
-      final response = await _client.patch(Endpoints.authUpdateProfile, data: updates);
+      final response = await _client.patch(
+        Endpoints.authUpdateProfile,
+        data: updates,
+      );
 
       final user = User.fromJson(response.data);
       await _client.saveUser(jsonEncode(user.toJson()));
@@ -139,7 +142,10 @@ class AuthService {
   /// 📧 Resend verification email
   Future<void> resendVerificationEmail(String email) async {
     try {
-      await _client.post(Endpoints.authResendVerification, data: {'email': email});
+      await _client.post(
+        Endpoints.authResendVerification,
+        data: {'email': email},
+      );
     } catch (e) {
       debugPrint('Resend verification error: $e');
       rethrow;

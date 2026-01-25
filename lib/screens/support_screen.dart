@@ -90,10 +90,7 @@ class _SupportScreenState extends State<SupportScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.crimson,
-                    Colors.purple.shade600,
-                  ],
+                  colors: [AppColors.crimson, Colors.purple.shade600],
                 ),
               ),
               child: Column(
@@ -115,10 +112,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Find answers to common questions or contact us',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -273,9 +267,7 @@ class _SupportScreenState extends State<SupportScreen> {
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.border(brightness),
-          ),
+          border: Border.all(color: AppColors.border(brightness)),
         ),
         child: Row(
           children: [
@@ -285,11 +277,7 @@ class _SupportScreenState extends State<SupportScreen> {
                 color: AppColors.crimson.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: AppColors.crimson,
-                size: 24,
-              ),
+              child: Icon(icon, color: AppColors.crimson, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -399,10 +387,7 @@ class _SupportScreenState extends State<SupportScreen> {
         const SizedBox(height: 8),
         Text(
           label,
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 12,
-          ),
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12),
         ),
         const SizedBox(height: 4),
         Text(
@@ -423,9 +408,7 @@ class _SupportScreenState extends State<SupportScreen> {
         content: Text('Opening $type support...'),
         backgroundColor: AppColors.crimson,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -441,9 +424,7 @@ class _SupportScreenState extends State<SupportScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Please describe the issue you encountered:',
-              ),
+              const Text('Please describe the issue you encountered:'),
               const SizedBox(height: 16),
               TextField(
                 controller: descriptionController,
@@ -490,8 +471,5 @@ class FAQItem {
   final String question;
   final String answer;
 
-  FAQItem({
-    required this.question,
-    required this.answer,
-  });
+  FAQItem({required this.question, required this.answer});
 }

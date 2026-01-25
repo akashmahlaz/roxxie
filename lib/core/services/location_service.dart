@@ -9,12 +9,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../exceptions.dart';
 
-enum LocationPermissionState {
-  granted,
-  serviceDisabled,
-  denied,
-  deniedForever,
-}
+enum LocationPermissionState { granted, serviceDisabled, denied, deniedForever }
 
 class LocationService {
   static final LocationService _instance = LocationService._internal();
@@ -45,15 +40,22 @@ class LocationService {
         ),
       );
 
-      debugPrint('📍 [LocationService] Location obtained in ${stopwatch.elapsedMilliseconds}ms');
-      debugPrint('📍 [LocationService] Coordinates: ${position.latitude}, ${position.longitude}');
+      debugPrint(
+        '📍 [LocationService] Location obtained in ${stopwatch.elapsedMilliseconds}ms',
+      );
+      debugPrint(
+        '📍 [LocationService] Coordinates: ${position.latitude}, ${position.longitude}',
+      );
 
       return position;
-
     } on PermissionDeniedException {
-      throw PermissionException('Location permission denied. Please enable location access in settings.');
+      throw PermissionException(
+        'Location permission denied. Please enable location access in settings.',
+      );
     } on LocationServiceDisabledException {
-      throw ServiceDisabledException('Location service is disabled. Please enable location services.');
+      throw ServiceDisabledException(
+        'Location service is disabled. Please enable location services.',
+      );
     } catch (e) {
       debugPrint('❌ [LocationService] Get location error: $e');
       throw LocationTimeoutException('Failed to get location: $e');
@@ -69,13 +71,14 @@ class LocationService {
 
       final position = await Geolocator.getLastKnownPosition();
       if (position != null) {
-        debugPrint('📍 [LocationService] Last known location: ${position.latitude}, ${position.longitude}');
+        debugPrint(
+          '📍 [LocationService] Last known location: ${position.latitude}, ${position.longitude}',
+        );
       } else {
         debugPrint('📍 [LocationService] No last known location available');
       }
 
       return position;
-
     } catch (e) {
       debugPrint('❌ [LocationService] Get last known location error: $e');
       return null;
@@ -83,11 +86,16 @@ class LocationService {
   }
 
   /// 🌍 Get address from coordinates with retry logic
-  Future<String> getAddressFromCoordinates(double latitude, double longitude) async {
+  Future<String> getAddressFromCoordinates(
+    double latitude,
+    double longitude,
+  ) async {
     final stopwatch = Stopwatch()..start();
 
     try {
-      debugPrint('🌍 [LocationService] Getting address for: $latitude, $longitude');
+      debugPrint(
+        '🌍 [LocationService] Getting address for: $latitude, $longitude',
+      );
 
       // Validate coordinates
       _validateCoordinates(latitude, longitude);
@@ -98,7 +106,9 @@ class LocationService {
 
       for (int attempt = 1; attempt <= _maxRetries; attempt++) {
         try {
-          debugPrint('🌍 [LocationService] Geocoding attempt $attempt/$_maxRetries');
+          debugPrint(
+            '🌍 [LocationService] Geocoding attempt $attempt/$_maxRetries',
+          );
 
           final placemarks = await placemarkFromCoordinates(
             latitude,
@@ -111,31 +121,38 @@ class LocationService {
             debugPrint('🌍 [LocationService] Address found: $address');
             break;
           }
-
         } on SocketException {
           lastError = NetworkException('Network error during geocoding');
           if (attempt < _maxRetries) {
             final delay = _retryDelay * attempt;
-            debugPrint('⚠️ [LocationService] Geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...');
+            debugPrint(
+              '⚠️ [LocationService] Geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...',
+            );
             await Future.delayed(delay);
           }
         } catch (e) {
           lastError = LocationTimeoutException('Geocoding error: $e');
           if (attempt < _maxRetries) {
             final delay = _retryDelay * attempt;
-            debugPrint('⚠️ [LocationService] Geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...');
+            debugPrint(
+              '⚠️ [LocationService] Geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...',
+            );
             await Future.delayed(delay);
           }
         }
       }
 
       if (address == null) {
-        throw lastError ?? LocationTimeoutException('Failed to get address after $_maxRetries attempts');
+        throw lastError ??
+            LocationTimeoutException(
+              'Failed to get address after $_maxRetries attempts',
+            );
       }
 
-      debugPrint('🌍 [LocationService] Address resolved in ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+        '🌍 [LocationService] Address resolved in ${stopwatch.elapsedMilliseconds}ms',
+      );
       return address;
-
     } catch (e) {
       debugPrint('❌ [LocationService] Get address error: $e');
       throw LocationTimeoutException('Failed to get address: $e');
@@ -149,7 +166,9 @@ class LocationService {
     final stopwatch = Stopwatch()..start();
 
     try {
-      debugPrint('📍 [LocationService] Getting coordinates for address: $address');
+      debugPrint(
+        '📍 [LocationService] Getting coordinates for address: $address',
+      );
 
       // Validate address
       if (address.trim().isEmpty) {
@@ -162,41 +181,52 @@ class LocationService {
 
       for (int attempt = 1; attempt <= _maxRetries; attempt++) {
         try {
-          debugPrint('📍 [LocationService] Address geocoding attempt $attempt/$_maxRetries');
-
-          locations = await locationFromAddress(
-            address,
+          debugPrint(
+            '📍 [LocationService] Address geocoding attempt $attempt/$_maxRetries',
           );
 
+          locations = await locationFromAddress(address);
+
           if (locations.isNotEmpty) {
-            debugPrint('📍 [LocationService] Found ${locations.length} locations');
+            debugPrint(
+              '📍 [LocationService] Found ${locations.length} locations',
+            );
             break;
           }
-
         } on SocketException {
-          lastError = NetworkException('Network error during address geocoding');
+          lastError = NetworkException(
+            'Network error during address geocoding',
+          );
           if (attempt < _maxRetries) {
             final delay = _retryDelay * attempt;
-            debugPrint('⚠️ [LocationService] Address geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...');
+            debugPrint(
+              '⚠️ [LocationService] Address geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...',
+            );
             await Future.delayed(delay);
           }
         } catch (e) {
           lastError = LocationTimeoutException('Address geocoding error: $e');
           if (attempt < _maxRetries) {
             final delay = _retryDelay * attempt;
-            debugPrint('⚠️ [LocationService] Address geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...');
+            debugPrint(
+              '⚠️ [LocationService] Address geocoding attempt $attempt failed, retrying in ${delay.inSeconds}s...',
+            );
             await Future.delayed(delay);
           }
         }
       }
 
       if (locations == null || locations.isEmpty) {
-        throw lastError ?? LocationTimeoutException('Failed to find coordinates for address after $_maxRetries attempts');
+        throw lastError ??
+            LocationTimeoutException(
+              'Failed to find coordinates for address after $_maxRetries attempts',
+            );
       }
 
-      debugPrint('📍 [LocationService] Address resolved in ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+        '📍 [LocationService] Address resolved in ${stopwatch.elapsedMilliseconds}ms',
+      );
       return locations;
-
     } catch (e) {
       debugPrint('❌ [LocationService] Get coordinates error: $e');
       throw LocationTimeoutException('Failed to get coordinates: $e');
@@ -219,18 +249,39 @@ class LocationService {
   }
 
   /// 📏 Calculate distance in kilometers
-  double calculateDistanceInKm(double lat1, double lon1, double lat2, double lon2) {
+  double calculateDistanceInKm(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     return calculateDistance(lat1, lon1, lat2, lon2) / 1000;
   }
 
   /// 📏 Calculate distance in miles
-  double calculateDistanceInMiles(double lat1, double lon1, double lat2, double lon2) {
+  double calculateDistanceInMiles(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     return calculateDistance(lat1, lon1, lat2, lon2) / 1609.34;
   }
 
   /// 🔍 Check if location is within radius
-  bool isWithinRadius(double centerLat, double centerLon, double pointLat, double pointLon, double radiusKm) {
-    final distance = calculateDistanceInKm(centerLat, centerLon, pointLat, pointLon);
+  bool isWithinRadius(
+    double centerLat,
+    double centerLon,
+    double pointLat,
+    double pointLon,
+    double radiusKm,
+  ) {
+    final distance = calculateDistanceInKm(
+      centerLat,
+      centerLon,
+      pointLat,
+      pointLon,
+    );
     return distance <= radiusKm;
   }
 
@@ -255,7 +306,6 @@ class LocationService {
         'accuracy': position.accuracy,
         'timestamp': DateTime.now().toIso8601String(),
       };
-
     } catch (e) {
       debugPrint('❌ [LocationService] Get location with address error: $e');
       rethrow;
@@ -290,9 +340,10 @@ class LocationService {
             'address': address,
             'formattedAddress': address,
           });
-
         } catch (e) {
-          debugPrint('⚠️ [LocationService] Failed to get address for location: $e');
+          debugPrint(
+            '⚠️ [LocationService] Failed to get address for location: $e',
+          );
           // Continue with basic coordinates if address fails
           results.add({
             'latitude': location.latitude,
@@ -303,9 +354,10 @@ class LocationService {
         }
       }
 
-      debugPrint('🔍 [LocationService] Found ${results.length} locations in ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+        '🔍 [LocationService] Found ${results.length} locations in ${stopwatch.elapsedMilliseconds}ms',
+      );
       return results;
-
     } catch (e) {
       debugPrint('❌ [LocationService] Search locations error: $e');
       throw LocationTimeoutException('Failed to search locations: $e');
@@ -329,7 +381,9 @@ class LocationService {
           debugPrint('⚠️ [LocationService] Location permission denied');
           return false;
         case PermissionStatus.permanentlyDenied:
-          debugPrint('❌ [LocationService] Location permission permanently denied');
+          debugPrint(
+            '❌ [LocationService] Location permission permanently denied',
+          );
           return false;
         case PermissionStatus.limited:
           debugPrint('⚠️ [LocationService] Location permission limited');
@@ -338,7 +392,6 @@ class LocationService {
           debugPrint('❌ [LocationService] Unknown permission status: $status');
           return false;
       }
-
     } catch (e) {
       debugPrint('❌ [LocationService] Request permissions error: $e');
       return false;
@@ -437,7 +490,9 @@ class LocationService {
       // If we have a recent position (less than 5 mins old), use it
       if (position != null &&
           DateTime.now().difference(position.timestamp).inMinutes < 5) {
-        debugPrint('Using cached position: ${position.latitude}, ${position.longitude}');
+        debugPrint(
+          'Using cached position: ${position.latitude}, ${position.longitude}',
+        );
         return position;
       }
 
@@ -493,14 +548,13 @@ class LocationService {
       String? country;
 
       try {
-        debugPrint('Geocoding position: ${position.latitude}, ${position.longitude}');
+        debugPrint(
+          'Geocoding position: ${position.latitude}, ${position.longitude}',
+        );
         final placemarks = await placemarkFromCoordinates(
           position.latitude,
           position.longitude,
-        ).timeout(
-          const Duration(seconds: 10),
-          onTimeout: () => <Placemark>[],
-        );
+        ).timeout(const Duration(seconds: 10), onTimeout: () => <Placemark>[]);
 
         if (placemarks.isNotEmpty) {
           final place = placemarks.first;
@@ -528,7 +582,9 @@ class LocationService {
       return LocationResult(
         latitude: position.latitude,
         longitude: position.longitude,
-        address: address ?? '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}',
+        address:
+            address ??
+            '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}',
         city: city,
         country: country,
       );
@@ -563,9 +619,13 @@ class LocationService {
         throw PermissionException('Location permission denied');
       }
     } else if (status == PermissionStatus.permanentlyDenied) {
-      throw PermissionException('Location permission permanently denied. Please enable in app settings.');
+      throw PermissionException(
+        'Location permission permanently denied. Please enable in app settings.',
+      );
     } else if (status == PermissionStatus.limited) {
-      throw PermissionException('Location permission limited. Please enable full access.');
+      throw PermissionException(
+        'Location permission limited. Please enable full access.',
+      );
     }
   }
 
@@ -573,17 +633,23 @@ class LocationService {
   Future<void> _checkLocationServiceEnabled() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw ServiceDisabledException('Location service is disabled. Please enable location services.');
+      throw ServiceDisabledException(
+        'Location service is disabled. Please enable location services.',
+      );
     }
   }
 
   /// Validate coordinates
   void _validateCoordinates(double latitude, double longitude) {
     if (latitude < -90 || latitude > 90) {
-      throw ValidationException('Invalid latitude: $latitude (must be between -90 and 90)');
+      throw ValidationException(
+        'Invalid latitude: $latitude (must be between -90 and 90)',
+      );
     }
     if (longitude < -180 || longitude > 180) {
-      throw ValidationException('Invalid longitude: $longitude (must be between -180 and 180)');
+      throw ValidationException(
+        'Invalid longitude: $longitude (must be between -180 and 180)',
+      );
     }
   }
 
@@ -600,7 +666,8 @@ class LocationService {
     if (placemark.locality != null && placemark.locality!.isNotEmpty) {
       parts.add(placemark.locality!);
     }
-    if (placemark.administrativeArea != null && placemark.administrativeArea!.isNotEmpty) {
+    if (placemark.administrativeArea != null &&
+        placemark.administrativeArea!.isNotEmpty) {
       parts.add(placemark.administrativeArea!);
     }
     if (placemark.country != null && placemark.country!.isNotEmpty) {

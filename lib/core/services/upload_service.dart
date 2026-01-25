@@ -150,9 +150,7 @@ class UploadService {
     try {
       final response = await _client.post(
         Endpoints.uploadSignedParams,
-        data: {
-          'resourceType': resourceType,
-        },
+        data: {'resourceType': resourceType},
       );
       return SignedUploadParams.fromJson(response.data);
     } catch (e) {
@@ -181,17 +179,17 @@ class UploadService {
   }
 
   /// 🖼️ Upload gallery image (base64)
-  Future<UploadResponse> uploadGalleryImage(String filePath, {int index = 0}) async {
+  Future<UploadResponse> uploadGalleryImage(
+    String filePath, {
+    int index = 0,
+  }) async {
     try {
       debugPrint('Uploading gallery image: $filePath');
       final base64Data = await fileToBase64DataUri(filePath);
 
       final response = await _client.post(
         Endpoints.uploadGallery,
-        data: {
-          'file': base64Data,
-          'index': index,
-        },
+        data: {'file': base64Data, 'index': index},
       );
 
       debugPrint('Gallery image uploaded: ${response.data}');
@@ -203,7 +201,9 @@ class UploadService {
   }
 
   /// 🖼️ Upload multiple gallery images
-  Future<List<UploadResponse>> uploadGalleryImages(List<String> filePaths) async {
+  Future<List<UploadResponse>> uploadGalleryImages(
+    List<String> filePaths,
+  ) async {
     final results = <UploadResponse>[];
     for (var i = 0; i < filePaths.length; i++) {
       try {

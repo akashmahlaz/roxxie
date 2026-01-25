@@ -178,7 +178,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
     required bool isSelected,
   }) {
     final brightness = Theme.of(context).brightness;
-    
+
     return GestureDetector(
       onTap: () => _selectRole(role),
       child: AnimatedContainer(
@@ -255,7 +255,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                     ? (role == 'artist' ? AppColors.crimson : AppColors.cyan)
                     : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? Colors.transparent : AppColors.border(brightness),
+                  color: isSelected
+                      ? Colors.transparent
+                      : AppColors.border(brightness),
                   width: 2,
                 ),
               ),

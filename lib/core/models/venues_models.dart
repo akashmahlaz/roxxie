@@ -152,11 +152,7 @@ class BudgetRange {
   final double? max;
   final String? currency;
 
-  BudgetRange({
-    this.min,
-    this.max,
-    this.currency,
-  });
+  BudgetRange({this.min, this.max, this.currency});
 
   Map<String, dynamic> toJson() => {
     if (min != null) 'min': min,
@@ -171,7 +167,8 @@ class BudgetRange {
 
 /// Venue Types Helper Class
 class VenueTypes {
-  static List<String> get types => VenueType.values.map((e) => e.displayName).toList();
+  static List<String> get types =>
+      VenueType.values.map((e) => e.displayName).toList();
 
   static String toBackendValue(String displayName) {
     try {
@@ -186,9 +183,7 @@ class VenueTypes {
 
   static String fromBackendValue(String backendValue) {
     try {
-      final type = VenueType.values.firstWhere(
-        (e) => e.value == backendValue,
-      );
+      final type = VenueType.values.firstWhere((e) => e.value == backendValue);
       return type.displayName;
     } catch (e) {
       return 'Other';
@@ -356,7 +351,15 @@ class PaymentTypes {
 
 /// Currencies (matches backend Currency enum)
 class Currencies {
-  static const List<String> codes = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY'];
+  static const List<String> codes = [
+    'USD',
+    'EUR',
+    'GBP',
+    'CAD',
+    'AUD',
+    'INR',
+    'JPY',
+  ];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -415,7 +418,7 @@ class VenueEquipment {
   bool hasDressingRoom = false;
   bool hasParking = false;
   String? parkingDetails;
-  
+
   // Additional equipment stored locally but NOT sent to backend
   List<String> additionalEquipment = [];
   String? equipmentNotes;
@@ -434,7 +437,8 @@ class VenueEquipment {
     'hasDressingRoom': hasDressingRoom,
     'hasParking': hasParking,
     if (parkingDetails != null) 'parkingDetails': parkingDetails,
-    if (additionalEquipment.isNotEmpty) 'additionalEquipment': additionalEquipment,
+    if (additionalEquipment.isNotEmpty)
+      'additionalEquipment': additionalEquipment,
     if (equipmentNotes != null) 'equipmentNotes': equipmentNotes,
   };
 
@@ -451,7 +455,9 @@ class VenueEquipment {
     equipment.hasParking = json['hasParking'] ?? false;
     equipment.parkingDetails = json['parkingDetails'];
     if (json['additionalEquipment'] != null) {
-      equipment.additionalEquipment = List<String>.from(json['additionalEquipment']);
+      equipment.additionalEquipment = List<String>.from(
+        json['additionalEquipment'],
+      );
     }
     equipment.equipmentNotes = json['equipmentNotes'];
     return equipment;
@@ -704,10 +710,11 @@ class GigPreferences {
   bool openToNewArtists = true;
   bool acceptsDemos = false;
   String? demoSubmissionEmail;
-  
+
   // New fields for enhanced venue setup
   List<String> typicalEventNights = []; // ['Fri', 'Sat', 'Sun']
-  String? bookingLeadTime; // '1 week', '2 weeks', '1 month', '2 months', 'No preference'
+  String?
+  bookingLeadTime; // '1 week', '2 weeks', '1 month', '2 months', 'No preference'
   String? paymentTerm; // 'per_show', 'monthly', 'per_hour'
   bool providesDrinks = false;
   bool providesAccommodation = false;
@@ -718,7 +725,8 @@ class GigPreferences {
   Map<String, dynamic> toJson() => {
     'preferredGenres': preferredGenres,
     'gigTypes': gigTypes.map((e) => GigTypes.toBackendValue(e)).toList(),
-    if (paymentType != null) 'paymentType': PaymentTypes.toBackendValue(paymentType!),
+    if (paymentType != null)
+      'paymentType': PaymentTypes.toBackendValue(paymentType!),
     'minBudget': minBudget,
     'maxBudget': maxBudget,
     'currency': currency,
@@ -752,7 +760,8 @@ class GigPreferences {
     prefs.currency = json['currency'] ?? 'USD';
     prefs.avgGigDuration = (json['avgGigDuration'] ?? 3).toDouble();
     prefs.providesMusicianMeals = json['providesMusicianMeals'] ?? false;
-    prefs.providesGreenRoomRefreshments = json['providesGreenRoomRefreshments'] ?? false;
+    prefs.providesGreenRoomRefreshments =
+        json['providesGreenRoomRefreshments'] ?? false;
     prefs.notesForArtists = json['notesForArtists'];
     prefs.openToNewArtists = json['openToNewArtists'] ?? true;
     prefs.acceptsDemos = json['acceptsDemos'] ?? false;
@@ -811,15 +820,23 @@ class VenueProfileData {
   String? get email => contactEmail;
   set email(String? value) => contactEmail = value;
   List<String> get typicalSlots => [];
-  set typicalSlots(List<String> value) { /* no-op for now */ }
+  set typicalSlots(List<String> value) {
+    /* no-op for now */
+  }
   int get typicalSetLength => 180; // 3 hours default
-  set typicalSetLength(int value) { /* no-op for now */ }
+  set typicalSetLength(int value) {
+    /* no-op for now */
+  }
   bool get providesEquipment => false;
-  set providesEquipment(bool value) { /* no-op for now */ }
+  set providesEquipment(bool value) {
+    /* no-op for now */
+  }
   bool get providesMeals => gigPreferences.providesMusicianMeals;
   set providesMeals(bool value) => gigPreferences.providesMusicianMeals = value;
   bool get providesAccommodation => false;
-  set providesAccommodation(bool value) { /* no-op for now */ }
+  set providesAccommodation(bool value) {
+    /* no-op for now */
+  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // STEP 2: MEDIA
@@ -830,7 +847,7 @@ class VenueProfileData {
   List<String> pastEventPhotos = []; // Local file paths for past events
   List<VenuePhoto> photoGallery = []; // Uploaded photos with URLs
   VirtualTour? virtualTour;
-  
+
   /// Backward compatibility alias for contactEmail
   String? get bookingEmail => contactEmail;
   set bookingEmail(String? value) => contactEmail = value;
@@ -840,7 +857,8 @@ class VenueProfileData {
   // ═══════════════════════════════════════════════════════════════════════
   String? phone;
   bool showPhoneOnProfile = false;
-  String? contactEmail; // ✅ CORRECT: Backend expects contactEmail, NOT bookingEmail
+  String?
+  contactEmail; // ✅ CORRECT: Backend expects contactEmail, NOT bookingEmail
   String? eventsEmail;
   VenueLocation location = VenueLocation();
   List<OperatingHours> operatingHours = [];
@@ -1012,12 +1030,12 @@ class VenueProfileData {
     if (profilePhotoUrl != null) {
       dto['profilePhotoUrl'] = profilePhotoUrl;
     }
-    
+
     // ✅ FIX: photoGallery must be array of URL strings, NOT objects
     if (photoGallery.isNotEmpty) {
       dto['photoGallery'] = photoGallery.map((p) => p.url).toList();
     }
-    
+
     if (virtualTour != null) {
       dto['virtualTour'] = virtualTour!.toJson();
     }
@@ -1029,7 +1047,7 @@ class VenueProfileData {
       dto['phone'] = phone;
     }
     dto['showPhoneOnProfile'] = showPhoneOnProfile;
-    
+
     // ✅ CORRECT: Use contactEmail, NOT bookingEmail
     if (contactEmail != null) {
       dto['contactEmail'] = contactEmail;
@@ -1125,7 +1143,9 @@ class VenueProfileData {
 
     // Preferences (10 points)
     if (gigPreferences.preferredGenres.isNotEmpty) score += 5;
-    if (gigPreferences.minBudget > 0 || gigPreferences.maxBudget > 0) score += 5;
+    if (gigPreferences.minBudget > 0 || gigPreferences.maxBudget > 0) {
+      score += 5;
+    }
 
     // Additional (5 points)
     if (amenities.isNotEmpty) score += 5;
@@ -1163,9 +1183,7 @@ class VenueProfileData {
     profilePhotoUrl = json['profilePhotoUrl'];
     if (json['photoGallery'] != null) {
       photoGallery = (json['photoGallery'] as List)
-          .map((p) => p is String 
-              ? VenuePhoto(url: p)
-              : VenuePhoto.fromJson(p))
+          .map((p) => p is String ? VenuePhoto(url: p) : VenuePhoto.fromJson(p))
           .toList();
     }
     if (json['virtualTour'] != null) {
@@ -1233,7 +1251,7 @@ class Venue {
   final bool hasCompletedSetup;
   final DateTime? createdAt;
   final DateTime? updatedAt;
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // CONTACT & OPERATIONS - For Profile Display
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1245,7 +1263,7 @@ class Venue {
 
   // Additional properties for compatibility
   String get primaryPhoto => profilePhotoUrl ?? '';
-  
+
   /// Backward compatibility alias for name
   String get venueName => name;
 
@@ -1284,7 +1302,7 @@ class Venue {
     if (json['location'] != null) {
       location = VenueLocation.fromJson(json['location']);
     }
-    
+
     // Parse social links
     VenueSocialLinks? socialLinks;
     if (json['socialLinks'] != null) {
@@ -1294,17 +1312,19 @@ class Venue {
         ..twitter = json['socialLinks']['twitter']
         ..website = json['socialLinks']['website'];
     }
-    
+
     // Parse operating hours
     List<OperatingHours>? operatingHours;
     if (json['operatingHours'] != null) {
       operatingHours = (json['operatingHours'] as List)
-          .map((h) => OperatingHours(
-                dayOfWeek: h['dayOfWeek'] ?? _dayNameToString(h['dayOfWeek']),
-                openTime: h['openTime'],
-                closeTime: h['closeTime'],
-                isOpen: h['isOpen'] ?? true,
-              ))
+          .map(
+            (h) => OperatingHours(
+              dayOfWeek: h['dayOfWeek'] ?? _dayNameToString(h['dayOfWeek']),
+              openTime: h['openTime'],
+              closeTime: h['closeTime'],
+              isOpen: h['isOpen'] ?? true,
+            ),
+          )
           .toList();
     }
 
@@ -1325,7 +1345,8 @@ class Venue {
       gigPreferences: json['gigPreferences'] != null
           ? GigPreferences.fromJson(json['gigPreferences'])
           : null,
-      reviewStatsAverageRating: json['reviewStats']?['averageRating']?.toDouble(),
+      reviewStatsAverageRating: json['reviewStats']?['averageRating']
+          ?.toDouble(),
       totalGigsHosted: json['totalGigsHosted'],
       reviewCount: json['reviewCount'],
       rating: json['rating']?.toDouble(),
@@ -1346,11 +1367,19 @@ class Venue {
       operatingHours: operatingHours,
     );
   }
-  
+
   /// Helper to convert day index to name
   static String _dayNameToString(dynamic day) {
     if (day is int) {
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const days = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ];
       return days[day % 7];
     }
     return day?.toString() ?? 'Monday';

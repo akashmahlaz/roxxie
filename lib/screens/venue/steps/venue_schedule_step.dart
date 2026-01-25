@@ -29,18 +29,58 @@ class VenueScheduleStep extends StatefulWidget {
 class _VenueScheduleStepState extends State<VenueScheduleStep> {
   // Days of the week data
   final List<_DaySchedule> _weekSchedule = [
-    _DaySchedule(name: 'Monday', isOpen: true, openTime: '09:00 AM', closeTime: '11:00 PM'),
-    _DaySchedule(name: 'Tuesday', isOpen: true, openTime: '09:00 AM', closeTime: '11:00 PM'),
-    _DaySchedule(name: 'Wednesday', isOpen: true, openTime: '09:00 AM', closeTime: '11:00 PM'),
-    _DaySchedule(name: 'Thursday', isOpen: true, openTime: '09:00 AM', closeTime: '11:00 PM'),
-    _DaySchedule(name: 'Friday', isOpen: true, openTime: '09:00 AM', closeTime: '02:00 AM', note: 'Open Late'),
-    _DaySchedule(name: 'Saturday', isOpen: true, openTime: '09:00 AM', closeTime: '02:00 AM', note: 'Open Late'),
+    _DaySchedule(
+      name: 'Monday',
+      isOpen: true,
+      openTime: '09:00 AM',
+      closeTime: '11:00 PM',
+    ),
+    _DaySchedule(
+      name: 'Tuesday',
+      isOpen: true,
+      openTime: '09:00 AM',
+      closeTime: '11:00 PM',
+    ),
+    _DaySchedule(
+      name: 'Wednesday',
+      isOpen: true,
+      openTime: '09:00 AM',
+      closeTime: '11:00 PM',
+    ),
+    _DaySchedule(
+      name: 'Thursday',
+      isOpen: true,
+      openTime: '09:00 AM',
+      closeTime: '11:00 PM',
+    ),
+    _DaySchedule(
+      name: 'Friday',
+      isOpen: true,
+      openTime: '09:00 AM',
+      closeTime: '02:00 AM',
+      note: 'Open Late',
+    ),
+    _DaySchedule(
+      name: 'Saturday',
+      isOpen: true,
+      openTime: '09:00 AM',
+      closeTime: '02:00 AM',
+      note: 'Open Late',
+    ),
     _DaySchedule(name: 'Sunday', isOpen: false),
   ];
 
   // Typical event nights
   final Set<String> _eventNights = {'Fri', 'Sat', 'Sun'};
-  final List<String> _allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  final List<String> _allDays = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
 
   // Booking lead time
   String _bookingLeadTime = '2 weeks';
@@ -61,7 +101,11 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
   void _loadExistingData() {
     // Load existing operating hours if available
     if (widget.profileData.operatingHours.isNotEmpty) {
-      for (int i = 0; i < widget.profileData.operatingHours.length && i < 7; i++) {
+      for (
+        int i = 0;
+        i < widget.profileData.operatingHours.length && i < 7;
+        i++
+      ) {
         final hours = widget.profileData.operatingHours[i];
         _weekSchedule[i].isOpen = hours.isOpen;
         if (hours.openTime != null) {
@@ -97,7 +141,8 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
     }).toList();
 
     // Save event nights
-    widget.profileData.gigPreferences.typicalEventNights = _eventNights.toList();
+    widget.profileData.gigPreferences.typicalEventNights = _eventNights
+        .toList();
 
     // Save booking lead time
     widget.profileData.gigPreferences.bookingLeadTime = _bookingLeadTime;
@@ -161,11 +206,13 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.graphite.withValues(alpha: 0.4) : Colors.white,
+              color: isDark
+                  ? AppColors.graphite.withValues(alpha: 0.4)
+                  : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
@@ -262,12 +309,23 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.crimson : (isDark ? AppColors.graphite.withValues(alpha: 0.4) : Colors.white),
+                      color: isSelected
+                          ? AppColors.crimson
+                          : (isDark
+                                ? AppColors.graphite.withValues(alpha: 0.4)
+                                : Colors.white),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: isSelected ? AppColors.crimson : (isDark ? AppColors.slate : const Color(0xFFE5DCDC)),
+                        color: isSelected
+                            ? AppColors.crimson
+                            : (isDark
+                                  ? AppColors.slate
+                                  : const Color(0xFFE5DCDC)),
                         width: 2,
                       ),
                     ),
@@ -275,8 +333,12 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
                       day,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppColors.text(brightness),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.text(brightness),
                       ),
                     ),
                   ),
@@ -320,7 +382,9 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? AppColors.graphite.withValues(alpha: 0.4) : Colors.white,
+                color: isDark
+                    ? AppColors.graphite.withValues(alpha: 0.4)
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
@@ -330,7 +394,10 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
                 child: DropdownButton<String>(
                   value: _bookingLeadTime,
                   isExpanded: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   icon: Icon(
                     Icons.expand_more_rounded,
                     color: isDark ? Colors.grey[400] : const Color(0xFF876464),
@@ -366,7 +433,12 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
     );
   }
 
-  Widget _buildDayRow(_DaySchedule day, bool isDark, {bool isFirst = false, bool isLast = false}) {
+  Widget _buildDayRow(
+    _DaySchedule day,
+    bool isDark, {
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
     return Opacity(
       opacity: day.isOpen ? 1.0 : 0.6,
       child: Padding(
@@ -387,12 +459,18 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
                   color: day.isOpen ? AppColors.crimson : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: day.isOpen ? AppColors.crimson : (isDark ? AppColors.slate : const Color(0xFFE5DCDC)),
+                    color: day.isOpen
+                        ? AppColors.crimson
+                        : (isDark ? AppColors.slate : const Color(0xFFE5DCDC)),
                     width: 2,
                   ),
                 ),
                 child: day.isOpen
-                    ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      )
                     : null,
               ),
             ),
@@ -407,14 +485,18 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.text(isDark ? Brightness.dark : Brightness.light),
+                      color: AppColors.text(
+                        isDark ? Brightness.dark : Brightness.light,
+                      ),
                     ),
                   ),
                   Text(
                     day.isOpen ? (day.note ?? 'Open') : 'Closed',
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.grey[400] : const Color(0xFF876464),
+                      color: isDark
+                          ? Colors.grey[400]
+                          : const Color(0xFF876464),
                     ),
                   ),
                 ],
@@ -510,7 +592,9 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.text(isDark ? Brightness.dark : Brightness.light),
+                    color: AppColors.text(
+                      isDark ? Brightness.dark : Brightness.light,
+                    ),
                   ),
                 ),
               ),

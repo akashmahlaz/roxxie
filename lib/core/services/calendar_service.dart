@@ -7,18 +7,10 @@ import 'package:flutter/foundation.dart';
 import '../api/api.dart';
 
 /// Calendar event types
-enum CalendarEventType {
-  availability,
-  blocked,
-  gig,
-}
+enum CalendarEventType { availability, blocked, gig }
 
 /// Availability slot type for API
-enum AvailabilityType {
-  available,
-  blocked,
-  booked,
-}
+enum AvailabilityType { available, blocked, booked }
 
 /// Calendar event model
 class CalendarEvent {
@@ -116,7 +108,7 @@ class CalendarResponse {
     final eventsList = (json['events'] as List? ?? [])
         .map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>))
         .toList();
-    
+
     return CalendarResponse(
       events: eventsList,
       availableCount: json['availableCount'] ?? 0,
@@ -129,7 +121,11 @@ class CalendarResponse {
   Map<DateTime, List<CalendarEvent>> get eventsByDate {
     final Map<DateTime, List<CalendarEvent>> grouped = {};
     for (final event in events) {
-      final dateKey = DateTime(event.date.year, event.date.month, event.date.day);
+      final dateKey = DateTime(
+        event.date.year,
+        event.date.month,
+        event.date.day,
+      );
       if (grouped[dateKey] == null) {
         grouped[dateKey] = [];
       }
@@ -140,11 +136,14 @@ class CalendarResponse {
 
   /// Get events for specific date
   List<CalendarEvent> getEventsForDate(DateTime date) {
-    return events.where((e) => 
-      e.date.year == date.year && 
-      e.date.month == date.month && 
-      e.date.day == date.day
-    ).toList();
+    return events
+        .where(
+          (e) =>
+              e.date.year == date.year &&
+              e.date.month == date.month &&
+              e.date.day == date.day,
+        )
+        .toList();
   }
 }
 
@@ -171,7 +170,8 @@ class AvailabilitySlot {
   });
 
   /// Create from GigTimeSlot (our robust time model)
-  factory AvailabilitySlot.fromTimeSlot(GigTimeSlot timeSlot, {
+  factory AvailabilitySlot.fromTimeSlot(
+    GigTimeSlot timeSlot, {
     AvailabilityType type = AvailabilityType.available,
     String? notes,
   }) {
@@ -187,7 +187,8 @@ class AvailabilitySlot {
   }
 
   Map<String, dynamic> toJson() => {
-    'date': '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+    'date':
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
     'startTime': startTime,
     'endTime': endTime,
     'type': type.name,
@@ -214,7 +215,13 @@ class AvailabilitySlot {
     final hour = int.parse(parts[0]);
     final minute = int.parse(parts[1]);
     final endDate = isOvernight ? date.add(const Duration(days: 1)) : date;
-    return DateTime(endDate.year, endDate.month, endDate.day, hour, minute).toUtc();
+    return DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      hour,
+      minute,
+    ).toUtc();
   }
 }
 
@@ -229,10 +236,10 @@ class GigTimeSlot {
 
   /// Minimum notice period in minutes (default: 60 minutes)
   static const int minNoticePeriod = 60;
-  
+
   /// Minimum duration in minutes
   static const int minDuration = 30;
-  
+
   /// Maximum duration in hours
   static const int maxDuration = 16;
 
@@ -246,30 +253,17 @@ class GigTimeSlot {
   });
 
   /// Common presets
-  static GigTimeSlot afternoon(DateTime date) => GigTimeSlot(
-    date: date,
-    startHour: 12,
-    endHour: 17,
-  );
+  static GigTimeSlot afternoon(DateTime date) =>
+      GigTimeSlot(date: date, startHour: 12, endHour: 17);
 
-  static GigTimeSlot evening(DateTime date) => GigTimeSlot(
-    date: date,
-    startHour: 18,
-    endHour: 23,
-  );
+  static GigTimeSlot evening(DateTime date) =>
+      GigTimeSlot(date: date, startHour: 18, endHour: 23);
 
-  static GigTimeSlot lateNight(DateTime date) => GigTimeSlot(
-    date: date,
-    startHour: 22,
-    endHour: 2,
-    isOvernight: true,
-  );
+  static GigTimeSlot lateNight(DateTime date) =>
+      GigTimeSlot(date: date, startHour: 22, endHour: 2, isOvernight: true);
 
-  static GigTimeSlot allDay(DateTime date) => GigTimeSlot(
-    date: date,
-    startHour: 10,
-    endHour: 23,
-  );
+  static GigTimeSlot allDay(DateTime date) =>
+      GigTimeSlot(date: date, startHour: 10, endHour: 23);
 
   /// Create from time strings (e.g., "10:30 PM" format)
   factory GigTimeSlot.fromTimeStrings({
@@ -285,24 +279,24 @@ class GigTimeSlot {
       final minute = int.parse(timeParts[1]);
       final isPM = parts.length > 1 && parts[1].toUpperCase() == 'PM';
       final isAM = parts.length > 1 && parts[1].toUpperCase() == 'AM';
-      
+
       if (isPM && hour != 12) hour += 12;
       if (isAM && hour == 12) hour = 0;
-      
+
       return hour * 60 + minute;
     }
-    
+
     final startMins = parseTime(startTime);
     final endMins = parseTime(endTime);
-    
+
     final startHour = startMins ~/ 60;
     final startMinute = startMins % 60;
     final endHour = endMins ~/ 60;
     final endMinute = endMins % 60;
-    
+
     // Detect overnight (end time appears before start time)
     final isOvernight = endMins <= startMins;
-    
+
     return GigTimeSlot(
       date: date,
       startHour: startHour,
@@ -330,34 +324,33 @@ class GigTimeSlot {
   }
 
   /// Start DateTime (local time)
-  DateTime get startDateTime => DateTime(
-    date.year, date.month, date.day,
-    startHour, startMinute,
-  );
+  DateTime get startDateTime =>
+      DateTime(date.year, date.month, date.day, startHour, startMinute);
 
   /// End DateTime (handles overnight, local time)
   DateTime get endDateTime {
-    final baseDate = isOvernight
-        ? date.add(const Duration(days: 1))
-        : date;
+    final baseDate = isOvernight ? date.add(const Duration(days: 1)) : date;
     return DateTime(
-      baseDate.year, baseDate.month, baseDate.day,
-      endHour, endMinute,
+      baseDate.year,
+      baseDate.month,
+      baseDate.day,
+      endHour,
+      endMinute,
     );
   }
 
   /// Start DateTime in UTC (for API calls)
   DateTime get startDateTimeUtc => startDateTime.toUtc();
-  
+
   /// End DateTime in UTC (for API calls)
   DateTime get endDateTimeUtc => endDateTime.toUtc();
 
   /// Format for API (HH:mm)
-  String get startTimeString => 
-    '${startHour.toString().padLeft(2, '0')}:${startMinute.toString().padLeft(2, '0')}';
-  
-  String get endTimeString => 
-    '${endHour.toString().padLeft(2, '0')}:${endMinute.toString().padLeft(2, '0')}';
+  String get startTimeString =>
+      '${startHour.toString().padLeft(2, '0')}:${startMinute.toString().padLeft(2, '0')}';
+
+  String get endTimeString =>
+      '${endHour.toString().padLeft(2, '0')}:${endMinute.toString().padLeft(2, '0')}';
 
   /// Display format (12h with AM/PM)
   String get displayStartTime => _formatDisplay(startHour, startMinute);
@@ -392,12 +385,12 @@ class GigTimeSlot {
     if (duration.inMinutes < minDuration) {
       return 'Min $minDuration mins duration required';
     }
-    
+
     // 2. Duration must be at most 16 hours
     if (duration.inHours > maxDuration) {
       return 'Max $maxDuration hours duration';
     }
-    
+
     // 3. Date cannot be in the past (before today)
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -405,7 +398,7 @@ class GigTimeSlot {
     if (slotDate.isBefore(today)) {
       return 'Cannot add past dates';
     }
-    
+
     // 4. If today, start time must be at least 1 hour in the future
     if (slotDate.isAtSameMomentAs(today)) {
       final minStartTime = now.add(Duration(minutes: minNoticePeriod));
@@ -413,12 +406,12 @@ class GigTimeSlot {
         return 'Must start 1hr+ from now';
       }
     }
-    
+
     // 5. Start hour must be reasonable (6 AM - 11 PM for start)
     if (startHour < 6) {
       return 'Cannot start before 6 AM';
     }
-    
+
     return null;
   }
 
@@ -442,20 +435,25 @@ class GigTimeSlot {
     final thisEnd = endTotalMinutes;
     final otherStart = other.startTotalMinutes;
     final otherEnd = other.endTotalMinutes;
-    
+
     // Only check overlap if same date
     final thisDate = DateTime(date.year, date.month, date.day);
-    final otherDate = DateTime(other.date.year, other.date.month, other.date.day);
+    final otherDate = DateTime(
+      other.date.year,
+      other.date.month,
+      other.date.day,
+    );
     if (!thisDate.isAtSameMomentAs(otherDate)) {
       // Check if overnight slots spill into next day
-      if (isOvernight && otherDate.isAtSameMomentAs(thisDate.add(const Duration(days: 1)))) {
+      if (isOvernight &&
+          otherDate.isAtSameMomentAs(thisDate.add(const Duration(days: 1)))) {
         // This slot ends on otherDate
         final overlapEnd = endHour * 60 + endMinute;
         if (otherStart < overlapEnd) return true;
       }
       return false;
     }
-    
+
     // Check overlap: two ranges overlap if start1 < end2 AND start2 < end1
     return thisStart < otherEnd && otherStart < thisEnd;
   }
@@ -465,17 +463,23 @@ class GigTimeSlot {
     // Parse event times
     final eventStartParts = event.startTime.split(':');
     final eventEndParts = event.endTime.split(':');
-    final eventStartMins = int.parse(eventStartParts[0]) * 60 + int.parse(eventStartParts[1]);
-    final eventEndMins = int.parse(eventEndParts[0]) * 60 + int.parse(eventEndParts[1]);
-    
+    final eventStartMins =
+        int.parse(eventStartParts[0]) * 60 + int.parse(eventStartParts[1]);
+    final eventEndMins =
+        int.parse(eventEndParts[0]) * 60 + int.parse(eventEndParts[1]);
+
     // Only check same date
     final thisDate = DateTime(date.year, date.month, date.day);
-    final eventDate = DateTime(event.date.year, event.date.month, event.date.day);
+    final eventDate = DateTime(
+      event.date.year,
+      event.date.month,
+      event.date.day,
+    );
     if (!thisDate.isAtSameMomentAs(eventDate)) return false;
-    
+
     final thisStart = startTotalMinutes;
     final thisEnd = isOvernight ? endTotalMinutes : endHour * 60 + endMinute;
-    
+
     return thisStart < eventEndMins && eventStartMins < thisEnd;
   }
 
@@ -499,8 +503,9 @@ class GigTimeSlot {
   }
 
   @override
-  String toString() => '$displayStartTime → $displayEndTime${isOvernight ? ' (next day)' : ''}';
-  
+  String toString() =>
+      '$displayStartTime → $displayEndTime${isOvernight ? ' (next day)' : ''}';
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -517,8 +522,14 @@ class GigTimeSlot {
 
   @override
   int get hashCode => Object.hash(
-    date.year, date.month, date.day,
-    startHour, startMinute, endHour, endMinute, isOvernight,
+    date.year,
+    date.month,
+    date.day,
+    startHour,
+    startMinute,
+    endHour,
+    endMinute,
+    isOvernight,
   );
 }
 
@@ -563,9 +574,10 @@ class CalendarService {
       }
 
       final calendar = CalendarResponse.fromJson(response.data);
-      debugPrint('📅 [CalendarService] Loaded ${calendar.events.length} events');
+      debugPrint(
+        '📅 [CalendarService] Loaded ${calendar.events.length} events',
+      );
       return calendar;
-
     } on DioException catch (e) {
       throw _handleDioError(e, 'get calendar');
     } catch (e) {
@@ -599,19 +611,22 @@ class CalendarService {
       }
 
       final slots = (response.data['slots'] as List? ?? [])
-          .map((e) => AvailabilitySlot(
-                date: DateTime.parse(e['date']),
-                startTime: e['startTime'] ?? '19:00',
-                endTime: e['endTime'] ?? '23:00',
-                type: e['isAvailable'] == true 
-                    ? AvailabilityType.available 
-                    : AvailabilityType.blocked,
-              ))
+          .map(
+            (e) => AvailabilitySlot(
+              date: DateTime.parse(e['date']),
+              startTime: e['startTime'] ?? '19:00',
+              endTime: e['endTime'] ?? '23:00',
+              type: e['isAvailable'] == true
+                  ? AvailabilityType.available
+                  : AvailabilityType.blocked,
+            ),
+          )
           .toList();
 
-      debugPrint('📅 [CalendarService] Loaded ${slots.length} availability slots');
+      debugPrint(
+        '📅 [CalendarService] Loaded ${slots.length} availability slots',
+      );
       return slots;
-
     } on DioException catch (e) {
       throw _handleDioError(e, 'get availability');
     } catch (e) {
@@ -622,15 +637,13 @@ class CalendarService {
   /// Add a single availability slot
   Future<void> addAvailability(AvailabilitySlot slot) async {
     try {
-      debugPrint('📅 [CalendarService] Adding availability for ${slot.date}...');
-
-      await _client.post(
-        Endpoints.artistsAddAvailability,
-        data: slot.toJson(),
+      debugPrint(
+        '📅 [CalendarService] Adding availability for ${slot.date}...',
       );
 
-      debugPrint('📅 [CalendarService] Availability added successfully');
+      await _client.post(Endpoints.artistsAddAvailability, data: slot.toJson());
 
+      debugPrint('📅 [CalendarService] Availability added successfully');
     } on DioException catch (e) {
       throw _handleDioError(e, 'add availability');
     } catch (e) {
@@ -641,17 +654,16 @@ class CalendarService {
   /// Update all availability (replace)
   Future<void> updateAvailability(List<AvailabilitySlot> slots) async {
     try {
-      debugPrint('📅 [CalendarService] Updating ${slots.length} availability slots...');
+      debugPrint(
+        '📅 [CalendarService] Updating ${slots.length} availability slots...',
+      );
 
       await _client.put(
         Endpoints.artistsMyAvailability,
-        data: {
-          'slots': slots.map((s) => s.toJson()).toList(),
-        },
+        data: {'slots': slots.map((s) => s.toJson()).toList()},
       );
 
       debugPrint('📅 [CalendarService] Availability updated successfully');
-
     } on DioException catch (e) {
       throw _handleDioError(e, 'update availability');
     } catch (e) {
@@ -662,7 +674,8 @@ class CalendarService {
   /// Remove availability for a specific date
   Future<void> removeAvailability(DateTime date) async {
     try {
-      final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       debugPrint('📅 [CalendarService] Removing availability for $dateStr...');
 
       await _client.delete(
@@ -671,7 +684,6 @@ class CalendarService {
       );
 
       debugPrint('📅 [CalendarService] Availability removed successfully');
-
     } on DioException catch (e) {
       throw _handleDioError(e, 'remove availability');
     } catch (e) {
@@ -681,19 +693,22 @@ class CalendarService {
 
   /// Block a date (mark as unavailable)
   Future<void> blockDate(DateTime date, {String? notes}) async {
-    return addAvailability(AvailabilitySlot(
-      date: date,
-      startTime: '00:00',
-      endTime: '23:59',
-      type: AvailabilityType.blocked,
-      notes: notes,
-    ));
+    return addAvailability(
+      AvailabilitySlot(
+        date: date,
+        startTime: '00:00',
+        endTime: '23:59',
+        type: AvailabilityType.blocked,
+        notes: notes,
+      ),
+    );
   }
 
   /// Helper to handle Dio errors
   CalendarServiceError _handleDioError(DioException e, String operation) {
     final statusCode = e.response?.statusCode;
-    final message = e.response?.data?['message'] ?? e.message ?? 'Unknown error';
+    final message =
+        e.response?.data?['message'] ?? e.message ?? 'Unknown error';
 
     if (statusCode == 401) {
       return CalendarServiceError('Authentication required', statusCode);

@@ -6,6 +6,7 @@
 /// - Pull-to-refresh with shimmer loading
 /// - Swipe-to-dismiss with haptic feedback
 /// - Grouped by date with smart headers
+/// - REAL API integration
 ///
 /// All user notifications in one place
 library;
@@ -13,6 +14,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
+import '../core/services/services.dart';
 import '../widgets/widgets.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -23,101 +25,134 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  bool _isLoading = false;
-  
-  final List<NotificationItem> _notifications = [
-    NotificationItem(
-      id: '1',
-      type: NotificationType.match,
-      title: 'New Match!',
-      message: 'You matched with Blue Note Jazz Club',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      isRead: false,
-    ),
-    NotificationItem(
-      id: '2',
-      type: NotificationType.message,
-      title: 'New Message',
-      message: 'Hey! We loved your demo...',
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      isRead: false,
-    ),
-    NotificationItem(
-      id: '3',
-      type: NotificationType.gig,
-      title: 'Upcoming Gig',
-      message: 'Your performance at The Velvet Lounge is tomorrow at 8 PM',
-      timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '4',
-      type: NotificationType.profile,
-      title: 'Profile Viewed',
-      message: '12 venues viewed your profile this week',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '5',
-      type: NotificationType.boost,
-      title: 'Profile Boosted',
-      message: 'Your profile boost has ended. You got 45 extra views!',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '6',
-      type: NotificationType.match,
-      title: 'New Match!',
-      message: 'You matched with Riverside Music Hall',
-      timestamp: DateTime.now().subtract(const Duration(days: 2)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '7',
-      type: NotificationType.payment,
-      title: 'Payment Received',
-      message: 'You received \$350 for your gig at Downtown Bar',
-      timestamp: DateTime.now().subtract(const Duration(days: 3)),
-      isRead: true,
-    ),
-  ];
+  final NotificationHistoryService _notificationService =
+      NotificationHistoryService();
+
+  bool _isLoading = true;
+  // ignore: unused_field
+  String? _errorMessage;
+  List<NotificationItem> _notifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final response = await _notificationService.getNotifications(limit: 50);
+
+      setState(() {
+        _notifications = response.notifications
+            .map(
+              (n) => NotificationItem(
+                id: n.id,
+                type: _mapNotificationType(n.type),
+                title: n.title,
+                message: n.body,
+                timestamp: n.createdAt,
+                isRead: n.isRead,
+              ),
+            )
+            .toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading notifications: $e');
+      // Fall back to empty list on error
+      setState(() {
+        _notifications = [];
+        _isLoading = false;
+      });
+    }
+  }
+
+  NotificationType _mapNotificationType(String type) {
+    switch (type.toLowerCase()) {
+      case 'match':
+        return NotificationType.match;
+      case 'message':
+      case 'chat':
+        return NotificationType.message;
+      case 'gig':
+      case 'gig_opportunity':
+      case 'gigopportunity':
+        return NotificationType.gig;
+      case 'profile':
+      case 'profile_view':
+        return NotificationType.profile;
+      case 'boost':
+        return NotificationType.boost;
+      case 'payment':
+        return NotificationType.payment;
+      default:
+        return NotificationType.gig;
+    }
+  }
 
   Future<void> _refresh() async {
-    setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
-    
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-    
-    setState(() => _isLoading = false);
+    await _loadNotifications();
   }
 
-  void _markAllAsRead() {
+  Future<void> _markAllAsRead() async {
     HapticFeedback.selectionClick();
-    setState(() {
-      for (var notification in _notifications) {
-        notification.isRead = true;
+
+    try {
+      await _notificationService.markAllAsRead();
+      setState(() {
+        for (var notification in _notifications) {
+          notification.isRead = true;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('All notifications marked as read'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
       }
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('All notifications marked as read'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to mark as read'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
   }
 
-  void _dismissNotification(NotificationItem notification) {
+  Future<void> _dismissNotification(NotificationItem notification) async {
     HapticFeedback.lightImpact();
-    setState(() {
-      _notifications.remove(notification);
-    });
+
+    try {
+      await _notificationService.deleteNotification(notification.id);
+      setState(() {
+        _notifications.remove(notification);
+      });
+    } catch (e) {
+      debugPrint('Failed to delete notification: $e');
+    }
   }
 
   @override
@@ -166,7 +201,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             AnimatedTapFeedback(
               onTap: _markAllAsRead,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Center(
                   child: Text(
                     'Mark all read',
@@ -184,71 +222,72 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: _isLoading
           ? const _NotificationSkeletonList()
           : _notifications.isEmpty
-              ? _buildEmptyState(brightness)
-              : RefreshIndicator(
-                  onRefresh: _refresh,
-                  color: AppColors.crimson,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = _notifications[index];
-                      final showDateHeader = index == 0 ||
-                          !_isSameDay(
-                            notification.timestamp,
-                            _notifications[index - 1].timestamp,
-                          );
+          ? _buildEmptyState(brightness)
+          : RefreshIndicator(
+              onRefresh: _refresh,
+              color: AppColors.crimson,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: _notifications.length,
+                itemBuilder: (context, index) {
+                  final notification = _notifications[index];
+                  final showDateHeader =
+                      index == 0 ||
+                      !_isSameDay(
+                        notification.timestamp,
+                        _notifications[index - 1].timestamp,
+                      );
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (showDateHeader)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                              child: Text(
-                                _formatDateHeader(notification.timestamp),
-                                style: TextStyle(
-                                  color: AppColors.textSec(brightness),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          Dismissible(
-                            key: Key(notification.id),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.error,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 20),
-                              child: const Icon(
-                                Icons.delete_rounded,
-                                color: Colors.white,
-                              ),
-                            ),
-                            onDismissed: (_) => _dismissNotification(notification),
-                            child: _NotificationCard(
-                              notification: notification,
-                              brightness: brightness,
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                setState(() => notification.isRead = true);
-                                // Navigate based on notification type
-                              },
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (showDateHeader)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                          child: Text(
+                            _formatDateHeader(notification.timestamp),
+                            style: TextStyle(
+                              color: AppColors.textSec(brightness),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+                        ),
+                      Dismissible(
+                        key: Key(notification.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          child: const Icon(
+                            Icons.delete_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        onDismissed: (_) => _dismissNotification(notification),
+                        child: _NotificationCard(
+                          notification: notification,
+                          brightness: brightness,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => notification.isRead = true);
+                            // Navigate based on notification type
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
     );
   }
 
@@ -504,14 +543,7 @@ class _NotificationSkeletonList extends StatelessWidget {
 // 📊 MODELS
 // ═══════════════════════════════════════════════════════════════════════════
 
-enum NotificationType {
-  match,
-  message,
-  gig,
-  profile,
-  boost,
-  payment,
-}
+enum NotificationType { match, message, gig, profile, boost, payment }
 
 class NotificationItem {
   final String id;

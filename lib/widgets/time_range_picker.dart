@@ -2,6 +2,7 @@
 /// A professional, bulletproof time selection widget for gig scheduling
 library;
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
@@ -30,22 +31,25 @@ class TimeRangePicker extends StatefulWidget {
   State<TimeRangePicker> createState() => _TimeRangePickerState();
 }
 
-class _TimeRangePickerState extends State<TimeRangePicker> 
+class _TimeRangePickerState extends State<TimeRangePicker>
     with SingleTickerProviderStateMixin {
   // Slider range: 6 AM (360 mins) to 4 AM next day (1680 mins = 28 hours * 60)
   // This allows overnight selection
   static const double _minMinutes = 6 * 60; // 6 AM
   static const double _maxMinutes = 28 * 60; // 4 AM next day (as 28:00)
-  
+
   late double _startValue;
   late double _endValue;
   late bool _isOvernight;
-  
+
+  // Picker mode: slider or clock
+  bool _useClockPicker = false;
+
   // For duration pulse animation
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   String _lastDuration = '';
-  
+
   // Track last hour for haptic feedback
   int _lastStartHour = -1;
   int _lastEndHour = -1;
@@ -66,7 +70,7 @@ class _TimeRangePickerState extends State<TimeRangePicker>
     _initializeFromSlot();
     _setupPulseAnimation();
   }
-  
+
   void _setupPulseAnimation() {
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 400),
@@ -81,7 +85,7 @@ class _TimeRangePickerState extends State<TimeRangePicker>
       }
     });
   }
-  
+
   @override
   void dispose() {
     _pulseController.dispose();
@@ -109,13 +113,13 @@ class _TimeRangePickerState extends State<TimeRangePicker>
   GigTimeSlot _buildTimeSlot() {
     int startMins = _startValue.round();
     int endMins = _endValue.round();
-    
+
     // Determine if overnight
     bool overnight = endMins >= 24 * 60;
-    
+
     // Normalize end time if overnight
     int actualEndMins = overnight ? endMins - 24 * 60 : endMins;
-    
+
     return GigTimeSlot(
       date: widget.date,
       startHour: startMins ~/ 60,
@@ -125,16 +129,16 @@ class _TimeRangePickerState extends State<TimeRangePicker>
       isOvernight: overnight,
     );
   }
-  
+
   /// Check if current slot conflicts with existing availability
   String? _getConflictWarning() {
     if (widget.existingSlots == null || widget.existingSlots!.isEmpty) {
       return null;
     }
-    
+
     final currentStart = _startValue;
     final currentEnd = _endValue;
-    
+
     for (final existing in widget.existingSlots!) {
       // Skip if different date
       if (existing.date.day != widget.date.day ||
@@ -142,30 +146,42 @@ class _TimeRangePickerState extends State<TimeRangePicker>
           existing.date.year != widget.date.year) {
         continue;
       }
-      
+
       // Parse existing slot times (format: "HH:mm")
       final startParts = existing.startTime.split(':');
       final endParts = existing.endTime.split(':');
-      
+
       final existingStartHour = int.tryParse(startParts[0]) ?? 0;
-      final existingStartMinute = startParts.length > 1 ? int.tryParse(startParts[1]) ?? 0 : 0;
+      final existingStartMinute = startParts.length > 1
+          ? int.tryParse(startParts[1]) ?? 0
+          : 0;
       final existingEndHour = int.tryParse(endParts[0]) ?? 0;
-      final existingEndMinute = endParts.length > 1 ? int.tryParse(endParts[1]) ?? 0 : 0;
-      
-      double existingStart = (existingStartHour * 60 + existingStartMinute).toDouble();
-      double existingEnd = (existingEndHour * 60 + existingEndMinute).toDouble();
+      final existingEndMinute = endParts.length > 1
+          ? int.tryParse(endParts[1]) ?? 0
+          : 0;
+
+      double existingStart = (existingStartHour * 60 + existingStartMinute)
+          .toDouble();
+      double existingEnd = (existingEndHour * 60 + existingEndMinute)
+          .toDouble();
       if (existing.isOvernight) existingEnd += 24 * 60;
-      
+
       // Check for overlap
       if (currentStart < existingEnd && currentEnd > existingStart) {
-        final displayStart = _formatTimeForDisplay(existingStartHour, existingStartMinute);
-        final displayEnd = _formatTimeForDisplay(existingEndHour, existingEndMinute);
+        final displayStart = _formatTimeForDisplay(
+          existingStartHour,
+          existingStartMinute,
+        );
+        final displayEnd = _formatTimeForDisplay(
+          existingEndHour,
+          existingEndMinute,
+        );
         return 'Overlaps with $displayStart - $displayEnd';
       }
     }
     return null;
   }
-  
+
   String _formatTimeForDisplay(int hour, int minute) {
     final period = hour >= 12 ? 'PM' : 'AM';
     int displayHour = hour % 12;
@@ -173,14 +189,18 @@ class _TimeRangePickerState extends State<TimeRangePicker>
     final minuteStr = minute.toString().padLeft(2, '0');
     return '$displayHour:$minuteStr $period';
   }
-  
+
   /// Copy availability from last week
   void _copyFromLastWeek() {
     if (widget.lastWeekSlot != null) {
       HapticFeedback.mediumImpact();
       setState(() {
-        _startValue = (widget.lastWeekSlot!.startHour * 60 + widget.lastWeekSlot!.startMinute).toDouble();
-        int endMins = widget.lastWeekSlot!.endHour * 60 + widget.lastWeekSlot!.endMinute;
+        _startValue =
+            (widget.lastWeekSlot!.startHour * 60 +
+                    widget.lastWeekSlot!.startMinute)
+                .toDouble();
+        int endMins =
+            widget.lastWeekSlot!.endHour * 60 + widget.lastWeekSlot!.endMinute;
         if (widget.lastWeekSlot!.isOvernight) endMins += 24 * 60;
         _endValue = endMins.toDouble();
         _isOvernight = widget.lastWeekSlot!.isOvernight;
@@ -189,7 +209,7 @@ class _TimeRangePickerState extends State<TimeRangePicker>
       _triggerPulse();
     }
   }
-  
+
   void _triggerPulse() {
     if (!_pulseController.isAnimating) {
       _pulseController.forward();
@@ -198,27 +218,27 @@ class _TimeRangePickerState extends State<TimeRangePicker>
 
   void _onStartSliderChanged(double val) {
     final newHour = (val / 60).floor();
-    
+
     // Haptic at hourly marks
     if (newHour != _lastStartHour) {
       HapticFeedback.lightImpact();
       _lastStartHour = newHour;
     }
-    
+
     setState(() => _startValue = val);
     _checkDurationChanged();
     widget.onChanged(_buildTimeSlot());
   }
-  
+
   void _onEndSliderChanged(double val) {
     final newHour = (val / 60).floor();
-    
+
     // Haptic at hourly marks
     if (newHour != _lastEndHour) {
       HapticFeedback.lightImpact();
       _lastEndHour = newHour;
     }
-    
+
     setState(() {
       _endValue = val;
       _isOvernight = val >= 24 * 60;
@@ -226,7 +246,7 @@ class _TimeRangePickerState extends State<TimeRangePicker>
     _checkDurationChanged();
     widget.onChanged(_buildTimeSlot());
   }
-  
+
   void _checkDurationChanged() {
     final slot = _buildTimeSlot();
     final newDuration = slot.durationDisplay;
@@ -236,6 +256,7 @@ class _TimeRangePickerState extends State<TimeRangePicker>
     }
   }
 
+  // ignore: unused_element
   void _onSliderChanged() {
     HapticFeedback.selectionClick();
     final slot = _buildTimeSlot();
@@ -287,10 +308,10 @@ class _TimeRangePickerState extends State<TimeRangePicker>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.crimson.withOpacity(0.1),
+                color: AppColors.crimson.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.crimson.withOpacity(0.3),
+                  color: AppColors.crimson.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -316,7 +337,7 @@ class _TimeRangePickerState extends State<TimeRangePicker>
           ),
           const SizedBox(height: 12),
         ],
-        
+
         // Quick Presets with icons
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -339,18 +360,15 @@ class _TimeRangePickerState extends State<TimeRangePicker>
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Conflict Warning
         if (hasConflict) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.15),
+              color: AppColors.warning.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.warning,
-                width: 1,
-              ),
+              border: Border.all(color: AppColors.warning, width: 1),
             ),
             child: Row(
               children: [
@@ -384,16 +402,16 @@ class _TimeRangePickerState extends State<TimeRangePicker>
             color: AppColors.surface(brightness),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: hasConflict 
-                  ? AppColors.warning 
+              color: hasConflict
+                  ? AppColors.warning
                   : (isValid ? AppColors.border(brightness) : AppColors.error),
               width: (isValid && !hasConflict) ? 1 : 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: isValid 
-                    ? Colors.black.withOpacity(0.05)
-                    : AppColors.error.withOpacity(0.15),
+                color: isValid
+                    ? Colors.black.withValues(alpha: 0.05)
+                    : AppColors.error.withValues(alpha: 0.15),
                 blurRadius: isValid ? 8 : 12,
                 offset: const Offset(0, 4),
               ),
@@ -431,34 +449,41 @@ class _TimeRangePickerState extends State<TimeRangePicker>
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Animated Duration Badge
               ScaleTransition(
                 scale: _pulseAnimation,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isValid 
-                        ? AppColors.crimson.withOpacity(0.1)
-                        : AppColors.error.withOpacity(0.1),
+                    color: isValid
+                        ? AppColors.crimson.withValues(alpha: 0.1)
+                        : AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isValid ? Icons.schedule_rounded : Icons.warning_rounded,
+                        isValid
+                            ? Icons.schedule_rounded
+                            : Icons.warning_rounded,
                         size: 16,
                         color: isValid ? AppColors.crimson : AppColors.error,
                       ),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          isValid 
+                          isValid
                               ? 'Duration: ${slot.durationDisplay}'
                               : slot.validationError ?? 'Invalid',
                           style: TextStyle(
-                            color: isValid ? AppColors.crimson : AppColors.error,
+                            color: isValid
+                                ? AppColors.crimson
+                                : AppColors.error,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -473,46 +498,62 @@ class _TimeRangePickerState extends State<TimeRangePicker>
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
-        // Start Time Slider with tooltip and tick marks
-        _EnhancedSliderSection(
-          label: 'Start Time',
-          value: _startValue,
-          min: _minMinutes,
-          max: _endValue - 30,
-          onChanged: _onStartSliderChanged,
-          formatValue: _formatMinutes,
-          brightness: brightness,
-          color: AppColors.success,
+        // Picker mode toggle
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _PickerModeToggle(
+              useClockPicker: _useClockPicker,
+              brightness: brightness,
+              onToggle: () {
+                HapticFeedback.lightImpact();
+                setState(() => _useClockPicker = !_useClockPicker);
+              },
+            ),
+          ],
         ),
         const SizedBox(height: 12),
 
-        // End Time Slider with tooltip and tick marks
-        _EnhancedSliderSection(
-          label: 'End Time',
-          value: _endValue,
-          min: _startValue + 30,
-          max: _maxMinutes,
-          onChanged: _onEndSliderChanged,
-          formatValue: _formatMinutes,
-          brightness: brightness,
-          color: AppColors.crimson,
-          showOvernightLabel: _isOvernight,
-        ),
-        const SizedBox(height: 12),
+        // Conditional picker: Slider or Clock
+        if (_useClockPicker) ...[
+          // Clock Face Picker
+          _ClockFacePicker(
+            startValue: _startValue,
+            endValue: _endValue,
+            brightness: brightness,
+            isOvernight: _isOvernight,
+            onStartChanged: _onStartSliderChanged,
+            onEndChanged: _onEndSliderChanged,
+            formatValue: _formatMinutes,
+          ),
+        ] else ...[
+          // Slider-based picker
+          _EnhancedSliderSection(
+            label: 'Start Time',
+            value: _startValue,
+            min: _minMinutes,
+            max: _endValue - 30,
+            onChanged: _onStartSliderChanged,
+            formatValue: _formatMinutes,
+            brightness: brightness,
+            color: AppColors.success,
+          ),
+          const SizedBox(height: 12),
 
-        // Interactive Time Bar (drag to select)
-        _InteractiveTimeBar(
-          startValue: _startValue,
-          endValue: _endValue,
-          minValue: _minMinutes,
-          maxValue: _maxMinutes,
-          brightness: brightness,
-          isOvernight: _isOvernight,
-          onStartChanged: _onStartSliderChanged,
-          onEndChanged: _onEndSliderChanged,
-        ),
+          _EnhancedSliderSection(
+            label: 'End Time',
+            value: _endValue,
+            min: _startValue + 30,
+            max: _maxMinutes,
+            onChanged: _onEndSliderChanged,
+            formatValue: _formatMinutes,
+            brightness: brightness,
+            color: AppColors.crimson,
+            showOvernightLabel: _isOvernight,
+          ),
+        ],
       ],
     );
   }
@@ -553,15 +594,15 @@ class _PresetChip extends StatelessWidget {
           color: isSelected ? null : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected 
-                ? AppColors.crimson 
+            color: isSelected
+                ? AppColors.crimson
                 : AppColors.border(brightness),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.crimson.withOpacity(0.3),
+                    color: AppColors.crimson.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -575,16 +616,16 @@ class _PresetChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: isSelected ? Colors.white : AppColors.textSec(brightness),
+                color: isSelected
+                    ? Colors.white
+                    : AppColors.textSec(brightness),
               ),
               const SizedBox(width: 6),
             ],
             Text(
               label,
               style: TextStyle(
-                color: isSelected 
-                    ? Colors.white 
-                    : AppColors.text(brightness),
+                color: isSelected ? Colors.white : AppColors.text(brightness),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -668,12 +709,12 @@ class _EnhancedSliderSection extends StatefulWidget {
 
 class _EnhancedSliderSectionState extends State<_EnhancedSliderSection> {
   bool _isDragging = false;
-  
+
   @override
   Widget build(BuildContext context) {
     double snappedValue = (widget.value / 15).round() * 15.0;
     snappedValue = snappedValue.clamp(widget.min, widget.max);
-    
+
     // Calculate thumb position percentage for tooltip
     final range = widget.max - widget.min;
     final thumbPercent = range > 0 ? (snappedValue - widget.min) / range : 0.0;
@@ -695,12 +736,15 @@ class _EnhancedSliderSectionState extends State<_EnhancedSliderSection> {
             ),
             if (widget.showOvernightLabel)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.15),
+                  color: AppColors.warning.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.warning.withOpacity(0.3),
+                    color: AppColors.warning.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -723,14 +767,17 @@ class _EnhancedSliderSectionState extends State<_EnhancedSliderSection> {
           ],
         ),
         const SizedBox(height: 8),
-        
+
         // Slider with tooltip overlay
         LayoutBuilder(
           builder: (context, constraints) {
             final sliderWidth = constraints.maxWidth;
             // Clamp tooltip position to stay within bounds (tooltip width ~70)
-            final tooltipX = (sliderWidth * thumbPercent).clamp(35.0, sliderWidth - 35);
-            
+            final tooltipX = (sliderWidth * thumbPercent).clamp(
+              35.0,
+              sliderWidth - 35,
+            );
+
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -739,32 +786,42 @@ class _EnhancedSliderSectionState extends State<_EnhancedSliderSection> {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: _buildTickMarks(widget.min, widget.max, sliderWidth, widget.brightness),
+                  child: _buildTickMarks(
+                    widget.min,
+                    widget.max,
+                    sliderWidth,
+                    widget.brightness,
+                  ),
                 ),
-                
+
                 // Slider with padding to prevent thumb overflow
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 0),
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: widget.color,
-                      inactiveTrackColor: widget.color.withOpacity(0.15),
+                      inactiveTrackColor: widget.color.withValues(alpha: 0.15),
                       thumbColor: Colors.white,
-                      overlayColor: widget.color.withOpacity(0.2),
+                      overlayColor: widget.color.withValues(alpha: 0.2),
                       trackHeight: 8,
                       thumbShape: const RoundSliderThumbShape(
                         enabledThumbRadius: 12,
                         elevation: 3,
                         pressedElevation: 6,
                       ),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 20,
+                      ),
                       trackShape: const RoundedRectSliderTrackShape(),
                     ),
                     child: Slider(
                       value: snappedValue.clamp(widget.min, widget.max),
                       min: widget.min,
                       max: widget.max,
-                      divisions: ((widget.max - widget.min) / 15).round().clamp(1, 1000),
+                      divisions: ((widget.max - widget.min) / 15).round().clamp(
+                        1,
+                        1000,
+                      ),
                       onChangeStart: (_) => setState(() => _isDragging = true),
                       onChangeEnd: (_) => setState(() => _isDragging = false),
                       onChanged: (val) {
@@ -774,20 +831,23 @@ class _EnhancedSliderSectionState extends State<_EnhancedSliderSection> {
                     ),
                   ),
                 ),
-                
+
                 // Floating tooltip (visible when dragging)
                 if (_isDragging)
                   Positioned(
                     left: tooltipX - 35,
                     top: -35,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: widget.color,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: widget.color.withOpacity(0.3),
+                            color: widget.color.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -810,16 +870,21 @@ class _EnhancedSliderSectionState extends State<_EnhancedSliderSection> {
       ],
     );
   }
-  
-  Widget _buildTickMarks(double min, double max, double width, Brightness brightness) {
+
+  Widget _buildTickMarks(
+    double min,
+    double max,
+    double width,
+    Brightness brightness,
+  ) {
     final List<Widget> ticks = [];
     final range = max - min;
-    
+
     // Add tick at each hour
     for (double mins = min; mins <= max; mins += 60) {
       final percent = (mins - min) / range;
       final left = width * percent;
-      
+
       // Only show tick marks at full hours
       if (mins % 60 == 0) {
         ticks.add(
@@ -829,17 +894,14 @@ class _EnhancedSliderSectionState extends State<_EnhancedSliderSection> {
             child: Container(
               width: 1,
               height: 4,
-              color: AppColors.textSec(brightness).withOpacity(0.3),
+              color: AppColors.textSec(brightness).withValues(alpha: 0.3),
             ),
           ),
         );
       }
     }
-    
-    return SizedBox(
-      height: 4,
-      child: Stack(children: ticks),
-    );
+
+    return SizedBox(height: 4, child: Stack(children: ticks));
   }
 }
 
@@ -893,7 +955,7 @@ class _InteractiveTimeBarState extends State<_InteractiveTimeBar> {
           ],
         ),
         const SizedBox(height: 4),
-        
+
         // Interactive Bar
         LayoutBuilder(
           builder: (context, constraints) {
@@ -919,13 +981,17 @@ class _InteractiveTimeBarState extends State<_InteractiveTimeBar> {
                 final percent = localX / width;
                 final minutes = widget.minValue + (range * percent);
                 final snapped = (minutes / 15).round() * 15.0;
-                
+
                 if (_draggingStart && snapped < widget.endValue - 30) {
                   HapticFeedback.selectionClick();
-                  widget.onStartChanged(snapped.clamp(widget.minValue, widget.endValue - 30));
+                  widget.onStartChanged(
+                    snapped.clamp(widget.minValue, widget.endValue - 30),
+                  );
                 } else if (_draggingEnd && snapped > widget.startValue + 30) {
                   HapticFeedback.selectionClick();
-                  widget.onEndChanged(snapped.clamp(widget.startValue + 30, widget.maxValue));
+                  widget.onEndChanged(
+                    snapped.clamp(widget.startValue + 30, widget.maxValue),
+                  );
                 }
               },
               onHorizontalDragEnd: (_) {
@@ -948,12 +1014,14 @@ class _InteractiveTimeBarState extends State<_InteractiveTimeBar> {
                       child: Container(
                         width: 2,
                         decoration: BoxDecoration(
-                          color: AppColors.textSec(widget.brightness).withOpacity(0.4),
+                          color: AppColors.textSec(
+                            widget.brightness,
+                          ).withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(1),
                         ),
                       ),
                     ),
-                    
+
                     // Selection with handles
                     Positioned(
                       left: startX,
@@ -964,60 +1032,76 @@ class _InteractiveTimeBarState extends State<_InteractiveTimeBar> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: widget.isOvernight
-                                ? [AppColors.success, AppColors.warning, AppColors.crimson]
+                                ? [
+                                    AppColors.success,
+                                    AppColors.warning,
+                                    AppColors.crimson,
+                                  ]
                                 : [AppColors.success, AppColors.crimson],
                           ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Start handle
-                            Container(
-                              width: 12,
-                              height: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.3),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(12),
-                                  bottomLeft: Radius.circular(12),
-                                ),
-                              ),
-                              child: Center(
-                                child: Container(
-                                  width: 3,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(2),
+                        // Use ClipRect to prevent handle overflow
+                        child: selectionWidth < 30
+                            ? const SizedBox() // Too small to show handles
+                            : Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Start handle
+                                  Container(
+                                    width: 10,
+                                    height: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(12),
+                                        bottomLeft: Radius.circular(12),
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Container(
+                                        width: 2,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
-                            // End handle
-                            Container(
-                              width: 12,
-                              height: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.3),
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(12),
-                                  bottomRight: Radius.circular(12),
-                                ),
-                              ),
-                              child: Center(
-                                child: Container(
-                                  width: 3,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(2),
+                                  // End handle
+                                  Container(
+                                    width: 10,
+                                    height: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      borderRadius: const BorderRadius.only(
+                                        topRight: Radius.circular(12),
+                                        bottomRight: Radius.circular(12),
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Container(
+                                        width: 2,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ],
@@ -1037,6 +1121,433 @@ class _InteractiveTimeBarState extends State<_InteractiveTimeBar> {
   );
 }
 
+/// Toggle between slider and clock picker mode
+class _PickerModeToggle extends StatelessWidget {
+  final bool useClockPicker;
+  final Brightness brightness;
+  final VoidCallback onToggle;
+
+  const _PickerModeToggle({
+    required this.useClockPicker,
+    required this.brightness,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.inputFill(brightness),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border(brightness)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              useClockPicker
+                  ? Icons.linear_scale_rounded
+                  : Icons.access_time_rounded,
+              size: 16,
+              color: AppColors.textSec(brightness),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              useClockPicker ? 'Use Sliders' : 'Use Clock',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// iOS-style clock face picker for time selection
+class _ClockFacePicker extends StatefulWidget {
+  final double startValue;
+  final double endValue;
+  final Brightness brightness;
+  final bool isOvernight;
+  final ValueChanged<double> onStartChanged;
+  final ValueChanged<double> onEndChanged;
+  final String Function(double) formatValue;
+
+  const _ClockFacePicker({
+    required this.startValue,
+    required this.endValue,
+    required this.brightness,
+    required this.isOvernight,
+    required this.onStartChanged,
+    required this.onEndChanged,
+    required this.formatValue,
+  });
+
+  @override
+  State<_ClockFacePicker> createState() => _ClockFacePickerState();
+}
+
+class _ClockFacePickerState extends State<_ClockFacePicker> {
+  bool _editingStart =
+      true; // true = editing start time, false = editing end time
+
+  @override
+  Widget build(BuildContext context) {
+    final currentValue = _editingStart ? widget.startValue : widget.endValue;
+
+    return Column(
+      children: [
+        // Start/End selector tabs
+        Row(
+          children: [
+            Expanded(
+              child: _TimeTab(
+                label: 'START',
+                time: widget.formatValue(widget.startValue),
+                isSelected: _editingStart,
+                color: AppColors.success,
+                brightness: widget.brightness,
+                onTap: () => setState(() => _editingStart = true),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _TimeTab(
+                label: 'END',
+                time: widget.formatValue(widget.endValue),
+                isSelected: !_editingStart,
+                color: AppColors.crimson,
+                brightness: widget.brightness,
+                onTap: () => setState(() => _editingStart = false),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Clock face
+        SizedBox(
+          height: 200,
+          child: _ClockDial(
+            value: currentValue,
+            brightness: widget.brightness,
+            color: _editingStart ? AppColors.success : AppColors.crimson,
+            onChanged: (val) {
+              HapticFeedback.selectionClick();
+              if (_editingStart) {
+                if (val < widget.endValue - 30) {
+                  widget.onStartChanged(val);
+                }
+              } else {
+                if (val > widget.startValue + 30) {
+                  widget.onEndChanged(val);
+                }
+              }
+            },
+          ),
+        ),
+
+        // Overnight indicator
+        if (widget.isOvernight)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🌙', style: TextStyle(fontSize: 14)),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Ends next day',
+                    style: TextStyle(
+                      color: AppColors.warning,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Tab for selecting start/end time in clock picker
+class _TimeTab extends StatelessWidget {
+  final String label;
+  final String time;
+  final bool isSelected;
+  final Color color;
+  final Brightness brightness;
+  final VoidCallback onTap;
+
+  const _TimeTab({
+    required this.label,
+    required this.time,
+    required this.isSelected,
+    required this.color,
+    required this.brightness,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? color.withValues(alpha: 0.15)
+              : AppColors.inputFill(brightness),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : AppColors.border(brightness),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? color : AppColors.textSec(brightness),
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              time,
+              style: TextStyle(
+                color: isSelected ? color : AppColors.text(brightness),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Circular clock dial for iOS-style time picking
+class _ClockDial extends StatelessWidget {
+  final double value; // in minutes
+  final Brightness brightness;
+  final Color color;
+  final ValueChanged<double> onChanged;
+
+  const _ClockDial({
+    required this.value,
+    required this.brightness,
+    required this.color,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.maxHeight.clamp(0.0, constraints.maxWidth);
+        final center = Offset(constraints.maxWidth / 2, size / 2);
+        final radius = (size / 2) - 20;
+
+        // Current hour (0-23) for display
+        final hour = (value / 60).floor() % 24;
+        final minute = (value % 60).round();
+
+        return GestureDetector(
+          onPanUpdate: (details) {
+            final localPos = details.localPosition;
+            final dx = localPos.dx - center.dx;
+            final dy = localPos.dy - center.dy;
+
+            // Calculate angle from center using atan2
+            final angleRad = math.atan2(dy, dx);
+
+            // Convert to hours (add π/2 for 12 o'clock orientation)
+            var hourFromAngle =
+                ((angleRad + math.pi / 2) / (2 * math.pi) * 12) % 12;
+            if (hourFromAngle < 0) hourFromAngle += 12;
+
+            // Determine AM/PM based on current value
+            final isPM = hour >= 12;
+            var newHour = hourFromAngle.round();
+            if (isPM) newHour += 12;
+            if (newHour >= 24) newHour -= 12;
+            if (newHour < 6) newHour += 12; // Keep in valid range
+
+            // Convert to minutes (snap to 15-min intervals)
+            final newMins = (newHour * 60 + minute).toDouble();
+            final snapped = (newMins / 15).round() * 15.0;
+
+            // Clamp to valid range
+            onChanged(snapped.clamp(6 * 60, 28 * 60));
+          },
+          child: CustomPaint(
+            size: Size(constraints.maxWidth, size),
+            painter: _ClockDialPainter(
+              center: center,
+              radius: radius,
+              hour: hour,
+              minute: minute,
+              color: color,
+              brightness: brightness,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Custom painter for clock dial
+class _ClockDialPainter extends CustomPainter {
+  final Offset center;
+  final double radius;
+  final int hour;
+  final int minute;
+  final Color color;
+  final Brightness brightness;
+
+  _ClockDialPainter({
+    required this.center,
+    required this.radius,
+    required this.hour,
+    required this.minute,
+    required this.color,
+    required this.brightness,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bgPaint = Paint()
+      ..color = brightness == Brightness.dark
+          ? AppColors.graphite
+          : const Color(0xFFF5F5F5)
+      ..style = PaintingStyle.fill;
+
+    final borderPaint = Paint()
+      ..color = brightness == Brightness.dark
+          ? AppColors.slate
+          : const Color(0xFFE0E0E0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Draw clock face
+    canvas.drawCircle(center, radius, bgPaint);
+    canvas.drawCircle(center, radius, borderPaint);
+
+    // Draw hour markers
+    final markerPaint = Paint()
+      ..color = brightness == Brightness.dark
+          ? AppColors.textSec(brightness)
+          : const Color(0xFF666666)
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 12; i++) {
+      final angle = (i / 12 * 2 * math.pi) - (math.pi / 2);
+      final isQuarter = i % 3 == 0;
+      final markerRadius = isQuarter ? 4.0 : 2.0;
+      final markerDist = radius - 10;
+
+      final x = center.dx + markerDist * math.cos(angle);
+      final y = center.dy + markerDist * math.sin(angle);
+
+      canvas.drawCircle(Offset(x, y), markerRadius, markerPaint);
+    }
+
+    // Draw hour hand
+    final hourAngle =
+        ((hour % 12 + minute / 60) / 12 * 2 * math.pi) - (math.pi / 2);
+    final hourHandLength = radius * 0.5;
+
+    final handPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(
+      center,
+      Offset(
+        center.dx + hourHandLength * math.cos(hourAngle),
+        center.dy + hourHandLength * math.sin(hourAngle),
+      ),
+      handPaint,
+    );
+
+    // Draw minute hand (longer, thinner)
+    final minuteAngle = (minute / 60 * 2 * math.pi) - (math.pi / 2);
+    final minuteHandLength = radius * 0.7;
+
+    final minutePaint = Paint()
+      ..color = color.withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(
+      center,
+      Offset(
+        center.dx + minuteHandLength * math.cos(minuteAngle),
+        center.dy + minuteHandLength * math.sin(minuteAngle),
+      ),
+      minutePaint,
+    );
+
+    // Draw center dot
+    final centerPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 6, centerPaint);
+
+    // Draw AM/PM indicator
+    final isPM = hour >= 12;
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: isPM ? 'PM' : 'AM',
+        style: TextStyle(
+          color: color,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(center.dx - textPainter.width / 2, center.dy + radius * 0.3),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ClockDialPainter oldDelegate) {
+    return hour != oldDelegate.hour ||
+        minute != oldDelegate.minute ||
+        color != oldDelegate.color;
+  }
+}
+
 /// Preset data class with icon
 class _TimePreset {
   final String name;
@@ -1045,5 +1556,11 @@ class _TimePreset {
   final bool isOvernight;
   final IconData? icon;
 
-  const _TimePreset(this.name, this.startHour, this.endHour, this.isOvernight, [this.icon]);
+  const _TimePreset(
+    this.name,
+    this.startHour,
+    this.endHour,
+    this.isOvernight, [
+    this.icon,
+  ]);
 }

@@ -9,6 +9,7 @@
 /// - Review carousel with ratings
 /// - Quick action FAB menu
 /// - Smooth scroll-to-section navigation
+/// - REAL API integration for artist data
 ///
 /// Comprehensive artist profile viewing for venues
 library;
@@ -16,8 +17,10 @@ library;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/theme/theme.dart';
-import '../../widgets/widgets.dart';
+import '../core/theme/theme.dart';
+import '../core/services/services.dart';
+import '../core/models/models.dart' as models;
+import '../widgets/widgets.dart';
 
 class ArtistProfileViewScreen extends StatefulWidget {
   final String artistId;
@@ -30,7 +33,8 @@ class ArtistProfileViewScreen extends StatefulWidget {
   });
 
   @override
-  State<ArtistProfileViewScreen> createState() => _ArtistProfileViewScreenState();
+  State<ArtistProfileViewScreen> createState() =>
+      _ArtistProfileViewScreenState();
 }
 
 class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
@@ -39,10 +43,14 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
   late AnimationController _fabController;
   late AnimationController _statsController;
   late TabController _tabController;
-  
+
+  final ArtistService _artistService = ArtistService();
+  final ReviewService _reviewService = ReviewService();
+
   double _scrollOffset = 0;
   bool _showFABMenu = false;
   bool _isLoading = true;
+  String? _errorMessage;
   ArtistProfile? _artist;
 
   @override
@@ -75,76 +83,147 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
   }
 
   Future<void> _loadArtist() async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    
-    setState(() {
-      _artist = ArtistProfile(
-        id: widget.artistId,
-        name: 'Marcus Rivera',
-        stageName: 'The Midnight Sound',
-        avatar: 'https://i.pravatar.cc/300?img=13',
-        coverImage: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-        bio: 'Professional jazz guitarist with 8+ years of experience performing at top venues across NYC. '
-             'Specializing in smooth jazz, fusion, and contemporary styles. '
-             'Available for solo performances, duo acts, and full band bookings.',
-        genres: ['Jazz', 'Soul', 'R&B', 'Funk', 'Blues'],
-        instruments: ['Guitar', 'Bass', 'Vocals'],
-        location: 'Brooklyn, NY',
-        rating: 4.9,
-        reviewCount: 127,
-        gigsCompleted: 245,
-        yearsActive: 8,
-        responseRate: 98,
-        responseTime: '< 1 hour',
-        isVerified: true,
-        isPremium: true,
-        priceRange: '\$200 - \$500',
-        availability: ['Weekends', 'Evenings', 'Special Events'],
-        media: [
-          MediaItem(type: 'video', url: 'https://example.com/video1.mp4', thumbnail: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400'),
-          MediaItem(type: 'audio', url: 'https://example.com/audio1.mp3', title: 'Smooth Groove Live'),
-          MediaItem(type: 'image', url: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400'),
-          MediaItem(type: 'image', url: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400'),
-        ],
-        reviews: [
-          Review(
-            id: '1',
-            authorName: 'Blue Note NYC',
-            authorImage: 'https://i.pravatar.cc/100?img=65',
-            rating: 5,
-            comment: 'Absolutely incredible performance. Marcus brought the house down! Will definitely book again.',
-            date: DateTime.now().subtract(const Duration(days: 7)),
-          ),
-          Review(
-            id: '2',
-            authorName: 'The Jazz Corner',
-            authorImage: 'https://i.pravatar.cc/100?img=52',
-            rating: 5,
-            comment: 'Professional, punctual, and supremely talented. Our customers loved every minute.',
-            date: DateTime.now().subtract(const Duration(days: 21)),
-          ),
-          Review(
-            id: '3',
-            authorName: 'Harlem Nights',
-            authorImage: 'https://i.pravatar.cc/100?img=43',
-            rating: 4,
-            comment: 'Great energy and rapport with the crowd. Would recommend!',
-            date: DateTime.now().subtract(const Duration(days: 45)),
-          ),
-        ],
-        upcomingAvailability: [
-          DateTime.now().add(const Duration(days: 2)),
-          DateTime.now().add(const Duration(days: 5)),
-          DateTime.now().add(const Duration(days: 7)),
-          DateTime.now().add(const Duration(days: 12)),
-        ],
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      // Fetch real artist data from API
+      final artist = await _artistService.getArtistById(widget.artistId);
+
+      // Fetch reviews for this artist
+      List<Review> reviews = [];
+      try {
+        final reviewsResponse = await _reviewService.getArtistReviews(
+          widget.artistId,
+          limit: 10,
+        );
+        reviews = reviewsResponse.reviews
+            .map(
+              (r) => Review(
+                id: r.id,
+                authorName: r.reviewerName,
+                authorImage:
+                    r.reviewerPhoto ??
+                    'https://i.pravatar.cc/100?img=${r.id.hashCode % 70}',
+                rating: r.overallRating,
+                comment: r.content,
+                date: r.createdAt,
+              ),
+            )
+            .toList();
+      } catch (e) {
+        // Reviews might not exist yet, that's okay
+        debugPrint('Could not load reviews: $e');
+      }
+
+      // Map API Artist model to local ArtistProfile
+      setState(() {
+        _artist = ArtistProfile(
+          id: artist.id,
+          name: artist.stageName, // Use stageName as display name
+          stageName: artist.stageName,
+          avatar:
+              artist.profilePhoto ??
+              'https://i.pravatar.cc/300?img=${artist.id.hashCode % 70}',
+          coverImage: artist.galleryUrls.isNotEmpty
+              ? artist.galleryUrls.first
+              : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
+          bio:
+              artist.bio ??
+              'Professional artist ready to bring amazing performances to your venue.',
+          genres: artist.genres,
+          instruments: artist.equipment,
+          location: artist.displayLocation,
+          rating: artist.averageRating > 0
+              ? artist.averageRating
+              : artist.rating,
+          reviewCount: artist.totalReviews > 0
+              ? artist.totalReviews
+              : artist.reviewCount,
+          gigsCompleted: artist.completedGigs,
+          yearsActive: artist.yearsOfExperience ?? 1,
+          responseRate: 90, // TODO: Add to backend model
+          responseTime: '< 24 hours', // TODO: Add to backend model
+          isVerified: artist.isVerified,
+          isPremium:
+              artist.subscriptionTier == 'premium' ||
+              artist.subscriptionTier == 'pro',
+          priceRange:
+              '\$${artist.minPrice.toInt()} - \$${artist.maxPrice.toInt()}',
+          availability: [
+            'Weekends',
+            'Evenings',
+          ], // TODO: Parse from artist.availability
+          media: _mapMediaItems(artist),
+          reviews: reviews,
+          upcomingAvailability: _generateUpcomingDates(),
+        );
+        _isLoading = false;
+      });
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _statsController.forward();
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to load artist profile. Please try again.';
+      });
+      debugPrint('Error loading artist: $e');
+    }
+  }
+
+  List<MediaItem> _mapMediaItems(models.Artist artist) {
+    List<MediaItem> items = [];
+
+    // Add videos from portfolio
+    for (var video in artist.videoSamples) {
+      items.add(
+        MediaItem(
+          type: 'video',
+          url: video.url,
+          thumbnail:
+              video.thumbnailUrl ??
+              'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400',
+          title: video.title,
+        ),
       );
-      _isLoading = false;
-    });
-    
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _statsController.forward();
-    });
+    }
+
+    // Add audio samples
+    for (var audio in artist.audioSamples) {
+      items.add(
+        MediaItem(
+          type: 'audio',
+          url: audio.url,
+          title: audio.title ?? 'Audio Sample',
+        ),
+      );
+    }
+
+    // Add gallery images
+    for (var imageUrl in artist.galleryUrls) {
+      items.add(MediaItem(type: 'image', url: imageUrl));
+    }
+
+    // If no media, add profile photo as placeholder
+    if (items.isEmpty && artist.profilePhoto != null) {
+      items.add(MediaItem(type: 'image', url: artist.profilePhoto!));
+    }
+
+    return items;
+  }
+
+  List<DateTime> _generateUpcomingDates() {
+    // TODO: Fetch real availability from calendar API
+    return [
+      DateTime.now().add(const Duration(days: 2)),
+      DateTime.now().add(const Duration(days: 5)),
+      DateTime.now().add(const Duration(days: 7)),
+      DateTime.now().add(const Duration(days: 12)),
+    ];
   }
 
   @override
@@ -155,6 +234,10 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
 
     if (_isLoading) {
       return _buildLoadingState(brightness);
+    }
+
+    if (_errorMessage != null) {
+      return _buildErrorState(brightness);
     }
 
     return Scaffold(
@@ -186,18 +269,12 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
               ),
 
               // Content
-              SliverToBoxAdapter(
-                child: _buildProfileContent(brightness),
-              ),
+              SliverToBoxAdapter(child: _buildProfileContent(brightness)),
             ],
           ),
 
           // Floating Action Button
-          Positioned(
-            right: 20,
-            bottom: 100,
-            child: _buildFAB(brightness),
-          ),
+          Positioned(right: 20, bottom: 100, child: _buildFAB(brightness)),
         ],
       ),
     );
@@ -209,10 +286,7 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
       body: ShimmerBase(
         child: Column(
           children: [
-            Container(
-              height: 300,
-              color: AppColors.surface(brightness),
-            ),
+            Container(height: 300, color: AppColors.surface(brightness)),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -237,6 +311,70 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(Brightness brightness) {
+    return Scaffold(
+      backgroundColor: AppColors.background(brightness),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.text(brightness)),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: AppColors.textSec(brightness),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Oops!',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.text(brightness),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage ?? 'Something went wrong',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textSec(brightness),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadArtist,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Try Again'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -281,7 +419,11 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
               color: Colors.black.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.share_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
         ),
       ),
@@ -301,7 +443,11 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
               color: Colors.black.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.more_vert_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
         ),
       ),
@@ -317,10 +463,7 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
         // Cover image with parallax
         Transform.translate(
           offset: Offset(0, parallaxOffset),
-          child: Image.network(
-            _artist!.coverImage,
-            fit: BoxFit.cover,
-          ),
+          child: Image.network(_artist!.coverImage, fit: BoxFit.cover),
         ),
 
         // Gradient overlay
@@ -405,7 +548,10 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
                         if (_artist!.isPremium) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
@@ -415,7 +561,11 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.star_rounded, color: Colors.white, size: 12),
+                                Icon(
+                                  Icons.star_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
                                 SizedBox(width: 4),
                                 Text(
                                   'PRO',
@@ -434,18 +584,33 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_rounded, color: Colors.white70, size: 14),
+                        const Icon(
+                          Icons.location_on_rounded,
+                          color: Colors.white70,
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           _artist!.location,
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFFFD700),
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '${_artist!.rating} (${_artist!.reviewCount})',
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -543,7 +708,11 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.person_outline_rounded, color: AppColors.crimson, size: 20),
+                Icon(
+                  Icons.person_outline_rounded,
+                  color: AppColors.crimson,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'About',
@@ -587,23 +756,30 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _artist!.genres.map((genre) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.crimson, Color(0xFFFF6B6B)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              genre,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          )).toList(),
+          children: _artist!.genres
+              .map(
+                (genre) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.crimson, Color(0xFFFF6B6B)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    genre,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
         ),
 
         const SizedBox(height: 20),
@@ -621,29 +797,40 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _artist!.instruments.map((instrument) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.surface(brightness),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border(brightness)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(_getInstrumentIcon(instrument), size: 16, color: AppColors.crimson),
-                const SizedBox(width: 6),
-                Text(
-                  instrument,
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+          children: _artist!.instruments
+              .map(
+                (instrument) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface(brightness),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border(brightness)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getInstrumentIcon(instrument),
+                        size: 16,
+                        color: AppColors.crimson,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        instrument,
+                        style: TextStyle(
+                          color: AppColors.text(brightness),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          )).toList(),
+              )
+              .toList(),
         ),
       ],
     );
@@ -666,7 +853,11 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
                     color: AppColors.success.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.event_available_rounded, color: AppColors.success, size: 20),
+                  child: Icon(
+                    Icons.event_available_rounded,
+                    color: AppColors.success,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Column(
@@ -692,7 +883,10 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.crimson.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -712,29 +906,40 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: _artist!.availability.map((slot) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.background(brightness),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border(brightness)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_circle_rounded, size: 14, color: AppColors.success),
-                    const SizedBox(width: 6),
-                    Text(
-                      slot,
-                      style: TextStyle(
-                        color: AppColors.text(brightness),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+              children: _artist!.availability
+                  .map(
+                    (slot) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.background(brightness),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border(brightness)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 14,
+                            color: AppColors.success,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            slot,
+                            style: TextStyle(
+                              color: AppColors.text(brightness),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              )).toList(),
+                  )
+                  .toList(),
             ),
           ],
         ),
@@ -779,7 +984,9 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
             itemBuilder: (context, index) {
               final media = _artist!.media[index];
               return Padding(
-                padding: EdgeInsets.only(right: index < _artist!.media.length - 1 ? 12 : 0),
+                padding: EdgeInsets.only(
+                  right: index < _artist!.media.length - 1 ? 12 : 0,
+                ),
                 child: AnimatedTapFeedback(
                   onTap: () {
                     HapticFeedback.selectionClick();
@@ -819,7 +1026,11 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                  const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xFFFFD700),
+                    size: 14,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     _artist!.rating.toString(),
@@ -847,10 +1058,14 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
           ],
         ),
         const SizedBox(height: 14),
-        ...(_artist!.reviews.take(3).map((review) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _ReviewCard(review: review, brightness: brightness),
-        ))),
+        ...(_artist!.reviews
+            .take(3)
+            .map(
+              (review) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _ReviewCard(review: review, brightness: brightness),
+              ),
+            )),
       ],
     );
   }
@@ -940,7 +1155,12 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
     );
   }
 
-  Widget _buildFABItem(IconData icon, String label, Color color, VoidCallback onTap) {
+  Widget _buildFABItem(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return AnimatedTapFeedback(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -1027,7 +1247,9 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
                     content: const Text('Booking request sent!'),
                     backgroundColor: AppColors.success,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 );
               },
@@ -1234,10 +1456,12 @@ class _MediaCard extends StatelessWidget {
           Image.network(
             media.thumbnail ?? media.url,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               color: AppColors.cardBackground(brightness),
               child: Icon(
-                media.type == 'audio' ? Icons.audiotrack_rounded : Icons.image_rounded,
+                media.type == 'audio'
+                    ? Icons.audiotrack_rounded
+                    : Icons.image_rounded,
                 color: AppColors.textSec(brightness),
                 size: 40,
               ),
@@ -1251,7 +1475,11 @@ class _MediaCard extends StatelessWidget {
                   color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
+                child: const Icon(
+                  Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
             ),
           if (media.type == 'audio')
@@ -1260,7 +1488,11 @@ class _MediaCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.audiotrack_rounded, color: Colors.white, size: 32),
+                  const Icon(
+                    Icons.audiotrack_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
                   if (media.title != null) ...[
                     const SizedBox(height: 8),
                     Padding(
@@ -1335,11 +1567,16 @@ class _ReviewCard extends StatelessWidget {
                 ),
               ),
               Row(
-                children: List.generate(5, (i) => Icon(
-                  i < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                  size: 14,
-                  color: const Color(0xFFFFD700),
-                )),
+                children: List.generate(
+                  5,
+                  (i) => Icon(
+                    i < review.rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    size: 14,
+                    color: const Color(0xFFFFD700),
+                  ),
+                ),
               ),
             ],
           ),

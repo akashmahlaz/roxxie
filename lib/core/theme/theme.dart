@@ -1,7 +1,7 @@
 /// 🎨 ROXXIE DESIGN SYSTEM
-/// 
+///
 /// Premium, world-class design tokens and theme configuration
-/// 
+///
 /// This barrel file exports all theme-related modules
 library;
 

@@ -22,7 +22,7 @@ import '../widgets/widgets.dart';
 class GigContractScreen extends StatefulWidget {
   final String? gigId;
   final String? contractId;
-  
+
   const GigContractScreen({super.key, this.gigId, this.contractId});
 
   @override
@@ -106,7 +106,9 @@ class _GigContractScreenState extends State<GigContractScreen>
           content: const Text('Please accept all terms and sign'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;
@@ -131,7 +133,9 @@ class _GigContractScreenState extends State<GigContractScreen>
         final brightness = Theme.of(context).brightness;
         return Dialog(
           backgroundColor: AppColors.surface(brightness),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Column(
@@ -210,24 +214,16 @@ class _GigContractScreenState extends State<GigContractScreen>
             _buildAppBar(brightness),
 
             // Contract Header
-            SliverToBoxAdapter(
-              child: _buildContractHeader(brightness),
-            ),
+            SliverToBoxAdapter(child: _buildContractHeader(brightness)),
 
             // Progress Steps
-            SliverToBoxAdapter(
-              child: _buildProgressSteps(brightness),
-            ),
+            SliverToBoxAdapter(child: _buildProgressSteps(brightness)),
 
             // Content based on step
-            SliverToBoxAdapter(
-              child: _buildCurrentStepContent(brightness),
-            ),
+            SliverToBoxAdapter(child: _buildCurrentStepContent(brightness)),
 
             // Bottom padding
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 120),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
           ],
         ),
       ),
@@ -258,10 +254,7 @@ class _GigContractScreenState extends State<GigContractScreen>
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border(brightness)),
           ),
-          child: Icon(
-            Icons.close_rounded,
-            color: AppColors.text(brightness),
-          ),
+          child: Icon(Icons.close_rounded, color: AppColors.text(brightness)),
         ),
       ),
       title: Text(
@@ -497,8 +490,8 @@ class _GigContractScreenState extends State<GigContractScreen>
                       color: isCompleted
                           ? AppColors.crimson
                           : (isActive
-                              ? AppColors.crimson.withValues(alpha: 0.15)
-                              : AppColors.surface(brightness)),
+                                ? AppColors.crimson.withValues(alpha: 0.15)
+                                : AppColors.surface(brightness)),
                       border: Border.all(
                         color: isActive || isCompleted
                             ? AppColors.crimson
@@ -533,8 +526,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                           ? AppColors.text(brightness)
                           : AppColors.textSec(brightness),
                       fontSize: 12,
-                      fontWeight:
-                          isActive ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ],
@@ -760,8 +752,10 @@ class _GigContractScreenState extends State<GigContractScreen>
                 });
               },
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.crimson),
                   borderRadius: BorderRadius.circular(12),
@@ -979,11 +973,7 @@ class _GigContractScreenState extends State<GigContractScreen>
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.gavel_rounded,
-                  color: AppColors.info,
-                  size: 20,
-                ),
+                Icon(Icons.gavel_rounded, color: AppColors.info, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -1016,9 +1006,7 @@ class _GigContractScreenState extends State<GigContractScreen>
       ),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        border: Border(
-          top: BorderSide(color: AppColors.border(brightness)),
-        ),
+        border: Border(top: BorderSide(color: AppColors.border(brightness))),
       ),
       child: Row(
         children: [
@@ -1038,10 +1026,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                 ),
                 child: const Text(
                   'Back',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -1109,8 +1094,18 @@ class _GigContractScreenState extends State<GigContractScreen>
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -1318,8 +1313,7 @@ class _AgreementCheckbox extends StatelessWidget {
               : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color:
-                isChecked ? AppColors.success : AppColors.border(brightness),
+            color: isChecked ? AppColors.success : AppColors.border(brightness),
             width: isChecked ? 2 : 1,
           ),
         ),
@@ -1418,10 +1412,7 @@ class _SignatureCanvasState extends State<_SignatureCanvas> {
         }
       },
       child: CustomPaint(
-        painter: _SignaturePainter(
-          lines: _lines,
-          currentLine: _currentLine,
-        ),
+        painter: _SignaturePainter(lines: _lines, currentLine: _currentLine),
         size: Size.infinite,
       ),
     );

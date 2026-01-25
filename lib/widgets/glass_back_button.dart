@@ -52,7 +52,9 @@ class GlassBackButton extends StatelessWidget {
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: AppColors.cardBackground(brightness).withValues(alpha: 0.5),
+                color: AppColors.cardBackground(
+                  brightness,
+                ).withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: AppColors.border(brightness).withValues(alpha: 0.3),

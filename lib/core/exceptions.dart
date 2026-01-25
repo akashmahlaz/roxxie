@@ -14,11 +14,7 @@ abstract class GigMatchException implements Exception {
   final String? code;
   final dynamic originalError;
 
-  const GigMatchException(
-    this.message, {
-    this.code,
-    this.originalError,
-  });
+  const GigMatchException(this.message, {this.code, this.originalError});
 
   @override
   String toString() => 'GigMatchException: $message';
@@ -26,11 +22,7 @@ abstract class GigMatchException implements Exception {
 
 /// Base exception for service-specific errors
 abstract class ServiceException extends GigMatchException {
-  const ServiceException(
-    super.message, {
-    super.code,
-    super.originalError,
-  });
+  const ServiceException(super.message, {super.code, super.originalError});
 }
 
 /// ═══════════════════════════════════════════════════════════════════════
@@ -317,11 +309,7 @@ class ArtistServiceError extends ArtistServiceException {
 
 /// Base exception for venue service errors
 abstract class VenueServiceException extends ServiceException {
-  const VenueServiceException(
-    super.message, {
-    super.code,
-    super.originalError,
-  });
+  const VenueServiceException(super.message, {super.code, super.originalError});
 }
 
 /// Exception thrown in venue service operations
@@ -339,11 +327,7 @@ class VenueServiceError extends VenueServiceException {
 
 /// Base exception for chat service errors
 abstract class ChatServiceException extends ServiceException {
-  const ChatServiceException(
-    super.message, {
-    super.code,
-    super.originalError,
-  });
+  const ChatServiceException(super.message, {super.code, super.originalError});
 }
 
 /// Exception thrown in chat service operations
@@ -433,4 +417,19 @@ class PaymentException extends SubscriptionServiceException {
     super.code = 'PAYMENT_ERROR',
     super.originalError,
   });
+}
+
+/// Exception thrown when API operations fail
+class ApiException extends ServiceException {
+  final int statusCode;
+
+  const ApiException(
+    super.message,
+    this.statusCode, {
+    super.code = 'API_ERROR',
+    super.originalError,
+  });
+
+  @override
+  String toString() => 'ApiException($statusCode): $message';
 }

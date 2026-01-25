@@ -21,10 +21,7 @@ import '../widgets/widgets.dart';
 class VenueProfileViewScreen extends StatefulWidget {
   final String venueId;
 
-  const VenueProfileViewScreen({
-    super.key,
-    required this.venueId,
-  });
+  const VenueProfileViewScreen({super.key, required this.venueId});
 
   @override
   State<VenueProfileViewScreen> createState() => _VenueProfileViewScreenState();
@@ -35,7 +32,7 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
   late ScrollController _scrollController;
   late AnimationController _statsController;
   late PageController _galleryController;
-  
+
   double _scrollOffset = 0;
   int _currentGalleryIndex = 0;
   bool _isLoading = true;
@@ -85,7 +82,8 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
           'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800',
         ],
         avatar: 'https://i.pravatar.cc/150?img=65',
-        description: 'Blue Note is the jazz capital of the world, featuring legendary artists and emerging talent '
+        description:
+            'Blue Note is the jazz capital of the world, featuring legendary artists and emerging talent '
             'seven nights a week. Since opening in 1981, we\'ve been the premier jazz venue in New York City, '
             'showcasing the best in jazz, blues, R&B, and world music.',
         address: '131 W 3rd St, New York, NY 10012',
@@ -101,7 +99,10 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
           VenueAmenity(icon: Icons.speaker_rounded, label: 'Full PA System'),
           VenueAmenity(icon: Icons.restaurant_rounded, label: 'Dinner Service'),
           VenueAmenity(icon: Icons.local_bar_rounded, label: 'Full Bar'),
-          VenueAmenity(icon: Icons.local_parking_rounded, label: 'Nearby Parking'),
+          VenueAmenity(
+            icon: Icons.local_parking_rounded,
+            label: 'Nearby Parking',
+          ),
           VenueAmenity(icon: Icons.accessible_rounded, label: 'Accessible'),
           VenueAmenity(icon: Icons.wifi_rounded, label: 'WiFi'),
         ],
@@ -113,7 +114,8 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
             artistName: 'Marcus Rivera',
             artistImage: 'https://i.pravatar.cc/100?img=13',
             rating: 5,
-            comment: 'Incredible sound system and super professional staff. The crowd was amazing!',
+            comment:
+                'Incredible sound system and super professional staff. The crowd was amazing!',
             date: DateTime.now().subtract(const Duration(days: 5)),
           ),
           VenueReview(
@@ -121,7 +123,8 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
             artistName: 'Sarah\'s Jazz Quartet',
             artistImage: 'https://i.pravatar.cc/100?img=47',
             rating: 5,
-            comment: 'Best venue I\'ve ever played. The stage setup is perfect and they really take care of artists.',
+            comment:
+                'Best venue I\'ve ever played. The stage setup is perfect and they really take care of artists.',
             date: DateTime.now().subtract(const Duration(days: 12)),
           ),
           VenueReview(
@@ -129,7 +132,8 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
             artistName: 'The Midnight Run',
             artistImage: 'https://i.pravatar.cc/100?img=33',
             rating: 4,
-            comment: 'Great atmosphere and attentive audience. Would love to come back!',
+            comment:
+                'Great atmosphere and attentive audience. Would love to come back!',
             date: DateTime.now().subtract(const Duration(days: 28)),
           ),
         ],
@@ -185,18 +189,12 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
               ),
 
               // Content
-              SliverToBoxAdapter(
-                child: _buildProfileContent(brightness),
-              ),
+              SliverToBoxAdapter(child: _buildProfileContent(brightness)),
             ],
           ),
 
           // FAB
-          Positioned(
-            right: 20,
-            bottom: 100,
-            child: _buildFAB(brightness),
-          ),
+          Positioned(right: 20, bottom: 100, child: _buildFAB(brightness)),
         ],
       ),
     );
@@ -277,7 +275,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
               color: Colors.black.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.share_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
         ),
       ),
@@ -297,7 +299,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
               color: Colors.black.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.more_vert_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
         ),
       ),
@@ -435,7 +441,10 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
                         if (_venue!.isPremium) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
@@ -445,7 +454,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.star_rounded, color: Colors.white, size: 12),
+                                Icon(
+                                  Icons.star_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
                                 SizedBox(width: 4),
                                 Text(
                                   'FEATURED',
@@ -473,18 +486,33 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_rounded, color: Colors.white70, size: 14),
+                        const Icon(
+                          Icons.location_on_rounded,
+                          color: Colors.white70,
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           _venue!.location,
-                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFFFD700),
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '${_venue!.rating} (${_venue!.reviewCount})',
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -598,7 +626,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
                   color: AppColors.crimson.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(Icons.work_rounded, color: AppColors.crimson, size: 24),
+                child: Icon(
+                  Icons.work_rounded,
+                  color: AppColors.crimson,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -629,7 +661,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
                   color: AppColors.crimson,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                child: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
             ],
           ),
@@ -648,7 +684,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline_rounded, color: AppColors.crimson, size: 20),
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: AppColors.crimson,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'About',
@@ -692,7 +732,12 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label, Brightness brightness, {bool highlight = false}) {
+  Widget _buildInfoChip(
+    IconData icon,
+    String label,
+    Brightness brightness, {
+    bool highlight = false,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -712,7 +757,9 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
           Icon(
             icon,
             size: 16,
-            color: highlight ? AppColors.success : AppColors.textSec(brightness),
+            color: highlight
+                ? AppColors.success
+                : AppColors.textSec(brightness),
           ),
           const SizedBox(width: 6),
           Text(
@@ -744,23 +791,30 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _venue!.genres.map((genre) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.crimson, Color(0xFFFF6B6B)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              genre,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          )).toList(),
+          children: _venue!.genres
+              .map(
+                (genre) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.crimson, Color(0xFFFF6B6B)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    genre,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
         ),
       ],
     );
@@ -782,29 +836,36 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
         Wrap(
           spacing: 10,
           runSpacing: 10,
-          children: _venue!.amenities.map((amenity) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.surface(brightness),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border(brightness)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(amenity.icon, size: 18, color: AppColors.success),
-                const SizedBox(width: 8),
-                Text(
-                  amenity.label,
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+          children: _venue!.amenities
+              .map(
+                (amenity) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface(brightness),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border(brightness)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(amenity.icon, size: 18, color: AppColors.success),
+                      const SizedBox(width: 8),
+                      Text(
+                        amenity.label,
+                        style: TextStyle(
+                          color: AppColors.text(brightness),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          )).toList(),
+              )
+              .toList(),
         ),
       ],
     );
@@ -820,7 +881,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.location_on_rounded, color: AppColors.crimson, size: 20),
+                Icon(
+                  Icons.location_on_rounded,
+                  color: AppColors.crimson,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Location',
@@ -857,7 +922,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.map_rounded, color: AppColors.textSec(brightness), size: 32),
+                    Icon(
+                      Icons.map_rounded,
+                      color: AppColors.textSec(brightness),
+                      size: 32,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       'Map Preview',
@@ -908,7 +977,11 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                  const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xFFFFD700),
+                    size: 14,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     _venue!.rating.toString(),
@@ -936,10 +1009,14 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
           ],
         ),
         const SizedBox(height: 14),
-        ...(_venue!.reviews.take(3).map((review) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _ReviewCard(review: review, brightness: brightness),
-        ))),
+        ...(_venue!.reviews
+            .take(3)
+            .map(
+              (review) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _ReviewCard(review: review, brightness: brightness),
+              ),
+            )),
       ],
     );
   }
@@ -1234,11 +1311,16 @@ class _ReviewCard extends StatelessWidget {
                 ),
               ),
               Row(
-                children: List.generate(5, (i) => Icon(
-                  i < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                  size: 14,
-                  color: const Color(0xFFFFD700),
-                )),
+                children: List.generate(
+                  5,
+                  (i) => Icon(
+                    i < review.rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    size: 14,
+                    color: const Color(0xFFFFD700),
+                  ),
+                ),
               ),
             ],
           ),

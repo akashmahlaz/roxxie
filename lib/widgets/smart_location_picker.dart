@@ -13,7 +13,8 @@ import '../core/services/services.dart';
 class SmartLocationPicker extends StatefulWidget {
   final String? initialCity;
   final String? initialCountry;
-  final Function(String city, String country, double? lat, double? lng)? onLocationSelected;
+  final Function(String city, String country, double? lat, double? lng)?
+  onLocationSelected;
   final bool autoDetect;
 
   const SmartLocationPicker({
@@ -65,7 +66,7 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
 
     try {
       final result = await _locationService.getCurrentLocationWithAddress();
-      
+
       if (result != null && mounted) {
         setState(() {
           _city = result.city;
@@ -75,7 +76,12 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
           _isDetecting = false;
         });
 
-        widget.onLocationSelected?.call(_city!, _country!, _latitude, _longitude);
+        widget.onLocationSelected?.call(
+          _city!,
+          _country!,
+          _latitude,
+          _longitude,
+        );
       } else {
         setState(() {
           _isDetecting = false;
@@ -180,11 +186,7 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.check_circle_rounded,
-                color: Colors.green,
-                size: 20,
-              ),
+              Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -249,10 +251,7 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
           decoration: InputDecoration(
             hintText: 'City or Zip Code',
             hintStyle: TextStyle(color: AppColors.textSec(brightness)),
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              color: AppColors.crimson,
-            ),
+            prefixIcon: Icon(Icons.search_rounded, color: AppColors.crimson),
             suffixIcon: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -303,27 +302,22 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
             }
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Auto-detect option
         TextButton.icon(
           onPressed: _autoDetectLocation,
           icon: Icon(Icons.my_location_rounded, size: 18),
           label: const Text('Auto-detect my location'),
-          style: TextButton.styleFrom(
-            foregroundColor: AppColors.crimson,
-          ),
+          style: TextButton.styleFrom(foregroundColor: AppColors.crimson),
         ),
 
         if (_errorMessage != null) ...[
           const SizedBox(height: 8),
           Text(
             _errorMessage!,
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.red, fontSize: 12),
           ),
         ],
       ],
@@ -333,7 +327,7 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
   void _handleManualLocation(String input) {
     // Simple parsing - in production, use Google Places API
     final parts = input.split(',').map((e) => e.trim()).toList();
-    
+
     setState(() {
       if (parts.length >= 2) {
         _city = parts[0];

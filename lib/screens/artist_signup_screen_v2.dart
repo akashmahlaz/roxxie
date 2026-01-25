@@ -85,13 +85,15 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
 
   void _initParticles() {
     for (int i = 0; i < 40; i++) {
-      _particles.add(_SignupParticle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble(),
-        size: _random.nextDouble() * 3 + 1,
-        speed: _random.nextDouble() * 0.15 + 0.05,
-        opacity: _random.nextDouble() * 0.4 + 0.1,
-      ));
+      _particles.add(
+        _SignupParticle(
+          x: _random.nextDouble(),
+          y: _random.nextDouble(),
+          size: _random.nextDouble() * 3 + 1,
+          speed: _random.nextDouble() * 0.15 + 0.05,
+          opacity: _random.nextDouble() * 0.4 + 0.1,
+        ),
+      );
     }
   }
 
@@ -149,7 +151,10 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
 
   SnackBar _buildPremiumSnackBar(String message, Color color) {
     return SnackBar(
-      content: Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
+      content: Text(
+        message,
+        style: const TextStyle(fontWeight: FontWeight.w500),
+      ),
       backgroundColor: color,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -171,10 +176,12 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
     }
 
     if (!_acceptTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(_buildPremiumSnackBar(
-        'Please accept the Terms & Conditions',
-        AppColors.crimson,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        _buildPremiumSnackBar(
+          'Please accept the Terms & Conditions',
+          AppColors.crimson,
+        ),
+      );
       return;
     }
 
@@ -197,26 +204,31 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
 
       if (success) {
         HapticFeedback.heavyImpact();
-        messenger.showSnackBar(_buildPremiumSnackBar(
-          '✅ Account created! Complete your profile',
-          Colors.green,
-        ));
+        messenger.showSnackBar(
+          _buildPremiumSnackBar(
+            '✅ Account created! Complete your profile',
+            Colors.green,
+          ),
+        );
 
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const ArtistProfileSetupScreen(),
-            transitionsBuilder: (_, animation, __, child) {
+            pageBuilder: (_, _, _) => const ArtistProfileSetupScreen(),
+            transitionsBuilder: (_, animation, _, child) {
               return FadeTransition(
                 opacity: animation,
                 child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.05, 0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeOutCubic,
-                  )),
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(0.05, 0),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      ),
                   child: child,
                 ),
               );
@@ -228,13 +240,17 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
         throw Exception(authProvider.errorMessage ?? 'Registration failed');
       }
     } on _ValidationException catch (e) {
-      messenger.showSnackBar(_buildPremiumSnackBar('⚠️ ${e.message}', AppColors.crimson));
+      messenger.showSnackBar(
+        _buildPremiumSnackBar('⚠️ ${e.message}', AppColors.crimson),
+      );
     } catch (e) {
       HapticFeedback.heavyImpact();
-      messenger.showSnackBar(_buildPremiumSnackBar(
-        '❌ ${e.toString().replaceAll('Exception: ', '')}',
-        Colors.red.shade400,
-      ));
+      messenger.showSnackBar(
+        _buildPremiumSnackBar(
+          '❌ ${e.toString().replaceAll('Exception: ', '')}',
+          Colors.red.shade400,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -380,7 +396,9 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground(brightness).withValues(alpha: 0.5),
+                  color: AppColors.cardBackground(
+                    brightness,
+                  ).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: AppColors.border(brightness).withValues(alpha: 0.3),
@@ -459,7 +477,10 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
         AnimatedBuilder(
           animation: _shimmerController,
           builder: (context, _) {
-            final shimmerValue = (_shimmerController.value * 3 - 1).clamp(0.0, 1.0);
+            final shimmerValue = (_shimmerController.value * 3 - 1).clamp(
+              0.0,
+              1.0,
+            );
             return ShaderMask(
               shaderCallback: (bounds) {
                 return LinearGradient(
@@ -556,11 +577,14 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
           obscureText: _obscurePassword,
           suffixIcon: IconButton(
             icon: Icon(
-              _obscurePassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+              _obscurePassword
+                  ? Icons.visibility_rounded
+                  : Icons.visibility_off_rounded,
               color: AppColors.textTert(brightness),
               size: 24,
             ),
-            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            onPressed: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
           ),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Required';
@@ -608,11 +632,15 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
           obscureText: _obscureConfirmPassword,
           suffixIcon: IconButton(
             icon: Icon(
-              _obscureConfirmPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+              _obscureConfirmPassword
+                  ? Icons.visibility_rounded
+                  : Icons.visibility_off_rounded,
               color: AppColors.textTert(brightness),
               size: 24,
             ),
-            onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+            onPressed: () => setState(
+              () => _obscureConfirmPassword = !_obscureConfirmPassword,
+            ),
           ),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Required';
@@ -652,7 +680,9 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
         Text(
           label,
           style: TextStyle(
-            color: isFocused ? AppColors.crimson : AppColors.textSec(brightness),
+            color: isFocused
+                ? AppColors.crimson
+                : AppColors.textSec(brightness),
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -683,14 +713,16 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
                 padding: const EdgeInsets.only(left: 14, right: 10),
                 child: Icon(
                   icon,
-                  color: isFocused ? AppColors.crimson : AppColors.textTert(brightness),
+                  color: isFocused
+                      ? AppColors.crimson
+                      : AppColors.textTert(brightness),
                   size: 20,
                 ),
               ),
               prefixIconConstraints: const BoxConstraints(minWidth: 44),
               suffixIcon: suffixIcon,
               filled: true,
-              fillColor: isDark 
+              fillColor: isDark
                   ? AppColors.graphite.withValues(alpha: 0.5)
                   : Colors.grey[100],
               border: OutlineInputBorder(
@@ -700,7 +732,9 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: isDark ? AppColors.slate.withValues(alpha: 0.5) : Colors.grey[300]!,
+                  color: isDark
+                      ? AppColors.slate.withValues(alpha: 0.5)
+                      : Colors.grey[300]!,
                   width: 1,
                 ),
               ),
@@ -716,7 +750,10 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Colors.red, width: 1.5),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
           ),
         ),
@@ -743,11 +780,18 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
             height: 26,
             decoration: BoxDecoration(
               gradient: _acceptTerms
-                  ? LinearGradient(colors: [AppColors.crimson, AppColors.crimson.withValues(alpha: 0.8)])
+                  ? LinearGradient(
+                      colors: [
+                        AppColors.crimson,
+                        AppColors.crimson.withValues(alpha: 0.8),
+                      ],
+                    )
                   : null,
               color: _acceptTerms ? null : Colors.transparent,
               border: Border.all(
-                color: _acceptTerms ? AppColors.crimson : AppColors.border(brightness),
+                color: _acceptTerms
+                    ? AppColors.crimson
+                    : AppColors.border(brightness),
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -772,19 +816,33 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
                 children: [
                   TextSpan(
                     text: 'I agree to the ',
-                    style: TextStyle(color: AppColors.textSec(brightness), fontSize: 14),
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 14,
+                    ),
                   ),
                   TextSpan(
                     text: 'Terms of Service',
-                    style: TextStyle(color: AppColors.crimson, fontSize: 14, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: AppColors.crimson,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   TextSpan(
                     text: ' and ',
-                    style: TextStyle(color: AppColors.textSec(brightness), fontSize: 14),
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 14,
+                    ),
                   ),
                   TextSpan(
                     text: 'Privacy Policy',
-                    style: TextStyle(color: AppColors.crimson, fontSize: 14, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: AppColors.crimson,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -820,7 +878,9 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.crimson.withValues(alpha: _isLoading ? 0.2 : 0.4 * _pulseAnimation.value),
+                  color: AppColors.crimson.withValues(
+                    alpha: _isLoading ? 0.2 : 0.4 * _pulseAnimation.value,
+                  ),
                   blurRadius: 25,
                   spreadRadius: 2,
                   offset: const Offset(0, 10),
@@ -835,7 +895,10 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
                         SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -851,7 +914,11 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.music_note_rounded, color: Colors.white, size: 22),
+                        Icon(
+                          Icons.music_note_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                         const SizedBox(width: 10),
                         Text(
                           'Create Artist Profile',
@@ -889,8 +956,8 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
-                pageBuilder: (_, __, ___) => const LoginScreen(),
-                transitionsBuilder: (_, animation, __, child) {
+                pageBuilder: (_, _, _) => const LoginScreen(),
+                transitionsBuilder: (_, animation, _, child) {
                   return FadeTransition(opacity: animation, child: child);
                 },
                 transitionDuration: const Duration(milliseconds: 300),
@@ -917,15 +984,22 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
   Widget _buildOrDivider(Brightness brightness) {
     return Row(
       children: [
-        Expanded(child: Divider(color: AppColors.border(brightness), thickness: 1)),
+        Expanded(
+          child: Divider(color: AppColors.border(brightness), thickness: 1),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'or sign up with',
-            style: TextStyle(color: AppColors.textTert(brightness), fontSize: 13),
+            style: TextStyle(
+              color: AppColors.textTert(brightness),
+              fontSize: 13,
+            ),
           ),
         ),
-        Expanded(child: Divider(color: AppColors.border(brightness), thickness: 1)),
+        Expanded(
+          child: Divider(color: AppColors.border(brightness), thickness: 1),
+        ),
       ],
     );
   }
@@ -968,16 +1042,18 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
   Future<void> _handleGoogleSignUp() async {
     HapticFeedback.lightImpact();
     if (_isLoading) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final authProvider = context.read<AuthProvider>();
       // Pass artist role for social signup
-      final success = await authProvider.signInWithGoogle(role: UserRole.artist);
-      
+      final success = await authProvider.signInWithGoogle(
+        role: UserRole.artist,
+      );
+
       if (!mounted) return;
-      
+
       if (success) {
         HapticFeedback.heavyImpact();
         _navigateAfterSocialLogin(authProvider);
@@ -987,7 +1063,9 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
             content: Text(authProvider.errorMessage ?? 'Google sign-up failed'),
             backgroundColor: AppColors.crimson,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -999,16 +1077,16 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
   Future<void> _handleAppleSignUp() async {
     HapticFeedback.lightImpact();
     if (_isLoading) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final authProvider = context.read<AuthProvider>();
       // Pass artist role for social signup
       final success = await authProvider.signInWithApple(role: UserRole.artist);
-      
+
       if (!mounted) return;
-      
+
       if (success) {
         HapticFeedback.heavyImpact();
         _navigateAfterSocialLogin(authProvider);
@@ -1018,7 +1096,9 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
             content: Text(authProvider.errorMessage ?? 'Apple sign-up failed'),
             backgroundColor: AppColors.crimson,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -1061,7 +1141,7 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
         child: Container(
           height: 54,
           decoration: BoxDecoration(
-            color: isDark 
+            color: isDark
                 ? AppColors.graphite.withValues(alpha: 0.6)
                 : Colors.grey[50],
             borderRadius: BorderRadius.circular(16),
@@ -1130,9 +1210,12 @@ class _ParticleFieldPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (final particle in particles) {
       final y = (particle.y - progress * particle.speed) % 1.0;
-      final x = particle.x + math.sin(progress * math.pi * 2 + particle.x * 10) * 0.02;
+      final x =
+          particle.x +
+          math.sin(progress * math.pi * 2 + particle.x * 10) * 0.02;
 
-      final twinkle = 0.5 + 0.5 * math.sin(progress * math.pi * 4 + particle.x * 15);
+      final twinkle =
+          0.5 + 0.5 * math.sin(progress * math.pi * 4 + particle.x * 15);
 
       final paint = Paint()
         ..color = color.withValues(alpha: particle.opacity * twinkle * 0.5)
@@ -1167,12 +1250,15 @@ class _GradientOrbPainter extends CustomPainter {
     final orb1Y = size.height * 0.15 + math.sin(progress * math.pi * 2) * 20;
 
     final orb1Paint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.crimson.withValues(alpha: isDark ? 0.2 : 0.12),
-          AppColors.crimson.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(orb1X, orb1Y), radius: 150));
+      ..shader =
+          RadialGradient(
+            colors: [
+              AppColors.crimson.withValues(alpha: isDark ? 0.2 : 0.12),
+              AppColors.crimson.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(center: Offset(orb1X, orb1Y), radius: 150),
+          );
 
     canvas.drawCircle(Offset(orb1X, orb1Y), 150, orb1Paint);
 
@@ -1181,12 +1267,15 @@ class _GradientOrbPainter extends CustomPainter {
     final orb2Y = size.height * 0.85 + math.cos(progress * math.pi * 2) * 30;
 
     final orb2Paint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.purple.withValues(alpha: isDark ? 0.1 : 0.06),
-          Colors.purple.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(orb2X, orb2Y), radius: 120));
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.purple.withValues(alpha: isDark ? 0.1 : 0.06),
+              Colors.purple.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(center: Offset(orb2X, orb2Y), radius: 120),
+          );
 
     canvas.drawCircle(Offset(orb2X, orb2Y), 120, orb2Paint);
   }

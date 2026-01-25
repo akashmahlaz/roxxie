@@ -22,9 +22,9 @@ import '../core/theme/theme.dart';
 
 /// Material 3 Window Size Classes for responsive design
 enum WindowSizeClass {
-  compact,   // < 600dp (phones)
-  medium,    // 600-839dp (tablets, foldables)
-  expanded,  // >= 840dp (large tablets, desktop)
+  compact, // < 600dp (phones)
+  medium, // 600-839dp (tablets, foldables)
+  expanded, // >= 840dp (large tablets, desktop)
 }
 
 /// Get current window size class
@@ -86,10 +86,7 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
   Widget _buildCompactLayout(BuildContext context, Brightness brightness) {
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
-      body: IndexedStack(
-        index: selectedIndex,
-        children: children,
-      ),
+      body: IndexedStack(index: selectedIndex, children: children),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: onDestinationSelected,
@@ -121,21 +118,19 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
                     child: floatingActionButton,
                   )
                 : null,
-            destinations: destinations.map((d) => NavigationRailDestination(
-              icon: d.icon,
-              selectedIcon: d.selectedIcon,
-              label: Text(d.label),
-            )).toList(),
+            destinations: destinations
+                .map(
+                  (d) => NavigationRailDestination(
+                    icon: d.icon,
+                    selectedIcon: d.selectedIcon,
+                    label: Text(d.label),
+                  ),
+                )
+                .toList(),
           ),
-          VerticalDivider(
-            width: 1,
-            color: AppColors.border(brightness),
-          ),
+          VerticalDivider(width: 1, color: AppColors.border(brightness)),
           Expanded(
-            child: IndexedStack(
-              index: selectedIndex,
-              children: children,
-            ),
+            child: IndexedStack(index: selectedIndex, children: children),
           ),
         ],
       ),
@@ -157,7 +152,10 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
               const SizedBox(height: 12),
               // App logo/header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 16,
+                ),
                 child: Row(
                   children: [
                     Icon(
@@ -179,7 +177,7 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
               ),
               const Divider(indent: 28, endIndent: 28),
               ...destinations.asMap().entries.map((entry) {
-                final i = entry.key;
+                final _ = entry.key;
                 final d = entry.value;
                 return NavigationDrawerDestination(
                   icon: d.icon,
@@ -196,15 +194,9 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
               ],
             ],
           ),
-          VerticalDivider(
-            width: 1,
-            color: AppColors.border(brightness),
-          ),
+          VerticalDivider(width: 1, color: AppColors.border(brightness)),
           Expanded(
-            child: IndexedStack(
-              index: selectedIndex,
-              children: children,
-            ),
+            child: IndexedStack(index: selectedIndex, children: children),
           ),
         ],
       ),
@@ -281,7 +273,7 @@ class AdaptiveLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sizeClass = context.windowSizeClass;
-    
+
     return switch (sizeClass) {
       WindowSizeClass.expanded => expanded ?? medium ?? compact,
       WindowSizeClass.medium => medium ?? compact,
@@ -349,7 +341,10 @@ class _ListDetailLayoutState<T> extends State<ListDetailLayout<T>> {
         appBar: AppBar(
           backgroundColor: AppColors.surface(brightness),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: AppColors.text(brightness),
+            ),
             onPressed: () => setState(() => _selectedItem = null),
           ),
         ),
@@ -368,10 +363,7 @@ class _ListDetailLayoutState<T> extends State<ListDetailLayout<T>> {
           width: widget.listWidth,
           child: _buildList(brightness, showDivider: true),
         ),
-        VerticalDivider(
-          width: 1,
-          color: AppColors.border(brightness),
-        ),
+        VerticalDivider(width: 1, color: AppColors.border(brightness)),
         Expanded(
           child: _selectedItem != null
               ? widget.detailBuilder(_selectedItem as T)
@@ -399,7 +391,7 @@ class _ListDetailLayoutState<T> extends State<ListDetailLayout<T>> {
       itemBuilder: (context, index) {
         final item = widget.items[index];
         final isSelected = item == _selectedItem;
-        
+
         return GestureDetector(
           onTap: () => setState(() => _selectedItem = item),
           child: widget.listItemBuilder(item, isSelected),
@@ -422,7 +414,7 @@ bool isNightTime() {
 /// Returns a color tint based on time of day for adaptive UI
 Color getTimeBasedTint(Brightness brightness) {
   final hour = DateTime.now().hour;
-  
+
   if (hour >= 6 && hour < 12) {
     // Morning - warm golden tint
     return brightness == Brightness.dark

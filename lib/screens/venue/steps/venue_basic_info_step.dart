@@ -82,8 +82,8 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
       (widget.profileData.venueType?.isNotEmpty ?? false);
 
   /// Check if venue name was already provided during signup
-  bool get _hasVenueNameFromSignup => 
-      widget.profileData.venueName != null && 
+  bool get _hasVenueNameFromSignup =>
+      widget.profileData.venueName != null &&
       widget.profileData.venueName!.trim().isNotEmpty;
 
   @override
@@ -477,9 +477,7 @@ class _VenueBasicInfoStepState extends State<VenueBasicInfoStep> {
       decoration: BoxDecoration(
         color: AppColors.crimson.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.crimson.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

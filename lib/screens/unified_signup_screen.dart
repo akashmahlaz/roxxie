@@ -31,7 +31,6 @@ class UnifiedSignupScreen extends StatefulWidget {
 
 class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
     with SingleTickerProviderStateMixin {
-  
   // ═══════════════════════════════════════════════════════════════════════
   // FORM CONTROLLERS - MINIMAL ESSENTIAL FIELDS ONLY
   // ═══════════════════════════════════════════════════════════════════════
@@ -47,7 +46,7 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _acceptTerms = false;
-  
+
   // Location state
   String? _city;
   String? _country;
@@ -115,7 +114,7 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
 
     try {
       final authProvider = context.read<AuthProvider>();
-      
+
       final success = await authProvider.register(
         email: _emailController.text.trim().toLowerCase(),
         password: _passwordController.text,
@@ -131,12 +130,12 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
 
       if (success) {
         _showSuccess('Account created successfully!');
-        
+
         // Navigate to appropriate profile setup
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         if (!mounted) return;
-        
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -202,7 +201,10 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
                 children: [
                   // Back button
                   IconButton(
-                    icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
+                    icon: Icon(
+                      Icons.arrow_back_rounded,
+                      color: AppColors.text(brightness),
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     alignment: Alignment.centerLeft,
@@ -214,150 +216,158 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
                   Text(
                     'Create Account',
                     style: TextStyle(
-                          color: AppColors.text(brightness),
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
+                      color: AppColors.text(brightness),
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    'Join thousands of artists and venues',
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 15,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // ═══════════════════════════════════════════════════
+                  // SOCIAL AUTHENTICATION
+                  // ═══════════════════════════════════════════════════
+                  _buildSocialButtons(brightness),
+
+                  const SizedBox(height: 24),
+
+                  // Divider
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(color: AppColors.border(brightness)),
                       ),
-
-                      const SizedBox(height: 8),
-
-                      Text(
-                        'Join thousands of artists and venues',
-                        style: TextStyle(
-                          color: AppColors.textSec(brightness),
-                          fontSize: 15,
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // ═══════════════════════════════════════════════════
-                      // SOCIAL AUTHENTICATION
-                      // ═══════════════════════════════════════════════════
-                      _buildSocialButtons(brightness),
-
-                      const SizedBox(height: 24),
-
-                      // Divider
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: AppColors.border(brightness))),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              'or continue with email',
-                              style: TextStyle(
-                                color: AppColors.textSec(brightness),
-                                fontSize: 12,
-                              ),
-                            ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'or continue with email',
+                          style: TextStyle(
+                            color: AppColors.textSec(brightness),
+                            fontSize: 12,
                           ),
-                          Expanded(child: Divider(color: AppColors.border(brightness))),
-                        ],
+                        ),
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // ═══════════════════════════════════════════════════
-                      // ROLE SELECTION (INTEGRATED)
-                      // ═══════════════════════════════════════════════════
-                      _buildRoleSelector(brightness),
-
-                      const SizedBox(height: 20),
-
-                      // ═══════════════════════════════════════════════════
-                      // ESSENTIAL FORM FIELDS
-                      // ═══════════════════════════════════════════════════
-
-                      // Name
-                      _buildTextField(
-                        controller: _nameController,
-                        label: _selectedRole == UserRole.venue ? 'Venue Name' : 'Your Name',
-                        hint: _selectedRole == UserRole.venue 
-                            ? 'e.g., The Blue Note Jazz Club' 
-                            : 'e.g., Sarah Johnson',
-                        icon: _selectedRole == UserRole.venue 
-                            ? Icons.storefront_rounded 
-                            : Icons.person_outline_rounded,
-                        brightness: brightness,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Name is required';
-                          }
-                          if (value.trim().length < 2) {
-                            return 'Name must be at least 2 characters';
-                          }
-                          return null;
-                        },
-                        textInputAction: TextInputAction.next,
-                        autofillHints: [AutofillHints.name],
+                      Expanded(
+                        child: Divider(color: AppColors.border(brightness)),
                       ),
+                    ],
+                  ),
 
-                      const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-                      // Email
-                      _buildTextField(
-                        controller: _emailController,
-                        label: 'Email Address',
-                        hint: 'your@email.com',
-                        icon: Icons.email_outlined,
-                        brightness: brightness,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Email is required';
-                          }
-                          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$');
-                          if (!emailRegex.hasMatch(value)) {
-                            return 'Enter a valid email address';
-                          }
-                          return null;
-                        },
-                        textInputAction: TextInputAction.next,
-                        autofillHints: [AutofillHints.email],
-                      ),
+                  // ═══════════════════════════════════════════════════
+                  // ROLE SELECTION (INTEGRATED)
+                  // ═══════════════════════════════════════════════════
+                  _buildRoleSelector(brightness),
 
-                      const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                      // Location (Smart Picker)
-                      SmartLocationPicker(
-                        autoDetect: true,
-                        onLocationSelected: (city, country, lat, lng) {
-                          setState(() {
-                            _city = city;
-                            _country = country;
-                            _latitude = lat;
-                            _longitude = lng;
-                          });
-                        },
-                      ),
+                  // ═══════════════════════════════════════════════════
+                  // ESSENTIAL FORM FIELDS
+                  // ═══════════════════════════════════════════════════
 
-                      const SizedBox(height: 16),
+                  // Name
+                  _buildTextField(
+                    controller: _nameController,
+                    label: _selectedRole == UserRole.venue
+                        ? 'Venue Name'
+                        : 'Your Name',
+                    hint: _selectedRole == UserRole.venue
+                        ? 'e.g., The Blue Note Jazz Club'
+                        : 'e.g., Sarah Johnson',
+                    icon: _selectedRole == UserRole.venue
+                        ? Icons.storefront_rounded
+                        : Icons.person_outline_rounded,
+                    brightness: brightness,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Name is required';
+                      }
+                      if (value.trim().length < 2) {
+                        return 'Name must be at least 2 characters';
+                      }
+                      return null;
+                    },
+                    textInputAction: TextInputAction.next,
+                    autofillHints: [AutofillHints.name],
+                  ),
 
-                      // Password
-                      _buildPasswordField(brightness),
+                  const SizedBox(height: 16),
 
-                      const SizedBox(height: 12),
+                  // Email
+                  _buildTextField(
+                    controller: _emailController,
+                    label: 'Email Address',
+                    hint: 'your@email.com',
+                    icon: Icons.email_outlined,
+                    brightness: brightness,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Email is required';
+                      }
+                      final emailRegex = RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$',
+                      );
+                      if (!emailRegex.hasMatch(value)) {
+                        return 'Enter a valid email address';
+                      }
+                      return null;
+                    },
+                    textInputAction: TextInputAction.next,
+                    autofillHints: [AutofillHints.email],
+                  ),
 
-                      // Password strength indicator
-                      PasswordStrengthIndicator(
-                        password: _passwordController.text,
-                        showRequirements: _passwordController.text.isNotEmpty,
-                      ),
+                  const SizedBox(height: 16),
 
-                      const SizedBox(height: 20),
+                  // Location (Smart Picker)
+                  SmartLocationPicker(
+                    autoDetect: true,
+                    onLocationSelected: (city, country, lat, lng) {
+                      setState(() {
+                        _city = city;
+                        _country = country;
+                        _latitude = lat;
+                        _longitude = lng;
+                      });
+                    },
+                  ),
 
-                      // Terms & Conditions
-                      _buildTermsCheckbox(brightness),
+                  const SizedBox(height: 16),
 
-                      const SizedBox(height: 24),
+                  // Password
+                  _buildPasswordField(brightness),
 
-                      // Create Account Button
-                      _buildSignupButton(brightness),
+                  const SizedBox(height: 12),
 
-                      const SizedBox(height: 20),
+                  // Password strength indicator
+                  PasswordStrengthIndicator(
+                    password: _passwordController.text,
+                    showRequirements: _passwordController.text.isNotEmpty,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Terms & Conditions
+                  _buildTermsCheckbox(brightness),
+
+                  const SizedBox(height: 24),
+
+                  // Create Account Button
+                  _buildSignupButton(brightness),
+
+                  const SizedBox(height: 20),
 
                   // Login link
                   _buildLoginLink(brightness),
@@ -496,8 +506,8 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? color.withValues(alpha: 0.1) 
+          color: isSelected
+              ? color.withValues(alpha: 0.1)
               : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -584,7 +594,10 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ],
@@ -615,14 +628,21 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
           decoration: InputDecoration(
             hintText: 'Create a strong password',
             hintStyle: TextStyle(color: AppColors.textTert(brightness)),
-            prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.crimson, size: 20),
+            prefixIcon: Icon(
+              Icons.lock_outline_rounded,
+              color: AppColors.crimson,
+              size: 20,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
-                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 color: AppColors.textTert(brightness),
                 size: 20,
               ),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
             filled: true,
             fillColor: AppColors.surface(brightness),
@@ -638,7 +658,10 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: AppColors.crimson, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ],
@@ -658,7 +681,9 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
             decoration: BoxDecoration(
               color: _acceptTerms ? AppColors.crimson : Colors.transparent,
               border: Border.all(
-                color: _acceptTerms ? AppColors.crimson : AppColors.border(brightness),
+                color: _acceptTerms
+                    ? AppColors.crimson
+                    : AppColors.border(brightness),
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(5),
@@ -675,7 +700,10 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
             child: Text.rich(
               TextSpan(
                 text: 'I agree to the ',
-                style: TextStyle(color: AppColors.textSec(brightness), fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.textSec(brightness),
+                  fontSize: 13,
+                ),
                 children: [
                   TextSpan(
                     text: 'Terms of Service',
@@ -749,7 +777,10 @@ class _UnifiedSignupScreenState extends State<UnifiedSignupScreen>
         child: Text.rich(
           TextSpan(
             text: 'Already have an account? ',
-            style: TextStyle(color: AppColors.textSec(brightness), fontSize: 14),
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 14,
+            ),
             children: [
               TextSpan(
                 text: 'Log In',

@@ -6,12 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 
 /// Error severity levels
-enum ErrorSeverity {
-  info,
-  warning,
-  error,
-  fatal,
-}
+enum ErrorSeverity { info, warning, error, fatal }
 
 /// Custom app exception with detailed context
 class AppException implements Exception {
@@ -88,7 +83,8 @@ class ValidationException extends AppException {
 
 /// Enterprise Error Handling Service
 class ErrorHandlingService {
-  static final ErrorHandlingService _instance = ErrorHandlingService._internal();
+  static final ErrorHandlingService _instance =
+      ErrorHandlingService._internal();
   factory ErrorHandlingService() => _instance;
   ErrorHandlingService._internal();
 
@@ -117,11 +113,7 @@ class ErrorHandlingService {
 
     // Setup platform dispatcher error handling
     PlatformDispatcher.instance.onError = (error, stack) {
-      logError(
-        error,
-        stackTrace: stack,
-        severity: ErrorSeverity.fatal,
-      );
+      logError(error, stackTrace: stack, severity: ErrorSeverity.fatal);
       return true;
     };
 

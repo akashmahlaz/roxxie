@@ -22,25 +22,41 @@ class VenueMusicPreferencesStep extends StatefulWidget {
   });
 
   @override
-  State<VenueMusicPreferencesStep> createState() => _VenueMusicPreferencesStepState();
+  State<VenueMusicPreferencesStep> createState() =>
+      _VenueMusicPreferencesStepState();
 }
 
 class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
   late TextEditingController _addressController;
-  
+
   // Genre options
   final List<String> _genreOptions = [
-    'Jazz', 'Rock', 'EDM', 'Indie', 'Pop', 'Blues',
-    'Hip Hop', 'Country', 'Classical', 'Folk', 'Reggae', 
-    'Metal', 'R&B', 'Soul', 'Funk', 'Electronic'
+    'Jazz',
+    'Rock',
+    'EDM',
+    'Indie',
+    'Pop',
+    'Blues',
+    'Hip Hop',
+    'Country',
+    'Classical',
+    'Folk',
+    'Reggae',
+    'Metal',
+    'R&B',
+    'Soul',
+    'Funk',
+    'Electronic',
   ];
 
   @override
   void initState() {
     super.initState();
     _addressController = TextEditingController(
-      text: widget.profileData.location.formattedAddress ?? 
-            widget.profileData.location.streetAddress ?? '',
+      text:
+          widget.profileData.location.formattedAddress ??
+          widget.profileData.location.streetAddress ??
+          '',
     );
   }
 
@@ -130,22 +146,26 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                     height: 40,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
-                      color: isSelected 
-                          ? AppColors.crimson 
-                          : (isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.grey[100]),
+                      color: isSelected
+                          ? AppColors.crimson
+                          : (isDark
+                                ? AppColors.graphite.withValues(alpha: 0.5)
+                                : Colors.grey[100]),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isSelected 
-                            ? AppColors.crimson 
+                        color: isSelected
+                            ? AppColors.crimson
                             : (isDark ? AppColors.slate : Colors.transparent),
                       ),
-                      boxShadow: isSelected ? [
-                        BoxShadow(
-                          color: AppColors.crimson.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ] : null,
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.crimson.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -162,9 +182,11 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                           genre,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected 
-                                ? Colors.white 
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? Colors.white
                                 : AppColors.text(brightness),
                           ),
                         ),
@@ -221,7 +243,9 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
             child: Container(
               height: 56,
               decoration: BoxDecoration(
-                color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.grey[100],
+                color: isDark
+                    ? AppColors.graphite.withValues(alpha: 0.5)
+                    : Colors.grey[100],
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -247,7 +271,9 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                           color: isDark ? Colors.grey[500] : Colors.grey[400],
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ),
                       ),
                       onChanged: (value) {
                         widget.profileData.location.streetAddress = value;
@@ -287,7 +313,10 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                         end: Alignment.bottomRight,
                         colors: isDark
                             ? [const Color(0xFF1A1A1A), const Color(0xFF2D2D2D)]
-                            : [const Color(0xFFE8E8E8), const Color(0xFFD0D0D0)],
+                            : [
+                                const Color(0xFFE8E8E8),
+                                const Color(0xFFD0D0D0),
+                              ],
                       ),
                     ),
                     child: Center(
@@ -342,7 +371,9 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                                 color: AppColors.crimson,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: isDark ? AppColors.charcoal : Colors.white,
+                                  color: isDark
+                                      ? AppColors.charcoal
+                                      : Colors.white,
                                   width: 4,
                                 ),
                                 boxShadow: [
@@ -363,12 +394,17 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                         ),
                         const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: isDark ? AppColors.charcoal : Colors.white,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: isDark ? AppColors.slate : Colors.grey[200]!,
+                              color: isDark
+                                  ? AppColors.slate
+                                  : Colors.grey[200]!,
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -401,7 +437,10 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                         const SizedBox(height: 8),
                         _buildMapControl(Icons.remove_rounded, isDark, () {}),
                         const SizedBox(height: 8),
-                        _buildMapControlPrimary(Icons.my_location_rounded, _useCurrentLocation),
+                        _buildMapControlPrimary(
+                          Icons.my_location_rounded,
+                          _useCurrentLocation,
+                        ),
                       ],
                     ),
                   ),
@@ -412,14 +451,16 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
           const SizedBox(height: 16),
 
           // Address Preview
-          if (widget.profileData.location.city != null || 
+          if (widget.profileData.location.city != null ||
               widget.profileData.location.streetAddress != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : Colors.grey[100],
+                  color: isDark
+                      ? AppColors.graphite.withValues(alpha: 0.5)
+                      : Colors.grey[100],
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -436,8 +477,8 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.profileData.location.streetAddress ?? 
-                                widget.profileData.location.city ?? 
+                            widget.profileData.location.streetAddress ??
+                                widget.profileData.location.city ??
                                 'Set your address',
                             style: TextStyle(
                               fontSize: 14,
@@ -450,7 +491,9 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
                               '${widget.profileData.location.city}, ${widget.profileData.location.country ?? ''}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? Colors.grey[500] : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[600],
                               ),
                             ),
                         ],
@@ -511,11 +554,7 @@ class _VenueMusicPreferencesStepState extends State<VenueMusicPreferencesStep> {
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: Colors.white,
-        ),
+        child: Icon(icon, size: 20, color: Colors.white),
       ),
     );
   }

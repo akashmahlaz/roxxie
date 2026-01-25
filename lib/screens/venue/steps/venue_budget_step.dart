@@ -78,7 +78,8 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
 
     // Load payment term
     final paymentTerm = widget.profileData.gigPreferences.paymentTerm;
-    if (paymentTerm != null && _paymentOptions.any((o) => o.id == paymentTerm)) {
+    if (paymentTerm != null &&
+        _paymentOptions.any((o) => o.id == paymentTerm)) {
       _paymentTerm = paymentTerm;
     }
 
@@ -96,7 +97,7 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
     if (widget.profileData.gigPreferences.providesPromotion) {
       _selectedPerks.add('promotion');
     }
-    
+
     // Default to meals and drinks if nothing selected
     if (_selectedPerks.isEmpty) {
       _selectedPerks.addAll({'meals', 'drinks'});
@@ -112,10 +113,15 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
     widget.profileData.gigPreferences.paymentTerm = _paymentTerm;
 
     // Save perks
-    widget.profileData.gigPreferences.providesMusicianMeals = _selectedPerks.contains('meals');
-    widget.profileData.gigPreferences.providesDrinks = _selectedPerks.contains('drinks');
-    widget.profileData.gigPreferences.providesAccommodation = _selectedPerks.contains('accommodation');
-    widget.profileData.gigPreferences.providesPromotion = _selectedPerks.contains('promotion');
+    widget.profileData.gigPreferences.providesMusicianMeals = _selectedPerks
+        .contains('meals');
+    widget.profileData.gigPreferences.providesDrinks = _selectedPerks.contains(
+      'drinks',
+    );
+    widget.profileData.gigPreferences.providesAccommodation = _selectedPerks
+        .contains('accommodation');
+    widget.profileData.gigPreferences.providesPromotion = _selectedPerks
+        .contains('promotion');
 
     widget.onDataChanged();
   }
@@ -158,7 +164,9 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                   'Set your financial expectations to attract the right talent for your venue.',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? Colors.grey[400] : AppColors.text(brightness).withValues(alpha: 0.6),
+                    color: isDark
+                        ? Colors.grey[400]
+                        : AppColors.text(brightness).withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -188,7 +196,9 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
             margin: const EdgeInsets.symmetric(horizontal: 24),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.graphite.withValues(alpha: 0.5) : const Color(0xFFF8F6F6),
+              color: isDark
+                  ? AppColors.graphite.withValues(alpha: 0.5)
+                  : const Color(0xFFF8F6F6),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -221,7 +231,9 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                 SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     activeTrackColor: AppColors.crimson,
-                    inactiveTrackColor: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
+                    inactiveTrackColor: isDark
+                        ? AppColors.slate
+                        : const Color(0xFFE5DCDC),
                     thumbColor: Colors.white,
                     overlayColor: AppColors.crimson.withValues(alpha: 0.2),
                     trackHeight: 6,
@@ -251,14 +263,22 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                         '\$${_budgetRange.start.toInt()}',
                         style: TextStyle(
                           fontSize: 10,
-                          color: isDark ? Colors.grey[500] : AppColors.text(brightness).withValues(alpha: 0.6),
+                          color: isDark
+                              ? Colors.grey[500]
+                              : AppColors.text(
+                                  brightness,
+                                ).withValues(alpha: 0.6),
                         ),
                       ),
                       Text(
                         '\$${_budgetRange.end.toInt()}',
                         style: TextStyle(
                           fontSize: 10,
-                          color: isDark ? Colors.grey[500] : AppColors.text(brightness).withValues(alpha: 0.6),
+                          color: isDark
+                              ? Colors.grey[500]
+                              : AppColors.text(
+                                  brightness,
+                                ).withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -305,10 +325,14 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.crimson.withValues(alpha: 0.05)
-                            : (isDark ? AppColors.graphite.withValues(alpha: 0.5) : const Color(0xFFF8F6F6)),
+                            : (isDark
+                                  ? AppColors.graphite.withValues(alpha: 0.5)
+                                  : const Color(0xFFF8F6F6)),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? AppColors.crimson : Colors.transparent,
+                          color: isSelected
+                              ? AppColors.crimson
+                              : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -318,7 +342,11 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                             option.icon,
                             color: isSelected
                                 ? AppColors.crimson
-                                : (isDark ? Colors.grey[400] : AppColors.text(brightness).withValues(alpha: 0.6)),
+                                : (isDark
+                                      ? Colors.grey[400]
+                                      : AppColors.text(
+                                          brightness,
+                                        ).withValues(alpha: 0.6)),
                             size: 24,
                           ),
                           const SizedBox(width: 12),
@@ -327,7 +355,9 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                               option.title,
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
                                 color: AppColors.text(brightness),
                               ),
                             ),
@@ -337,12 +367,16 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.crimson : Colors.transparent,
+                              color: isSelected
+                                  ? AppColors.crimson
+                                  : Colors.transparent,
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isSelected
                                     ? AppColors.crimson
-                                    : (isDark ? AppColors.slate : const Color(0xFFE5DCDC)),
+                                    : (isDark
+                                          ? AppColors.slate
+                                          : const Color(0xFFE5DCDC)),
                                 width: 2,
                               ),
                             ),
@@ -415,10 +449,14 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.crimson.withValues(alpha: 0.05)
-                          : (isDark ? AppColors.graphite.withValues(alpha: 0.5) : const Color(0xFFF8F6F6)),
+                          : (isDark
+                                ? AppColors.graphite.withValues(alpha: 0.5)
+                                : const Color(0xFFF8F6F6)),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected ? AppColors.crimson : Colors.transparent,
+                        color: isSelected
+                            ? AppColors.crimson
+                            : Colors.transparent,
                         width: 2,
                       ),
                     ),
@@ -428,7 +466,11 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                           perk.icon,
                           color: isSelected
                               ? AppColors.crimson
-                              : (isDark ? Colors.grey[400] : AppColors.text(brightness).withValues(alpha: 0.6)),
+                              : (isDark
+                                    ? Colors.grey[400]
+                                    : AppColors.text(
+                                        brightness,
+                                      ).withValues(alpha: 0.6)),
                           size: 22,
                         ),
                         const SizedBox(width: 10),
@@ -447,17 +489,25 @@ class _VenueBudgetStepState extends State<VenueBudgetStep> {
                           width: 20,
                           height: 20,
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.crimson : Colors.transparent,
+                            color: isSelected
+                                ? AppColors.crimson
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
                               color: isSelected
                                   ? AppColors.crimson
-                                  : (isDark ? AppColors.slate : const Color(0xFFE5DCDC)),
+                                  : (isDark
+                                        ? AppColors.slate
+                                        : const Color(0xFFE5DCDC)),
                               width: 2,
                             ),
                           ),
                           child: isSelected
-                              ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 14,
+                                )
                               : null,
                         ),
                       ],
@@ -505,17 +555,17 @@ class _CustomRangeThumbShape extends RoundRangeSliderThumbShape {
     bool? isPressed,
   }) {
     final canvas = context.canvas;
-    
+
     // Draw shadow
     final shadowPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.2)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     canvas.drawCircle(center + const Offset(0, 2), 12, shadowPaint);
-    
+
     // Draw white circle with border
     final fillPaint = Paint()..color = Colors.white;
     canvas.drawCircle(center, 12, fillPaint);
-    
+
     // Draw crimson border
     final borderPaint = Paint()
       ..color = AppColors.crimson
@@ -530,11 +580,7 @@ class _PaymentOption {
   final String title;
   final IconData icon;
 
-  _PaymentOption({
-    required this.id,
-    required this.title,
-    required this.icon,
-  });
+  _PaymentOption({required this.id, required this.title, required this.icon});
 }
 
 class _PerkOption {
@@ -542,9 +588,5 @@ class _PerkOption {
   final String title;
   final IconData icon;
 
-  _PerkOption({
-    required this.id,
-    required this.title,
-    required this.icon,
-  });
+  _PerkOption({required this.id, required this.title, required this.icon});
 }

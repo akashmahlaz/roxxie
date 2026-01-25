@@ -82,6 +82,9 @@ class GigMatchApp extends StatelessWidget {
 
         // Chat Provider - messages, real-time updates
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+
+        // Profile Provider - artist/venue profile with real API data
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: MaterialApp(
         title: 'GigMatch',
@@ -120,7 +123,7 @@ class GigMatchApp extends StatelessWidget {
           '/support': (context) => const SupportScreen(),
           '/artist-setup': (context) => const ArtistProfileSetupScreen(),
           '/venue-setup': (context) => const VenueProfileSetupScreen(),
-          
+
           // Enterprise Screens
           '/wallet': (context) => const WalletScreen(),
           '/reviews': (context) => const ReviewsScreen(),
@@ -137,19 +140,13 @@ class GigMatchApp extends StatelessWidget {
           // Chat screen with match ID
           if (settings.name?.startsWith('/chat/') ?? false) {
             final matchId = settings.name!.split('/').last;
-            return _createFadeRoute(
-              ChatScreen(matchId: matchId),
-              settings,
-            );
+            return _createFadeRoute(ChatScreen(matchId: matchId), settings);
           }
 
           // Gig details screen with gig ID
           if (settings.name?.startsWith('/gig/') ?? false) {
             final gigId = settings.name!.split('/').last;
-            return _createFadeRoute(
-              GigDetailsScreen(gigId: gigId),
-              settings,
-            );
+            return _createFadeRoute(GigDetailsScreen(gigId: gigId), settings);
           }
 
           // Contract screen with contract ID
@@ -191,10 +188,7 @@ class GigMatchApp extends StatelessWidget {
       pageBuilder: (context, animation, secondaryAnimation) => page,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
-          opacity: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInOut,
-          ),
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
           child: child,
         );
       },

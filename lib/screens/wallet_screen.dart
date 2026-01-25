@@ -178,14 +178,10 @@ class _WalletScreenState extends State<WalletScreen>
           _buildAppBar(brightness),
 
           // Balance Card
-          SliverToBoxAdapter(
-            child: _buildBalanceCard(brightness),
-          ),
+          SliverToBoxAdapter(child: _buildBalanceCard(brightness)),
 
           // Quick Actions
-          SliverToBoxAdapter(
-            child: _buildQuickActions(brightness),
-          ),
+          SliverToBoxAdapter(child: _buildQuickActions(brightness)),
 
           // Tab Bar
           SliverPersistentHeader(
@@ -354,7 +350,8 @@ class _WalletScreenState extends State<WalletScreen>
                     AnimatedBuilder(
                       animation: _balanceAnimation,
                       builder: (context, child) {
-                        final value = _walletData.availableBalance *
+                        final value =
+                            _walletData.availableBalance *
                             _balanceAnimation.value;
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,10 +471,7 @@ class _WalletScreenState extends State<WalletScreen>
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white60,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: Colors.white60, fontSize: 12),
         ),
       ],
     );
@@ -557,7 +551,8 @@ class _WalletScreenState extends State<WalletScreen>
         itemCount: filtered.length,
         itemBuilder: (context, index) {
           final transaction = filtered[index];
-          final showDateHeader = index == 0 ||
+          final showDateHeader =
+              index == 0 ||
               !_isSameDay(filtered[index - 1].date, transaction.date);
 
           return Column(
@@ -565,10 +560,7 @@ class _WalletScreenState extends State<WalletScreen>
             children: [
               if (showDateHeader)
                 Padding(
-                  padding: EdgeInsets.only(
-                    top: index == 0 ? 0 : 16,
-                    bottom: 8,
-                  ),
+                  padding: EdgeInsets.only(top: index == 0 ? 0 : 16, bottom: 8),
                   child: Text(
                     _formatDateHeader(transaction.date),
                     style: TextStyle(
@@ -594,14 +586,14 @@ class _WalletScreenState extends State<WalletScreen>
     final icon = type == TransactionType.earning
         ? Icons.payments_rounded
         : type == TransactionType.payout
-            ? Icons.account_balance_rounded
-            : Icons.receipt_long_rounded;
+        ? Icons.account_balance_rounded
+        : Icons.receipt_long_rounded;
 
     final message = type == TransactionType.earning
         ? 'No earnings yet'
         : type == TransactionType.payout
-            ? 'No payouts yet'
-            : 'No transactions yet';
+        ? 'No payouts yet'
+        : 'No transactions yet';
 
     return Center(
       child: Column(
@@ -614,11 +606,7 @@ class _WalletScreenState extends State<WalletScreen>
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.border(brightness)),
             ),
-            child: Icon(
-              icon,
-              size: 40,
-              color: AppColors.textTert(brightness),
-            ),
+            child: Icon(icon, size: 40, color: AppColors.textTert(brightness)),
           ),
           const SizedBox(height: 16),
           Text(
@@ -663,8 +651,18 @@ class _WalletScreenState extends State<WalletScreen>
     }
 
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -749,10 +747,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
         indicatorSize: TabBarIndicatorSize.label,
         labelColor: AppColors.crimson,
         unselectedLabelColor: AppColors.textSec(brightness),
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-        ),
+        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         unselectedLabelStyle: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
@@ -870,11 +865,7 @@ class _TransactionCard extends StatelessWidget {
                 color: _getTypeColor().withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                _getTypeIcon(),
-                color: _getTypeColor(),
-                size: 22,
-              ),
+              child: Icon(_getTypeIcon(), color: _getTypeColor(), size: 22),
             ),
             const SizedBox(width: 14),
 
@@ -932,7 +923,9 @@ class _TransactionCard extends StatelessWidget {
             Text(
               '${_isPositive() ? '+' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
               style: TextStyle(
-                color: _isPositive() ? AppColors.success : AppColors.text(brightness),
+                color: _isPositive()
+                    ? AppColors.success
+                    : AppColors.text(brightness),
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -1093,7 +1086,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
           content: const Text('Please enter a valid amount'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;
@@ -1118,7 +1113,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
           ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -1176,7 +1173,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   decoration: BoxDecoration(
                     color: AppColors.background(widget.brightness),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border(widget.brightness)),
+                    border: Border.all(
+                      color: AppColors.border(widget.brightness),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -1211,8 +1210,8 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                       AnimatedTapFeedback(
                         onTap: () {
                           HapticFeedback.selectionClick();
-                          _amountController.text =
-                              widget.availableBalance.toStringAsFixed(2);
+                          _amountController.text = widget.availableBalance
+                              .toStringAsFixed(2);
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -1245,7 +1244,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   decoration: BoxDecoration(
                     color: AppColors.background(widget.brightness),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border(widget.brightness)),
+                    border: Border.all(
+                      color: AppColors.border(widget.brightness),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -1485,7 +1486,9 @@ class _PayoutMethodTile extends StatelessWidget {
               : AppColors.background(brightness),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.crimson : AppColors.border(brightness),
+            color: isSelected
+                ? AppColors.crimson
+                : AppColors.border(brightness),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -1574,11 +1577,7 @@ class _TransactionDetailSheet extends StatelessWidget {
                     color: _getTypeColor().withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    _getTypeIcon(),
-                    color: _getTypeColor(),
-                    size: 32,
-                  ),
+                  child: Icon(_getTypeIcon(), color: _getTypeColor(), size: 32),
                 ),
 
                 const SizedBox(height: 16),
@@ -1587,7 +1586,9 @@ class _TransactionDetailSheet extends StatelessWidget {
                 Text(
                   '${_isPositive() ? '+' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
                   style: TextStyle(
-                    color: _isPositive() ? AppColors.success : AppColors.text(brightness),
+                    color: _isPositive()
+                        ? AppColors.success
+                        : AppColors.text(brightness),
                     fontSize: 32,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1619,7 +1620,8 @@ class _TransactionDetailSheet extends StatelessWidget {
                 ),
                 _DetailRow(
                   label: 'Type',
-                  value: transaction.type.name[0].toUpperCase() +
+                  value:
+                      transaction.type.name[0].toUpperCase() +
                       transaction.type.name.substring(1),
                   brightness: brightness,
                 ),
@@ -1720,8 +1722,18 @@ class _TransactionDetailSheet extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final hour = date.hour > 12 ? date.hour - 12 : date.hour;
     final period = date.hour >= 12 ? 'PM' : 'AM';
