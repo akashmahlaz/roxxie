@@ -10,8 +10,8 @@ class ApiConfig {
 
   // Local development (use your computer's IP for physical device)
   // For Android emulator use 10.0.2.2, for physical device use your LAN IP
-  static const String baseUrl = 'http://10.31.131.50:3000/api/v1';
-  static const String wsUrl = 'ws://10.31.131.50:3000';
+  static const String baseUrl = 'http://10.188.28.168:3000/api/v1';
+  static const String wsUrl = 'ws://10.188.28.168:3000';
 
   // ⏱️ Timeouts
   static const Duration connectTimeout = Duration(seconds: 30);

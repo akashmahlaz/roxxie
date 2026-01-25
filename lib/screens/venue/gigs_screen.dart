@@ -16,11 +16,13 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/theme.dart';
+import '../../core/services/gigs_service.dart';
+import '../../core/models/gig_models.dart' as api;
 import '../../widgets/widgets.dart';
 import 'create_gig_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MODEL
+// MODEL - Local UI model that maps from API
 // ═══════════════════════════════════════════════════════════════════════════════
 
 enum GigStatus { active, draft, completed, cancelled }
@@ -68,6 +70,57 @@ class Gig {
 
   bool get isBooked => bookedArtistId != null;
   bool get isPast => date.isBefore(DateTime.now());
+
+  /// Convert from API model to local UI model
+  factory Gig.fromApi(api.Gig apiGig) {
+    // Parse startTime string like "19:30" to TimeOfDay
+    TimeOfDay parseTime(String timeStr) {
+      final parts = timeStr.split(':');
+      return TimeOfDay(
+        hour: int.tryParse(parts[0]) ?? 0,
+        minute: parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0,
+      );
+    }
+
+    TimeOfDay? parseEndTime(String? timeStr) {
+      if (timeStr == null || timeStr.isEmpty) return null;
+      return parseTime(timeStr);
+    }
+
+    GigStatus mapStatus(api.GigStatus apiStatus) {
+      switch (apiStatus) {
+        case api.GigStatus.open:
+        case api.GigStatus.inProgress:
+          return GigStatus.active;
+        case api.GigStatus.draft:
+          return GigStatus.draft;
+        case api.GigStatus.completed:
+        case api.GigStatus.filled:
+          return GigStatus.completed;
+        case api.GigStatus.cancelled:
+          return GigStatus.cancelled;
+      }
+    }
+
+    return Gig(
+      id: apiGig.id,
+      title: apiGig.title,
+      description: apiGig.description,
+      date: apiGig.date,
+      startTime: parseTime(apiGig.startTime),
+      endTime: parseEndTime(apiGig.endTime),
+      payment: apiGig.budget,
+      gigType: 'Live Performance',
+      genres: apiGig.requiredGenres,
+      status: mapStatus(apiGig.status),
+      applicationsCount: apiGig.applicationCount,
+      viewsCount: apiGig.viewCount,
+      bookedArtistId: apiGig.bookedArtists.isNotEmpty ? apiGig.bookedArtists.first : null,
+      equipmentProvided: apiGig.perks?.providesFood ?? false,
+      mealIncluded: apiGig.perks?.providesDrinks ?? false,
+      createdAt: apiGig.createdAt ?? DateTime.now(),
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -85,7 +138,9 @@ class _GigsScreenState extends State<GigsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
+  String? _errorMessage;
   List<Gig> _gigs = [];
+  final GigsService _gigsService = GigsService();
 
   @override
   void initState() {
@@ -101,98 +156,27 @@ class _GigsScreenState extends State<GigsScreen>
   }
 
   Future<void> _loadGigs() async {
-    setState(() => _isLoading = true);
-    
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 1200));
-    
-    // Mock data
     setState(() {
-      _gigs = [
-        Gig(
-          id: '1',
-          title: 'Friday Night Jazz',
-          description: 'Looking for a jazz trio for our weekly Friday night session. Must have experience with standards.',
-          date: DateTime.now().add(const Duration(days: 2)),
-          startTime: const TimeOfDay(hour: 20, minute: 0),
-          endTime: const TimeOfDay(hour: 23, minute: 30),
-          payment: 450,
-          gigType: 'Live Performance',
-          genres: ['Jazz', 'Soul'],
-          status: GigStatus.active,
-          applicationsCount: 12,
-          viewsCount: 48,
-          equipmentProvided: true,
-          mealIncluded: true,
-          createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        ),
-        Gig(
-          id: '2',
-          title: 'Saturday Rock Night',
-          description: 'High-energy rock band needed for our weekly Saturday special. Good crowd guaranteed!',
-          date: DateTime.now().add(const Duration(days: 3)),
-          startTime: const TimeOfDay(hour: 21, minute: 0),
-          endTime: const TimeOfDay(hour: 1, minute: 0),
-          payment: 600,
-          gigType: 'Live Performance',
-          genres: ['Rock', 'Alternative'],
-          status: GigStatus.active,
-          applicationsCount: 8,
-          viewsCount: 36,
-          bookedArtistId: 'artist123',
-          bookedArtistName: 'The Midnight Run',
-          bookedArtistImage: 'https://i.pravatar.cc/150?img=33',
-          createdAt: DateTime.now().subtract(const Duration(days: 7)),
-        ),
-        Gig(
-          id: '3',
-          title: 'Acoustic Sunday Brunch',
-          description: 'Chill acoustic performance for our popular Sunday brunch crowd.',
-          date: DateTime.now().add(const Duration(days: 4)),
-          startTime: const TimeOfDay(hour: 11, minute: 0),
-          endTime: const TimeOfDay(hour: 14, minute: 0),
-          payment: 250,
-          gigType: 'Background Music',
-          genres: ['Acoustic', 'Folk'],
-          status: GigStatus.draft,
-          applicationsCount: 0,
-          viewsCount: 0,
-          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        ),
-        Gig(
-          id: '4',
-          title: 'New Year\'s Eve Celebration',
-          description: 'Planning ahead for our biggest night! Premium payment for premium talent.',
-          date: DateTime(2025, 12, 31),
-          startTime: const TimeOfDay(hour: 21, minute: 0),
-          endTime: const TimeOfDay(hour: 2, minute: 0),
-          payment: 1500,
-          gigType: 'Private Event',
-          genres: ['Pop', 'R&B', 'Dance'],
-          status: GigStatus.draft,
-          applicationsCount: 0,
-          viewsCount: 0,
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        ),
-        Gig(
-          id: '5',
-          title: 'Last Week Jazz Night',
-          description: 'Another great night of smooth jazz.',
-          date: DateTime.now().subtract(const Duration(days: 7)),
-          startTime: const TimeOfDay(hour: 20, minute: 0),
-          endTime: const TimeOfDay(hour: 23, minute: 0),
-          payment: 400,
-          gigType: 'Live Performance',
-          genres: ['Jazz'],
-          status: GigStatus.completed,
-          bookedArtistId: 'artist456',
-          bookedArtistName: 'Sarah\'s Jazz Quartet',
-          bookedArtistImage: 'https://i.pravatar.cc/150?img=47',
-          createdAt: DateTime.now().subtract(const Duration(days: 14)),
-        ),
-      ];
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      // Load from real API
+      final response = await _gigsService.getMyGigs(page: 1, limit: 50);
+      
+      setState(() {
+        _gigs = response.items.map((apiGig) => Gig.fromApi(apiGig)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading gigs: $e');
+      setState(() {
+        _errorMessage = 'Failed to load gigs. Please try again.';
+        _isLoading = false;
+        _gigs = [];
+      });
+    }
   }
 
   List<Gig> get _activeGigs => 

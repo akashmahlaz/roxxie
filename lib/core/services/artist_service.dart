@@ -126,7 +126,7 @@ class ArtistService {
       final requestData = request.toJson();
       debugPrint('🎸 [ArtistService] Update data keys: ${requestData.keys.toList()}');
 
-      final response = await _client.patch(
+      final response = await _client.put(
         Endpoints.artistsMe,
         data: requestData,
       );

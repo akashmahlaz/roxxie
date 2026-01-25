@@ -47,6 +47,8 @@ class User {
   final String? phone;
   final bool isEmailVerified;
   final bool isProfileComplete;
+  final bool pushNotificationsEnabled;
+  final bool emailNotificationsEnabled;
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? artistId;
@@ -62,6 +64,8 @@ class User {
     this.phone,
     this.isEmailVerified = false,
     this.isProfileComplete = false,
+    this.pushNotificationsEnabled = true,
+    this.emailNotificationsEnabled = true,
     required this.createdAt,
     required this.updatedAt,
     this.artistId,
@@ -79,6 +83,8 @@ class User {
       phone: json['phone'],
       isEmailVerified: json['isEmailVerified'] ?? false,
       isProfileComplete: json['isProfileComplete'] ?? false,
+      pushNotificationsEnabled: json['pushNotificationsEnabled'] ?? true,
+      emailNotificationsEnabled: json['emailNotificationsEnabled'] ?? true,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
       artistId: json['artistId'],
@@ -96,6 +102,8 @@ class User {
     'phone': phone,
     'isEmailVerified': isEmailVerified,
     'isProfileComplete': isProfileComplete,
+    'pushNotificationsEnabled': pushNotificationsEnabled,
+    'emailNotificationsEnabled': emailNotificationsEnabled,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
     'artistId': artistId,
@@ -112,6 +120,8 @@ class User {
     String? phone,
     bool? isEmailVerified,
     bool? isProfileComplete,
+    bool? pushNotificationsEnabled,
+    bool? emailNotificationsEnabled,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? artistId,
@@ -127,6 +137,8 @@ class User {
       phone: phone ?? this.phone,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
+      pushNotificationsEnabled: pushNotificationsEnabled ?? this.pushNotificationsEnabled,
+      emailNotificationsEnabled: emailNotificationsEnabled ?? this.emailNotificationsEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       artistId: artistId ?? this.artistId,

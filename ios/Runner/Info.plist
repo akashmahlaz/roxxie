@@ -49,5 +49,13 @@
 	<!-- Location permission (needed for Geolocator prompt) -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We use your location to match you with nearby artists/venues and show relevant gigs in your area.</string>
+
+	<!-- Calendar permissions (needed for device calendar sync) -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>GigMatch uses calendar access to sync your gigs and availability with your device calendar.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>GigMatch uses calendar access to sync your gigs and availability with your device calendar.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Access contacts for event attendee information.</string>
 </dict>
 </plist>

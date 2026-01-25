@@ -70,18 +70,26 @@ class AuthProvider extends ChangeNotifier {
 
   /// 🔄 Initialize - Check existing auth state
   Future<void> init() async {
+    debugPrint('🔐 AuthProvider.init() starting...');
     _setLoading(true);
     try {
       final isLoggedIn = await _authService.isLoggedIn();
+      debugPrint('🔐 isLoggedIn check: $isLoggedIn');
+      
       if (isLoggedIn) {
         // Try to get cached user first
         _user = await _authService.getCachedUser();
+        debugPrint('🔐 Cached user: ${_user?.email ?? "null"}');
+        
         _onboardingSkipped = await _authService.getOnboardingSkipped();
         final cachedProfileComplete = _user?.isProfileComplete ?? false;
 
         // Then fetch fresh profile
         try {
+          debugPrint('🔐 Fetching fresh profile from server...');
           final updatedUser = await _authService.getProfile();
+          debugPrint('🔐 Server profile fetched: ${updatedUser.email}');
+          
           await _loadRoleProfile();
           // If cached user says complete, do not downgrade on stale backend data
           _user = cachedProfileComplete && !updatedUser.isProfileComplete
@@ -92,9 +100,13 @@ class AuthProvider extends ChangeNotifier {
           _status = hasCompletedOnboarding
               ? AuthStatus.authenticated
               : AuthStatus.profileIncomplete;
+          debugPrint('🔐 Auth status: $_status');
         } catch (e) {
+          debugPrint('🔐 Profile fetch failed: $e, trying token refresh...');
           // Token might be expired, try refresh
           final refreshed = await _authService.refreshTokens();
+          debugPrint('🔐 Token refresh result: $refreshed');
+          
           if (refreshed) {
             final updatedUser = await _authService.getProfile();
             await _loadRoleProfile();
@@ -108,16 +120,19 @@ class AuthProvider extends ChangeNotifier {
                 ? AuthStatus.authenticated
                 : AuthStatus.profileIncomplete;
           } else {
+            debugPrint('🔐 Token refresh failed, setting unauthenticated');
             _status = AuthStatus.unauthenticated;
           }
         }
       } else {
+        debugPrint('🔐 No token found, setting unauthenticated');
         _status = AuthStatus.unauthenticated;
       }
     } catch (e) {
-      debugPrint('Auth init error: $e');
+      debugPrint('🔐 Auth init error: $e');
       _status = AuthStatus.unauthenticated;
     } finally {
+      debugPrint('🔐 AuthProvider.init() complete. Status: $_status');
       _setLoading(false);
     }
   }

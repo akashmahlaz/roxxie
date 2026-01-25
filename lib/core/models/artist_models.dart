@@ -206,6 +206,18 @@ class ArtistProfileData {
       dto['bandSize'] = bandSize!;
     }
 
+    // Availability - convert to backend format
+    if (availability.isNotEmpty) {
+      dto['availability'] = availability.map((slot) {
+        return {
+          'date': slot['date'], // Already in ISO8601 string format
+          'startTime': slot['startTime'],
+          'endTime': slot['endTime'],
+          'isAvailable': slot['isBooked'] != true, // Invert isBooked to isAvailable
+        };
+      }).toList();
+    }
+
     return dto;
   }
 
@@ -406,6 +418,7 @@ class Artist {
   final String id;
   final String userId;
   final String stageName;
+  final String? profilePhoto;
 
   // Compatibility getter for displayName
   String get displayName => stageName;
@@ -444,6 +457,7 @@ class Artist {
     required this.id,
     required this.userId,
     required this.stageName,
+    this.profilePhoto,
     this.bio,
     required this.artistType,
     required this.genres,
@@ -474,6 +488,7 @@ class Artist {
       userId: json['userId'] ?? '',
       stageName: json['stageName'] ?? '',
       bio: json['bio'],
+      profilePhoto: json['profilePhoto'],
       artistType: ArtistType.fromString(json['artistType'] ?? 'solo'),
       genres: List<String>.from(json['genres'] ?? []),
       experienceLevel: ExperienceLevel.fromString(
@@ -544,7 +559,8 @@ class Artist {
     'updatedAt': updatedAt.toIso8601String(),
   };
 
-  String get primaryPhoto => galleryUrls.isNotEmpty ? galleryUrls.first : '';
+  /// Primary photo - prefer profilePhoto, then first gallery photo
+  String get primaryPhoto => profilePhoto ?? (galleryUrls.isNotEmpty ? galleryUrls.first : '');
   String get displayLocation =>
       location?.city ?? location?.formattedAddress ?? 'Location not set';
 }

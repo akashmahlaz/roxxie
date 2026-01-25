@@ -13,12 +13,41 @@ import '../services/error_handling_service.dart';
 class ApiClient {
   static ApiClient? _instance;
   late final Dio _dio;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔐 SECURE STORAGE CONFIGURATION
+  // Uses flutter_secure_storage with proper settings for data persistence
+  // This fixes the issue where tokens are lost on app restart/reinstall
+  // ═══════════════════════════════════════════════════════════════════════════
+  late final FlutterSecureStorage _storage;
+  
+  // Android options to persist tokens across app restarts
+  // Note: encryptedSharedPreferences is deprecated in v10, using custom ciphers
+  static AndroidOptions _getAndroidOptions() => const AndroidOptions(
+    // Use strong encryption algorithms for token storage
+    keyCipherAlgorithm: KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+    storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
+    // Reset storage on error to prevent corrupted state blocking the app
+    resetOnError: true,
+  );
+  
+  // iOS options for keychain persistence
+  static IOSOptions _getIOSOptions() => const IOSOptions(
+    accessibility: KeychainAccessibility.first_unlock_this_device,
+    // Sync across devices disabled for security
+    synchronizable: false,
+  );
 
   // Singleton
   factory ApiClient() => _instance ??= ApiClient._internal();
 
   ApiClient._internal() {
+    // Initialize secure storage with platform-specific options
+    _storage = FlutterSecureStorage(
+      aOptions: _getAndroidOptions(),
+      iOptions: _getIOSOptions(),
+    );
+    
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConfig.baseUrl,
@@ -42,65 +71,148 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  // 🔑 Token Management
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔑 TOKEN MANAGEMENT
+  // All storage operations have try-catch to handle encryption key issues
+  // ═══════════════════════════════════════════════════════════════════════════
+  
   Future<String?> getAccessToken() async {
-    return await _storage.read(key: ApiConfig.accessTokenKey);
+    try {
+      return await _storage.read(key: ApiConfig.accessTokenKey);
+    } catch (e) {
+      debugPrint('⚠️ Error reading access token: $e');
+      // If encryption fails, clear storage and return null
+      await _handleStorageError();
+      return null;
+    }
   }
 
   Future<String?> getRefreshToken() async {
-    return await _storage.read(key: ApiConfig.refreshTokenKey);
+    try {
+      return await _storage.read(key: ApiConfig.refreshTokenKey);
+    } catch (e) {
+      debugPrint('⚠️ Error reading refresh token: $e');
+      await _handleStorageError();
+      return null;
+    }
   }
 
   Future<void> saveTokens(AuthTokens tokens) async {
-    await _storage.write(
-      key: ApiConfig.accessTokenKey,
-      value: tokens.accessToken,
-    );
-    await _storage.write(
-      key: ApiConfig.refreshTokenKey,
-      value: tokens.refreshToken,
-    );
+    try {
+      await _storage.write(
+        key: ApiConfig.accessTokenKey,
+        value: tokens.accessToken,
+      );
+      await _storage.write(
+        key: ApiConfig.refreshTokenKey,
+        value: tokens.refreshToken,
+      );
+      debugPrint('✅ Tokens saved successfully');
+    } catch (e) {
+      debugPrint('⚠️ Error saving tokens: $e');
+      await _handleStorageError();
+      // Retry once after clearing
+      try {
+        await _storage.write(
+          key: ApiConfig.accessTokenKey,
+          value: tokens.accessToken,
+        );
+        await _storage.write(
+          key: ApiConfig.refreshTokenKey,
+          value: tokens.refreshToken,
+        );
+        debugPrint('✅ Tokens saved successfully after retry');
+      } catch (e2) {
+        debugPrint('❌ Failed to save tokens even after retry: $e2');
+      }
+    }
   }
 
   Future<void> clearTokens() async {
-    await _storage.delete(key: ApiConfig.accessTokenKey);
-    await _storage.delete(key: ApiConfig.refreshTokenKey);
-    await _storage.delete(key: ApiConfig.userKey);
-    await _storage.delete(key: ApiConfig.onboardingSkippedKey);
+    try {
+      await _storage.delete(key: ApiConfig.accessTokenKey);
+      await _storage.delete(key: ApiConfig.refreshTokenKey);
+      await _storage.delete(key: ApiConfig.userKey);
+      await _storage.delete(key: ApiConfig.onboardingSkippedKey);
+    } catch (e) {
+      debugPrint('⚠️ Error clearing tokens: $e');
+      // Force clear all storage on error
+      try {
+        await _storage.deleteAll();
+      } catch (_) {}
+    }
   }
 
   Future<void> saveUser(String userData) async {
-    await _storage.write(key: ApiConfig.userKey, value: userData);
+    try {
+      await _storage.write(key: ApiConfig.userKey, value: userData);
+    } catch (e) {
+      debugPrint('⚠️ Error saving user: $e');
+    }
   }
 
   Future<String?> getUser() async {
-    return await _storage.read(key: ApiConfig.userKey);
+    try {
+      return await _storage.read(key: ApiConfig.userKey);
+    } catch (e) {
+      debugPrint('⚠️ Error reading user: $e');
+      return null;
+    }
+  }
+  
+  /// Handle storage errors by clearing corrupted data
+  Future<void> _handleStorageError() async {
+    try {
+      debugPrint('🔄 Attempting to recover from storage error...');
+      await _storage.deleteAll();
+      debugPrint('✅ Storage cleared after error');
+    } catch (e) {
+      debugPrint('❌ Failed to clear storage: $e');
+    }
   }
 
   // ✅ Onboarding skipped flag
   Future<void> saveOnboardingSkipped(bool value) async {
-    await _storage.write(
-      key: ApiConfig.onboardingSkippedKey,
-      value: value ? 'true' : 'false',
-    );
+    try {
+      await _storage.write(
+        key: ApiConfig.onboardingSkippedKey,
+        value: value ? 'true' : 'false',
+      );
+    } catch (e) {
+      debugPrint('⚠️ Error saving onboarding skipped: $e');
+    }
   }
 
   Future<bool> getOnboardingSkipped() async {
-    final value = await _storage.read(key: ApiConfig.onboardingSkippedKey);
-    return value == 'true';
+    try {
+      final value = await _storage.read(key: ApiConfig.onboardingSkippedKey);
+      return value == 'true';
+    } catch (e) {
+      debugPrint('⚠️ Error reading onboarding skipped: $e');
+      return false;
+    }
   }
 
   // ✅ Has seen onboarding (for non-logged in users)
   Future<void> saveHasSeenOnboarding(bool value) async {
-    await _storage.write(
-      key: ApiConfig.hasSeenOnboardingKey,
-      value: value ? 'true' : 'false',
-    );
+    try {
+      await _storage.write(
+        key: ApiConfig.hasSeenOnboardingKey,
+        value: value ? 'true' : 'false',
+      );
+    } catch (e) {
+      debugPrint('⚠️ Error saving has seen onboarding: $e');
+    }
   }
 
   Future<bool> getHasSeenOnboarding() async {
-    final value = await _storage.read(key: ApiConfig.hasSeenOnboardingKey);
-    return value == 'true';
+    try {
+      final value = await _storage.read(key: ApiConfig.hasSeenOnboardingKey);
+      return value == 'true';
+    } catch (e) {
+      debugPrint('⚠️ Error reading has seen onboarding: $e');
+      return false;
+    }
   }
 
   // 🔄 Token Refresh

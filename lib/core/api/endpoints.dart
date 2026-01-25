@@ -122,6 +122,18 @@ class Endpoints {
   /// Boost artist profile
   static const String artistsBoost = '/artists/me/boost';
 
+  /// Get current artist's calendar (availability + booked gigs)
+  static const String artistsMyCalendar = '/artists/me/calendar';
+
+  /// Get current artist's availability
+  static const String artistsMyAvailability = '/artists/me/availability';
+
+  /// Add single availability slot (POST)
+  static const String artistsAddAvailability = '/artists/me/availability';
+
+  /// Delete availability by date (DELETE with body)
+  static const String artistsRemoveAvailability = '/artists/me/availability';
+
   // ════════════════════════════════════════════════════════════════════════
   // VENUES
   // ════════════════════════════════════════════════════════════════════════
@@ -327,10 +339,10 @@ class Endpoints {
   /// Get gig categories
   static const String gigCategories = '/gigs/categories';
 
-  /// Create gig (venue only)
-  static const String gigsCreate = '/gigs/create';
+  /// Create gig (venue only) - POST /gigs
+  static const String gigsCreate = '/gigs';
 
-  /// Get my gigs
+  /// Get my gigs - GET /gigs/mine
   static const String gigsMine = '/gigs/mine';
 
   /// Discover gigs

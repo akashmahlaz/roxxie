@@ -31,6 +31,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showOnlineStatus = true;
   bool _showDistance = true;
   int _maxDistance = 50;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load settings from user profile
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUserSettings());
+  }
+
+  void _loadUserSettings() {
+    final auth = context.read<AuthProvider>();
+    final user = auth.user;
+    if (user != null) {
+      setState(() {
+        _pushNotifications = user.pushNotificationsEnabled;
+        _emailNotifications = user.emailNotificationsEnabled;
+      });
+    }
+  }
+
+  Future<void> _saveNotificationSettings() async {
+    setState(() => _isSaving = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      await auth.updateProfile({
+        'pushNotificationsEnabled': _pushNotifications,
+        'emailNotificationsEnabled': _emailNotifications,
+      });
+    } catch (e) {
+      debugPrint('Failed to save notification settings: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +98,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Receive notifications on your device',
                   Icons.notifications_rounded,
                   _pushNotifications,
-                  (value) => setState(() => _pushNotifications = value),
+                  (value) {
+                    setState(() => _pushNotifications = value);
+                    _saveNotificationSettings();
+                  },
                   brightness,
                 ),
                 _buildSwitchTile(
@@ -72,7 +109,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Receive updates via email',
                   Icons.email_rounded,
                   _emailNotifications,
-                  (value) => setState(() => _emailNotifications = value),
+                  (value) {
+                    setState(() => _emailNotifications = value);
+                    _saveNotificationSettings();
+                  },
                   brightness,
                 ),
                 _buildSwitchTile(

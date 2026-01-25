@@ -13,7 +13,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
+import '../../core/services/gigs_service.dart';
+import '../../core/models/gig_models.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../widgets/widgets.dart';
 
 class CreateGigScreen extends StatefulWidget {
@@ -116,31 +120,94 @@ class _CreateGigScreenState extends State<CreateGigScreen>
     HapticFeedback.mediumImpact();
     setState(() {
       _isSaving = true;
-      _isSuccess = true; // Optimistic
+      _isSuccess = false;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final venueProfile = authProvider.venueProfile;
+      
+      if (venueProfile == null) {
+        throw Exception('Venue profile not found');
+      }
 
-    setState(() => _isSaving = false);
+      final gigsService = GigsService();
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const AnimatedSuccessCheck(size: 20, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Gig created successfully!'),
-            ],
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
+      // Build location from venue profile
+      final venueLocation = venueProfile.location;
+      final geoCoords = venueLocation?.coordinates ?? [0.0, 0.0];
+
+      final request = CreateGigRequest(
+        venueId: venueProfile.id,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim().isNotEmpty 
+            ? _descriptionController.text.trim() 
+            : null,
+        date: _selectedDate?.toIso8601String() ?? DateTime.now().toIso8601String(),
+        startTime: _startTime != null 
+            ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}'
+            : '19:00',
+        endTime: _endTime != null 
+            ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'
+            : null,
+        budget: double.tryParse(_paymentController.text) ?? 100.0,
+        requiredGenres: _selectedGenres,
+        specificRequirements: _requirementsController.text.trim().isNotEmpty 
+            ? _requirementsController.text.trim() 
+            : null,
+        location: CreateGigLocationRequest(
+          city: venueLocation?.city ?? 'Unknown',
+          country: venueLocation?.country ?? 'Unknown',
+          venueAddress: venueLocation?.streetAddress ?? venueLocation?.formattedAddress,
+          geoCoordinates: geoCoords,
+        ),
+        status: GigStatus.open,
+        perks: GigPerks(
+          providesFood: _mealIncluded,
+          providesDrinks: _mealIncluded,
         ),
       );
-      Navigator.pop(context, true);
+
+      await gigsService.createGig(request);
+      
+      setState(() {
+        _isSaving = false;
+        _isSuccess = true;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const AnimatedSuccessCheck(size: 20, color: Colors.white),
+                const SizedBox(width: 12),
+                const Text('Gig created successfully!'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('Error creating gig: $e');
+      setState(() => _isSaving = false);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create gig: ${e.toString()}'),
+            backgroundColor: AppColors.crimson,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
     }
   }
 

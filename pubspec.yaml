@@ -38,7 +38,7 @@ dependencies:
   # 🎨 PREMIUM DESIGN DEPENDENCIES
 
   # World-class typography from Google Fonts
-  google_fonts: ^7.0.0
+  google_fonts: ^8.0.0
 
   # Premium icons (Phosphor, Lucide style)
   flutter_phosphor_icons: ^0.0.1+6

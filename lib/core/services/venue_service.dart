@@ -186,7 +186,7 @@ class VenueService {
       final requestData = request.toJson();
       debugPrint('🏢 [VenueService] Update data keys: ${requestData.keys.toList()}');
 
-      final response = await _client.patch(
+      final response = await _client.put(
         Endpoints.venuesMe,
         data: requestData,
       );

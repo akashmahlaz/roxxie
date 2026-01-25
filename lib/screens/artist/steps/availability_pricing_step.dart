@@ -67,12 +67,17 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
         _selectedDates.add(normalizedDate);
         widget.profileData.availability.add({
           'date': normalizedDate.toIso8601String(),
-          'startTime': _defaultStartTime.format(context),
-          'endTime': _defaultEndTime.format(context),
+          'startTime': _formatTime24(_defaultStartTime),
+          'endTime': _formatTime24(_defaultEndTime),
           'isBooked': false,
         });
       }
     });
+  }
+
+  /// Format TimeOfDay as 24-hour HH:MM string for backend
+  String _formatTime24(TimeOfDay time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
   void _changeMonth(int delta) {
@@ -132,8 +137,8 @@ class _AvailabilityPricingStepState extends State<AvailabilityPricingStep> {
             final slot = widget.profileData.availability[i];
             widget.profileData.availability[i] = {
               ...slot,
-              'startTime': startTime.format(context),
-              'endTime': endTime.format(context),
+              'startTime': _formatTime24(startTime),
+              'endTime': _formatTime24(endTime),
             };
           }
         });
