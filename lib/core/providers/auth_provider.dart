@@ -349,6 +349,25 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// 🗑️ Delete account
+  Future<bool> deleteAccount() async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _authService.deleteAccount();
+      // Account deleted on server. Now clean up local state.
+      // We call logout to clean up tokens, social auth, and provider state.
+      await logout();
+      return true;
+    } catch (e) {
+      _setError('Failed to delete account: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// ✅ Mark onboarding as skipped (local-only fallback)
   Future<void> markOnboardingSkipped() async {
     _onboardingSkipped = true;
