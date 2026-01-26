@@ -103,6 +103,9 @@ dependencies:
   # Connectivity check
   connectivity_plus: ^7.0.0
 
+  # UUID for session tokens
+  uuid: ^4.3.3
+
   # Location services
   geolocator: ^14.0.2
   geocoding: ^4.0.0

@@ -10,6 +10,7 @@ export 'swipe_service.dart';
 export 'message_service.dart';
 export 'upload_service.dart';
 export 'location_service.dart';
+export 'google_places_service.dart';
 export 'analytics_service.dart';
 export 'chat_service.dart';
 export 'discovery_service.dart';

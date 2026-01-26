@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../core/theme/theme.dart';
 import '../core/services/services.dart';
 
@@ -31,6 +33,7 @@ class SmartLocationPicker extends StatefulWidget {
 
 class _SmartLocationPickerState extends State<SmartLocationPicker> {
   final _locationService = LocationService();
+  final _placesService = GooglePlacesService();
   final _searchController = TextEditingController();
 
   String? _city;
@@ -40,6 +43,12 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
   bool _isDetecting = false;
   bool _isManualEntry = false;
   String? _errorMessage;
+
+  // Google Places Autocomplete
+  String _sessionToken = const Uuid().v4();
+  List<PlaceSuggestion> _suggestions = [];
+  Timer? _debounce;
+  bool _isLoadingSuggestions = false;
 
   @override
   void initState() {
@@ -55,6 +64,7 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
   @override
   void dispose() {
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -293,15 +303,19 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
           ),
           onChanged: (value) {
             setState(() {});
-            // TODO: Implement autocomplete with Google Places API
+            _onSearchChanged(value);
           },
           onSubmitted: (value) {
             if (value.isNotEmpty) {
-              // For now, parse simple city input
+              // Fallback to manual parsing if no suggestion selected
               _handleManualLocation(value);
             }
           },
         ),
+
+        // Suggestions List
+        if (_isLoadingSuggestions || _suggestions.isNotEmpty)
+          _buildSuggestionsList(brightness),
 
         const SizedBox(height: 12),
 
@@ -325,7 +339,7 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
   }
 
   void _handleManualLocation(String input) {
-    // Simple parsing - in production, use Google Places API
+    // Simple parsing as fallback
     final parts = input.split(',').map((e) => e.trim()).toList();
 
     setState(() {
@@ -340,5 +354,118 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
     });
 
     widget.onLocationSelected?.call(_city!, _country!, null, null);
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      if (query.isEmpty) {
+        setState(() {
+          _suggestions = [];
+          _isLoadingSuggestions = false;
+        });
+        return;
+      }
+
+      setState(() => _isLoadingSuggestions = true);
+
+      final results = await _placesService.getAutocompleteSuggestions(
+        query,
+        _sessionToken,
+      );
+
+      if (mounted) {
+        setState(() {
+          _suggestions = results;
+          _isLoadingSuggestions = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _selectSuggestion(PlaceSuggestion suggestion) async {
+    setState(() {
+      _searchController.text = suggestion.description;
+      _suggestions = [];
+      _isLoadingSuggestions = true;
+    });
+
+    final details = await _placesService.getPlaceDetails(
+      suggestion.placeId,
+      _sessionToken,
+    );
+
+    if (details != null && mounted) {
+      setState(() {
+        _city = details.city;
+        _country = details.country;
+        _latitude = details.lat;
+        _longitude = details.lng;
+        _isManualEntry = false;
+        _isLoadingSuggestions = false;
+
+        // Reset session token for next session
+        _sessionToken = const Uuid().v4();
+      });
+
+      widget.onLocationSelected?.call(_city!, _country!, _latitude, _longitude);
+    } else {
+      if (mounted) {
+        setState(() => _isLoadingSuggestions = false);
+      }
+    }
+  }
+
+  Widget _buildSuggestionsList(Brightness brightness) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 200),
+      margin: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(brightness)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: _isLoadingSuggestions
+          ? const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+          : ListView.separated(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: _suggestions.length,
+            separatorBuilder:
+                (context, index) =>
+                    Divider(height: 1, color: AppColors.border(brightness)),
+            itemBuilder: (context, index) {
+              final suggestion = _suggestions[index];
+              return ListTile(
+                dense: true,
+                title: Text(
+                  suggestion.mainText,
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                subtitle: Text(
+                  suggestion.secondaryText,
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 12,
+                  ),
+                ),
+                onTap: () => _selectSuggestion(suggestion),
+              );
+            },
+          ),
+    );
   }
 }

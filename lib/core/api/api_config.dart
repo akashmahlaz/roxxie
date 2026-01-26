@@ -34,6 +34,9 @@ class ApiConfig {
   static const String matches = '/matches';
   static const String messages = '/messages';
   static const String upload = '/upload';
+
+  // 🌍 External Services
+  static const String googlePlacesApiKey = 'YOUR_GOOGLE_PLACES_API_KEY';
 }
 
 /// API Endpoints helper
