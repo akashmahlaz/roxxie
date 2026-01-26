@@ -585,6 +585,44 @@ class CalendarService {
     }
   }
 
+  /// Get public calendar for a specific artist
+  Future<CalendarResponse> getArtistCalendar(
+    String artistId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      debugPrint('📅 [CalendarService] Fetching calendar for artist $artistId...');
+
+      final queryParams = <String, dynamic>{};
+      if (startDate != null) {
+        queryParams['startDate'] = startDate.toIso8601String().split('T')[0];
+      }
+      if (endDate != null) {
+        queryParams['endDate'] = endDate.toIso8601String().split('T')[0];
+      }
+
+      final response = await _client.get(
+        Endpoints.artistCalendar(artistId),
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      if (response.data == null) {
+        throw CalendarServiceError('Empty response from server');
+      }
+
+      final calendar = CalendarResponse.fromJson(response.data);
+      debugPrint(
+        '📅 [CalendarService] Loaded ${calendar.events.length} events for artist $artistId',
+      );
+      return calendar;
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'get artist calendar');
+    } catch (e) {
+      throw CalendarServiceError('Failed to load artist calendar: $e');
+    }
+  }
+
   /// Get only availability slots
   Future<List<AvailabilitySlot>> getAvailability({
     DateTime? startDate,

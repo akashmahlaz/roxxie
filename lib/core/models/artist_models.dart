@@ -463,6 +463,8 @@ class Artist {
   final String subscriptionTier;
   final int profileCompletionPercent;
   final bool hasCompletedSetup;
+  final int responseRate;
+  final String responseTime;
 
   // Price range getters for compatibility with UI
   double get minPrice => priceRange?.min ?? 100.0;
@@ -509,6 +511,8 @@ class Artist {
     this.subscriptionTier = 'free',
     this.profileCompletionPercent = 0,
     this.hasCompletedSetup = false,
+    this.responseRate = 100,
+    this.responseTime = 'Within 24 hours',
   });
 
   factory Artist.fromJson(Map<String, dynamic> json) {
@@ -571,6 +575,8 @@ class Artist {
       subscriptionTier: json['subscriptionTier'] ?? 'free',
       profileCompletionPercent: json['profileCompletionPercent'] ?? 0,
       hasCompletedSetup: json['hasCompletedSetup'] ?? false,
+      responseRate: json['responseRate'] ?? 100,
+      responseTime: json['responseTime'] ?? 'Within 24 hours',
     );
   }
 

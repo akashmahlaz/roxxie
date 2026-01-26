@@ -63,6 +63,16 @@ class AuthService {
     }
   }
 
+  /// 🗑️ Delete account
+  Future<void> deleteAccount() async {
+    try {
+      await _client.delete(Endpoints.deleteAccount);
+    } catch (e) {
+      debugPrint('Delete account error: $e');
+      rethrow;
+    }
+  }
+
   /// 🔄 Refresh tokens
   Future<bool> refreshTokens() async {
     return await _client.refreshTokens();

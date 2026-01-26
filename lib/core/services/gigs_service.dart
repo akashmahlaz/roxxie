@@ -99,6 +99,21 @@ class GigsService {
     }
   }
 
+  /// ✅ Update gig (Venue only)
+  Future<Gig> updateGig(String gigId, UpdateGigRequest request) async {
+    try {
+      final response = await _client.patch(
+        '/gigs/$gigId',
+        data: request.toJson(),
+      );
+
+      return Gig.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Update gig error: $e');
+      rethrow;
+    }
+  }
+
   /// ✅ Get my gigs (Venue)
   ///
   /// Use [status] to filter (draft/open/in_progress/filled/completed/cancelled)

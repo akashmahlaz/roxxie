@@ -46,6 +46,7 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
 
   final ArtistService _artistService = ArtistService();
   final ReviewService _reviewService = ReviewService();
+  final CalendarService _calendarService = CalendarService();
 
   double _scrollOffset = 0;
   bool _showFABMenu = false;
@@ -118,6 +119,27 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
         debugPrint('Could not load reviews: $e');
       }
 
+      // Fetch calendar for upcoming availability
+      List<DateTime> upcomingDates = [];
+      try {
+        final calendar = await _calendarService.getArtistCalendar(
+          widget.artistId,
+          startDate: DateTime.now(),
+          endDate: DateTime.now().add(const Duration(days: 30)),
+        );
+
+        upcomingDates = calendar.events
+            .where((e) => e.eventType == CalendarEventType.availability)
+            .map((e) => e.date)
+            .toList();
+
+        // Deduplicate and sort
+        upcomingDates = upcomingDates.toSet().toList()..sort();
+      } catch (e) {
+        debugPrint('Could not load calendar: $e');
+        // Continue loading profile even if calendar fails
+      }
+
       // Map API Artist model to local ArtistProfile
       setState(() {
         _artist = ArtistProfile(
@@ -146,6 +168,7 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
           yearsActive: artist.yearsOfExperience ?? 1,
           responseRate: artist.responseRate,
           responseTime: _formatResponseTime(artist.responseTime),
+          responseTime: artist.responseTime,
           isVerified: artist.isVerified,
           isPremium:
               artist.subscriptionTier == 'premium' ||
@@ -158,7 +181,7 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
           ], // TODO: Parse from artist.availability
           media: _mapMediaItems(artist),
           reviews: reviews,
-          upcomingAvailability: _generateUpcomingDates(),
+          upcomingAvailability: upcomingDates,
         );
         _isLoading = false;
       });

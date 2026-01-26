@@ -445,19 +445,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              // TODO: Implement password change
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Password changed successfully'),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            onPressed: () async {
+              final currentPassword = currentPasswordController.text;
+              final newPassword = newPasswordController.text;
+              final confirmPassword = confirmPasswordController.text;
+
+              if (currentPassword.isEmpty ||
+                  newPassword.isEmpty ||
+                  confirmPassword.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Please fill in all fields'),
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating,
                   ),
-                ),
+                );
+                return;
+              }
+
+              if (newPassword != confirmPassword) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('New passwords do not match'),
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+
+              final authProvider = context.read<AuthProvider>();
+              final success = await authProvider.changePassword(
+                currentPassword: currentPassword,
+                newPassword: newPassword,
               );
+
+              if (context.mounted) {
+                if (success) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Password changed successfully'),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        authProvider.errorMessage ?? 'Failed to change password',
+                      ),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson),
             child: const Text('Change Password'),
@@ -488,15 +535,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              // TODO: Implement account deletion
-              Navigator.pop(context);
-              await context.read<AuthProvider>().logout();
+              Navigator.pop(context); // Close confirmation dialog
+
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder:
+                    (context) => const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.crimson,
+                      ),
+                    ),
+              );
+
+              final success =
+                  await context.read<AuthProvider>().deleteAccount();
+
               if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/role-selection',
-                  (route) => false,
-                );
+                Navigator.pop(context); // Close loading dialog
+
+                if (success) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/role-selection',
+                    (route) => false,
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Failed to delete account. Please try again.',
+                      ),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),

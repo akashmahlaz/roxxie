@@ -38,11 +38,17 @@ class UploadResponse {
   }
 }
 
-/// Helper to convert file to base64 data URI
-Future<String> fileToBase64DataUri(String filePath) async {
+/// Private helper to read and encode file in an isolate
+Future<String> _readAndEncodeFile(String filePath) async {
   final file = File(filePath);
   final bytes = await file.readAsBytes();
-  final base64String = base64Encode(bytes);
+  return base64Encode(bytes);
+}
+
+/// Helper to convert file to base64 data URI
+Future<String> fileToBase64DataUri(String filePath) async {
+  // Offload file reading and encoding to a separate isolate to avoid UI jank
+  final base64String = await compute(_readAndEncodeFile, filePath);
 
   // Determine MIME type from extension
   final extension = filePath.split('.').last.toLowerCase();

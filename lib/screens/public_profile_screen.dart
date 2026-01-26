@@ -18,6 +18,7 @@ import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
 import '../widgets/widgets.dart';
+import 'chat_screen.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   final String? userId; // If null, show current user's profile
@@ -1360,7 +1361,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
             ),
             child: IconButton(
               onPressed: () {
-                // TODO: Open chat
+                if (widget.userId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatScreen(
+                        participantId: widget.userId,
+                      ),
+                    ),
+                  );
+                }
               },
               icon: Icon(
                 Icons.chat_bubble_outline_rounded,

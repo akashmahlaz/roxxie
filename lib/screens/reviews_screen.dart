@@ -150,8 +150,8 @@ class _ReviewsScreenState extends State<ReviewsScreen>
         threeStarCount: statsResponse.ratingDistribution[3] ?? 0,
         twoStarCount: statsResponse.ratingDistribution[2] ?? 0,
         oneStarCount: statsResponse.ratingDistribution[1] ?? 0,
-        responseRate: 0.9, // TODO: Add to backend stats
-        averageResponseTime: '< 24 hours', // TODO: Add to backend stats
+        responseRate: statsResponse.responseRate ?? 0.0,
+        averageResponseTime: statsResponse.averageResponseTime ?? 'N/A',
       );
 
       _isLoading = false;
