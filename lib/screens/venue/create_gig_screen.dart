@@ -21,7 +21,9 @@ import '../../core/providers/auth_provider.dart';
 import '../../widgets/widgets.dart';
 
 class CreateGigScreen extends StatefulWidget {
-  const CreateGigScreen({super.key});
+  final Gig? gig;
+
+  const CreateGigScreen({super.key, this.gig});
 
   @override
   State<CreateGigScreen> createState() => _CreateGigScreenState();
@@ -95,6 +97,49 @@ class _CreateGigScreenState extends State<CreateGigScreen>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+
+    if (widget.gig != null) {
+      _initializeFromGig(widget.gig!);
+    }
+  }
+
+  void _initializeFromGig(Gig gig) {
+    _titleController.text = gig.title;
+    _descriptionController.text = gig.description ?? '';
+    _paymentController.text = gig.budget.toStringAsFixed(0);
+    _requirementsController.text = gig.specificRequirements ?? '';
+
+    _selectedDate = gig.date;
+
+    // Parse times
+    try {
+      final startParts = gig.startTime.split(':');
+      if (startParts.length == 2) {
+        _startTime = TimeOfDay(
+          hour: int.parse(startParts[0]),
+          minute: int.parse(startParts[1]),
+        );
+      }
+
+      if (gig.endTime != null) {
+        final endParts = gig.endTime!.split(':');
+        if (endParts.length == 2) {
+          _endTime = TimeOfDay(
+            hour: int.parse(endParts[0]),
+            minute: int.parse(endParts[1]),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error parsing time: $e');
+    }
+
+    _selectedGenres.addAll(gig.requiredGenres);
+    _equipmentProvided = gig.perks?.providesFood ?? true;
+    _mealIncluded = gig.perks?.providesDrinks ?? true;
+    _parkingAvailable = gig.perks?.providesTransport ?? true;
+
+    // Note: gigType is not currently stored in backend model
   }
 
   @override
@@ -153,41 +198,69 @@ class _CreateGigScreenState extends State<CreateGigScreen>
       final venueLocation = venueProfile.location;
       final geoCoords = venueLocation?.coordinates ?? [0.0, 0.0];
 
-      final request = CreateGigRequest(
-        venueId: venueProfile.id,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isNotEmpty
-            ? _descriptionController.text.trim()
-            : null,
-        date:
-            _selectedDate?.toIso8601String() ??
-            DateTime.now().toIso8601String(),
-        startTime: _startTime != null
-            ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}'
-            : '19:00',
-        endTime: _endTime != null
-            ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'
-            : null,
-        budget: double.tryParse(_paymentController.text) ?? 100.0,
-        requiredGenres: _selectedGenres,
-        specificRequirements: _requirementsController.text.trim().isNotEmpty
-            ? _requirementsController.text.trim()
-            : null,
-        location: CreateGigLocationRequest(
-          city: venueLocation?.city ?? 'Unknown',
-          country: venueLocation?.country ?? 'Unknown',
-          venueAddress:
-              venueLocation?.streetAddress ?? venueLocation?.formattedAddress,
-          geoCoordinates: geoCoords,
-        ),
-        status: GigStatus.open,
-        perks: GigPerks(
-          providesFood: _mealIncluded,
-          providesDrinks: _mealIncluded,
-        ),
+      final startTimeStr = _startTime != null
+          ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}'
+          : '19:00';
+      final endTimeStr = _endTime != null
+          ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'
+          : null;
+
+      final perks = GigPerks(
+        providesFood: _mealIncluded,
+        providesDrinks: _mealIncluded,
+        providesTransport: _parkingAvailable,
       );
 
-      await gigsService.createGig(request);
+      if (widget.gig != null) {
+        // Update existing gig
+        final request = UpdateGigRequest(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
+              : null,
+          date: _selectedDate?.toIso8601String(),
+          startTime: startTimeStr,
+          endTime: endTimeStr,
+          budget: double.tryParse(_paymentController.text),
+          requiredGenres: _selectedGenres,
+          specificRequirements: _requirementsController.text.trim().isNotEmpty
+              ? _requirementsController.text.trim()
+              : null,
+          perks: perks,
+        );
+
+        await gigsService.updateGig(widget.gig!.id, request);
+      } else {
+        // Create new gig
+        final request = CreateGigRequest(
+          venueId: venueProfile.id,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
+              : null,
+          date:
+              _selectedDate?.toIso8601String() ??
+              DateTime.now().toIso8601String(),
+          startTime: startTimeStr,
+          endTime: endTimeStr,
+          budget: double.tryParse(_paymentController.text) ?? 100.0,
+          requiredGenres: _selectedGenres,
+          specificRequirements: _requirementsController.text.trim().isNotEmpty
+              ? _requirementsController.text.trim()
+              : null,
+          location: CreateGigLocationRequest(
+            city: venueLocation?.city ?? 'Unknown',
+            country: venueLocation?.country ?? 'Unknown',
+            venueAddress:
+                venueLocation?.streetAddress ?? venueLocation?.formattedAddress,
+            geoCoordinates: geoCoords,
+          ),
+          status: GigStatus.open,
+          perks: perks,
+        );
+
+        await gigsService.createGig(request);
+      }
 
       setState(() {
         _isSaving = false;
@@ -201,7 +274,9 @@ class _CreateGigScreenState extends State<CreateGigScreen>
               children: [
                 const AnimatedSuccessCheck(size: 20, color: Colors.white),
                 const SizedBox(width: 12),
-                const Text('Gig created successfully!'),
+                Text(widget.gig != null
+                    ? 'Gig updated successfully!'
+                    : 'Gig created successfully!'),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -215,13 +290,13 @@ class _CreateGigScreenState extends State<CreateGigScreen>
         Navigator.pop(context, true);
       }
     } catch (e) {
-      debugPrint('Error creating gig: $e');
+      debugPrint('Error saving gig: $e');
       setState(() => _isSaving = false);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create gig: ${e.toString()}'),
+            content: Text('Failed to save gig: ${e.toString()}'),
             backgroundColor: AppColors.crimson,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -248,7 +323,7 @@ class _CreateGigScreenState extends State<CreateGigScreen>
           onPressed: () => _showExitConfirmation(brightness),
         ),
         title: Text(
-          'Create Gig',
+          widget.gig != null ? 'Edit Gig' : 'Create Gig',
           style: TextStyle(
             color: AppColors.text(brightness),
             fontSize: 18,
@@ -931,7 +1006,11 @@ class _CreateGigScreenState extends State<CreateGigScreen>
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            _isSuccess ? 'Published!' : 'Publish Gig',
+                            _isSuccess
+                                ? 'Saved!'
+                                : (widget.gig != null
+                                    ? 'Save Changes'
+                                    : 'Publish Gig'),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,

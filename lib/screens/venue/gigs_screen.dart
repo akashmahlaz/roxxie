@@ -46,6 +46,7 @@ class Gig {
   final bool equipmentProvided;
   final bool mealIncluded;
   final DateTime createdAt;
+  final api.Gig? source;
 
   const Gig({
     required this.id,
@@ -66,6 +67,7 @@ class Gig {
     this.equipmentProvided = true,
     this.mealIncluded = true,
     required this.createdAt,
+    this.source,
   });
 
   bool get isBooked => bookedArtistId != null;
@@ -121,6 +123,7 @@ class Gig {
       equipmentProvided: apiGig.perks?.providesFood ?? false,
       mealIncluded: apiGig.perks?.providesDrinks ?? false,
       createdAt: apiGig.createdAt ?? DateTime.now(),
+      source: apiGig,
     );
   }
 }
@@ -494,9 +497,18 @@ class _GigsScreenState extends State<GigsScreen>
     // TODO: Navigate to gig details
   }
 
-  void _editGig(Gig gig) {
+  Future<void> _editGig(Gig gig) async {
     HapticFeedback.lightImpact();
-    // TODO: Navigate to edit screen
+    if (gig.source == null) return;
+
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => CreateGigScreen(gig: gig.source)),
+    );
+
+    if (result == true) {
+      _loadGigs();
+    }
   }
 
   void _duplicateGig(Gig gig) {
