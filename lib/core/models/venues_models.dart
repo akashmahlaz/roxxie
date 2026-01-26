@@ -418,6 +418,7 @@ class VenueEquipment {
   bool hasDressingRoom = false;
   bool hasParking = false;
   String? parkingDetails;
+  bool isWheelchairAccessible = false; // Added missing field
 
   // Additional equipment stored locally but NOT sent to backend
   List<String> additionalEquipment = [];
@@ -437,6 +438,7 @@ class VenueEquipment {
     'hasDressingRoom': hasDressingRoom,
     'hasParking': hasParking,
     if (parkingDetails != null) 'parkingDetails': parkingDetails,
+    'isWheelchairAccessible': isWheelchairAccessible,
     if (additionalEquipment.isNotEmpty)
       'additionalEquipment': additionalEquipment,
     if (equipmentNotes != null) 'equipmentNotes': equipmentNotes,
@@ -454,6 +456,7 @@ class VenueEquipment {
     equipment.hasDressingRoom = json['hasDressingRoom'] ?? false;
     equipment.hasParking = json['hasParking'] ?? false;
     equipment.parkingDetails = json['parkingDetails'];
+    equipment.isWheelchairAccessible = json['isWheelchairAccessible'] ?? false;
     if (json['additionalEquipment'] != null) {
       equipment.additionalEquipment = List<String>.from(
         json['additionalEquipment'],
@@ -1260,6 +1263,7 @@ class Venue {
   final String? website;
   final VenueSocialLinks? socialLinks;
   final List<OperatingHours>? operatingHours;
+  final VenueEquipment equipment; // Added equipment field
 
   // Additional properties for compatibility
   String get primaryPhoto => profilePhotoUrl ?? '';
@@ -1295,7 +1299,8 @@ class Venue {
     this.website,
     this.socialLinks,
     this.operatingHours,
-  });
+    VenueEquipment? equipment,
+  }) : equipment = equipment ?? VenueEquipment();
 
   factory Venue.fromJson(Map<String, dynamic> json) {
     VenueLocation? location;
@@ -1326,6 +1331,12 @@ class Venue {
             ),
           )
           .toList();
+    }
+
+    // Parse equipment
+    VenueEquipment? equipment;
+    if (json['equipment'] != null) {
+      equipment = VenueEquipment.fromJson(json['equipment']);
     }
 
     return Venue(
@@ -1365,6 +1376,7 @@ class Venue {
       website: json['socialLinks']?['website'],
       socialLinks: socialLinks,
       operatingHours: operatingHours,
+      equipment: equipment,
     );
   }
 
@@ -1407,5 +1419,6 @@ class Venue {
     if (phone != null) 'phone': phone,
     if (contactEmail != null) 'contactEmail': contactEmail,
     if (socialLinks != null) 'socialLinks': socialLinks!.toJson(),
+    'equipment': equipment.toJson(),
   };
 }

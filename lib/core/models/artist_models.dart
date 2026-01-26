@@ -4,6 +4,8 @@ library;
 
 import 'user_models.dart';
 
+// ... [Keep conversions and enums as is until the Artist model]
+
 /// Artist Profile Data Model for Onboarding
 /// Used during the multi-step profile setup process
 class ArtistProfileData {
@@ -163,10 +165,12 @@ class ArtistProfileData {
       };
     }
 
-    // Pricing
-    dto['minPrice'] = minPrice;
-    dto['maxPrice'] = maxPrice;
-    dto['currency'] = currency;
+    // Pricing (Nested Object)
+    dto['pricing'] = {
+      'minPrice': minPrice,
+      'maxPrice': maxPrice,
+      'currency': currency,
+    };
 
     // Social links
     final socialLinks = <String, String>{};
@@ -202,9 +206,11 @@ class ArtistProfileData {
     }
     dto['showPhoneOnProfile'] = showPhoneOnProfile;
 
-    // Equipment
+    // Equipment (Nested Object)
     if (equipment.isNotEmpty) {
-      dto['equipment'] = equipment;
+      dto['equipment'] = {
+        'equipmentList': equipment.join(', '),
+      };
     }
 
     // Band size
@@ -542,10 +548,14 @@ class Artist {
       socialLinks: json['socialLinks'] != null
           ? SocialLinks.fromJson(json['socialLinks'])
           : null,
-      priceRange: json['priceRange'] != null
-          ? PriceRange.fromJson(json['priceRange'])
-          : null,
-      equipment: List<String>.from(json['equipment'] ?? []),
+      priceRange: json['pricing'] != null // Backend sends 'pricing' object
+          ? PriceRange.fromJson(json['pricing'])
+          : (json['priceRange'] != null
+              ? PriceRange.fromJson(json['priceRange'])
+              : null),
+      equipment: json['equipment'] != null && json['equipment']['equipmentList'] != null
+          ? (json['equipment']['equipmentList'] as String).split(',').map((e) => e.trim()).toList()
+          : [],
       bandSize: json['bandSize'],
       isAvailable: json['isAvailable'] ?? true,
       isVerified: json['isVerified'] ?? false,
@@ -589,8 +599,10 @@ class Artist {
     'audioSamples': audioSamples.map((e) => e.toJson()).toList(),
     'videoSamples': videoSamples.map((e) => e.toJson()).toList(),
     'socialLinks': socialLinks?.toJson(),
-    'priceRange': priceRange?.toJson(),
-    'equipment': equipment,
+    'pricing': priceRange?.toJson(), // Corrected to use 'pricing' key
+    'equipment': {
+      'equipmentList': equipment.join(', '),
+    },
     'bandSize': bandSize,
     'isAvailable': isAvailable,
     'isVerified': isVerified,
@@ -719,10 +731,32 @@ class UpdateArtistRequest {
     if (maxTravelDistance != null) {
       json['maxTravelDistance'] = maxTravelDistance;
     }
-    if (galleryUrls != null) json['galleryUrls'] = galleryUrls;
+
+    // Media - Using PhotoGalleryDto structure: { url: string, caption?: string }
+    if (galleryUrls != null) {
+      json['photoGallery'] = galleryUrls!.map((url) => {'url': url}).toList();
+    }
+
     if (socialLinks != null) json['socialLinks'] = socialLinks!.toJson();
-    if (priceRange != null) json['priceRange'] = priceRange!.toJson();
-    if (equipment != null) json['equipment'] = equipment;
+
+    // Pricing - Nested Object
+    if (minPrice != null || maxPrice != null) {
+      json['pricing'] = {
+        if (minPrice != null) 'minPrice': minPrice,
+        if (maxPrice != null) 'maxPrice': maxPrice,
+        'currency': 'USD', // Default
+      };
+    } else if (priceRange != null) {
+      json['pricing'] = priceRange!.toJson();
+    }
+
+    // Equipment - Nested Object
+    if (equipment != null) {
+      json['equipment'] = {
+        'equipmentList': equipment!.join(', '),
+      };
+    }
+
     if (bandSize != null) json['bandSize'] = bandSize;
     if (isAvailable != null) json['isAvailable'] = isAvailable;
     if (audioSamples != null) {
