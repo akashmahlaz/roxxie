@@ -317,13 +317,13 @@ class PushNotificationService {
         requestSoundPermission: false,
       );
 
-      const settings = InitializationSettings(
+      const initSettings = InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
       );
 
       await _localNotifications.initialize(
-        settings,
+        settings: initSettings,
         onDidReceiveNotificationResponse: _handleLocalNotificationTap,
       );
 
@@ -807,10 +807,10 @@ class PushNotificationService {
       );
 
       await _localNotifications.show(
-        payload.type.index,
-        payload.title,
-        payload.body,
-        details,
+        id: payload.type.index,
+        title: payload.title,
+        body: payload.body,
+        notificationDetails: details,
         payload: jsonEncode(payload.toMap()),
       );
 
@@ -855,10 +855,10 @@ class PushNotificationService {
       );
 
       await _localNotifications.show(
-        gigId.hashCode,
-        title,
-        body,
-        details,
+        id: gigId.hashCode,
+        title: title,
+        body: body,
+        notificationDetails: details,
         payload: 'gig://$gigId',
       );
 
@@ -871,7 +871,7 @@ class PushNotificationService {
   /// Cancel a local notification
   Future<void> cancelNotification(String id) async {
     try {
-      await _localNotifications.cancel(id.hashCode);
+      await _localNotifications.cancel(id: id.hashCode);
       debugPrint('🔔 [PushNotificationService] Notification cancelled: $id');
     } catch (e) {
       debugPrint('⚠️ [PushNotificationService] Cancel notification failed: $e');

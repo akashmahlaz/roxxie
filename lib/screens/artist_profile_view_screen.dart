@@ -238,16 +238,6 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
     return items;
   }
 
-  List<DateTime> _generateUpcomingDates() {
-    // TODO: Fetch real availability from calendar API
-    return [
-      DateTime.now().add(const Duration(days: 2)),
-      DateTime.now().add(const Duration(days: 5)),
-      DateTime.now().add(const Duration(days: 7)),
-      DateTime.now().add(const Duration(days: 12)),
-    ];
-  }
-
   String _formatResponseTime(int minutes) {
     if (minutes < 60) {
       return '< 1 hour';

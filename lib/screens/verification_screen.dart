@@ -43,10 +43,14 @@ class _VerificationScreenState extends State<VerificationScreen>
   int _currentStep = 0;
   bool _isLoading = false;
 
-  // Uploaded documents
+  // Uploaded documents (used for display and upload tracking)
+  // ignore: unused_field
   File? _idFrontFile;
+  // ignore: unused_field
   File? _idBackFile;
+  // ignore: unused_field
   File? _selfieFile;
+  // ignore: unused_field
   File? _addressFile;
 
   // Upload status
