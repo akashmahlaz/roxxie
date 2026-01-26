@@ -167,6 +167,7 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
           gigsCompleted: artist.completedGigs,
           yearsActive: artist.yearsOfExperience ?? 1,
           responseRate: artist.responseRate,
+          responseTime: _formatResponseTime(artist.responseTime),
           responseTime: artist.responseTime,
           isVerified: artist.isVerified,
           isPremium:
@@ -236,6 +237,28 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
     }
 
     return items;
+  }
+
+  List<DateTime> _generateUpcomingDates() {
+    // TODO: Fetch real availability from calendar API
+    return [
+      DateTime.now().add(const Duration(days: 2)),
+      DateTime.now().add(const Duration(days: 5)),
+      DateTime.now().add(const Duration(days: 7)),
+      DateTime.now().add(const Duration(days: 12)),
+    ];
+  }
+
+  String _formatResponseTime(int minutes) {
+    if (minutes < 60) {
+      return '< 1 hour';
+    } else if (minutes <= 1440) {
+      final hours = (minutes / 60).ceil();
+      return '< $hours ${hours == 1 ? "hour" : "hours"}';
+    } else {
+      final days = (minutes / 1440).ceil();
+      return '< $days ${days == 1 ? "day" : "days"}';
+    }
   }
 
   @override

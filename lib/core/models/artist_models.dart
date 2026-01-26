@@ -457,6 +457,8 @@ class Artist {
   final int totalReviews;
   final int completedGigs;
   final int reliabilityScore;
+  final int responseRate;
+  final int responseTime;
   final int profileViews;
   final String subscriptionTier;
   final int profileCompletionPercent;
@@ -503,6 +505,8 @@ class Artist {
     this.totalReviews = 0,
     this.completedGigs = 0,
     this.reliabilityScore = 100,
+    this.responseRate = 100,
+    this.responseTime = 1440,
     this.profileViews = 0,
     this.subscriptionTier = 'free',
     this.profileCompletionPercent = 0,
@@ -565,6 +569,8 @@ class Artist {
       totalReviews: json['totalReviews'] ?? json['reviewCount'] ?? 0,
       completedGigs: json['completedGigs'] ?? 0,
       reliabilityScore: json['reliabilityScore'] ?? 100,
+      responseRate: json['responseRate'] ?? 100,
+      responseTime: json['responseTime'] ?? 1440,
       profileViews: json['profileViews'] ?? 0,
       subscriptionTier: json['subscriptionTier'] ?? 'free',
       profileCompletionPercent: json['profileCompletionPercent'] ?? 0,
