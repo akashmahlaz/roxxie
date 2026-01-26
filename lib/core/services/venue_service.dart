@@ -709,12 +709,16 @@ class UpdateVenueRequest {
     if (description != null) json['description'] = description;
     if (venueType != null) json['venueType'] = venueType;
 
-    // Location: only send if valid and not [0,0]
-    if (location != null &&
-        location!.coordinates.length >= 2 &&
-        location!.longitude != 0.0 &&
-        location!.latitude != 0.0) {
-      json['location'] = location!.toJson();
+    // Location: send if has valid coordinates OR has city/country
+    if (location != null) {
+      final hasValidCoords = location!.coordinates.length >= 2 &&
+          location!.longitude != 0.0 &&
+          location!.latitude != 0.0;
+      final hasAddress = (location!.city != null && location!.city!.isNotEmpty) ||
+          (location!.country != null && location!.country!.isNotEmpty);
+      if (hasValidCoords || hasAddress) {
+        json['location'] = location!.toJson();
+      }
     }
 
     // Preferences

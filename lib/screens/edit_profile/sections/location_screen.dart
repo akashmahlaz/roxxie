@@ -230,6 +230,12 @@ class _LocationScreenState extends State<LocationScreen>
 
     setState(() => _isLoading = true);
 
+    debugPrint('📍 [LocationScreen] Saving location...');
+    debugPrint('📍 City: ${_cityController.text.trim()}');
+    debugPrint('📍 Country: ${_countryController.text.trim()}');
+    debugPrint('📍 Coordinates: [$_longitude, $_latitude]');
+    debugPrint('📍 Travel radius: $_travelRadius');
+
     try {
       if (auth.isArtist) {
         final location = Location(
@@ -241,6 +247,7 @@ class _LocationScreenState extends State<LocationScreen>
               : _addressController.text.trim(),
         );
 
+        debugPrint('📍 [LocationScreen] Updating artist location...');
         await _artistService.updateMyProfile(
           UpdateArtistRequest(
             location: location,
@@ -257,6 +264,7 @@ class _LocationScreenState extends State<LocationScreen>
               : _addressController.text.trim(),
         );
 
+        debugPrint('📍 [LocationScreen] Updating venue location...');
         await _venueService.updateMyProfile(
           UpdateVenueRequest(location: location),
         );

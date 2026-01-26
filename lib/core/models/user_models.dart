@@ -189,14 +189,27 @@ class Location {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'type': type,
-    'coordinates': coordinates,
-    if (city != null) 'city': city,
-    if (state != null) 'state': state,
-    if (country != null) 'country': country,
-    if (formattedAddress != null) 'formattedAddress': formattedAddress,
-  };
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    
+    // Backend requires city and country as strings (not optional)
+    // Send them even if empty to satisfy validation
+    json['city'] = city ?? '';
+    json['country'] = country ?? '';
+    
+    // Only send coordinates if valid (not [0,0])
+    if (coordinates.length >= 2 && 
+        (coordinates[0] != 0.0 || coordinates[1] != 0.0)) {
+      json['coordinates'] = coordinates;
+    }
+    
+    // Optional fields that backend accepts
+    if (formattedAddress != null && formattedAddress!.isNotEmpty) {
+      json['formattedAddress'] = formattedAddress;
+    }
+    
+    return json;
+  }
 
   double get longitude => coordinates.isNotEmpty ? coordinates[0] : 0.0;
   double get latitude => coordinates.length > 1 ? coordinates[1] : 0.0;

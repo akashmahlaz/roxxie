@@ -137,6 +137,10 @@ class ArtistService {
       debugPrint(
         '🎸 [ArtistService] Update data keys: ${requestData.keys.toList()}',
       );
+      // Log location data specifically for debugging
+      if (requestData.containsKey('location')) {
+        debugPrint('🎸 [ArtistService] Location data: ${requestData['location']}');
+      }
 
       final response = await _client.put(
         Endpoints.artistsMe,
