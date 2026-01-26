@@ -168,7 +168,6 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
           yearsActive: artist.yearsOfExperience ?? 1,
           responseRate: artist.responseRate,
           responseTime: _formatResponseTime(artist.responseTime),
-          responseTime: artist.responseTime,
           isVerified: artist.isVerified,
           isPremium:
               artist.subscriptionTier == 'premium' ||
