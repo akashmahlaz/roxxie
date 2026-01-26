@@ -111,6 +111,8 @@ class ReviewStats {
   final double? averageVenueQuality;
   final double? averagePayment;
   final List<TagCount> topTags;
+  final double? responseRate;
+  final String? averageResponseTime;
 
   ReviewStats({
     required this.averageRating,
@@ -122,6 +124,8 @@ class ReviewStats {
     this.averageVenueQuality,
     this.averagePayment,
     this.topTags = const [],
+    this.responseRate,
+    this.averageResponseTime,
   });
 
   factory ReviewStats.fromJson(Map<String, dynamic> json) {
@@ -144,6 +148,8 @@ class ReviewStats {
       topTags: (json['topTags'] as List? ?? [])
           .map((e) => TagCount.fromJson(e))
           .toList(),
+      responseRate: json['responseRate']?.toDouble(),
+      averageResponseTime: json['averageResponseTime'],
     );
   }
 
@@ -153,6 +159,8 @@ class ReviewStats {
       totalReviews: 0,
       ratingDistribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
       topTags: [],
+      responseRate: 0,
+      averageResponseTime: 'N/A',
     );
   }
 }
