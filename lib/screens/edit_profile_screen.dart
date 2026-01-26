@@ -1,10 +1,11 @@
-/// ✏️ GIGMATCH Edit Profile Screen
+/// ✏️ GIGMATCH Edit Profile Screen - PROFESSIONAL VERSION
 ///
-/// Modern, premium profile editor with:
-/// - Smooth animations and transitions
-/// - Real-time preview
-/// - Photo/video/audio editing
-/// - Cloudinary uploads
+/// Features:
+/// - Tabbed interface (Info, Media, Settings)
+/// - Advanced location picker
+/// - Media uploads (Gallery, Audio, Video)
+/// - Social links
+/// - Pricing & Equipment
 library;
 
 import 'dart:io';
@@ -16,7 +17,8 @@ import '../core/providers/providers.dart';
 import '../core/services/upload_service.dart';
 import '../core/services/venue_service.dart';
 import '../core/models/models.dart';
-import '../widgets/widgets.dart';
+import '../widgets/location_search_sheet.dart';
+import '../widgets/media_upload_widgets.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -30,37 +32,65 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   final _formKey = GlobalKey<FormState>();
   final _uploadService = UploadService();
   final _imagePicker = ImagePicker();
-
-  late AnimationController _animController;
-  late Animation<double> _fadeAnimation;
-
-  // Form controllers
-  late TextEditingController _nameController;
-  late TextEditingController _bioController;
-  late TextEditingController _stageNameController;
-  late TextEditingController _phoneController;
-  late TextEditingController _cityController;
+  late TabController _tabController;
 
   // State
   bool _isSaving = false;
   bool _hasChanges = false;
   String? _newProfilePhotoPath;
+
+  // ─── INFO TAB CONTROLLERS ───
+  late TextEditingController _nameController;
+  late TextEditingController _stageNameController;
+  late TextEditingController _bioController;
+  late TextEditingController _cityController;
+
+  // Location Data
+  double? _latitude;
+  double? _longitude;
+  String? _country;
+
+  // Genres
   List<String> _selectedGenres = [];
+
+  // Socials
+  late TextEditingController _instagramController;
+  late TextEditingController _spotifyController;
+  late TextEditingController _youtubeController;
+  late TextEditingController _soundcloudController;
+
+  // ─── MEDIA TAB DATA ───
+  List<String> _galleryUrls = [];
+  List<AudioSample> _audioSamples = [];
+  List<VideoSample> _videoSamples = [];
+
+  // ─── SETTINGS TAB CONTROLLERS ───
+  late TextEditingController _phoneController;
+  late TextEditingController _minPriceController;
+  late TextEditingController _maxPriceController;
+  late TextEditingController _equipmentController; // Comma separated
+  late TextEditingController _capacityController;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    );
-    _animController.forward();
+    _tabController = TabController(length: 3, vsync: this);
 
-    // Initialize controllers with current data
+    // Initialize with placeholders
+    _nameController = TextEditingController();
+    _stageNameController = TextEditingController();
+    _bioController = TextEditingController();
+    _cityController = TextEditingController();
+    _instagramController = TextEditingController();
+    _spotifyController = TextEditingController();
+    _youtubeController = TextEditingController();
+    _soundcloudController = TextEditingController();
+    _phoneController = TextEditingController();
+    _minPriceController = TextEditingController();
+    _maxPriceController = TextEditingController();
+    _equipmentController = TextEditingController();
+    _capacityController = TextEditingController();
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadCurrentProfile());
   }
 
@@ -70,43 +100,72 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     final artist = auth.artistProfile;
     final venue = auth.venueProfile;
 
-    _nameController = TextEditingController(
-      text: auth.isArtist
-          ? (artist?.displayName ?? user?.name)
-          : (venue?.name ?? user?.name),
-    );
-    _bioController = TextEditingController(
-      text: auth.isArtist ? artist?.bio : venue?.description,
-    );
-    _stageNameController = TextEditingController(text: artist?.stageName ?? '');
-    _phoneController = TextEditingController(
-      text: '', // Phone not available in Artist/Venue API response
-    );
-    _cityController = TextEditingController(
-      text: auth.isArtist ? artist?.location?.city : venue?.location?.city,
-    );
+    if (artist != null) {
+      _nameController.text = user?.name ?? '';
+      _stageNameController.text = artist.stageName;
+      _bioController.text = artist.bio ?? '';
 
-    if (auth.isArtist && artist != null) {
+      // Location
+      _cityController.text = artist.location?.city ?? artist.location?.formattedAddress ?? '';
+      _latitude = artist.location?.latitude;
+      _longitude = artist.location?.longitude;
+      _country = artist.location?.country;
+
       _selectedGenres = List<String>.from(artist.genres);
-    } else if (auth.isVenue && venue != null) {
-      _selectedGenres = List<String>.from(
-        venue.gigPreferences?.preferredGenres ?? [],
-      );
-    }
 
+      // Socials
+      _instagramController.text = artist.socialLinks?.instagram ?? '';
+      _spotifyController.text = artist.socialLinks?.spotify ?? '';
+      _youtubeController.text = artist.socialLinks?.youtube ?? '';
+      _soundcloudController.text = artist.socialLinks?.soundcloud ?? '';
+
+      // Media
+      _galleryUrls = List<String>.from(artist.galleryUrls);
+      _audioSamples = List<AudioSample>.from(artist.audioSamples);
+      _videoSamples = List<VideoSample>.from(artist.videoSamples);
+
+      // Settings
+      _phoneController.text = user?.phone ?? '';
+      _minPriceController.text = artist.minPrice.toString();
+      _maxPriceController.text = artist.maxPrice.toString();
+      _equipmentController.text = artist.equipment.join(', ');
+    } else if (venue != null) {
+      _nameController.text = venue.name;
+      _bioController.text = venue.description ?? '';
+      _phoneController.text = venue.phone ?? '';
+      _cityController.text = venue.location?.city ?? venue.location?.formattedAddress ?? '';
+      _latitude = venue.location?.latitude;
+      _longitude = venue.location?.longitude;
+      _country = venue.location?.country;
+      _capacityController.text = venue.capacity?.toString() ?? '';
+
+      if (venue.gigPreferences != null) {
+        _selectedGenres = List<String>.from(venue.gigPreferences!.preferredGenres);
+      }
+    }
     setState(() {});
   }
 
   @override
   void dispose() {
-    _animController.dispose();
+    _tabController.dispose();
     _nameController.dispose();
-    _bioController.dispose();
     _stageNameController.dispose();
-    _phoneController.dispose();
+    _bioController.dispose();
     _cityController.dispose();
+    _instagramController.dispose();
+    _spotifyController.dispose();
+    _youtubeController.dispose();
+    _soundcloudController.dispose();
+    _phoneController.dispose();
+    _minPriceController.dispose();
+    _maxPriceController.dispose();
+    _equipmentController.dispose();
+    _capacityController.dispose();
     super.dispose();
   }
+
+  // ─── ACTIONS ───
 
   Future<void> _pickProfilePhoto() async {
     final XFile? image = await _imagePicker.pickImage(
@@ -124,175 +183,173 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     }
   }
 
+  void _openLocationPicker(Brightness brightness) async {
+    final result = await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => LocationSearchSheet(brightness: brightness),
+    );
+
+    if (result != null && result is Map) {
+      setState(() {
+        _cityController.text = result['address'] ?? '';
+        _latitude = result['latitude'];
+        _longitude = result['longitude'];
+        _country = result['country']; // Might be null depending on LocationService
+        _hasChanges = true;
+      });
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isSaving = true);
 
     try {
       final auth = context.read<AuthProvider>();
       String? uploadedPhotoUrl;
 
-      // Upload new photo if selected
+      // Upload profile photo if changed
       if (_newProfilePhotoPath != null) {
-        try {
-          final result = await _uploadService.uploadProfilePhoto(
-            _newProfilePhotoPath!,
-          );
-          uploadedPhotoUrl = result.url;
-        } catch (e) {
-          debugPrint('Photo upload failed: $e');
-        }
+        final result = await _uploadService.uploadProfilePhoto(_newProfilePhotoPath!);
+        uploadedPhotoUrl = result.url;
       }
 
-      // Build update data
-      final updates = <String, dynamic>{
+      // 1. Update User Profile (Name, Photo)
+      final userUpdates = <String, dynamic>{
         'name': _nameController.text.trim(),
         if (uploadedPhotoUrl != null) 'profilePhotoUrl': uploadedPhotoUrl,
       };
+      await auth.updateProfile(userUpdates);
 
-      // Update user profile
-      final success = await auth.updateProfile(updates);
-
-      // Update role-specific profile
+      // 2. Update Artist Profile
       if (auth.isArtist) {
-        await auth.updateArtistProfile(
-          UpdateArtistRequest(
-            stageName: _stageNameController.text.trim().isEmpty
-                ? null
-                : _stageNameController.text.trim(),
-            bio: _bioController.text.trim(),
-            genres: _selectedGenres,
+        final equipmentList = _equipmentController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+
+        final updateRequest = UpdateArtistRequest(
+          stageName: _stageNameController.text.trim(),
+          bio: _bioController.text.trim(),
+          genres: _selectedGenres,
+          location: _latitude != null && _longitude != null
+              ? Location(
+                  coordinates: [_longitude!, _latitude!],
+                  city: _cityController.text,
+                  country: _country,
+                  formattedAddress: _cityController.text,
+                )
+              : null,
+          socialLinks: SocialLinks(
+            instagram: _instagramController.text.trim(),
+            spotify: _spotifyController.text.trim(),
+            youtube: _youtubeController.text.trim(),
+            soundcloud: _soundcloudController.text.trim(),
           ),
+          galleryUrls: _galleryUrls,
+          audioSamples: _audioSamples,
+          videoSamples: _videoSamples,
+          minPrice: double.tryParse(_minPriceController.text) ?? 0,
+          maxPrice: double.tryParse(_maxPriceController.text) ?? 0,
+          equipment: equipmentList,
         );
-      } else if (auth.isVenue) {
-        await auth.updateVenueProfile(
-          UpdateVenueRequest(
-            venueName: _nameController.text.trim(),
-            description: _bioController.text.trim(),
-            preferredGenres: _selectedGenres,
-            phone: _phoneController.text.trim().isEmpty
-                ? null
-                : _phoneController.text.trim(),
-          ),
+
+        final success = await auth.updateArtistProfile(updateRequest);
+        if (!success) throw Exception(auth.errorMessage ?? 'Failed to update artist profile');
+      }
+      // 3. Update Venue Profile
+      else if (auth.isVenue) {
+         final updateRequest = UpdateVenueRequest(
+          venueName: _nameController.text.trim(),
+          description: _bioController.text.trim(),
+          phone: _phoneController.text.trim(),
+          preferredGenres: _selectedGenres,
+          capacity: int.tryParse(_capacityController.text.trim()),
+          location: _latitude != null && _longitude != null
+              ? VenueLocation(
+                  coordinates: [_longitude!, _latitude!],
+                  city: _cityController.text,
+                  country: _country,
+                  formattedAddress: _cityController.text,
+                )
+              : null,
         );
+
+        final success = await auth.updateVenueProfile(updateRequest);
+        if (!success) throw Exception(auth.errorMessage ?? 'Failed to update venue profile');
       }
 
-      if (!mounted) return;
-
-      if (success) {
-        _showSuccessSnackBar('Profile updated successfully');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
         Navigator.pop(context);
-      } else {
-        _showErrorSnackBar(auth.errorMessage ?? 'Failed to update profile');
       }
     } catch (e) {
-      _showErrorSnackBar('Error: ${e.toString()}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            const SizedBox(width: 12),
-            Text(message),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_rounded, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppColors.crimson,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
+  // ─── UI BUILDERS ───
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final auth = context.watch<AuthProvider>();
 
+    if (auth.isVenue) {
+      return _buildVenueLayout(brightness);
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
-      appBar: _buildAppBar(brightness),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Form(
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              backgroundColor: AppColors.background(brightness),
+              expandedHeight: 200,
+              pinned: true,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              actions: _buildAppBarActions(brightness),
+              flexibleSpace: FlexibleSpaceBar(
+                background: _buildHeader(brightness),
+              ),
+              bottom: TabBar(
+                controller: _tabController,
+                indicatorColor: AppColors.crimson,
+                labelColor: AppColors.crimson,
+                unselectedLabelColor: AppColors.textSec(brightness),
+                tabs: const [
+                  Tab(text: 'INFO'),
+                  Tab(text: 'MEDIA'),
+                  Tab(text: 'SETTINGS'),
+                ],
+              ),
+            ),
+          ];
+        },
+        body: Form(
           key: _formKey,
-          onChanged: () => setState(() => _hasChanges = true),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+          onChanged: () => _hasChanges = true,
+          child: TabBarView(
+            controller: _tabController,
             children: [
-              // Profile Photo Section
-              _buildPhotoSection(brightness, auth),
-
-              const SizedBox(height: 32),
-
-              // Basic Info Section
-              _buildSectionHeader(
-                'Basic Information',
-                Icons.person_rounded,
-                brightness,
-              ),
-              const SizedBox(height: 16),
-              _buildNameField(brightness, auth),
-              if (auth.isArtist) ...[
-                const SizedBox(height: 16),
-                _buildStageNameField(brightness),
-              ],
-              const SizedBox(height: 16),
-              _buildBioField(brightness, auth),
-
-              const SizedBox(height: 32),
-
-              // Contact Section
-              _buildSectionHeader(
-                'Contact',
-                Icons.contact_phone_rounded,
-                brightness,
-              ),
-              const SizedBox(height: 16),
-              _buildPhoneField(brightness),
-              const SizedBox(height: 16),
-              _buildCityField(brightness),
-
-              const SizedBox(height: 32),
-
-              // Genres Section
-              _buildSectionHeader(
-                auth.isArtist ? 'Your Genres' : 'Preferred Genres',
-                Icons.music_note_rounded,
-                brightness,
-              ),
-              const SizedBox(height: 16),
-              _buildGenreSelector(brightness),
-
-              const SizedBox(height: 40),
-
-              // Save Button
-              _buildSaveButton(brightness),
-
-              const SizedBox(height: 20),
+              _buildInfoTab(brightness),
+              _buildMediaTab(brightness),
+              _buildSettingsTab(brightness),
             ],
           ),
         ),
@@ -300,141 +357,114 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     );
   }
 
-  PreferredSizeWidget _buildAppBar(Brightness brightness) {
-    return AppBar(
+  Widget _buildVenueLayout(Brightness brightness) {
+    return Scaffold(
       backgroundColor: AppColors.background(brightness),
-      elevation: 0,
-      leading: GlassBackButton(
-        onPressed: () {
-          if (_hasChanges) {
-            _showDiscardDialog(brightness);
-          } else {
-            Navigator.pop(context);
-          }
-        },
+      appBar: AppBar(
+        backgroundColor: AppColors.background(brightness),
+        title: Text('Edit Venue Profile', style: TextStyle(color: AppColors.text(brightness))),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.text(brightness)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: _buildAppBarActions(brightness),
       ),
-      title: Text(
-        'Edit Profile',
-        style: TextStyle(
-          color: AppColors.text(brightness),
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      centerTitle: true,
-    );
-  }
-
-  void _showDiscardDialog(Brightness brightness) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface(brightness),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Discard Changes?',
-          style: TextStyle(color: AppColors.text(brightness)),
-        ),
-        content: Text(
-          'You have unsaved changes. Are you sure you want to leave?',
-          style: TextStyle(color: AppColors.textSec(brightness)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Keep Editing',
-              style: TextStyle(color: AppColors.textSec(brightness)),
+      body: Form(
+        key: _formKey,
+        onChanged: () => _hasChanges = true,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+             _buildPhotoSection(brightness),
+             const SizedBox(height: 24),
+            _buildTextField(brightness, _nameController, 'Venue Name', Icons.store),
+            const SizedBox(height: 16),
+            _buildTextField(brightness, _bioController, 'Description', Icons.info, maxLines: 4),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () => _openLocationPicker(brightness),
+              child: AbsorbPointer(
+                child: _buildTextField(brightness, _cityController, 'Location', Icons.location_on),
+              ),
             ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'Discard',
-              style: TextStyle(color: AppColors.crimson),
-            ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            _buildTextField(brightness, _phoneController, 'Phone', Icons.phone, keyboardType: TextInputType.phone),
+            const SizedBox(height: 16),
+            _buildTextField(brightness, _capacityController, 'Capacity', Icons.people, keyboardType: TextInputType.number),
+             const SizedBox(height: 32),
+            _buildSectionHeader(brightness, 'Preferred Genres'),
+            _buildGenreSelector(brightness),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildPhotoSection(Brightness brightness, AuthProvider auth) {
-    final currentPhotoUrl = auth.user?.profilePhotoUrl;
+  List<Widget> _buildAppBarActions(Brightness brightness) {
+    return [
+      if (_isSaving)
+        const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.crimson)
+          ),
+        )
+      else
+        TextButton(
+          onPressed: _hasChanges ? _saveProfile : null,
+          child: Text(
+            'SAVE',
+            style: TextStyle(
+              color: _hasChanges ? AppColors.crimson : AppColors.textSec(brightness),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+    ];
+  }
 
-    return Center(
+  Widget _buildPhotoSection(Brightness brightness) {
+     final auth = context.watch<AuthProvider>();
+    final currentPhoto = auth.user?.profilePhotoUrl;
+     return Center(
       child: GestureDetector(
         onTap: _pickProfilePhoto,
         child: Stack(
           children: [
-            // Avatar
             Container(
-              width: 120,
-              height: 120,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.crimson.withValues(alpha: 0.2),
-                    AppColors.wine.withValues(alpha: 0.1),
-                  ],
-                ),
                 border: Border.all(color: AppColors.crimson, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.crimson.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: _newProfilePhotoPath != null
-                    ? Image.file(
-                        File(_newProfilePhotoPath!),
+                image: _newProfilePhotoPath != null
+                    ? DecorationImage(
+                        image: FileImage(File(_newProfilePhotoPath!)),
                         fit: BoxFit.cover,
-                        width: 120,
-                        height: 120,
                       )
-                    : (currentPhotoUrl != null && currentPhotoUrl.isNotEmpty
-                          ? Image.network(
-                              currentPhotoUrl,
-                              fit: BoxFit.cover,
-                              width: 120,
-                              height: 120,
-                              errorBuilder: (_, _, _) =>
-                                  _buildAvatarPlaceholder(brightness, auth),
-                            )
-                          : _buildAvatarPlaceholder(brightness, auth)),
+                    : currentPhoto != null
+                        ? DecorationImage(
+                            image: NetworkImage(currentPhoto),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
               ),
+              child: (_newProfilePhotoPath == null && currentPhoto == null)
+                  ? Icon(Icons.store, size: 50, color: AppColors.textSec(brightness))
+                  : null,
             ),
-
-            // Edit Badge
             Positioned(
               bottom: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-                  ),
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: AppColors.crimson,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.crimson.withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
-                child: const Icon(
-                  Icons.camera_alt_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
               ),
             ),
           ],
@@ -443,139 +473,218 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     );
   }
 
-  Widget _buildAvatarPlaceholder(Brightness brightness, AuthProvider auth) {
+  Widget _buildHeader(Brightness brightness) {
+    final auth = context.watch<AuthProvider>();
+    final currentPhoto = auth.user?.profilePhotoUrl;
+
     return Container(
       color: AppColors.surface(brightness),
-      child: Icon(
-        auth.isArtist ? Icons.music_note_rounded : Icons.business_rounded,
-        size: 48,
-        color: AppColors.crimson,
+      child: Center(
+        child: GestureDetector(
+          onTap: _pickProfilePhoto,
+          child: Stack(
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.crimson, width: 3),
+                  image: _newProfilePhotoPath != null
+                      ? DecorationImage(
+                          image: FileImage(File(_newProfilePhotoPath!)),
+                          fit: BoxFit.cover,
+                        )
+                      : currentPhoto != null
+                          ? DecorationImage(
+                              image: NetworkImage(currentPhoto),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                ),
+                child: (_newProfilePhotoPath == null && currentPhoto == null)
+                    ? Icon(Icons.person, size: 50, color: AppColors.textSec(brightness))
+                    : null,
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: AppColors.crimson,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(
-    String title,
-    IconData icon,
-    Brightness brightness,
-  ) {
-    return Row(
+  Widget _buildInfoTab(Brightness brightness) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
       children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppColors.crimson.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: AppColors.crimson, size: 20),
+        _buildSectionHeader(brightness, 'Basic Info'),
+        _buildTextField(brightness, _nameController, 'Full Name', Icons.person),
+        const SizedBox(height: 16),
+        _buildTextField(brightness, _stageNameController, 'Stage Name', Icons.mic),
+        const SizedBox(height: 16),
+        _buildTextField(
+          brightness,
+          _bioController,
+          'Bio',
+          Icons.info,
+          maxLines: 4,
         ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
+        const SizedBox(height: 16),
 
-  Widget _buildNameField(Brightness brightness, AuthProvider auth) {
-    return _buildTextField(
-      controller: _nameController,
-      label: auth.isArtist ? 'Display Name' : 'Venue Name',
-      hint: auth.isArtist ? 'Your name' : 'Your venue name',
-      icon: auth.isArtist ? Icons.person_rounded : Icons.storefront_rounded,
-      brightness: brightness,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Name is required';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildStageNameField(Brightness brightness) {
-    return _buildTextField(
-      controller: _stageNameController,
-      label: 'Stage Name',
-      hint: 'Your artist/band name',
-      icon: Icons.star_rounded,
-      brightness: brightness,
-    );
-  }
-
-  Widget _buildBioField(Brightness brightness, AuthProvider auth) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          auth.isArtist ? 'Bio' : 'Description',
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border(brightness)),
-          ),
-          child: TextFormField(
-            controller: _bioController,
-            maxLines: 4,
-            maxLength: 500,
-            style: TextStyle(color: AppColors.text(brightness)),
-            decoration: InputDecoration(
-              hintText: auth.isArtist
-                  ? 'Tell venues about yourself, your music, and experience...'
-                  : 'Describe your venue, atmosphere, and events...',
-              hintStyle: TextStyle(color: AppColors.textSec(brightness)),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
-              counterStyle: TextStyle(color: AppColors.textSec(brightness)),
+        // Location
+        GestureDetector(
+          onTap: () => _openLocationPicker(brightness),
+          child: AbsorbPointer(
+            child: _buildTextField(
+              brightness,
+              _cityController,
+              'Location',
+              Icons.location_on,
             ),
           ),
         ),
+
+        const SizedBox(height: 32),
+        _buildSectionHeader(brightness, 'Genres'),
+        _buildGenreSelector(brightness),
+
+        const SizedBox(height: 32),
+        _buildSectionHeader(brightness, 'Social Links'),
+        _buildTextField(brightness, _instagramController, 'Instagram Username', Icons.camera_alt_outlined, prefixText: '@'),
+        const SizedBox(height: 16),
+        _buildTextField(brightness, _spotifyController, 'Spotify Artist URL', Icons.music_note),
+        const SizedBox(height: 16),
+        _buildTextField(brightness, _youtubeController, 'YouTube Channel URL', Icons.play_circle_outline),
+        const SizedBox(height: 16),
+        _buildTextField(brightness, _soundcloudController, 'SoundCloud URL', Icons.cloud_queue),
       ],
     );
   }
 
-  Widget _buildPhoneField(Brightness brightness) {
-    return _buildTextField(
-      controller: _phoneController,
-      label: 'Phone Number',
-      hint: '+1 (555) 123-4567',
-      icon: Icons.phone_rounded,
-      brightness: brightness,
-      keyboardType: TextInputType.phone,
+  Widget _buildMediaTab(Brightness brightness) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        _buildSectionHeader(brightness, 'Photo Gallery'),
+        GalleryUploadGrid(
+          imageUrls: _galleryUrls,
+          brightness: brightness,
+          onChanged: (urls) => setState(() {
+            _galleryUrls = urls;
+            _hasChanges = true;
+          }),
+        ),
+
+        const SizedBox(height: 32),
+        _buildSectionHeader(brightness, 'Audio Tracks'),
+        Text(
+          'Upload your best tracks (MP3, WAV). Maximum 10MB per file.',
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12),
+        ),
+        const SizedBox(height: 12),
+        AudioUploadList(
+          samples: _audioSamples,
+          brightness: brightness,
+          onChanged: (samples) => setState(() {
+            _audioSamples = samples;
+            _hasChanges = true;
+          }),
+        ),
+
+        const SizedBox(height: 32),
+        _buildSectionHeader(brightness, 'Videos'),
+         Text(
+          'Upload performance videos. Maximum 50MB per file.',
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12),
+        ),
+        const SizedBox(height: 12),
+        VideoUploadList(
+          samples: _videoSamples,
+          brightness: brightness,
+          onChanged: (samples) => setState(() {
+            _videoSamples = samples;
+            _hasChanges = true;
+          }),
+        ),
+      ],
     );
   }
 
-  Widget _buildCityField(Brightness brightness) {
-    return _buildTextField(
-      controller: _cityController,
-      label: 'City',
-      hint: 'Your city',
-      icon: Icons.location_city_rounded,
-      brightness: brightness,
+  Widget _buildSettingsTab(Brightness brightness) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        _buildSectionHeader(brightness, 'Contact & Pricing'),
+        _buildTextField(brightness, _phoneController, 'Phone Number', Icons.phone, keyboardType: TextInputType.phone),
+        const SizedBox(height: 24),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(brightness, _minPriceController, 'Min Price (\$)', Icons.attach_money, keyboardType: TextInputType.number),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildTextField(brightness, _maxPriceController, 'Max Price (\$)', Icons.attach_money, keyboardType: TextInputType.number),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 32),
+        _buildSectionHeader(brightness, 'Equipment'),
+        Text(
+          'List equipment you can bring (comma separated)',
+          style: TextStyle(color: AppColors.textSec(brightness), fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+        _buildTextField(
+          brightness,
+          _equipmentController,
+          'e.g. PA System, Microphone, Guitar Amp',
+          Icons.speaker,
+          maxLines: 2,
+        ),
+      ],
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required Brightness brightness,
+  // ─── WIDGET HELPERS ───
+
+  Widget _buildSectionHeader(Brightness brightness, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: AppColors.text(brightness),
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    Brightness brightness,
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    int maxLines = 1,
     TextInputType? keyboardType,
-    String? Function(String?)? validator,
+    String? prefixText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,28 +693,29 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           label,
           style: TextStyle(
             color: AppColors.text(brightness),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(14),
+            color: AppColors.inputFill(brightness),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border(brightness)),
           ),
           child: TextFormField(
             controller: controller,
+            maxLines: maxLines,
             keyboardType: keyboardType,
-            validator: validator,
             style: TextStyle(color: AppColors.text(brightness)),
             decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: AppColors.textSec(brightness)),
-              prefixIcon: Icon(icon, color: AppColors.crimson, size: 20),
+              prefixIcon: Icon(icon, color: AppColors.textSec(brightness), size: 20),
+              prefixText: prefixText,
+              prefixStyle: TextStyle(color: AppColors.text(brightness)),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
+              isDense: true,
             ),
           ),
         ),
@@ -615,128 +725,49 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   Widget _buildGenreSelector(Brightness brightness) {
     final allGenres = [
-      'Rock',
-      'Pop',
-      'Jazz',
-      'Blues',
-      'Country',
-      'Hip Hop',
-      'R&B',
-      'Electronic',
-      'Classical',
-      'Folk',
-      'Indie',
-      'Metal',
-      'Reggae',
-      'Soul',
-      'Funk',
-      'Latin',
-      'World',
-      'Alternative',
-      'Punk',
+      'Rock', 'Pop', 'Jazz', 'Blues', 'Country', 'Hip Hop', 'R&B',
+      'Electronic', 'Classical', 'Folk', 'Indie', 'Metal', 'Reggae',
+      'Soul', 'Funk', 'Latin', 'Alternative', 'Punk'
     ];
 
     return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+      spacing: 8,
+      runSpacing: 8,
       children: allGenres.map((genre) {
         final isSelected = _selectedGenres.contains(genre);
-        return GestureDetector(
-          onTap: () {
+        return ChoiceChip(
+          label: Text(genre),
+          selected: isSelected,
+          onSelected: (selected) {
             setState(() {
-              if (isSelected) {
-                _selectedGenres.remove(genre);
+              if (selected) {
+                if (_selectedGenres.length < 5) {
+                  _selectedGenres.add(genre);
+                } else {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Maximum 5 genres allowed')),
+                  );
+                }
               } else {
-                _selectedGenres.add(genre);
+                _selectedGenres.remove(genre);
               }
               _hasChanges = true;
             });
           },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.crimson.withValues(alpha: 0.15)
-                  : AppColors.surface(brightness),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.crimson
-                    : AppColors.border(brightness),
-                width: isSelected ? 1.5 : 1,
-              ),
-            ),
-            child: Text(
-              genre,
-              style: TextStyle(
-                color: isSelected
-                    ? AppColors.crimson
-                    : AppColors.text(brightness),
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
+          selectedColor: AppColors.crimson,
+          backgroundColor: AppColors.surface(brightness),
+          labelStyle: TextStyle(
+            color: isSelected ? Colors.white : AppColors.text(brightness),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: isSelected ? AppColors.crimson : AppColors.border(brightness),
             ),
           ),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildSaveButton(Brightness brightness) {
-    return GestureDetector(
-      onTap: _isSaving ? null : _saveProfile,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          gradient: _hasChanges && !_isSaving
-              ? const LinearGradient(
-                  colors: [AppColors.crimson, Color(0xFFFF4D6D)],
-                )
-              : null,
-          color: _hasChanges && !_isSaving
-              ? null
-              : AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _hasChanges && !_isSaving
-                ? Colors.transparent
-                : AppColors.border(brightness),
-          ),
-          boxShadow: _hasChanges && !_isSaving
-              ? [
-                  BoxShadow(
-                    color: AppColors.crimson.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: _isSaving
-              ? SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: AppColors.text(brightness),
-                  ),
-                )
-              : Text(
-                  'Save Changes',
-                  style: TextStyle(
-                    color: _hasChanges
-                        ? Colors.white
-                        : AppColors.textSec(brightness),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-        ),
-      ),
     );
   }
 }
