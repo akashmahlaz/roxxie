@@ -144,8 +144,8 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
               : artist.reviewCount,
           gigsCompleted: artist.completedGigs,
           yearsActive: artist.yearsOfExperience ?? 1,
-          responseRate: 90, // TODO: Add to backend model
-          responseTime: '< 24 hours', // TODO: Add to backend model
+          responseRate: artist.responseRate,
+          responseTime: artist.responseTime,
           isVerified: artist.isVerified,
           isPremium:
               artist.subscriptionTier == 'premium' ||
