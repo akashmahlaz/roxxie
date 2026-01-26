@@ -559,81 +559,347 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
     );
   }
 
+  String _formatTimeOfDay(TimeOfDay time) {
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  TimeOfDay? _parseTimeOfDay(String? timeStr) {
+    if (timeStr == null) return null;
+    try {
+      final parts = timeStr.split(' ');
+      final timeParts = parts[0].split(':');
+      int hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      final period = parts[1];
+
+      if (period == 'PM' && hour != 12) hour += 12;
+      if (period == 'AM' && hour == 12) hour = 0;
+
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (e) {
+      return null;
+    }
+  }
+
   void _showEditHoursSheet(BuildContext context) {
-    // TODO: Implement full hours editing sheet
+    // Create a copy of the schedule for editing
+    final tempSchedule = _weekSchedule.map((day) => day.copy()).toList();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.8,
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.charcoal : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.slate : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.charcoal : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  // Handle
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.slate : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Edit Operating Hours',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.text(
+                              isDark ? Brightness.dark : Brightness.light,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Divider(
+                    height: 1,
+                    color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
+                  ),
+
+                  // List
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      itemCount: tempSchedule.length,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        color: isDark
+                            ? AppColors.slate.withValues(alpha: 0.5)
+                            : const Color(0xFFE5DCDC).withValues(alpha: 0.5),
+                      ),
+                      itemBuilder: (context, index) {
+                        return _buildEditableDayRow(
+                          tempSchedule[index],
+                          isDark,
+                          setSheetState,
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Save Button
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Save changes
+                          setState(() {
+                            for (int i = 0; i < _weekSchedule.length; i++) {
+                              _weekSchedule[i] = tempSchedule[i];
+                            }
+                            _saveData();
+                          });
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.crimson,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildEditableDayRow(
+    _DaySchedule day,
+    bool isDark,
+    StateSetter setSheetState,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Checkbox
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setSheetState(() => day.isOpen = !day.isOpen);
+                },
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: day.isOpen ? AppColors.crimson : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: day.isOpen
+                          ? AppColors.crimson
+                          : (isDark
+                                ? AppColors.slate
+                                : const Color(0xFFE5DCDC)),
+                      width: 2,
+                    ),
+                  ),
+                  child: day.isOpen
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        )
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Day Name
+              SizedBox(
+                width: 100,
                 child: Text(
-                  'Edit Operating Hours',
+                  day.name,
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.text(
                       isDark ? Brightness.dark : Brightness.light,
                     ),
                   ),
                 ),
               ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _weekSchedule.length,
-                  itemBuilder: (context, index) {
-                    return _buildDayRow(_weekSchedule[index], isDark);
-                  },
+
+              // Status (Closed)
+              if (!day.isOpen)
+                Text(
+                  'Closed',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: isDark ? Colors.grey[500] : const Color(0xFF876464),
+                  ),
                 ),
-              ),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.crimson,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+            ],
+          ),
+
+          // Time Pickers (only if open)
+          if (day.isOpen) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const SizedBox(width: 40), // Align with text
+                _buildTimePickerChip(
+                  context,
+                  day.openTime ?? '09:00 AM',
+                  isDark,
+                  (newTime) => setSheetState(() => day.openTime = newTime),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'to',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[400] : const Color(0xFF876464),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
+                _buildTimePickerChip(
+                  context,
+                  day.closeTime ?? '11:00 PM',
+                  isDark,
+                  (newTime) => setSheetState(() => day.closeTime = newTime),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimePickerChip(
+    BuildContext context,
+    String time,
+    bool isDark,
+    Function(String) onTimeChanged,
+  ) {
+    return GestureDetector(
+      onTap: () async {
+        HapticFeedback.lightImpact();
+        final initialTime =
+            _parseTimeOfDay(time) ?? const TimeOfDay(hour: 9, minute: 0);
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: initialTime,
+          builder: (context, child) {
+            return Theme(
+              data: isDark
+                  ? ThemeData.dark().copyWith(
+                      colorScheme: const ColorScheme.dark(
+                        primary: AppColors.crimson,
+                        surface: AppColors.charcoal,
+                        onSurface: Colors.white,
+                      ),
+                    )
+                  : ThemeData.light().copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: AppColors.crimson,
+                        surface: Colors.white,
+                        onSurface: Colors.black,
+                      ),
+                    ),
+              child: child!,
+            );
+          },
         );
+
+        if (picked != null) {
+          onTimeChanged(_formatTimeOfDay(picked));
+        }
       },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.graphite : const Color(0xFFF8F6F6),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              time,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppColors.text(
+                  isDark ? Brightness.dark : Brightness.light,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.access_time_rounded,
+              size: 16,
+              color: isDark ? Colors.grey[400] : Colors.grey[500],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -653,4 +919,14 @@ class _DaySchedule {
     this.closeTime,
     this.note,
   });
+
+  _DaySchedule copy() {
+    return _DaySchedule(
+      name: name,
+      isOpen: isOpen,
+      openTime: openTime,
+      closeTime: closeTime,
+      note: note,
+    );
+  }
 }
