@@ -105,24 +105,123 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
   }
 
   Widget _buildLoadingState(Brightness brightness) {
-    return Center(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircularProgressIndicator(
-            color: AppColors.crimson,
-            strokeWidth: 3,
-          ),
+          // Profile Header Skeleton
+          _buildHeaderSkeleton(brightness),
+
+          const SizedBox(height: 32),
+
+          // Section Title Skeleton
+          _buildShimmerBox(brightness, width: 120, height: 18),
+
           const SizedBox(height: 16),
-          Text(
-            'Loading profile...',
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 14,
+
+          // Section Cards Skeleton
+          for (int i = 0; i < 5; i++) ...[
+            _buildSectionSkeleton(brightness),
+            const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderSkeleton(Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.border(brightness),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Profile Photo Skeleton
+          _ShimmerBox(
+            brightness: brightness,
+            width: 72,
+            height: 72,
+            borderRadius: 36,
+          ),
+
+          const SizedBox(width: 16),
+
+          // Name and Role Skeleton
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildShimmerBox(brightness, width: 160, height: 22),
+                const SizedBox(height: 10),
+                _buildShimmerBox(brightness, width: 60, height: 20),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionSkeleton(Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.border(brightness),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Icon Skeleton
+          _ShimmerBox(
+            brightness: brightness,
+            width: 48,
+            height: 48,
+            borderRadius: 12,
+          ),
+
+          const SizedBox(width: 14),
+
+          // Title and Subtitle Skeleton
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildShimmerBox(brightness, width: 100, height: 16),
+                const SizedBox(height: 8),
+                _buildShimmerBox(brightness, width: 180, height: 14),
+              ],
+            ),
+          ),
+
+          // Arrow Skeleton
+          _buildShimmerBox(brightness, width: 22, height: 22),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerBox(
+    Brightness brightness, {
+    required double width,
+    required double height,
+    double? borderRadius,
+  }) {
+    return _ShimmerBox(
+      brightness: brightness,
+      width: width,
+      height: height,
+      borderRadius: borderRadius ?? 8,
     );
   }
 
@@ -537,4 +636,80 @@ class _ProfileSection {
     required this.screen,
     this.isComplete = false,
   });
+}
+
+/// Shimmer loading box with animation
+class _ShimmerBox extends StatefulWidget {
+  final Brightness brightness;
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  const _ShimmerBox({
+    required this.brightness,
+    required this.width,
+    required this.height,
+    required this.borderRadius,
+  });
+
+  @override
+  State<_ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<_ShimmerBox>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+    _animation = Tween<double>(begin: -2, end: 2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.brightness == Brightness.dark;
+    final baseColor = isDark
+        ? Colors.grey.shade800
+        : Colors.grey.shade300;
+    final highlightColor = isDark
+        ? Colors.grey.shade700
+        : Colors.grey.shade100;
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            gradient: LinearGradient(
+              begin: Alignment(_animation.value - 1, 0),
+              end: Alignment(_animation.value + 1, 0),
+              colors: [
+                baseColor,
+                highlightColor,
+                baseColor,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
