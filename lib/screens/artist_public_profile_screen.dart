@@ -6,8 +6,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/services/services.dart';
@@ -27,6 +30,11 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
   final _scrollController = ScrollController();
   final _artistService = ArtistService();
   final _reviewService = ReviewService();
+  late AudioPlayer _audioPlayer;
+  Duration _audioPosition = Duration.zero;
+  Duration _audioDuration = Duration.zero;
+  bool _audioLoading = false;
+  String? _audioError;
 
   bool _isLoading = true;
   String? _error;
@@ -41,6 +49,30 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+    _audioPlayer = AudioPlayer();
+    _audioPlayer.positionStream.listen((position) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _audioPosition = position);
+    });
+    _audioPlayer.durationStream.listen((duration) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _audioDuration = duration ?? Duration.zero);
+    });
+    _audioPlayer.playerStateStream.listen((state) {
+      if (!mounted) {
+        return;
+      }
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          _playingAudioIndex = null;
+          _audioPosition = Duration.zero;
+        });
+      }
+    });
   }
 
   Future<void> _loadProfile() async {
@@ -99,6 +131,7 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -606,6 +639,10 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
           final index = entry.key;
           final sample = entry.value;
           final isPlaying = _playingAudioIndex == index;
+          final hasUrl = sample.url.isNotEmpty;
+          final progress = _audioDuration.inMilliseconds > 0
+              ? (_audioPosition.inMilliseconds / _audioDuration.inMilliseconds)
+              : 0.0;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -621,12 +658,9 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
               children: [
                 // Play button
                 GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _playingAudioIndex = isPlaying ? null : index;
-                    });
-                    // TODO: Integrate audio player
-                  },
+                  onTap: hasUrl
+                      ? () => _toggleAudioPlayback(sample, index)
+                      : null,
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -634,7 +668,9 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      isPlaying
+                      _audioLoading && isPlaying
+                          ? Icons.hourglass_top_rounded
+                          : isPlaying
                           ? Icons.pause_rounded
                           : Icons.play_arrow_rounded,
                       color: Colors.white,
@@ -657,11 +693,25 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.divider(brightness),
-                          borderRadius: BorderRadius.circular(2),
+                      if (_audioError != null && isPlaying) ...[
+                        Text(
+                          _audioError!,
+                          style: TextStyle(
+                            color: AppColors.warning,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: isPlaying ? progress.clamp(0.0, 1.0) : 0.0,
+                          minHeight: 6,
+                          backgroundColor:
+                              AppColors.crimson.withValues(alpha: 0.15),
+                          valueColor:
+                              AlwaysStoppedAnimation(AppColors.crimson),
                         ),
                       ),
                     ],
@@ -670,12 +720,25 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
 
                 // Duration
                 if (sample.durationSeconds != null)
-                  Text(
-                    _formatDuration(sample.durationSeconds!),
-                    style: TextStyle(
-                      color: AppColors.textSec(brightness),
-                      fontSize: 12,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _formatDuration(sample.durationSeconds!),
+                        style: TextStyle(
+                          color: AppColors.textSec(brightness),
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (isPlaying)
+                        Text(
+                          _formatDuration(_audioPosition.inSeconds),
+                          style: TextStyle(
+                            color: AppColors.textSec(brightness),
+                            fontSize: 11,
+                          ),
+                        ),
+                    ],
                   ),
               ],
             ),
@@ -704,54 +767,60 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
             itemCount: artist.videoSamples.length,
             itemBuilder: (context, index) {
               final video = artist.videoSamples[index];
-              return Container(
-                width: 280,
-                margin: EdgeInsets.only(
-                  right: index < artist.videoSamples.length - 1 ? 12 : 0,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(12),
-                  image: video.thumbnailUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(video.thumbnailUrl!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (video.thumbnailUrl == null)
-                      Icon(
-                        Icons.movie_rounded,
-                        color: Colors.white24,
-                        size: 48,
-                      ),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.crimson,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 12,
-                      left: 12,
-                      child: Text(
-                        video.title ?? 'Video ${index + 1}',
-                        style: const TextStyle(
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _openVideoPlayer(video, brightness);
+                },
+                child: Container(
+                  width: 280,
+                  margin: EdgeInsets.only(
+                    right: index < artist.videoSamples.length - 1 ? 12 : 0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface(brightness),
+                    borderRadius: BorderRadius.circular(12),
+                    image: video.thumbnailUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(video.thumbnailUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (video.thumbnailUrl == null)
+                        Icon(
+                          Icons.movie_rounded,
+                          color: AppColors.textSec(brightness),
+                          size: 48,
+                        ),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
                           color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                          size: 32,
                         ),
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        bottom: 12,
+                        left: 12,
+                        child: Text(
+                          video.title ?? 'Video ${index + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -978,22 +1047,44 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
 
   Widget _buildSocialSection(Brightness brightness, Artist artist) {
     final social = artist.socialLinks!;
-    final links = <MapEntry<String, IconData>>[];
+    final links = <_SocialLinkItem>[];
 
-    if (social.website != null) {
-      links.add(const MapEntry('Website', Icons.language_rounded));
+    if (social.website != null && social.website!.isNotEmpty) {
+      links.add(
+        _SocialLinkItem(Icons.language_rounded, social.website!, null),
+      );
     }
-    if (social.instagram != null) {
-      links.add(const MapEntry('Instagram', Icons.camera_alt_rounded));
+    if (social.instagram != null && social.instagram!.isNotEmpty) {
+      links.add(
+        _SocialLinkItem(
+          Icons.camera_alt_rounded,
+          social.instagram!,
+          const Color(0xFFE1306C),
+        ),
+      );
     }
-    if (social.spotify != null) {
-      links.add(const MapEntry('Spotify', Icons.music_note_rounded));
+    if (social.spotify != null && social.spotify!.isNotEmpty) {
+      links.add(
+        _SocialLinkItem(
+          Icons.music_note_rounded,
+          social.spotify!,
+          const Color(0xFF1DB954),
+        ),
+      );
     }
-    if (social.youtube != null) {
-      links.add(const MapEntry('YouTube', Icons.play_circle_rounded));
+    if (social.youtube != null && social.youtube!.isNotEmpty) {
+      links.add(
+        _SocialLinkItem(
+          Icons.play_circle_rounded,
+          social.youtube!,
+          const Color(0xFFFF0000),
+        ),
+      );
     }
 
-    if (links.isEmpty) return const SizedBox.shrink();
+    if (links.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1003,13 +1094,20 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
         Wrap(
           spacing: 12,
           children: links.map((link) {
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.surface(brightness),
-                borderRadius: BorderRadius.circular(12),
+            return GestureDetector(
+              onTap: () => _openSocialLink(link.url, brightness),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (link.color ?? AppColors.crimson)
+                      .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  link.icon,
+                  color: link.color ?? AppColors.crimson,
+                ),
               ),
-              child: Icon(link.value, color: AppColors.crimson),
             );
           }).toList(),
         ),
@@ -1034,6 +1132,277 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile link copied to clipboard!')),
+    );
+  }
+
+  Future<void> _toggleAudioPlayback(AudioSample sample, int index) async {
+    if (sample.url.isEmpty) {
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+
+    if (_playingAudioIndex == index) {
+      await _audioPlayer.pause();
+      setState(() => _playingAudioIndex = null);
+      return;
+    }
+
+    setState(() {
+      _audioLoading = true;
+      _audioError = null;
+    });
+
+    try {
+      await _audioPlayer.setUrl(sample.url);
+      await _audioPlayer.play();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _playingAudioIndex = index;
+        _audioLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _audioLoading = false;
+        _audioError = 'Unable to play audio';
+        _playingAudioIndex = null;
+      });
+    }
+  }
+
+  Future<void> _openSocialLink(String url, Brightness brightness) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final uri = _normalizeUrl(url);
+    try {
+      final opened = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Unable to open link'),
+            backgroundColor: AppColors.crimson,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Unable to open link'),
+          backgroundColor: AppColors.crimson,
+        ),
+      );
+    }
+  }
+
+  Uri _normalizeUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return Uri.parse(url);
+    }
+    return Uri.parse('https://$url');
+  }
+
+  void _openVideoPlayer(VideoSample video, Brightness brightness) {
+    if (video.url.isEmpty) {
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _VideoPlayerSheet(
+        videoUrl: video.url,
+        title: video.title ?? 'Video',
+        brightness: brightness,
+      ),
+    );
+  }
+}
+
+class _SocialLinkItem {
+  final IconData icon;
+  final String url;
+  final Color? color;
+
+  _SocialLinkItem(this.icon, this.url, this.color);
+}
+
+class _VideoPlayerSheet extends StatefulWidget {
+  final String videoUrl;
+  final String title;
+  final Brightness brightness;
+
+  const _VideoPlayerSheet({
+    required this.videoUrl,
+    required this.title,
+    required this.brightness,
+  });
+
+  @override
+  State<_VideoPlayerSheet> createState() => _VideoPlayerSheetState();
+}
+
+class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _controller.initialize();
+      await _controller.play();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isInitialized = true);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _hasError = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      decoration: BoxDecoration(
+        color: AppColors.surface(widget.brightness),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.textSec(widget.brightness).withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: TextStyle(
+                    color: AppColors.text(widget.brightness),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(
+                  Icons.close_rounded,
+                  color: AppColors.textSec(widget.brightness),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          AspectRatio(
+            aspectRatio: _isInitialized ? _controller.value.aspectRatio : 16 / 9,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: _hasError
+                  ? Container(
+                      color: AppColors.surface(widget.brightness),
+                      child: Center(
+                        child: Text(
+                          'Unable to play video',
+                          style: TextStyle(color: AppColors.textSec(widget.brightness)),
+                        ),
+                      ),
+                    )
+                  : _isInitialized
+                  ? Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        VideoPlayer(_controller),
+                        VideoProgressIndicator(
+                          _controller,
+                          allowScrubbing: true,
+                          colors: VideoProgressColors(
+                            playedColor: AppColors.crimson,
+                            bufferedColor:
+                                AppColors.crimson.withValues(alpha: 0.3),
+                            backgroundColor:
+                                AppColors.textSec(widget.brightness).withValues(
+                                      alpha: 0.2,
+                                    ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 12,
+                          bottom: 16,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_controller.value.isPlaying) {
+                                  _controller.pause();
+                                } else {
+                                  _controller.play();
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _controller.value.isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Container(
+                      color: AppColors.surface(widget.brightness),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation(AppColors.crimson),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
