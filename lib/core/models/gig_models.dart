@@ -397,6 +397,80 @@ class CreateGigRequest {
   Map<String, dynamic> toJson() => _$CreateGigRequestToJson(this);
 }
 
+/// Request model for updating a gig (Venue).
+/// All fields are optional to support partial updates.
+class UpdateGigRequest {
+  final String? title;
+  final String? description;
+  final String? date;
+  final String? startTime;
+  final String? endTime;
+  final int? durationMinutes;
+  final int? numberOfSets;
+  final List<String>? requiredGenres;
+  final String? specificRequirements;
+  final int? artistsNeeded;
+  final double? budget;
+  final String? currency;
+  final GigPaymentType? paymentType;
+  final CreateGigLocationRequest? location;
+  final bool? isPublic;
+  final bool? acceptingApplications;
+  final GigPerks? perks;
+  final GigStatus? status;
+
+  const UpdateGigRequest({
+    this.title,
+    this.description,
+    this.date,
+    this.startTime,
+    this.endTime,
+    this.durationMinutes,
+    this.numberOfSets,
+    this.requiredGenres,
+    this.specificRequirements,
+    this.artistsNeeded,
+    this.budget,
+    this.currency,
+    this.paymentType,
+    this.location,
+    this.isPublic,
+    this.acceptingApplications,
+    this.perks,
+    this.status,
+  });
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    if (title != null) data['title'] = title;
+    if (description != null) data['description'] = description;
+    if (date != null) data['date'] = date;
+    if (startTime != null) data['startTime'] = startTime;
+    if (endTime != null) data['endTime'] = endTime;
+    if (durationMinutes != null) data['durationMinutes'] = durationMinutes;
+    if (numberOfSets != null) data['numberOfSets'] = numberOfSets;
+    if (requiredGenres != null) data['requiredGenres'] = requiredGenres;
+    if (specificRequirements != null) {
+      data['specificRequirements'] = specificRequirements;
+    }
+    if (artistsNeeded != null) data['artistsNeeded'] = artistsNeeded;
+    if (budget != null) data['budget'] = budget;
+    if (currency != null) data['currency'] = currency;
+    if (paymentType != null) {
+      data['paymentType'] = _$GigPaymentTypeEnumMap[paymentType!];
+    }
+    if (location != null) data['location'] = location!.toJson();
+    if (isPublic != null) data['isPublic'] = isPublic;
+    if (acceptingApplications != null) {
+      data['acceptingApplications'] = acceptingApplications;
+    }
+    if (perks != null) data['perks'] = perks!.toJson();
+    if (status != null) data['status'] = _gigStatusToWire(status);
+
+    return data;
+  }
+}
+
 @JsonSerializable(explicitToJson: true)
 class CreateGigLocationRequest {
   final String? venueAddress;
