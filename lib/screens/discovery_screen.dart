@@ -517,12 +517,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     }
 
     // Build card stack
-    final displayCards = cards
-        .skip(_currentCardIndex)
-        .take(3)
-        .toList()
-        .reversed
-        .toList();
+    final endIndex = math.min(_currentCardIndex + 3, cards.length);
+    final displayCards = <DiscoveryCard>[];
+    if (endIndex > _currentCardIndex) {
+      for (int i = endIndex - 1; i >= _currentCardIndex; i--) {
+        displayCards.add(cards[i]);
+      }
+    }
 
     return Stack(
       fit: StackFit.expand,
