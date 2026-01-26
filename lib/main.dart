@@ -27,7 +27,7 @@ import 'screens/artist/artist_profile_setup_screen.dart';
 import 'screens/venue/venue_profile_setup_screen.dart';
 import 'screens/artist_public_profile_screen.dart';
 import 'screens/public_profile_screen.dart';
-import 'screens/edit_profile_v2/edit_profile_v2_screen.dart';
+import 'screens/edit_profile/edit_profile_hub_screen.dart';
 
 // New Enterprise Screens
 import 'screens/wallet_screen.dart';
@@ -125,8 +125,7 @@ class GigMatchApp extends StatelessWidget {
           '/matches': (context) => const MatchesScreenV2(),
           '/profile': (context) => const ProfileScreenV3(),
           '/profile-old': (context) => const ProfileScreen(),
-          '/edit-profile': (context) => const EditProfileV2Screen(),
-          '/edit-profile-v2': (context) => const EditProfileV2Screen(),
+          '/edit-profile': (context) => const EditProfileHubScreen(),
           '/public-profile': (context) => const PublicProfileScreen(),
           '/settings': (context) => const SettingsScreen(),
           '/premium': (context) => const PremiumScreen(),
