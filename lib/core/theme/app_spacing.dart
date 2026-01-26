@@ -153,6 +153,45 @@ class AppSpacing {
   static const double radiusFull = 999.0;
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // 🏆 PREMIUM RADIUS (Samsung-inspired smooth corners)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Premium card radius - smooth large corners
+  static const double radiusCard = 24.0;
+
+  /// Premium input/button radius - softer feel
+  static const double radiusInput = 16.0;
+
+  /// Premium chip radius - pill shape
+  static const double radiusChip = 20.0;
+
+  /// Premium icon container radius
+  static const double radiusIcon = 14.0;
+
+  /// Premium section radius
+  static const double radiusSection = 28.0;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🏆 PREMIUM BORDER RADIUS PRESETS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const BorderRadius borderRadiusCard = BorderRadius.all(
+    Radius.circular(radiusCard),
+  );
+  static const BorderRadius borderRadiusInput = BorderRadius.all(
+    Radius.circular(radiusInput),
+  );
+  static const BorderRadius borderRadiusChip = BorderRadius.all(
+    Radius.circular(radiusChip),
+  );
+  static const BorderRadius borderRadiusIcon = BorderRadius.all(
+    Radius.circular(radiusIcon),
+  );
+  static const BorderRadius borderRadiusSection = BorderRadius.all(
+    Radius.circular(radiusSection),
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // 📦 BORDER RADIUS PRESETS
   // ═══════════════════════════════════════════════════════════════════════════
 
