@@ -83,49 +83,55 @@ class EditProfileTextField extends StatelessWidget {
               fontSize: 14,
             ),
             prefixIcon: prefixIcon != null
-                ? Icon(
-                    prefixIcon,
-                    color: AppColors.textSec(brightness),
-                    size: 22,
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 12),
+                    child: Icon(
+                      prefixIcon,
+                      color: AppColors.textSec(brightness),
+                      size: 22,
+                    ),
                   )
+                : null,
+            prefixIconConstraints: prefixIcon != null
+                ? const BoxConstraints(minWidth: 50)
                 : null,
             filled: true,
             fillColor: AppColors.surface(brightness),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               borderSide: BorderSide(
                 color: AppColors.border(brightness),
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               borderSide: BorderSide(
                 color: AppColors.border(brightness),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               borderSide: BorderSide(
                 color: AppColors.crimson,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               borderSide: BorderSide(
                 color: AppColors.error,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               borderSide: BorderSide(
                 color: AppColors.error,
                 width: 2,
               ),
             ),
             contentPadding: EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: maxLines > 1 ? 14 : 0,
+              horizontal: 18,
+              vertical: maxLines > 1 ? 16 : 16,
             ),
             counterStyle: TextStyle(
               color: AppColors.textSec(brightness),
@@ -210,7 +216,7 @@ class EditProfilePrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 56,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -218,9 +224,10 @@ class EditProfilePrimaryButton extends StatelessWidget {
           foregroundColor: Colors.white,
           disabledBackgroundColor: AppColors.crimson.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           ),
           elevation: 0,
+          shadowColor: AppColors.crimson.withValues(alpha: 0.3),
         ),
         child: isLoading
             ? const SizedBox(
@@ -271,31 +278,38 @@ class EditProfileInfoCard extends StatelessWidget {
     final cardColor = color ?? AppColors.cyan;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: cardColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: cardColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
-          color: cardColor.withValues(alpha: 0.3),
+          color: cardColor.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: cardColor,
-            size: 22,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: cardColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: cardColor,
+              size: 20,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Text(
               message,
               style: TextStyle(
                 color: AppColors.text(brightness),
                 fontSize: 13,
-                height: 1.4,
+                height: 1.5,
               ),
             ),
           ),

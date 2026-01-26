@@ -507,7 +507,7 @@ class _LocationScreenState extends State<LocationScreen>
 
   Widget _buildHeaderCard(Brightness brightness, bool isArtist) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -517,7 +517,7 @@ class _LocationScreenState extends State<LocationScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.cyan.withValues(alpha: 0.2),
           width: 1,
@@ -526,10 +526,10 @@ class _LocationScreenState extends State<LocationScreen>
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppColors.cyan.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
             ),
             child: Icon(
               Icons.location_on_rounded,
@@ -537,7 +537,7 @@ class _LocationScreenState extends State<LocationScreen>
               size: 28,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,7 +546,7 @@ class _LocationScreenState extends State<LocationScreen>
                   isArtist ? 'Your Base Location' : 'Venue Location',
                   style: TextStyle(
                     color: AppColors.text(brightness),
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -582,7 +582,7 @@ class _LocationScreenState extends State<LocationScreen>
           return Opacity(
             opacity: pulseValue,
             child: Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: _isLocating
                     ? LinearGradient(
@@ -595,7 +595,7 @@ class _LocationScreenState extends State<LocationScreen>
                       )
                     : null,
                 color: _isLocating ? null : AppColors.surface(brightness),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
                 border: Border.all(
                   color: _isLocating
                       ? AppColors.crimson.withValues(alpha: 0.4)
@@ -606,17 +606,23 @@ class _LocationScreenState extends State<LocationScreen>
                     ? [
                         BoxShadow(
                           color: AppColors.crimson.withValues(alpha: 0.2),
-                          blurRadius: 12,
+                          blurRadius: 16,
                           spreadRadius: 2,
                         ),
                       ]
-                    : null,
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -626,18 +632,18 @@ class _LocationScreenState extends State<LocationScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.crimson.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                          color: AppColors.crimson.withValues(alpha: 0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
                         ),
                       ],
                     ),
                     child: _isLocating
                         ? const Padding(
-                            padding: EdgeInsets.all(14),
+                            padding: EdgeInsets.all(16),
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
                               color: Colors.white,
@@ -646,10 +652,10 @@ class _LocationScreenState extends State<LocationScreen>
                         : const Icon(
                             Icons.my_location_rounded,
                             color: Colors.white,
-                            size: 24,
+                            size: 26,
                           ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 18),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -660,11 +666,11 @@ class _LocationScreenState extends State<LocationScreen>
                               : 'Use Current Location',
                           style: TextStyle(
                             color: AppColors.text(brightness),
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         Text(
                           _isLocating
                               ? 'Please wait while we find you'

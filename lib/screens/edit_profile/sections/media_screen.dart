@@ -109,7 +109,7 @@ class _MediaScreenState extends State<MediaScreen> {
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             ),
           ),
         );
@@ -122,7 +122,7 @@ class _MediaScreenState extends State<MediaScreen> {
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             ),
           ),
         );
@@ -142,7 +142,7 @@ class _MediaScreenState extends State<MediaScreen> {
           backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           ),
         ),
       );
@@ -186,7 +186,7 @@ class _MediaScreenState extends State<MediaScreen> {
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             ),
           ),
         );
@@ -199,7 +199,7 @@ class _MediaScreenState extends State<MediaScreen> {
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             ),
           ),
         );
@@ -219,7 +219,7 @@ class _MediaScreenState extends State<MediaScreen> {
           backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           ),
         ),
       );
@@ -247,7 +247,7 @@ class _MediaScreenState extends State<MediaScreen> {
               backgroundColor: AppColors.warning,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               ),
             ),
           );
@@ -275,7 +275,7 @@ class _MediaScreenState extends State<MediaScreen> {
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             ),
           ),
         );
@@ -288,7 +288,7 @@ class _MediaScreenState extends State<MediaScreen> {
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             ),
           ),
         );
@@ -308,7 +308,7 @@ class _MediaScreenState extends State<MediaScreen> {
           backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           ),
         ),
       );
@@ -333,7 +333,7 @@ class _MediaScreenState extends State<MediaScreen> {
               backgroundColor: AppColors.warning,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               ),
             ),
           );
@@ -361,7 +361,7 @@ class _MediaScreenState extends State<MediaScreen> {
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             ),
           ),
         );
@@ -374,7 +374,7 @@ class _MediaScreenState extends State<MediaScreen> {
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             ),
           ),
         );
@@ -444,7 +444,7 @@ class _MediaScreenState extends State<MediaScreen> {
           ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -456,7 +456,7 @@ class _MediaScreenState extends State<MediaScreen> {
           content: Text('Failed to update: ${e.toString()}'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -724,11 +724,18 @@ class _MediaScreenState extends State<MediaScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             image: DecorationImage(
               image: NetworkImage(url),
               fit: BoxFit.cover,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
         ),
         Positioned(
@@ -820,24 +827,31 @@ class _MediaScreenState extends State<MediaScreen> {
 
   Widget _buildAudioItem(AudioSample sample, int index, Brightness brightness) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.border(brightness),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: AppColors.crimson.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
             ),
             child: Icon(
               Icons.audiotrack,
@@ -937,14 +951,21 @@ class _MediaScreenState extends State<MediaScreen> {
 
   Widget _buildVideoItem(VideoSample sample, int index, Brightness brightness) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.border(brightness),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -954,8 +975,8 @@ class _MediaScreenState extends State<MediaScreen> {
             height: 140,
             decoration: BoxDecoration(
               color: AppColors.graphite,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(11),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppSpacing.radiusCard - 1),
               ),
               image: sample.thumbnailUrl != null
                   ? DecorationImage(
@@ -1014,7 +1035,7 @@ class _MediaScreenState extends State<MediaScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
         border: Border.all(
           color: AppColors.border(brightness),
           width: 1,
@@ -1051,3 +1072,4 @@ class _MediaScreenState extends State<MediaScreen> {
     );
   }
 }
+

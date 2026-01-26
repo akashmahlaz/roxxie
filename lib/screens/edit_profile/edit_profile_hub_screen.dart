@@ -132,10 +132,10 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
 
   Widget _buildHeaderSkeleton(Brightness brightness) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.border(brightness),
           width: 1,
@@ -146,21 +146,21 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
           // Profile Photo Skeleton
           _ShimmerBox(
             brightness: brightness,
-            width: 72,
-            height: 72,
-            borderRadius: 36,
+            width: 80,
+            height: 80,
+            borderRadius: 40,
           ),
 
-          const SizedBox(width: 16),
+          const SizedBox(width: 18),
 
           // Name and Role Skeleton
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildShimmerBox(brightness, width: 160, height: 22),
-                const SizedBox(height: 10),
-                _buildShimmerBox(brightness, width: 60, height: 20),
+                _buildShimmerBox(brightness, width: 160, height: 24),
+                const SizedBox(height: 12),
+                _buildShimmerBox(brightness, width: 70, height: 26),
               ],
             ),
           ),
@@ -171,10 +171,10 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
 
   Widget _buildSectionSkeleton(Brightness brightness) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.border(brightness),
           width: 1,
@@ -185,27 +185,27 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
           // Icon Skeleton
           _ShimmerBox(
             brightness: brightness,
-            width: 48,
-            height: 48,
-            borderRadius: 12,
+            width: 52,
+            height: 52,
+            borderRadius: AppSpacing.radiusIcon,
           ),
 
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
 
           // Title and Subtitle Skeleton
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildShimmerBox(brightness, width: 100, height: 16),
-                const SizedBox(height: 8),
-                _buildShimmerBox(brightness, width: 180, height: 14),
+                _buildShimmerBox(brightness, width: 110, height: 17),
+                const SizedBox(height: 10),
+                _buildShimmerBox(brightness, width: 190, height: 14),
               ],
             ),
           ),
 
           // Arrow Skeleton
-          _buildShimmerBox(brightness, width: 22, height: 22),
+          _buildShimmerBox(brightness, width: 24, height: 24),
         ],
       ),
     );
@@ -265,28 +265,42 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
     final role = isArtist ? 'Artist' : 'Venue';
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.border(brightness),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           // Profile Photo
           Container(
-            width: 72,
-            height: 72,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.crimson.withValues(alpha: 0.1),
               border: Border.all(
                 color: AppColors.crimson.withValues(alpha: 0.3),
-                width: 2,
+                width: 3,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.crimson.withValues(alpha: 0.15),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+              ],
               image: photoUrl != null && photoUrl.isNotEmpty
                   ? DecorationImage(
                       image: NetworkImage(photoUrl),
@@ -298,12 +312,12 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
                 ? Icon(
                     isArtist ? Icons.mic : Icons.business,
                     color: AppColors.crimson,
-                    size: 32,
+                    size: 36,
                   )
                 : null,
           ),
 
-          const SizedBox(width: 16),
+          const SizedBox(width: 18),
 
           // Name and Role
           Expanded(
@@ -314,29 +328,29 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
                   displayName,
                   style: TextStyle(
                     color: AppColors.text(brightness),
-                    fontSize: 20,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                    horizontal: 14,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: isArtist
                         ? AppColors.crimson.withValues(alpha: 0.1)
                         : AppColors.cyan.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
                   ),
                   child: Text(
                     role,
                     style: TextStyle(
                       color: isArtist ? AppColors.crimson : AppColors.cyan,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -526,38 +540,61 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
         _navigateToSection(section.screen);
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
           border: Border.all(
             color: section.isComplete
                 ? AppColors.success.withValues(alpha: 0.3)
                 : AppColors.border(brightness),
             width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: section.isComplete
+                  ? AppColors.success.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             // Icon Container
             Container(
-              width: 48,
-              height: 48,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                color: section.isComplete
-                    ? AppColors.success.withValues(alpha: 0.1)
-                    : AppColors.crimson.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                gradient: section.isComplete
+                    ? LinearGradient(
+                        colors: [
+                          AppColors.success.withValues(alpha: 0.15),
+                          AppColors.success.withValues(alpha: 0.08),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : LinearGradient(
+                        colors: [
+                          AppColors.crimson.withValues(alpha: 0.15),
+                          AppColors.crimson.withValues(alpha: 0.08),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
               ),
               child: Icon(
                 section.icon,
                 color: section.isComplete ? AppColors.success : AppColors.crimson,
-                size: 24,
+                size: 26,
               ),
             ),
 
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
 
             // Title and Subtitle
             Expanded(
@@ -568,16 +605,17 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
                     section.title,
                     style: TextStyle(
                       color: AppColors.text(brightness),
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     section.subtitle,
                     style: TextStyle(
                       color: AppColors.textSec(brightness),
                       fontSize: 13,
+                      height: 1.3,
                     ),
                   ),
                 ],
@@ -590,27 +628,45 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
                 if (section.isComplete)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 10,
+                      vertical: 5,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.success.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
                     ),
-                    child: Text(
-                      'Complete',
-                      style: TextStyle(
-                        color: AppColors.success,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          color: AppColors.success,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Done',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textSec(brightness),
-                  size: 22,
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.crimson.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.crimson,
+                    size: 20,
+                  ),
                 ),
               ],
             ),

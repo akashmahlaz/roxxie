@@ -311,10 +311,10 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Wrap(
-          spacing: 10,
-          runSpacing: 10,
+          spacing: 12,
+          runSpacing: 12,
           children: ArtistType.values.map((type) {
             final isSelected = _artistType == type;
             return GestureDetector(
@@ -323,22 +323,32 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
                 setState(() => _artistType = type);
                 _markChanged();
               },
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+                  horizontal: 20,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.crimson
                       : AppColors.surface(brightness),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.crimson
                         : AppColors.border(brightness),
-                    width: 1,
+                    width: isSelected ? 2 : 1,
                   ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.crimson.withValues(alpha: 0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   _formatArtistType(type),
@@ -346,7 +356,7 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
                     color: isSelected
                         ? Colors.white
                         : AppColors.text(brightness),
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
                 ),
@@ -387,10 +397,10 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Wrap(
-          spacing: 10,
-          runSpacing: 10,
+          spacing: 12,
+          runSpacing: 12,
           children: [2, 3, 4, 5, 6, 7, 8, 10].map((size) {
             final isSelected = _bandSize == size;
             return GestureDetector(
@@ -399,20 +409,30 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
                 setState(() => _bandSize = size);
                 _markChanged();
               },
-              child: Container(
-                width: 48,
-                height: 48,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.crimson
                       : AppColors.surface(brightness),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.crimson
                         : AppColors.border(brightness),
-                    width: 1,
+                    width: isSelected ? 2 : 1,
                   ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.crimson.withValues(alpha: 0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Center(
                   child: Text(
@@ -422,7 +442,7 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
                           ? Colors.white
                           : AppColors.text(brightness),
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: 17,
                     ),
                   ),
                 ),
@@ -448,12 +468,12 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
           decoration: BoxDecoration(
             color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             border: Border.all(
               color: AppColors.border(brightness),
               width: 1,
@@ -464,6 +484,7 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
               value: _venueType,
               isExpanded: true,
               dropdownColor: AppColors.surface(brightness),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               icon: Icon(
                 Icons.keyboard_arrow_down_rounded,
                 color: AppColors.textSec(brightness),
@@ -508,22 +529,31 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            Text(
-              '${_selectedGenres.length}/5',
-              style: TextStyle(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
                 color: _selectedGenres.length >= 5
-                    ? AppColors.warning
-                    : AppColors.textSec(brightness),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+                    ? AppColors.warning.withValues(alpha: 0.1)
+                    : AppColors.crimson.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_selectedGenres.length}/5',
+                style: TextStyle(
+                  color: _selectedGenres.length >= 5
+                      ? AppColors.warning
+                      : AppColors.crimson,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 10,
+          runSpacing: 10,
           children: _availableGenres.map((genre) {
             final isSelected = _selectedGenres.contains(genre);
             final canSelect = _selectedGenres.length < 5 || isSelected;
@@ -544,20 +574,29 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
+                  horizontal: 16,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.crimson
                       : AppColors.surface(brightness),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.crimson
                         : AppColors.border(brightness),
-                    width: 1,
+                    width: isSelected ? 2 : 1,
                   ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.crimson.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   genre,

@@ -523,7 +523,7 @@ class _SocialLinksScreenState extends State<SocialLinksScreen> {
 
   Widget _buildHeaderCard(Brightness brightness, bool isArtist) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -533,7 +533,7 @@ class _SocialLinksScreenState extends State<SocialLinksScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.crimson.withValues(alpha: 0.2),
           width: 1,
@@ -542,10 +542,10 @@ class _SocialLinksScreenState extends State<SocialLinksScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppColors.crimson.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
             ),
             child: Icon(
               Icons.share_rounded,
@@ -553,7 +553,7 @@ class _SocialLinksScreenState extends State<SocialLinksScreen> {
               size: 28,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,11 +562,11 @@ class _SocialLinksScreenState extends State<SocialLinksScreen> {
                   'Connect Your Socials',
                   style: TextStyle(
                     color: AppColors.text(brightness),
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
                   isArtist
                       ? 'Let venues discover your music and online presence'
@@ -595,7 +595,7 @@ class _SocialLinksScreenState extends State<SocialLinksScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: hasValue
               ? platform.color.withValues(alpha: 0.3)
@@ -605,9 +605,9 @@ class _SocialLinksScreenState extends State<SocialLinksScreen> {
         boxShadow: hasValue
             ? [
                 BoxShadow(
-                  color: platform.color.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: platform.color.withValues(alpha: 0.1),
+                  blurRadius: 16,
+                  offset: const Offset(0, 5),
                 ),
               ]
             : null,

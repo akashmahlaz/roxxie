@@ -96,7 +96,7 @@ class _PricingScreenState extends State<PricingScreen> {
           content: const Text('Minimum price cannot be greater than maximum'),
           backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
         ),
       );
       return;
@@ -143,7 +143,7 @@ class _PricingScreenState extends State<PricingScreen> {
           ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -155,7 +155,7 @@ class _PricingScreenState extends State<PricingScreen> {
           content: Text('Failed to update: ${e.toString()}'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -272,10 +272,10 @@ class _PricingScreenState extends State<PricingScreen> {
 
   Widget _buildInfoCard(Brightness brightness, bool isArtist) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.cyan.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.cyan.withValues(alpha: 0.3),
           width: 1,
@@ -321,10 +321,10 @@ class _PricingScreenState extends State<PricingScreen> {
         ),
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
             color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             border: Border.all(
               color: AppColors.border(brightness),
               width: 1,
@@ -421,19 +421,19 @@ class _PricingScreenState extends State<PricingScreen> {
                   filled: true,
                   fillColor: AppColors.surface(brightness),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
                     borderSide: BorderSide(
                       color: AppColors.border(brightness),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
                     borderSide: BorderSide(
                       color: AppColors.border(brightness),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
                     borderSide: BorderSide(
                       color: AppColors.crimson,
                       width: 2,
@@ -490,19 +490,19 @@ class _PricingScreenState extends State<PricingScreen> {
                   filled: true,
                   fillColor: AppColors.surface(brightness),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
                     borderSide: BorderSide(
                       color: AppColors.border(brightness),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
                     borderSide: BorderSide(
                       color: AppColors.border(brightness),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
                     borderSide: BorderSide(
                       color: AppColors.crimson,
                       width: 2,
@@ -565,19 +565,19 @@ class _PricingScreenState extends State<PricingScreen> {
             filled: true,
             fillColor: AppColors.surface(brightness),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               borderSide: BorderSide(
                 color: AppColors.border(brightness),
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               borderSide: BorderSide(
                 color: AppColors.border(brightness),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               borderSide: BorderSide(
                 color: AppColors.crimson,
                 width: 2,
@@ -600,7 +600,7 @@ class _PricingScreenState extends State<PricingScreen> {
     final maxPrice = double.tryParse(_maxPriceController.text) ?? 0;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -610,11 +610,18 @@ class _PricingScreenState extends State<PricingScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         border: Border.all(
           color: AppColors.crimson.withValues(alpha: 0.3),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.crimson.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
