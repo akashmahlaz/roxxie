@@ -144,8 +144,8 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
               : artist.reviewCount,
           gigsCompleted: artist.completedGigs,
           yearsActive: artist.yearsOfExperience ?? 1,
-          responseRate: 90, // TODO: Add to backend model
-          responseTime: '< 24 hours', // TODO: Add to backend model
+          responseRate: artist.responseRate,
+          responseTime: _formatResponseTime(artist.responseTime),
           isVerified: artist.isVerified,
           isPremium:
               artist.subscriptionTier == 'premium' ||
@@ -224,6 +224,18 @@ class _ArtistProfileViewScreenState extends State<ArtistProfileViewScreen>
       DateTime.now().add(const Duration(days: 7)),
       DateTime.now().add(const Duration(days: 12)),
     ];
+  }
+
+  String _formatResponseTime(int minutes) {
+    if (minutes < 60) {
+      return '< 1 hour';
+    } else if (minutes <= 1440) {
+      final hours = (minutes / 60).ceil();
+      return '< $hours ${hours == 1 ? "hour" : "hours"}';
+    } else {
+      final days = (minutes / 1440).ceil();
+      return '< $days ${days == 1 ? "day" : "days"}';
+    }
   }
 
   @override
