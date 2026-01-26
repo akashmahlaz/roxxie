@@ -127,6 +127,8 @@ dependencies:
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^7.0.1
   crypto: ^3.0.6
+  firebase_core: ^4.4.0
+  firebase_crashlytics: ^5.0.7
 
 dev_dependencies:
   flutter_test:

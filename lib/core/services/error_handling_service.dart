@@ -2,6 +2,7 @@
 /// Enterprise-level error handling, logging, and crash reporting
 library;
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 
@@ -167,17 +168,32 @@ class ErrorHandlingService {
 
   /// Send to crash reporting service
   void _sendToCrashReporting(AppException exception) {
-    // TODO: Integrate with Sentry or Firebase Crashlytics
-    // Example:
-    // Sentry.captureException(
-    //   exception.originalError ?? exception,
-    //   stackTrace: exception.stackTrace,
-    //   hint: Hint.withMap({
-    //     'severity': exception.severity.name,
-    //     'code': exception.code,
-    //     ...?exception.context,
-    //   }),
-    // );
+    try {
+      // Integrate with Firebase Crashlytics
+      FirebaseCrashlytics.instance.recordError(
+        exception.originalError ?? exception,
+        exception.stackTrace,
+        reason: exception.message,
+        fatal: exception.severity == ErrorSeverity.fatal,
+        information: [
+          'Severity: ${exception.severity.name}',
+          if (exception.code != null) 'Code: ${exception.code}',
+          if (exception.context != null) 'Context: ${exception.context}',
+        ],
+      );
+
+      // Set custom keys for better filtering
+      if (exception.code != null) {
+        FirebaseCrashlytics.instance.setCustomKey('error_code', exception.code!);
+      }
+      FirebaseCrashlytics.instance
+          .setCustomKey('severity', exception.severity.name);
+    } catch (e) {
+      // Fail silently if Crashlytics is not available or fails
+      if (kDebugMode) {
+        debugPrint('⚠️ Crashlytics reporting failed: $e');
+      }
+    }
   }
 
   /// Handle API errors
