@@ -488,15 +488,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              // TODO: Implement account deletion
-              Navigator.pop(context);
-              await context.read<AuthProvider>().logout();
+              Navigator.pop(context); // Close confirmation dialog
+
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder:
+                    (context) => const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.crimson,
+                      ),
+                    ),
+              );
+
+              final success =
+                  await context.read<AuthProvider>().deleteAccount();
+
               if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/role-selection',
-                  (route) => false,
-                );
+                Navigator.pop(context); // Close loading dialog
+
+                if (success) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/role-selection',
+                    (route) => false,
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Failed to delete account. Please try again.',
+                      ),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
