@@ -80,7 +80,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     final profileUrl =
         'https://gigmatch.app/profile/${auth.isArtist ? 'artist' : 'venue'}/${profile.artist?.id ?? profile.venue?.id ?? ''}';
 
-    Share.share('Check out my profile on GigMatch! 🎵\n$profileUrl');
+    SharePlus.instance.share(ShareParams(text: 'Check out my profile on GigMatch! 🎵\n$profileUrl'));
     Clipboard.setData(ClipboardData(text: profileUrl));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

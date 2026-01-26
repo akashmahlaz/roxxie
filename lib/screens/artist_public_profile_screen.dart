@@ -1128,7 +1128,7 @@ class _ArtistPublicProfileScreenState extends State<ArtistPublicProfileScreen> {
 
   void _shareProfile(Artist artist) {
     final url = 'https://gigmatch.app/artist/${artist.id}';
-    Share.share('Check out this artist on GigMatch! 🎵\n$url');
+    SharePlus.instance.share(ShareParams(text: 'Check out this artist on GigMatch! 🎵\n$url'));
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile link copied to clipboard!')),

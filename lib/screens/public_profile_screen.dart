@@ -204,7 +204,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     final auth = context.read<AuthProvider>();
     final profileUrl = 'https://gigmatch.app/profile/${auth.user?.id ?? ''}';
     final message = 'Check out my profile on GigMatch! 🎵\n$profileUrl';
-    Share.share(message);
+    SharePlus.instance.share(ShareParams(text: message));
     Clipboard.setData(ClipboardData(text: message));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile link copied to clipboard!')),

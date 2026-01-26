@@ -14,7 +14,10 @@ library;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/providers/wallet_provider.dart';
+import '../core/services/wallet_service.dart';
 import '../widgets/widgets.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -36,98 +39,15 @@ class _WalletScreenState extends State<WalletScreen>
   late Animation<double> _balanceAnimation;
   late Animation<double> _cardAnimation;
 
-  bool _isLoading = false;
   bool _showBalance = true;
-
-  // Mock wallet data
-  final _walletData = WalletData(
-    availableBalance: 2847.50,
-    pendingBalance: 650.00,
-    totalEarnings: 12650.00,
-    thisMonth: 1850.00,
-    lastPayout: DateTime.now().subtract(const Duration(days: 7)),
-    payoutMethod: 'Bank Account ••••4521',
-  );
-
-  final List<Transaction> _transactions = [
-    Transaction(
-      id: '1',
-      type: TransactionType.earning,
-      title: 'Jazz Night Performance',
-      venue: 'The Velvet Lounge',
-      amount: 350.00,
-      date: DateTime.now().subtract(const Duration(hours: 2)),
-      status: TransactionStatus.completed,
-    ),
-    Transaction(
-      id: '2',
-      type: TransactionType.payout,
-      title: 'Bank Transfer',
-      venue: '••••4521',
-      amount: 1200.00,
-      date: DateTime.now().subtract(const Duration(days: 2)),
-      status: TransactionStatus.completed,
-    ),
-    Transaction(
-      id: '3',
-      type: TransactionType.earning,
-      title: 'Corporate Event',
-      venue: 'Grand Hotel Ballroom',
-      amount: 800.00,
-      date: DateTime.now().subtract(const Duration(days: 5)),
-      status: TransactionStatus.pending,
-    ),
-    Transaction(
-      id: '4',
-      type: TransactionType.earning,
-      title: 'Weekend Brunch',
-      venue: 'Riverside Café',
-      amount: 250.00,
-      date: DateTime.now().subtract(const Duration(days: 7)),
-      status: TransactionStatus.completed,
-    ),
-    Transaction(
-      id: '5',
-      type: TransactionType.fee,
-      title: 'Platform Fee',
-      venue: 'GigMatch',
-      amount: 35.00,
-      date: DateTime.now().subtract(const Duration(days: 7)),
-      status: TransactionStatus.completed,
-    ),
-    Transaction(
-      id: '6',
-      type: TransactionType.payout,
-      title: 'Bank Transfer',
-      venue: '••••4521',
-      amount: 2000.00,
-      date: DateTime.now().subtract(const Duration(days: 14)),
-      status: TransactionStatus.completed,
-    ),
-    Transaction(
-      id: '7',
-      type: TransactionType.earning,
-      title: 'Club Night DJ Set',
-      venue: 'Electric Dreams',
-      amount: 500.00,
-      date: DateTime.now().subtract(const Duration(days: 18)),
-      status: TransactionStatus.completed,
-    ),
-    Transaction(
-      id: '8',
-      type: TransactionType.refund,
-      title: 'Cancelled Gig Refund',
-      venue: 'Blue Note',
-      amount: 150.00,
-      date: DateTime.now().subtract(const Duration(days: 21)),
-      status: TransactionStatus.completed,
-    ),
-  ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+
+    // Listen to tab changes to update filter
+    _tabController.addListener(_onTabChanged);
 
     _balanceController = AnimationController(
       vsync: this,
@@ -147,12 +67,35 @@ class _WalletScreenState extends State<WalletScreen>
       curve: Curves.easeOut,
     );
 
+    // Load wallet data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<WalletProvider>().initialize();
+    });
+
     _balanceController.forward();
     _cardController.forward();
   }
 
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) {
+      final provider = context.read<WalletProvider>();
+      switch (_tabController.index) {
+        case 0:
+          provider.setFilterType(WalletFilterType.all);
+          break;
+        case 1:
+          provider.setFilterType(WalletFilterType.earnings);
+          break;
+        case 2:
+          provider.setFilterType(WalletFilterType.payouts);
+          break;
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _balanceController.dispose();
     _cardController.dispose();
@@ -161,46 +104,102 @@ class _WalletScreenState extends State<WalletScreen>
 
   Future<void> _refresh() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
+    await context.read<WalletProvider>().refresh();
   }
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
 
-    return Scaffold(
-      backgroundColor: AppColors.background(brightness),
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          // Custom App Bar
-          _buildAppBar(brightness),
+    return Consumer<WalletProvider>(
+      builder: (context, walletProvider, _) {
+        // Show loading state for initial load
+        if (walletProvider.state == WalletState.initial ||
+            (walletProvider.state == WalletState.loading &&
+                walletProvider.balance.availableBalance == 0)) {
+          return Scaffold(
+            backgroundColor: AppColors.background(brightness),
+            body: const Center(
+              child: CircularProgressIndicator(color: AppColors.crimson),
+            ),
+          );
+        }
 
-          // Balance Card
-          SliverToBoxAdapter(child: _buildBalanceCard(brightness)),
+        // Show error state
+        if (walletProvider.hasError && walletProvider.balance.availableBalance == 0) {
+          return Scaffold(
+            backgroundColor: AppColors.background(brightness),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 64,
+                    color: AppColors.textTert(brightness),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    walletProvider.errorMessage ?? 'Failed to load wallet',
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => walletProvider.initialize(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.crimson,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-          // Quick Actions
-          SliverToBoxAdapter(child: _buildQuickActions(brightness)),
+        return Scaffold(
+          backgroundColor: AppColors.background(brightness),
+          body: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              // Custom App Bar
+              _buildAppBar(brightness),
 
-          // Tab Bar
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _TabBarDelegate(
-              tabController: _tabController,
-              brightness: brightness,
+              // Balance Card
+              SliverToBoxAdapter(
+                child: _buildBalanceCard(brightness, walletProvider.balance),
+              ),
+
+              // Quick Actions
+              SliverToBoxAdapter(
+                child: _buildQuickActions(brightness, walletProvider),
+              ),
+
+              // Tab Bar
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _TabBarDelegate(
+                  tabController: _tabController,
+                  brightness: brightness,
+                ),
+              ),
+            ],
+            body: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildTransactionsList(brightness, walletProvider, null),
+                _buildTransactionsList(
+                    brightness, walletProvider, WalletTransactionType.earning),
+                _buildTransactionsList(
+                    brightness, walletProvider, WalletTransactionType.payout),
+              ],
             ),
           ),
-        ],
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildTransactionsList(brightness, null),
-            _buildTransactionsList(brightness, TransactionType.earning),
-            _buildTransactionsList(brightness, TransactionType.payout),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -269,7 +268,7 @@ class _WalletScreenState extends State<WalletScreen>
   // 💳 BALANCE CARD
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildBalanceCard(Brightness brightness) {
+  Widget _buildBalanceCard(Brightness brightness, WalletBalance walletBalance) {
     return FadeTransition(
       opacity: _cardAnimation,
       child: SlideTransition(
@@ -351,7 +350,7 @@ class _WalletScreenState extends State<WalletScreen>
                       animation: _balanceAnimation,
                       builder: (context, child) {
                         final value =
-                            _walletData.availableBalance *
+                            walletBalance.availableBalance *
                             _balanceAnimation.value;
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,7 +402,7 @@ class _WalletScreenState extends State<WalletScreen>
                           const SizedBox(width: 8),
                           Text(
                             _showBalance
-                                ? '\$${_walletData.pendingBalance.toStringAsFixed(2)} pending'
+                                ? '\$${walletBalance.pendingBalance.toStringAsFixed(2)} pending'
                                 : '•••• pending',
                             style: const TextStyle(
                               color: Colors.white,
@@ -424,7 +423,7 @@ class _WalletScreenState extends State<WalletScreen>
                           child: _buildBalanceStat(
                             'This Month',
                             _showBalance
-                                ? '\$${_walletData.thisMonth.toStringAsFixed(0)}'
+                                ? '\$${walletBalance.thisMonth.toStringAsFixed(0)}'
                                 : '••••',
                             Icons.trending_up_rounded,
                           ),
@@ -438,7 +437,7 @@ class _WalletScreenState extends State<WalletScreen>
                           child: _buildBalanceStat(
                             'Total Earnings',
                             _showBalance
-                                ? '\$${_walletData.totalEarnings.toStringAsFixed(0)}'
+                                ? '\$${walletBalance.totalEarnings.toStringAsFixed(0)}'
                                 : '••••',
                             Icons.account_balance_wallet_rounded,
                           ),
@@ -481,7 +480,7 @@ class _WalletScreenState extends State<WalletScreen>
   // ⚡ QUICK ACTIONS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildQuickActions(Brightness brightness) {
+  Widget _buildQuickActions(Brightness brightness, WalletProvider walletProvider) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       child: Row(
@@ -491,7 +490,7 @@ class _WalletScreenState extends State<WalletScreen>
               icon: Icons.arrow_upward_rounded,
               label: 'Withdraw',
               color: AppColors.success,
-              onTap: () => _showWithdrawSheet(brightness),
+              onTap: () => _showWithdrawSheet(brightness, walletProvider),
               brightness: brightness,
             ),
           ),
@@ -529,13 +528,14 @@ class _WalletScreenState extends State<WalletScreen>
 
   Widget _buildTransactionsList(
     Brightness brightness,
-    TransactionType? filterType,
+    WalletProvider walletProvider,
+    WalletTransactionType? filterType,
   ) {
     final filtered = filterType != null
-        ? _transactions.where((t) => t.type == filterType).toList()
-        : _transactions;
+        ? walletProvider.transactions.where((t) => t.type == filterType).toList()
+        : walletProvider.transactions;
 
-    if (_isLoading) {
+    if (walletProvider.isLoading) {
       return const _TransactionSkeletonList();
     }
 
@@ -570,10 +570,10 @@ class _WalletScreenState extends State<WalletScreen>
                     ),
                   ),
                 ),
-              _TransactionCard(
+              _TransactionCardReal(
                 transaction: transaction,
                 brightness: brightness,
-                onTap: () => _showTransactionDetails(transaction, brightness),
+                onTap: () => _showTransactionDetailsReal(transaction, brightness),
               ),
             ],
           );
@@ -582,16 +582,16 @@ class _WalletScreenState extends State<WalletScreen>
     );
   }
 
-  Widget _buildEmptyState(Brightness brightness, TransactionType? type) {
-    final icon = type == TransactionType.earning
+  Widget _buildEmptyState(Brightness brightness, WalletTransactionType? type) {
+    final icon = type == WalletTransactionType.earning
         ? Icons.payments_rounded
-        : type == TransactionType.payout
+        : type == WalletTransactionType.payout
         ? Icons.account_balance_rounded
         : Icons.receipt_long_rounded;
 
-    final message = type == TransactionType.earning
+    final message = type == WalletTransactionType.earning
         ? 'No earnings yet'
-        : type == TransactionType.payout
+        : type == WalletTransactionType.payout
         ? 'No payouts yet'
         : 'No transactions yet';
 
@@ -671,15 +671,27 @@ class _WalletScreenState extends State<WalletScreen>
   // 🎭 BOTTOM SHEETS & DIALOGS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  void _showWithdrawSheet(Brightness brightness) {
+  void _showWithdrawSheet(Brightness brightness, WalletProvider walletProvider) {
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => _WithdrawSheet(
-        availableBalance: _walletData.availableBalance,
-        payoutMethod: _walletData.payoutMethod,
+      builder: (context) => _WithdrawSheetReal(
+        walletProvider: walletProvider,
+        brightness: brightness,
+      ),
+    );
+  }
+
+  void _showTransactionDetailsReal(WalletTransaction transaction, Brightness brightness) {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _TransactionDetailSheetReal(
+        transaction: transaction,
         brightness: brightness,
       ),
     );
@@ -703,19 +715,6 @@ class _WalletScreenState extends State<WalletScreen>
         backgroundColor: AppColors.info,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _showTransactionDetails(Transaction transaction, Brightness brightness) {
-    HapticFeedback.selectionClick();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => _TransactionDetailSheet(
-        transaction: transaction,
-        brightness: brightness,
       ),
     );
   }
@@ -833,6 +832,7 @@ class _QuickActionButton extends StatelessWidget {
 // 💳 TRANSACTION CARD
 // ═══════════════════════════════════════════════════════════════════════════
 
+/*
 class _TransactionCard extends StatelessWidget {
   final Transaction transaction;
   final Brightness brightness;
@@ -967,6 +967,7 @@ class _TransactionCard extends StatelessWidget {
     }
   }
 }
+*/
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 💀 SKELETON LOADERS
@@ -1535,6 +1536,7 @@ class _PayoutMethodTile extends StatelessWidget {
 // 📄 TRANSACTION DETAIL SHEET
 // ═══════════════════════════════════════════════════════════════════════════
 
+/*
 class _TransactionDetailSheet extends StatelessWidget {
   final Transaction transaction;
   final Brightness brightness;
@@ -1740,6 +1742,7 @@ class _TransactionDetailSheet extends StatelessWidget {
     return '${months[date.month - 1]} ${date.day}, ${date.year} at $hour:${date.minute.toString().padLeft(2, '0')} $period';
   }
 }
+*/
 
 class _DetailRow extends StatelessWidget {
   final String label;
@@ -1783,7 +1786,7 @@ class _DetailRow extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 📦 DATA MODELS
+// 📦 DATA MODELS (kept for backwards compatibility)
 // ═══════════════════════════════════════════════════════════════════════════
 
 class WalletData {
@@ -1826,4 +1829,663 @@ class Transaction {
     required this.date,
     required this.status,
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 💳 REAL TRANSACTION CARD (using WalletTransaction)
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _TransactionCardReal extends StatelessWidget {
+  final WalletTransaction transaction;
+  final Brightness brightness;
+  final VoidCallback onTap;
+
+  const _TransactionCardReal({
+    required this.transaction,
+    required this.brightness,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedTapFeedback(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border(brightness)),
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _getTypeColor().withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(_getTypeIcon(), color: _getTypeColor(), size: 22),
+            ),
+            const SizedBox(width: 14),
+
+            // Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.title,
+                    style: TextStyle(
+                      color: AppColors.text(brightness),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        transaction.venueName ?? transaction.description,
+                        style: TextStyle(
+                          color: AppColors.textSec(brightness),
+                          fontSize: 13,
+                        ),
+                      ),
+                      if (transaction.status == WalletTransactionStatus.pending) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Pending',
+                            style: TextStyle(
+                              color: Colors.amber,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Amount
+            Text(
+              '${transaction.isCredit ? '+' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: transaction.isCredit
+                    ? AppColors.success
+                    : AppColors.text(brightness),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getTypeIcon() {
+    switch (transaction.type) {
+      case WalletTransactionType.earning:
+        return Icons.arrow_downward_rounded;
+      case WalletTransactionType.payout:
+        return Icons.arrow_upward_rounded;
+      case WalletTransactionType.fee:
+        return Icons.receipt_rounded;
+      case WalletTransactionType.refund:
+        return Icons.replay_rounded;
+      case WalletTransactionType.adjustment:
+        return Icons.tune_rounded;
+    }
+  }
+
+  Color _getTypeColor() {
+    switch (transaction.type) {
+      case WalletTransactionType.earning:
+        return AppColors.success;
+      case WalletTransactionType.payout:
+        return AppColors.info;
+      case WalletTransactionType.fee:
+        return Colors.orange;
+      case WalletTransactionType.refund:
+        return Colors.purple;
+      case WalletTransactionType.adjustment:
+        return Colors.grey;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 📄 REAL WITHDRAW SHEET
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _WithdrawSheetReal extends StatefulWidget {
+  final WalletProvider walletProvider;
+  final Brightness brightness;
+
+  const _WithdrawSheetReal({
+    required this.walletProvider,
+    required this.brightness,
+  });
+
+  @override
+  State<_WithdrawSheetReal> createState() => _WithdrawSheetRealState();
+}
+
+class _WithdrawSheetRealState extends State<_WithdrawSheetReal> {
+  final _amountController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _withdraw() async {
+    final amount = double.tryParse(_amountController.text) ?? 0;
+    if (amount <= 0 || amount > widget.walletProvider.balance.availableBalance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid amount'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+
+    try {
+      final nav = Navigator.of(context);
+      final scaffold = ScaffoldMessenger.of(context);
+
+      await widget.walletProvider.requestPayout(amount: amount);
+
+      nav.pop();
+      scaffold.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const AnimatedSuccessCheck(size: 20, color: Colors.white),
+              const SizedBox(width: 12),
+              Text('Withdrawal of \$$amount initiated!'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Withdrawal failed: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final balance = widget.walletProvider.balance;
+    final defaultMethod = widget.walletProvider.defaultPayoutMethod;
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface(widget.brightness),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.border(widget.brightness),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Withdraw Funds',
+                  style: TextStyle(
+                    color: AppColors.text(widget.brightness),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Available: \$${balance.availableBalance.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: AppColors.textSec(widget.brightness),
+                    fontSize: 14,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Amount input
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.background(widget.brightness),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.border(widget.brightness),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        '\$',
+                        style: TextStyle(
+                          color: AppColors.text(widget.brightness),
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: TextStyle(
+                            color: AppColors.text(widget.brightness),
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: '0.00',
+                            hintStyle: TextStyle(
+                              color: AppColors.textTert(widget.brightness),
+                            ),
+                          ),
+                        ),
+                      ),
+                      AnimatedTapFeedback(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          _amountController.text = balance.availableBalance
+                              .toStringAsFixed(2);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.crimson.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'MAX',
+                            style: TextStyle(
+                              color: AppColors.crimson,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Payout method
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.background(widget.brightness),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.border(widget.brightness),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_rounded,
+                        color: AppColors.text(widget.brightness),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Payout to',
+                              style: TextStyle(
+                                color: AppColors.textSec(widget.brightness),
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              defaultMethod?.displayName ?? 'No payout method',
+                              style: TextStyle(
+                                color: AppColors.text(widget.brightness),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (defaultMethod != null)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Withdraw button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _withdraw,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.crimson,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Withdraw',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Info text
+                Text(
+                  'Withdrawals typically arrive within 1-3 business days',
+                  style: TextStyle(
+                    color: AppColors.textTert(widget.brightness),
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 📋 REAL TRANSACTION DETAIL SHEET
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _TransactionDetailSheetReal extends StatelessWidget {
+  final WalletTransaction transaction;
+  final Brightness brightness;
+
+  const _TransactionDetailSheetReal({
+    required this.transaction,
+    required this.brightness,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.border(brightness),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _getTypeColor().withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        _getTypeIcon(),
+                        color: _getTypeColor(),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            transaction.title,
+                            style: TextStyle(
+                              color: AppColors.text(brightness),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            transaction.type.displayName,
+                            style: TextStyle(
+                              color: AppColors.textSec(brightness),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Amount
+                Center(
+                  child: Text(
+                    '${transaction.isCredit ? '+' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: transaction.isCredit
+                          ? AppColors.success
+                          : AppColors.text(brightness),
+                      fontSize: 36,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Details
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.background(brightness),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      _DetailRow(
+                        label: 'Status',
+                        value: transaction.status.name.toUpperCase(),
+                        valueColor: _getStatusColor(),
+                        brightness: brightness,
+                      ),
+                      if (transaction.venueName != null)
+                        _DetailRow(
+                          label: 'Venue',
+                          value: transaction.venueName!,
+                          brightness: brightness,
+                        ),
+                      _DetailRow(
+                        label: 'Date',
+                        value: _formatDate(transaction.date),
+                        brightness: brightness,
+                      ),
+                      _DetailRow(
+                        label: 'Transaction ID',
+                        value: transaction.id.length > 12
+                            ? '${transaction.id.substring(0, 12)}...'
+                            : transaction.id,
+                        brightness: brightness,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getTypeIcon() {
+    switch (transaction.type) {
+      case WalletTransactionType.earning:
+        return Icons.arrow_downward_rounded;
+      case WalletTransactionType.payout:
+        return Icons.arrow_upward_rounded;
+      case WalletTransactionType.fee:
+        return Icons.receipt_rounded;
+      case WalletTransactionType.refund:
+        return Icons.replay_rounded;
+      case WalletTransactionType.adjustment:
+        return Icons.tune_rounded;
+    }
+  }
+
+  Color _getTypeColor() {
+    switch (transaction.type) {
+      case WalletTransactionType.earning:
+        return AppColors.success;
+      case WalletTransactionType.payout:
+        return AppColors.info;
+      case WalletTransactionType.fee:
+        return Colors.orange;
+      case WalletTransactionType.refund:
+        return Colors.purple;
+      case WalletTransactionType.adjustment:
+        return Colors.grey;
+    }
+  }
+
+  Color _getStatusColor() {
+    switch (transaction.status) {
+      case WalletTransactionStatus.completed:
+        return AppColors.success;
+      case WalletTransactionStatus.pending:
+        return Colors.amber;
+      case WalletTransactionStatus.processing:
+        return AppColors.info;
+      case WalletTransactionStatus.failed:
+        return AppColors.error;
+      case WalletTransactionStatus.cancelled:
+        return Colors.grey;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final period = date.hour >= 12 ? 'PM' : 'AM';
+    return '${months[date.month - 1]} ${date.day}, ${date.year} at $hour:${date.minute.toString().padLeft(2, '0')} $period';
+  }
 }

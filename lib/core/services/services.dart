@@ -20,3 +20,5 @@ export 'error_handling_service.dart';
 export 'calendar_service.dart';
 export 'review_service.dart';
 export 'notification_history_service.dart';
+export 'verification_service.dart';
+export 'wallet_service.dart';

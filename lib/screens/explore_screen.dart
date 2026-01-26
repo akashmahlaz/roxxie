@@ -11,10 +11,11 @@
 /// Advanced search and explore functionality
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/providers/providers.dart';
 import '../widgets/widgets.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -39,135 +40,55 @@ class _ExploreScreenState extends State<ExploreScreen>
   String _searchQuery = '';
   bool _showResults = false;
 
-  // Mock data
-  final List<String> _recentSearches = [
-    'Jazz venues downtown',
-    'Wedding bands',
-    'DJ for corporate event',
-    'Acoustic guitarist',
-  ];
-
+  // Static categories (genre-based)
   final List<SearchCategory> _categories = [
     SearchCategory(
       name: 'Jazz',
       icon: Icons.music_note_rounded,
       color: Colors.blue,
-      count: 234,
+      count: 0,
     ),
     SearchCategory(
       name: 'Rock',
       icon: Icons.electric_bolt_rounded,
       color: Colors.red,
-      count: 186,
+      count: 0,
     ),
     SearchCategory(
       name: 'Classical',
       icon: Icons.piano_rounded,
       color: Colors.purple,
-      count: 145,
+      count: 0,
     ),
     SearchCategory(
       name: 'Pop',
       icon: Icons.star_rounded,
       color: Colors.pink,
-      count: 312,
+      count: 0,
     ),
     SearchCategory(
       name: 'Electronic',
       icon: Icons.graphic_eq_rounded,
       color: Colors.cyan,
-      count: 198,
+      count: 0,
     ),
     SearchCategory(
       name: 'Hip Hop',
       icon: Icons.headphones_rounded,
       color: Colors.orange,
-      count: 167,
+      count: 0,
     ),
     SearchCategory(
       name: 'Country',
       icon: Icons.landscape_rounded,
       color: Colors.amber,
-      count: 89,
+      count: 0,
     ),
     SearchCategory(
       name: 'R&B/Soul',
       icon: Icons.favorite_rounded,
       color: Colors.indigo,
-      count: 156,
-    ),
-  ];
-
-  final List<TrendingItem> _trending = [
-    TrendingItem(
-      rank: 1,
-      name: 'The Velvet Lounge',
-      type: 'Jazz Club',
-      image: '',
-      rating: 4.9,
-      isHot: true,
-    ),
-    TrendingItem(
-      rank: 2,
-      name: 'Marcus Cole Trio',
-      type: 'Jazz Band',
-      image: '',
-      rating: 4.8,
-      isHot: true,
-    ),
-    TrendingItem(
-      rank: 3,
-      name: 'Electric Dreams',
-      type: 'Nightclub',
-      image: '',
-      rating: 4.7,
-      isHot: false,
-    ),
-    TrendingItem(
-      rank: 4,
-      name: 'Sarah Mitchell',
-      type: 'Acoustic Artist',
-      image: '',
-      rating: 4.9,
-      isHot: true,
-    ),
-    TrendingItem(
-      rank: 5,
-      name: 'Blue Note West',
-      type: 'Jazz Venue',
-      image: '',
-      rating: 4.8,
-      isHot: false,
-    ),
-  ];
-
-  final List<SearchResult> _mockResults = [
-    SearchResult(
-      id: '1',
-      name: 'The Velvet Lounge',
-      type: 'Jazz Club',
-      location: 'Downtown',
-      rating: 4.9,
-      reviews: 127,
-      image: '',
-    ),
-    SearchResult(
-      id: '2',
-      name: 'Blue Note Jazz Club',
-      type: 'Jazz Venue',
-      location: 'Midtown',
-      rating: 4.8,
-      reviews: 98,
-      image: '',
-    ),
-    SearchResult(
-      id: '3',
-      name: 'Marcus Cole',
-      type: 'Jazz Pianist',
-      location: 'Available Citywide',
-      rating: 4.9,
-      reviews: 45,
-      image: '',
+      count: 0,
     ),
   ];
 
@@ -187,6 +108,11 @@ class _ExploreScreenState extends State<ExploreScreen>
     _searchFocusNode.addListener(() {
       setState(() => _isSearching = _searchFocusNode.hasFocus);
     });
+
+    // Load trending from API
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ExploreProvider>().loadTrending();
+    });
   }
 
   @override
@@ -200,6 +126,7 @@ class _ExploreScreenState extends State<ExploreScreen>
   void _performSearch(String query) {
     if (query.trim().isEmpty) {
       setState(() => _showResults = false);
+      context.read<ExploreProvider>().clearResults();
       return;
     }
 
@@ -207,11 +134,10 @@ class _ExploreScreenState extends State<ExploreScreen>
     setState(() {
       _searchQuery = query;
       _showResults = true;
-      if (!_recentSearches.contains(query)) {
-        _recentSearches.insert(0, query);
-        if (_recentSearches.length > 5) _recentSearches.removeLast();
-      }
     });
+    
+    // Perform API search
+    context.read<ExploreProvider>().search(query);
   }
 
   @override
@@ -222,35 +148,43 @@ class _ExploreScreenState extends State<ExploreScreen>
       backgroundColor: AppColors.background(brightness),
       body: FadeTransition(
         opacity: _fadeAnimation,
-        child: CustomScrollView(
-          slivers: [
-            // App Bar with Search
-            _buildAppBar(brightness),
+        child: Consumer<ExploreProvider>(
+          builder: (context, provider, child) {
+            return CustomScrollView(
+              slivers: [
+                // App Bar with Search
+                _buildAppBar(brightness),
 
-            // Quick Filters
-            if (!_showResults)
-              SliverToBoxAdapter(child: _buildQuickFilters(brightness)),
+                // Quick Filters
+                if (!_showResults)
+                  SliverToBoxAdapter(child: _buildQuickFilters(brightness)),
 
-            // Content
-            if (_showResults)
-              _buildSearchResults(brightness)
-            else if (_isSearching)
-              _buildSearchSuggestions(brightness)
-            else ...[
-              // Trending Section
-              SliverToBoxAdapter(child: _buildTrendingSection(brightness)),
+                // Content
+                if (_showResults)
+                  _buildSearchResults(brightness, provider)
+                else if (_isSearching)
+                  _buildSearchSuggestions(brightness, provider)
+                else ...[
+                  // Trending Section
+                  SliverToBoxAdapter(
+                    child: _buildTrendingSection(brightness, provider),
+                  ),
 
-              // Categories
-              SliverToBoxAdapter(child: _buildCategoriesSection(brightness)),
+                  // Categories
+                  SliverToBoxAdapter(child: _buildCategoriesSection(brightness)),
 
-              // Recent Searches
-              if (_recentSearches.isNotEmpty)
-                SliverToBoxAdapter(child: _buildRecentSearches(brightness)),
+                  // Recent Searches
+                  if (provider.recentSearches.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _buildRecentSearches(brightness, provider),
+                    ),
 
-              // Bottom padding
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
-          ],
+                  // Bottom padding
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -473,7 +407,9 @@ class _ExploreScreenState extends State<ExploreScreen>
   // 🔥 TRENDING SECTION
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildTrendingSection(Brightness brightness) {
+  Widget _buildTrendingSection(Brightness brightness, ExploreProvider provider) {
+    final trending = provider.trending;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -498,19 +434,53 @@ class _ExploreScreenState extends State<ExploreScreen>
             ],
           ),
         ),
-        SizedBox(
-          height: 180,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: _trending.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final item = _trending[index];
-              return _TrendingCard(item: item, brightness: brightness);
-            },
+        if (provider.isLoading && trending.isEmpty)
+          SizedBox(
+            height: 180,
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppColors.crimson,
+                strokeWidth: 2,
+              ),
+            ),
+          )
+        else if (trending.isEmpty)
+          SizedBox(
+            height: 180,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.trending_up_rounded,
+                    color: AppColors.textTert(brightness),
+                    size: 40,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No trending artists yet',
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 180,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: trending.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final item = trending[index];
+                return _TrendingCardReal(item: item, brightness: brightness);
+              },
+            ),
           ),
-        ),
       ],
     );
   }
@@ -582,7 +552,9 @@ class _ExploreScreenState extends State<ExploreScreen>
   // 🕐 RECENT SEARCHES
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildRecentSearches(Brightness brightness) {
+  Widget _buildRecentSearches(Brightness brightness, ExploreProvider provider) {
+    final recentSearches = provider.recentSearches;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -602,7 +574,7 @@ class _ExploreScreenState extends State<ExploreScreen>
               AnimatedTapFeedback(
                 onTap: () {
                   HapticFeedback.selectionClick();
-                  setState(() => _recentSearches.clear());
+                  provider.clearRecentSearches();
                 },
                 child: Text(
                   'Clear All',
@@ -616,8 +588,8 @@ class _ExploreScreenState extends State<ExploreScreen>
             ],
           ),
         ),
-        ...List.generate(_recentSearches.length, (index) {
-          final search = _recentSearches[index];
+        ...List.generate(recentSearches.length, (index) {
+          final search = recentSearches[index];
           return Dismissible(
             key: Key(search),
             direction: DismissDirection.endToStart,
@@ -629,7 +601,7 @@ class _ExploreScreenState extends State<ExploreScreen>
             ),
             onDismissed: (_) {
               HapticFeedback.lightImpact();
-              setState(() => _recentSearches.removeAt(index));
+              provider.removeRecentSearch(search);
             },
             child: AnimatedTapFeedback(
               onTap: () {
@@ -678,13 +650,18 @@ class _ExploreScreenState extends State<ExploreScreen>
   // 💡 SEARCH SUGGESTIONS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildSearchSuggestions(Brightness brightness) {
+  Widget _buildSearchSuggestions(Brightness brightness, ExploreProvider provider) {
+    // Combine recent searches with generic suggestions
+    final recentSearches = provider.recentSearches.take(3).toList();
     final suggestions = [
-      'Jazz bands near me',
-      'Wedding musicians',
-      'DJ for party',
-      'Live acoustic',
-      'Corporate event entertainment',
+      ...recentSearches,
+      if (recentSearches.length < 3) ...[
+        'Jazz bands near me',
+        'Wedding musicians',
+        'DJ for party',
+        'Live acoustic',
+        'Corporate event entertainment',
+      ].take(5 - recentSearches.length),
     ];
 
     return SliverList(
@@ -693,7 +670,7 @@ class _ExploreScreenState extends State<ExploreScreen>
           return Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Text(
-              'Suggestions',
+              recentSearches.isNotEmpty ? 'Recent & Suggestions' : 'Suggestions',
               style: TextStyle(
                 color: AppColors.textSec(brightness),
                 fontSize: 13,
@@ -703,7 +680,11 @@ class _ExploreScreenState extends State<ExploreScreen>
           );
         }
 
+        if (index > suggestions.length) return null;
+        
         final suggestion = suggestions[index - 1];
+        final isRecent = recentSearches.contains(suggestion);
+        
         return AnimatedTapFeedback(
           onTap: () {
             HapticFeedback.selectionClick();
@@ -715,7 +696,7 @@ class _ExploreScreenState extends State<ExploreScreen>
             child: Row(
               children: [
                 Icon(
-                  Icons.search_rounded,
+                  isRecent ? Icons.history_rounded : Icons.search_rounded,
                   color: AppColors.textSec(brightness),
                   size: 20,
                 ),
@@ -746,7 +727,79 @@ class _ExploreScreenState extends State<ExploreScreen>
   // 🔎 SEARCH RESULTS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildSearchResults(Brightness brightness) {
+  Widget _buildSearchResults(Brightness brightness, ExploreProvider provider) {
+    final results = provider.results;
+    final status = provider.status;
+    
+    // Loading state
+    if (status == ExploreStatus.loading && results.isEmpty) {
+      return const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.crimson),
+        ),
+      );
+    }
+    
+    // Error state
+    if (status == ExploreStatus.error) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                provider.errorMessage ?? 'Search failed',
+                style: TextStyle(color: AppColors.textSec(brightness)),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () => provider.search(_searchQuery),
+                icon: const Icon(Icons.refresh, color: AppColors.crimson),
+                label: const Text('Retry', style: TextStyle(color: AppColors.crimson)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Empty results
+    if (results.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off_rounded,
+                size: 64,
+                color: AppColors.textTert(brightness),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No results for "$_searchQuery"',
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try different keywords',
+                style: TextStyle(color: AppColors.textSec(brightness)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         if (index == 0) {
@@ -756,42 +809,47 @@ class _ExploreScreenState extends State<ExploreScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${_mockResults.length} results for "$_searchQuery"',
+                  '${results.length} results for "$_searchQuery"',
                   style: TextStyle(
                     color: AppColors.textSec(brightness),
                     fontSize: 13,
                   ),
                 ),
-                AnimatedTapFeedback(
-                  onTap: () => HapticFeedback.selectionClick(),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.sort_rounded,
-                        color: AppColors.textSec(brightness),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Sort',
-                        style: TextStyle(
-                          color: AppColors.textSec(brightness),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+                // Type filter chips
+                Row(
+                  children: [
+                    _SearchTypeChip(
+                      label: 'All',
+                      isSelected: provider.searchType == SearchResultType.all,
+                      onTap: () => provider.setSearchType(SearchResultType.all),
+                      brightness: brightness,
+                    ),
+                    const SizedBox(width: 8),
+                    _SearchTypeChip(
+                      label: 'Artists',
+                      isSelected: provider.searchType == SearchResultType.artist,
+                      onTap: () => provider.setSearchType(SearchResultType.artist),
+                      brightness: brightness,
+                    ),
+                    const SizedBox(width: 8),
+                    _SearchTypeChip(
+                      label: 'Venues',
+                      isSelected: provider.searchType == SearchResultType.venue,
+                      onTap: () => provider.setSearchType(SearchResultType.venue),
+                      brightness: brightness,
+                    ),
+                  ],
                 ),
               ],
             ),
           );
         }
 
-        if (index > _mockResults.length) return null;
+        if (index > results.length) return null;
 
-        final result = _mockResults[index - 1];
-        return _SearchResultCard(result: result, brightness: brightness);
-      }, childCount: _mockResults.length + 2),
+        final result = results[index - 1];
+        return _SearchResultCardReal(result: result, brightness: brightness);
+      }, childCount: results.length + 2),
     );
   }
 
@@ -814,7 +872,7 @@ class _ExploreScreenState extends State<ExploreScreen>
 // 🔥 TRENDING CARD
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _TrendingCard extends StatelessWidget {
+/* class _TrendingCard extends StatelessWidget {
   final TrendingItem item;
   final Brightness brightness;
 
@@ -973,7 +1031,7 @@ class _TrendingCard extends StatelessWidget {
       ),
     );
   }
-}
+} */
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 📂 CATEGORY CARD
@@ -1039,6 +1097,7 @@ class _CategoryCard extends StatelessWidget {
 // 🔎 SEARCH RESULT CARD
 // ═══════════════════════════════════════════════════════════════════════════
 
+/*
 class _SearchResultCard extends StatelessWidget {
   final SearchResult result;
   final Brightness brightness;
@@ -1144,6 +1203,7 @@ class _SearchResultCard extends StatelessWidget {
     );
   }
 }
+*/
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ⚙️ FILTERS SHEET
@@ -1385,6 +1445,388 @@ class _FiltersSheetState extends State<_FiltersSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 🆕 REAL DATA WIDGETS
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _TrendingCardReal extends StatelessWidget {
+  final TrendingResult item;
+  final Brightness brightness;
+
+  const _TrendingCardReal({required this.item, required this.brightness});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedTapFeedback(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        // Navigate to artist/venue profile
+        if (item.isArtist) {
+          Navigator.pushNamed(context, '/artist/${item.id}');
+        } else {
+          Navigator.pushNamed(context, '/venue/${item.id}');
+        }
+      },
+      child: Container(
+        width: 140,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.crimson,
+              AppColors.crimson.withValues(alpha: 0.7),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.crimson.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Photo if available
+              if (item.photo != null && item.photo!.isNotEmpty)
+                Image.network(
+                  item.photo!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    color: AppColors.crimson.withValues(alpha: 0.8),
+                  ),
+                ),
+              
+              // Gradient overlay
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.8),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Rank badge
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '#${item.rank}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (item.isHot)
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(
+                              Icons.local_fire_department,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const Spacer(),
+                    // Name
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    // Type
+                    Text(
+                      item.type,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 6),
+                    // Rating
+                    if (item.rating != null)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.star_rounded,
+                            color: AppColors.gold,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            item.rating!.toStringAsFixed(1),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchResultCardReal extends StatelessWidget {
+  final ExploreResult result;
+  final Brightness brightness;
+
+  const _SearchResultCardReal({
+    required this.result,
+    required this.brightness,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedTapFeedback(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        if (result.isArtist) {
+          Navigator.pushNamed(context, '/artist/${result.id}');
+        } else {
+          Navigator.pushNamed(context, '/venue/${result.id}');
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border(brightness)),
+        ),
+        child: Row(
+          children: [
+            // Photo
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: AppColors.crimson.withValues(alpha: 0.1),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: result.photo != null && result.photo!.isNotEmpty
+                    ? Image.network(
+                        result.photo!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Icon(
+                          result.isArtist ? Icons.person : Icons.business,
+                          color: AppColors.crimson,
+                          size: 28,
+                        ),
+                      )
+                    : Icon(
+                        result.isArtist ? Icons.person : Icons.business,
+                        color: AppColors.crimson,
+                        size: 28,
+                      ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          result.name,
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (result.rating != null)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star_rounded,
+                              color: AppColors.gold,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              result.rating!.toStringAsFixed(1),
+                              style: TextStyle(
+                                color: AppColors.text(brightness),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    result.type,
+                    style: TextStyle(
+                      color: AppColors.crimson,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (result.location != null) ...[
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          color: AppColors.textSec(brightness),
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          result.location!,
+                          style: TextStyle(
+                            color: AppColors.textSec(brightness),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (result.genres.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      children: result.genres.take(3).map((genre) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface(brightness),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.border(brightness),
+                            ),
+                          ),
+                          child: Text(
+                            genre,
+                            style: TextStyle(
+                              color: AppColors.textSec(brightness),
+                              fontSize: 10,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textTert(brightness),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchTypeChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Brightness brightness;
+
+  const _SearchTypeChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.brightness,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.crimson
+              : AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.crimson
+                : AppColors.border(brightness),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected
+                ? Colors.white
+                : AppColors.textSec(brightness),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

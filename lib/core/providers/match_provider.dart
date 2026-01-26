@@ -8,14 +8,27 @@ import '../services/services.dart';
 
 enum MatchListStatus { initial, loading, loaded, error }
 
+enum MatchFilterType { all, unread, archived }
+
 class MatchProvider extends ChangeNotifier {
   final MatchService _matchService = MatchService();
+  final SwipeService _swipeService = SwipeService();
 
   MatchListStatus _status = MatchListStatus.initial;
   List<Match> _matches = [];
   int _unreadCount = 0;
   String? _errorMessage;
   bool _isLoading = false;
+
+  // Who Liked Me state
+  List<DiscoveryCard> _whoLikedMe = [];
+  int _whoLikedMeCount = 0;
+  bool _whoLikedMeLoading = false;
+  bool _isPremiumFeature = false;
+
+  // Filter state
+  MatchFilterType _filterType = MatchFilterType.all;
+  String _searchQuery = '';
 
   // Pagination
   int _page = 1;
@@ -29,6 +42,16 @@ class MatchProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
 
+  // Who Liked Me getters
+  List<DiscoveryCard> get whoLikedMe => _whoLikedMe;
+  int get whoLikedMeCount => _whoLikedMeCount;
+  bool get whoLikedMeLoading => _whoLikedMeLoading;
+  bool get isPremiumFeature => _isPremiumFeature;
+
+  // Filter getters
+  MatchFilterType get filterType => _filterType;
+  String get searchQuery => _searchQuery;
+
   // Filtered lists
   List<Match> get activeMatches =>
       _matches.where((m) => m.status == MatchStatus.active).toList();
@@ -38,6 +61,61 @@ class MatchProvider extends ChangeNotifier {
       _matches.where((m) => m.lastMessageAt == null).toList();
   List<Match> get conversationMatches =>
       _matches.where((m) => m.lastMessageAt != null).toList();
+
+  /// 🔎 Get filtered matches based on current filter
+  List<Match> get filteredMatches {
+    List<Match> result = _matches;
+
+    // Apply filter type
+    switch (_filterType) {
+      case MatchFilterType.all:
+        result = result.where((m) => m.status == MatchStatus.active).toList();
+        break;
+      case MatchFilterType.unread:
+        result =
+            result.where((m) => m.status == MatchStatus.active).toList();
+        // TODO: Add unread flag to Match model when available from backend
+        break;
+      case MatchFilterType.archived:
+        result = result.where((m) => m.status == MatchStatus.archived).toList();
+        break;
+    }
+
+    // Apply search query
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      result = result.where((m) {
+        // Search in both artist and venue names
+        final artistName = (m.artist?.stageName ?? '').toLowerCase();
+        final venueName = (m.venue?.name ?? '').toLowerCase();
+        return artistName.contains(query) || venueName.contains(query);
+      }).toList();
+    }
+
+    return result;
+  }
+
+  /// 🔎 Filtered new matches (no conversation yet)
+  List<Match> get filteredNewMatches {
+    return filteredMatches.where((m) => m.lastMessageAt == null).toList();
+  }
+
+  /// 💬 Filtered conversation matches (has messages)
+  List<Match> get filteredConversationMatches {
+    return filteredMatches.where((m) => m.lastMessageAt != null).toList();
+  }
+
+  /// 🎛️ Set filter type
+  void setFilterType(MatchFilterType type) {
+    _filterType = type;
+    notifyListeners();
+  }
+
+  /// 🔍 Set search query
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
 
   /// 🔄 Load matches
   Future<void> loadMatches({bool refresh = false}) async {
@@ -70,6 +148,7 @@ class MatchProvider extends ChangeNotifier {
       _hasMore = response.hasMore;
       _page++;
       _status = MatchListStatus.loaded;
+      _errorMessage = null;
 
       // Also fetch unread count
       await refreshUnreadCount();
@@ -81,6 +160,35 @@ class MatchProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// 💕 Load who liked me (premium feature)
+  Future<void> loadWhoLikedMe() async {
+    if (_whoLikedMeLoading) return;
+
+    _whoLikedMeLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _swipeService.getWhoLikedMe();
+      _whoLikedMe = response.profiles;
+      _whoLikedMeCount = response.count;
+      _isPremiumFeature = response.isPremiumFeature;
+    } catch (e) {
+      debugPrint('Load who liked me error: $e');
+      // Non-critical, don't set error state
+    } finally {
+      _whoLikedMeLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 🔄 Refresh all data
+  Future<void> refreshAll() async {
+    await Future.wait([
+      loadMatches(refresh: true),
+      loadWhoLikedMe(),
+    ]);
   }
 
   /// 🔢 Refresh unread count

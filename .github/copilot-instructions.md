@@ -1,4 +1,4 @@
-### 0 issue method
+### 0 issue method keep in mind 
 - Curly braces on ALL if/for/while: `if (x) { ... }`
 - Null safety: `artist.displayName ?? 'Unknown'`
 - Cache context before async: `final nav = Navigator.of(context);`
@@ -13,4 +13,4 @@
 - Context after await without caching
 
 ## After batch of Changes
-Run `flutter analyze` - must be 0 errors 0 issues 0 warnings  
+Run `flutter analyze` after each batch of changes - must be 0 errors 0 issues 0 warnings  

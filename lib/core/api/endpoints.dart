@@ -545,6 +545,28 @@ class Endpoints {
   static const String analyticsExport = '/analytics/export';
 
   // ═══════════════════════════════════════════════════════════════════════
+  // IDENTITY VERIFICATION
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get verification status
+  static const String verificationStatus = '/verification/status';
+
+  /// Start verification session
+  static const String verificationStart = '/verification/start';
+
+  /// Upload verification document
+  static const String verificationUploadDocument = '/verification/document';
+
+  /// Upload verification selfie
+  static const String verificationUploadSelfie = '/verification/selfie';
+
+  /// Submit verification for review
+  static const String verificationSubmit = '/verification/submit';
+
+  /// Get verification details
+  static String verificationDetails(String id) => '/verification/$id';
+
+  // ═══════════════════════════════════════════════════════════════════════
   // UPLOADS
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -693,6 +715,43 @@ class Endpoints {
 
   /// Language strings
   static const String translations = '/utils/translations';
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // WALLET & PAYOUTS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get wallet balance and summary
+  static const String walletBalance = '/wallet/balance';
+
+  /// Get wallet transactions
+  static const String walletTransactions = '/wallet/transactions';
+
+  /// Get single transaction details
+  static String walletTransaction(String id) => '/wallet/transactions/$id';
+
+  /// Request payout/withdrawal
+  static const String walletRequestPayout = '/wallet/payout/request';
+
+  /// Get payout history
+  static const String walletPayoutHistory = '/wallet/payout/history';
+
+  /// Get payout methods (connected bank accounts)
+  static const String walletPayoutMethods = '/wallet/payout/methods';
+
+  /// Add payout method
+  static const String walletAddPayoutMethod = '/wallet/payout/methods/add';
+
+  /// Set default payout method
+  static const String walletSetDefaultPayoutMethod = '/wallet/payout/methods/default';
+
+  /// Remove payout method
+  static String walletRemovePayoutMethod(String id) => '/wallet/payout/methods/$id';
+
+  /// Get Stripe Connect onboarding link
+  static const String walletStripeOnboarding = '/wallet/stripe/onboarding';
+
+  /// Get Stripe Connect dashboard link
+  static const String walletStripeDashboard = '/wallet/stripe/dashboard';
 
   // ═══════════════════════════════════════════════════════════════════════
   // HELP & SUPPORT

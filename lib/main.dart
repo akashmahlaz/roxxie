@@ -33,7 +33,6 @@ import 'screens/edit_profile_v2/edit_profile_v2_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/reviews_screen.dart';
 import 'screens/gig_contract_screen.dart';
-import 'screens/messages_list_screen_v2.dart';
 import 'screens/messages_list_screen.dart';
 import 'screens/explore_screen.dart';
 import 'screens/verification_screen.dart';
@@ -89,6 +88,12 @@ class GigMatchApp extends StatelessWidget {
 
         // Profile Provider - artist/venue profile with real API data
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+
+        // Explore Provider - search artists/venues
+        ChangeNotifierProvider(create: (_) => ExploreProvider()),
+
+        // Wallet Provider - earnings, transactions, payouts
+        ChangeNotifierProvider(create: (_) => WalletProvider()),
       ],
       child: MaterialApp(
         title: 'GigMatch',
@@ -134,7 +139,7 @@ class GigMatchApp extends StatelessWidget {
           '/wallet': (context) => const WalletScreen(),
           '/reviews': (context) => const ReviewsScreen(),
           '/contracts': (context) => const GigContractScreen(),
-          '/messages': (context) => const MessagesListScreenV2(),
+          '/messages': (context) => const MatchesScreenV2(),
           '/messages-old': (context) => const MessagesListScreen(),
           '/explore': (context) => const ExploreScreen(),
           '/verification': (context) => const VerificationScreen(),

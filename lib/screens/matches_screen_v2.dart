@@ -36,6 +36,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
 
   final List<_MatchParticle> _particles = [];
   final math.Random _random = math.Random();
+  
+  // Search controller
+  final TextEditingController _searchController = TextEditingController();
+  bool _showSearch = false;
 
   @override
   void initState() {
@@ -64,8 +68,16 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
     _initParticles();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MatchProvider>().loadMatches(refresh: true);
+      final provider = context.read<MatchProvider>();
+      provider.loadMatches(refresh: true);
+      provider.loadWhoLikedMe();
     });
+    
+    _searchController.addListener(_onSearchChanged);
+  }
+  
+  void _onSearchChanged() {
+    context.read<MatchProvider>().setSearchQuery(_searchController.text);
   }
 
   void _initParticles() {
@@ -88,6 +100,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
     _particleController.dispose();
     _floatController.dispose();
     _badgePulseController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -146,6 +159,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
               ],
               body: Consumer<MatchProvider>(
                 builder: (context, provider, child) {
+                  // Loading state
                   if (provider.status == MatchListStatus.loading &&
                       provider.matches.isEmpty) {
                     return const Center(
@@ -154,6 +168,13 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
                       ),
                     );
                   }
+                  
+                  // Error state with retry
+                  if (provider.status == MatchListStatus.error) {
+                    return _buildErrorState(provider, brightness);
+                  }
+                  
+                  // Empty state with CTA
                   if (provider.matches.isEmpty) {
                     return _buildEmptyState(brightness);
                   }
@@ -214,8 +235,24 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
         ],
       ),
       actions: [
+        // Search toggle
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            setState(() {
+              _showSearch = !_showSearch;
+              if (!_showSearch) {
+                _searchController.clear();
+              }
+            });
+          },
+          icon: Icon(
+            _showSearch ? Icons.close : Icons.search,
+            color: AppColors.text(brightness),
+          ),
+        ),
+        // Filter button
+        IconButton(
+          onPressed: () => _showFilterSheet(brightness),
           icon: Icon(Icons.tune_rounded, color: AppColors.text(brightness)),
         ),
         const SizedBox(width: 16),
@@ -228,36 +265,100 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildNewMatchesGrid(MatchProvider provider, Brightness brightness) {
-    final matches = provider.newMatches;
-
-    if (matches.isEmpty) {
-      return _buildTabEmptyState(
-        'No new matches',
-        Icons.favorite_border,
-        brightness,
-      );
-    }
+    final matches = provider.filteredNewMatches;
+    final whoLikedMe = provider.whoLikedMe;
+    final whoLikedMeCount = provider.whoLikedMeCount;
 
     return RefreshIndicator(
-      onRefresh: () => provider.loadMatches(refresh: true),
+      onRefresh: () => provider.refreshAll(),
       color: AppColors.crimson,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 0.7,
-        ),
-        itemCount: matches.length,
-        itemBuilder: (context, index) {
-          return _PremiumMatchCard(
-            match: matches[index],
-            onTap: () => _openChat(matches[index]),
-            brightness: brightness,
-            index: index,
-          );
-        },
+      child: CustomScrollView(
+        slivers: [
+          // Search bar (conditional)
+          if (_showSearch)
+            SliverToBoxAdapter(child: _buildSearchBar(brightness)),
+          
+          // Who Liked Me Section (Premium Teaser)
+          if (whoLikedMeCount > 0 || provider.whoLikedMeLoading)
+            SliverToBoxAdapter(
+              child: _buildWhoLikedMeSection(
+                whoLikedMe,
+                whoLikedMeCount,
+                provider.whoLikedMeLoading,
+                provider.isPremiumFeature,
+                brightness,
+              ),
+            ),
+          
+          // New Matches Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Text(
+                    'New Matches',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.text(brightness),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.crimson.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${matches.length}',
+                      style: const TextStyle(
+                        color: AppColors.crimson,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Matches Grid or Empty State
+          if (matches.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _buildTabEmptyState(
+                'No new matches',
+                Icons.favorite_border,
+                brightness,
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.7,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return _PremiumMatchCard(
+                      match: matches[index],
+                      onTap: () => _openChat(matches[index]),
+                      brightness: brightness,
+                      index: index,
+                    );
+                  },
+                  childCount: matches.length,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -267,59 +368,493 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildMessagesList(MatchProvider provider, Brightness brightness) {
-    final matches = provider.conversationMatches;
-
-    if (matches.isEmpty) {
-      return _buildTabEmptyState(
-        'No conversations started',
-        Icons.chat_bubble_outline,
-        brightness,
-      );
-    }
+    final matches = provider.filteredConversationMatches;
 
     return RefreshIndicator(
-      onRefresh: () => provider.loadMatches(refresh: true),
+      onRefresh: () => provider.refreshAll(),
       color: AppColors.crimson,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        itemCount: matches.length,
-        itemBuilder: (context, index) {
-          return _PremiumMessageTile(
-            match: matches[index],
-            brightness: brightness,
-            onTap: () => _openChat(matches[index]),
-            index: index,
-          );
-        },
+      child: CustomScrollView(
+        slivers: [
+          // Search bar (conditional)
+          if (_showSearch)
+            SliverToBoxAdapter(child: _buildSearchBar(brightness)),
+          
+          // Messages Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Text(
+                    'Messages',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.text(brightness),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (provider.unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.crimson,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${provider.unreadCount} new',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Messages List or Empty State
+          if (matches.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _buildTabEmptyState(
+                'No conversations started',
+                Icons.chat_bubble_outline,
+                brightness,
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return _PremiumMessageTile(
+                    match: matches[index],
+                    brightness: brightness,
+                    onTap: () => _openChat(matches[index]),
+                    index: index,
+                  );
+                },
+                childCount: matches.length,
+              ),
+            ),
+        ],
       ),
     );
   }
 
   Widget _buildEmptyState(Brightness brightness) {
     return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.crimson.withValues(alpha: 0.2),
+                    AppColors.crimson.withValues(alpha: 0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.favorite_rounded,
+                size: 64,
+                color: AppColors.crimson.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Matches Yet',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.text(brightness),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Start swiping to find your perfect gig!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: () {
+                // Navigate to discovery/swipe screen (tab 1)
+                if (context.mounted) {
+                  // Assuming bottom nav uses index 1 for Discover
+                  DefaultTabController.of(context).animateTo(1);
+                }
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              icon: const Icon(Icons.explore, color: Colors.white),
+              label: const Text(
+                'Start Discovering',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildErrorState(MatchProvider provider, Brightness brightness) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Something went wrong',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.text(brightness),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              provider.errorMessage ?? 'Failed to load matches',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              onPressed: () => provider.loadMatches(refresh: true),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.crimson),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              icon: const Icon(Icons.refresh, color: AppColors.crimson),
+              label: const Text(
+                'Try Again',
+                style: TextStyle(color: AppColors.crimson),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildSearchBar(Brightness brightness) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: TextField(
+        controller: _searchController,
+        style: TextStyle(color: AppColors.text(brightness)),
+        decoration: InputDecoration(
+          hintText: 'Search matches...',
+          hintStyle: TextStyle(color: AppColors.textTert(brightness)),
+          prefixIcon: Icon(Icons.search, color: AppColors.textTert(brightness)),
+          filled: true,
+          fillColor: AppColors.surface(brightness),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildWhoLikedMeSection(
+    List<DiscoveryCard> profiles,
+    int count,
+    bool isLoading,
+    bool isPremium,
+    Brightness brightness,
+  ) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.gold.withValues(alpha: 0.2),
+            AppColors.crimson.withValues(alpha: 0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.3),
+        ),
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.people_outline,
-            size: 80,
-            color: AppColors.crimson.withValues(alpha: 0.5),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.star, color: AppColors.gold, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Who Liked You',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppColors.text(brightness),
+                      ),
+                    ),
+                    if (count > 0)
+                      Text(
+                        '$count people want to match!',
+                        style: TextStyle(
+                          color: AppColors.textSec(brightness),
+                          fontSize: 13,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (isPremium)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.gold, AppColors.crimson],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'PRO',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
-          Text(
-            'Keep Swiping',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.text(brightness),
+          if (isLoading)
+            const Center(
+              child: SizedBox(
+                height: 60,
+                child: CircularProgressIndicator(
+                  color: AppColors.gold,
+                  strokeWidth: 2,
+                ),
+              ),
+            )
+          else if (profiles.isEmpty && count > 0)
+            // Blurred preview for non-premium
+            _buildBlurredPreview(count, brightness)
+          else if (profiles.isNotEmpty)
+            SizedBox(
+              height: 70,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: math.min(profiles.length, 5),
+                itemBuilder: (context, index) {
+                  final profile = profiles[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: () {
+                        // Navigate to profile or swipe screen
+                        HapticFeedback.lightImpact();
+                      },
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundImage: profile.primaryPhotoUrl.isNotEmpty
+                                ? NetworkImage(profile.primaryPhotoUrl)
+                                : null,
+                            backgroundColor: AppColors.surface(brightness),
+                            child: profile.primaryPhotoUrl.isEmpty
+                                ? Icon(Icons.person, color: AppColors.textTert(brightness))
+                                : null,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            profile.name.split(' ').first,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSec(brightness),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildBlurredPreview(int count, Brightness brightness) {
+    return Stack(
+      children: [
+        SizedBox(
+          height: 70,
+          child: Row(
+            children: List.generate(math.min(count, 4), (index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.crimson.withValues(alpha: 0.5),
+                    child: const Icon(Icons.person, color: Colors.white38),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        Positioned.fill(
+          child: Center(
+            child: FilledButton(
+              onPressed: () {
+                // Navigate to premium upgrade
+                HapticFeedback.lightImpact();
+                Navigator.pushNamed(context, '/subscription');
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: const Text(
+                'Unlock with Pro',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Your perfect gig is out there!',
-            style: TextStyle(color: AppColors.textSec(brightness)),
-          ),
-        ],
+        ),
+      ],
+    );
+  }
+  
+  void _showFilterSheet(Brightness brightness) {
+    HapticFeedback.lightImpact();
+    final provider = context.read<MatchProvider>();
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border(brightness),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Filter Matches',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.text(brightness),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _FilterOption(
+              title: 'All Matches',
+              icon: Icons.people,
+              isSelected: provider.filterType == MatchFilterType.all,
+              onTap: () {
+                provider.setFilterType(MatchFilterType.all);
+                Navigator.pop(context);
+              },
+              brightness: brightness,
+            ),
+            _FilterOption(
+              title: 'Unread',
+              icon: Icons.mark_email_unread,
+              isSelected: provider.filterType == MatchFilterType.unread,
+              onTap: () {
+                provider.setFilterType(MatchFilterType.unread);
+                Navigator.pop(context);
+              },
+              brightness: brightness,
+            ),
+            _FilterOption(
+              title: 'Archived',
+              icon: Icons.archive,
+              isSelected: provider.filterType == MatchFilterType.archived,
+              onTap: () {
+                provider.setFilterType(MatchFilterType.archived);
+                Navigator.pop(context);
+              },
+              brightness: brightness,
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -358,6 +893,58 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
     // Assuming Route is setup or direct push
     // Using simple push for now as verified in matches_screen
     Navigator.pushNamed(context, '/chat/${match.id}');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FILTER OPTION WIDGET
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _FilterOption extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Brightness brightness;
+
+  const _FilterOption({
+    required this.title,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+    required this.brightness,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.crimson.withValues(alpha: 0.1)
+              : AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? AppColors.crimson : AppColors.textSec(brightness),
+          size: 22,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? AppColors.crimson : AppColors.text(brightness),
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      trailing: isSelected
+          ? const Icon(Icons.check_circle, color: AppColors.crimson)
+          : null,
+    );
   }
 }
 
