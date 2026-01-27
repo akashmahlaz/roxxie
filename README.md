@@ -1,4 +1,4 @@
-# 🎵 Roxxie — Swipe. Match. Book Live Music Gigs.
+# Gigmatch — Swipe. Match. Book Live Music Gigs.
 
 **Gigmatch** is a modern, mobile-first platform that connects **singers & freelance musicians** with **local venues and event organizers** using a **Tinder-style swipe experience**.
 
@@ -10,7 +10,7 @@ Built with **Flutter** for a smooth cross-platform experience and designed to sc
 
 ---
 
-## 🚀 Why Roxxie?
+## Why Gigmatch?
 
 Finding live music gigs is still broken.
 
@@ -18,7 +18,7 @@ Finding live music gigs is still broken.
 - Venues struggle to find reliable performers  
 - Trust is missing on both sides  
 
-**Roxxie fixes this** by combining:
+**Gigmatch fixes this** by combining:
 - Swipe-based discovery
 - Verified bookings
 - Reviews & reputation
@@ -26,9 +26,9 @@ Finding live music gigs is still broken.
 
 ---
 
-## ✨ Core Features
+## Core Features
 
-### 🎤 For Artists (Singers / Bands)
+###  For Artists (Singers / Bands)
 - Create a professional artist profile
 - Upload music samples, videos, and photos
 - Set gig availability using a calendar
@@ -37,7 +37,7 @@ Finding live music gigs is still broken.
 - Accept or reject booking requests
 - Build reputation with verified reviews
 
-### 🏛 For Venues & Event Organizers
+### For Venues & Event Organizers
 - Create venue profiles
 - Post gig opportunities (date, budget, genre)
 - Swipe to discover artists
@@ -45,7 +45,7 @@ Finding live music gigs is still broken.
 - Send booking requests
 - Leave verified reviews after gigs
 
-### 🔐 Trust & Safety
+### Trust & Safety
 - Chat opens **only after a match**
 - Reviews allowed **only after verified bookings**
 - Reputation score based on real gigs
@@ -53,9 +53,9 @@ Finding live music gigs is still broken.
 
 ---
 
-## 🧠 Product Philosophy
+## Product Philosophy
 
-Roxxie is **not** a social network.
+Gigmatch is **not** a social network.
 
 It is:
 - A focused marketplace
@@ -67,7 +67,7 @@ No noise. No agents. Just music.
 
 ---
 
-## 📱 Tech Stack
+## Tech Stack
 
 ### Frontend (Mobile App)
 - **Flutter**
@@ -90,9 +90,9 @@ No noise. No agents. Just music.
 
 ---
 
-## 🧩 App Flow (High Level)
+## App Flow (High Level)
 
-1. Onboarding (What Roxxie does)
+1. Onboarding (What Gigmatch does)
 2. Role selection (Artist or Venue)
 3. Profile creation
 4. Swipe-based discovery
@@ -164,4 +164,4 @@ If you find this project interesting or useful:
 - 🍴 Fork it
 - 📢 Share it with Flutter / startup builders
 
-This helps Roxxie grow 🚀
+This helps Gigmatch grow 🚀
