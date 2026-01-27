@@ -66,6 +66,18 @@ class _MediaScreenState extends State<MediaScreen>
 
   bool get _isArtist => context.read<AuthProvider>().isArtist;
 
+    bool get _hasActiveUploads =>
+      _audioSamples.any((a) => a.isUploading) ||
+      _videoSamples.any((v) => v.isUploading) ||
+      _galleryPhotos.any((p) => p.isUploading) ||
+      _newProfilePhoto != null;
+
+    int get _activeUploadCount =>
+      _audioSamples.where((a) => a.isUploading).length +
+      _videoSamples.where((v) => v.isUploading).length +
+      _galleryPhotos.where((p) => p.isUploading).length +
+      (_newProfilePhoto != null ? 1 : 0);
+
   @override
   void initState() {
     super.initState();
@@ -313,27 +325,43 @@ class _MediaScreenState extends State<MediaScreen>
       ),
       centerTitle: true,
       actions: [
-        TextButton(
-          onPressed: _isSaving ? null : _saveChanges,
-          child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.crimson,
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: GestureDetector(
+            onTap: _isSaving ? null : _saveChanges,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                color: _isSaving ? AppColors.crimson.withValues(alpha: 0.5) : AppColors.crimson,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.crimson.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                )
-              : const Text(
-                  'Save',
-                  style: TextStyle(
-                    color: AppColors.crimson,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                ],
+              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Save',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
         ),
-        const SizedBox(width: 8),
       ],
       bottom: _isArtist && !_isLoading
           ? PreferredSize(
@@ -346,10 +374,11 @@ class _MediaScreenState extends State<MediaScreen>
 
   Widget _buildTabBar(Brightness brightness) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: AppColors.border(brightness),
           width: 1,
@@ -359,7 +388,14 @@ class _MediaScreenState extends State<MediaScreen>
         controller: _tabController,
         indicator: BoxDecoration(
           color: AppColors.crimson,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusInput - 2),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.crimson.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
@@ -447,19 +483,24 @@ class _MediaScreenState extends State<MediaScreen>
   }
 
   Widget _buildBody(Brightness brightness) {
-    if (_isArtist) {
-      return TabBarView(
-        controller: _tabController,
-        children: [
-          _buildAudioTab(brightness),
-          _buildVideoTab(brightness),
-          _buildPhotosTab(brightness),
-        ],
-      );
-    } else {
-      // Venue - only photos tab
-      return _buildPhotosTab(brightness);
-    }
+    return Column(
+      children: [
+        _buildMediaHeader(brightness),
+        if (_hasActiveUploads) _buildUploadQueue(brightness),
+        Expanded(
+          child: _isArtist
+              ? TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildAudioTab(brightness),
+                    _buildVideoTab(brightness),
+                    _buildPhotosTab(brightness),
+                  ],
+                )
+              : _buildPhotosTab(brightness),
+        ),
+      ],
+    );
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -473,6 +514,8 @@ class _MediaScreenState extends State<MediaScreen>
         icon: Icons.audiotrack_rounded,
         title: 'No Audio Samples',
         subtitle: 'Add audio samples to showcase your music',
+        actionLabel: 'Add Audio',
+        onAction: _addAudio,
       );
     }
 
@@ -715,7 +758,23 @@ class _MediaScreenState extends State<MediaScreen>
 
         // Upload
         try {
-          final response = await _uploadService.uploadAudio(filePath);
+          final response = await _uploadService.uploadAudio(
+            filePath,
+            onProgress: (sent, total) {
+              if (!mounted) return;
+              final progress = total > 0 ? sent / total : 0.0;
+              setState(() {
+                _audioSamples[index] = _AudioItem(
+                  id: newAudio.id,
+                  localPath: newAudio.localPath,
+                  title: newAudio.title,
+                  durationSeconds: newAudio.durationSeconds,
+                  isUploading: true,
+                  uploadProgress: progress,
+                );
+              });
+            },
+          );
 
           if (mounted) {
             setState(() {
@@ -756,6 +815,8 @@ class _MediaScreenState extends State<MediaScreen>
         icon: Icons.videocam_rounded,
         title: 'No Video Samples',
         subtitle: 'Add video samples to show your performances',
+        actionLabel: 'Add Video',
+        onAction: _addVideo,
       );
     }
 
@@ -967,7 +1028,23 @@ class _MediaScreenState extends State<MediaScreen>
 
       // Upload
       try {
-        final response = await _uploadService.uploadVideo(file.path);
+        final response = await _uploadService.uploadVideo(
+          file.path,
+          onProgress: (sent, total) {
+            if (!mounted) return;
+            final progress = total > 0 ? sent / total : 0.0;
+            setState(() {
+              _videoSamples[index] = _VideoItem(
+                id: newVideo.id,
+                localPath: newVideo.localPath,
+                title: newVideo.title,
+                durationSeconds: newVideo.durationSeconds,
+                isUploading: true,
+                uploadProgress: progress,
+              );
+            });
+          },
+        );
 
         if (mounted) {
           setState(() {
@@ -1046,8 +1123,17 @@ class _MediaScreenState extends State<MediaScreen>
 
           const SizedBox(height: 16),
 
-          // Gallery Grid
-          _buildGalleryGrid(brightness),
+          if (_galleryPhotos.isEmpty)
+            _buildEmptyState(
+              brightness,
+              icon: Icons.photo_library_rounded,
+              title: 'No Gallery Photos',
+              subtitle: 'Upload photos to make your profile stand out',
+              actionLabel: 'Add Photos',
+              onAction: _addGalleryPhoto,
+            )
+          else
+            _buildGalleryGrid(brightness),
         ],
       ),
     );
@@ -1364,6 +1450,18 @@ class _MediaScreenState extends State<MediaScreen>
         final response = await _uploadService.uploadGalleryImage(
           file.path,
           index: index,
+          onProgress: (sent, total) {
+            if (!mounted) return;
+            final progress = total > 0 ? sent / total : 0.0;
+            setState(() {
+              _galleryPhotos[index] = _PhotoItem(
+                id: newPhoto.id,
+                localPath: newPhoto.localPath,
+                isUploading: true,
+                uploadProgress: progress,
+              );
+            });
+          },
         );
 
         if (mounted) {
@@ -1436,11 +1534,134 @@ class _MediaScreenState extends State<MediaScreen>
   // 🔧 HELPERS
   // ════════════════════════════════════════════════════════════════════════════
 
+  Widget _buildMediaHeader(Brightness brightness) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.crimson.withValues(alpha: 0.12),
+              AppColors.crimson.withValues(alpha: 0.04),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+          border: Border.all(
+            color: AppColors.crimson.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
+              ),
+              child: const Icon(
+                Icons.perm_media_rounded,
+                color: AppColors.crimson,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _isArtist ? 'Your Media Portfolio' : 'Venue Media',
+                    style: TextStyle(
+                      color: AppColors.text(brightness),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _isArtist
+                        ? 'Showcase your sound, stage, and visuals'
+                        : 'Highlight your venue with professional media',
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.crimson,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+              ),
+              child: Text(
+                _isArtist
+                    ? '${_audioSamples.length + _videoSamples.length + _galleryPhotos.length} items'
+                    : '${_galleryPhotos.length} items',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUploadQueue(Brightness brightness) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+          border: Border.all(color: AppColors.border(brightness)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.crimson,
+                backgroundColor: AppColors.border(brightness),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Uploading $_activeUploadCount item${_activeUploadCount == 1 ? '' : 's'}...'
+                ' You can keep browsing while we finish.',
+                style: TextStyle(
+                  color: AppColors.textSec(brightness),
+                  fontSize: 12,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState(
     Brightness brightness, {
     required IconData icon,
     required String title,
     required String subtitle,
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     return Center(
       child: Padding(
@@ -1455,8 +1676,8 @@ class _MediaScreenState extends State<MediaScreen>
                 color: AppColors.crimson.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.audiotrack_rounded,
+              child: Icon(
+                icon,
                 color: AppColors.crimson,
                 size: 36,
               ),
@@ -1480,6 +1701,27 @@ class _MediaScreenState extends State<MediaScreen>
               ),
               textAlign: TextAlign.center,
             ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: onAction,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppSpacing.radiusChip),
+                  ),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(
+                  actionLabel,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1507,12 +1749,19 @@ class _MediaScreenState extends State<MediaScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppSpacing.radiusSection),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(28),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1521,11 +1770,12 @@ class _MediaScreenState extends State<MediaScreen>
             // Handle
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 48,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.border(brightness),
-                  borderRadius: BorderRadius.circular(2),
+                  color: AppColors.textSec(brightness).withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(3),
                 ),
               ),
             ),
@@ -1608,23 +1858,44 @@ class _MediaScreenState extends State<MediaScreen>
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: AppColors.charcoal,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+            gradient: LinearGradient(
+              colors: [
+                AppColors.surface(brightness),
+                AppColors.surface(brightness).withValues(alpha: 0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: AppColors.border(brightness),
               width: 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.crimson.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.crimson.withValues(alpha: 0.2),
+                      AppColors.crimson.withValues(alpha: 0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   icon,

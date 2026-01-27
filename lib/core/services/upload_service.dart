@@ -136,7 +136,7 @@ class SignedUploadParams {
   factory SignedUploadParams.fromJson(Map<String, dynamic> json) {
     return SignedUploadParams(
       signature: json['signature'] ?? '',
-      timestamp: json['timestamp'] ?? '',
+      timestamp: json['timestamp']?.toString() ?? '',
       apiKey: json['apiKey'] ?? json['api_key'] ?? '',
       cloudName: json['cloudName'] ?? json['cloud_name'] ?? '',
       folder: json['folder'],
