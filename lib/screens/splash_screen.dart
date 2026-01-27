@@ -8,6 +8,7 @@
 /// - Fast and smooth transitions
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,6 +42,7 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _taglineOpacity;
 
   bool _disposed = false;
+  final List<Timer> _timers = [];
 
   @override
   void initState() {
@@ -111,15 +113,27 @@ class _SplashScreenState extends State<SplashScreen>
   void _startSequence() async {
     HapticFeedback.lightImpact();
 
-    await Future.delayed(const Duration(milliseconds: 100));
+    await _delayWithTimer(const Duration(milliseconds: 100));
     if (_disposed) return;
 
     _mainController.forward();
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    await _delayWithTimer(const Duration(milliseconds: 600));
     if (_disposed) return;
 
     await _waitForAuthAndNavigate();
+  }
+
+  /// Creates a cancellable delay using Timer instead of Future.delayed
+  Future<void> _delayWithTimer(Duration duration) {
+    final completer = Completer<void>();
+    final timer = Timer(duration, () {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    });
+    _timers.add(timer);
+    return completer.future;
   }
 
   Future<void> _waitForAuthAndNavigate() async {
@@ -132,7 +146,7 @@ class _SplashScreenState extends State<SplashScreen>
     int attempts = 0;
     while (authProvider.status == AuthStatus.initial ||
         authProvider.status == AuthStatus.loading) {
-      await Future.delayed(const Duration(milliseconds: 100));
+      await _delayWithTimer(const Duration(milliseconds: 100));
       if (_disposed) return;
       attempts++;
       if (attempts >= 50) break; // 5 second timeout
@@ -141,7 +155,7 @@ class _SplashScreenState extends State<SplashScreen>
     // Ensure minimum splash display time
     final elapsed = DateTime.now().difference(startTime);
     if (elapsed < minSplashDuration) {
-      await Future.delayed(minSplashDuration - elapsed);
+      await _delayWithTimer(minSplashDuration - elapsed);
     }
 
     if (_disposed) return;
@@ -195,6 +209,11 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _disposed = true;
+    // Cancel all pending timers
+    for (final timer in _timers) {
+      timer.cancel();
+    }
+    _timers.clear();
     _mainController.dispose();
     _pulseController.dispose();
     _loadingController.dispose();
