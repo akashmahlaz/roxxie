@@ -29,3 +29,8 @@ export 'skeleton_screens.dart';
 export 'password_strength_indicator.dart';
 export 'profile_completion_tracker.dart';
 export 'smart_location_picker.dart';
+
+// Audio Components
+export 'mini_audio_player.dart';
+export 'audio_message_bubble.dart';
+export 'voice_recorder_button.dart';

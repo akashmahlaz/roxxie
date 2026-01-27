@@ -38,6 +38,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late final TextEditingController _messageController;
 
   bool _isSending = false;
+  bool _isRecording = false;
   bool _participantOnline = false;
   final bool _participantTyping = false;
   final List<dynamic> _messages = [];
@@ -167,10 +168,32 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _sendAudio(String audioPath, int durationSeconds) async {
+    if (_conversationId == null) return;
+    setState(() => _isSending = true);
+
+    try {
+      final chatProvider = context.read<ChatProvider>();
+      // Send audio with duration metadata in content
+      await chatProvider.sendMessage(
+        '$audioPath|$durationSeconds',
+        type: MessageType.audio,
+      );
+      await _loadMessages();
+    } catch (e) {
+      _showError('Failed to send audio');
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final currentUserId = context.read<AuthProvider>().user?.id;
+
 
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
