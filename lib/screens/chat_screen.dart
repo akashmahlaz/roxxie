@@ -457,6 +457,29 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     }
+    if (message.type == 'audio' || message.type == MessageType.audio) {
+      final isOwnMessage =
+          message.senderId == context.read<AuthProvider>().user?.id;
+      // Parse audio URL and duration from content or mediaUrl
+      String audioUrl = message.mediaUrl ?? message.content;
+      int? durationSeconds;
+
+      // Check if content contains duration (format: url|duration)
+      if (message.content.contains('|')) {
+        final parts = message.content.split('|');
+        audioUrl = parts[0];
+        durationSeconds = int.tryParse(parts[1]);
+      }
+
+      return SizedBox(
+        width: 200,
+        child: AudioMessageBubble(
+          audioUrl: audioUrl,
+          durationSeconds: durationSeconds,
+          isOwnMessage: isOwnMessage,
+        ),
+      );
+    }
     return Text(
       message.content,
       style: TextStyle(color: AppColors.textSec(brightness)),
@@ -464,6 +487,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageInput(Brightness brightness) {
+    // Show recording overlay when recording
+    if (_isRecording) {
+      return VoiceRecorderButton(
+        onRecordingComplete: (path, duration) {
+          setState(() => _isRecording = false);
+          _sendAudio(path, duration);
+        },
+        onRecordingStarted: () => setState(() => _isRecording = true),
+        onRecordingCancelled: () => setState(() => _isRecording = false),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -496,29 +531,31 @@ class _ChatScreenState extends State<ChatScreen> {
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          _isSending
-              ? const SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.crimson,
-                    ),
-                  ),
-                )
-              : IconButton(
-                  icon: Icon(
-                    Icons.send_rounded,
-                    color: _messageController.text.trim().isEmpty
-                        ? AppColors.textTert(brightness)
-                        : AppColors.crimson,
-                  ),
-                  onPressed: _messageController.text.trim().isEmpty
-                      ? null
-                      : _sendMessage,
+          if (_isSending)
+            const SizedBox(
+              width: 48,
+              height: 48,
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.crimson,
                 ),
+              ),
+            )
+          else if (_messageController.text.trim().isEmpty)
+            // Voice recorder button when no text
+            VoiceRecorderButton(
+              onRecordingComplete: _sendAudio,
+              onRecordingStarted: () => setState(() => _isRecording = true),
+              onRecordingCancelled: () => setState(() => _isRecording = false),
+            )
+          else
+            // Send button when there's text
+            IconButton(
+              icon: Icon(Icons.send_rounded, color: AppColors.crimson),
+              onPressed: _sendMessage,
+            ),
         ],
       ),
     );

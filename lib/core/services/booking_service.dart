@@ -15,7 +15,7 @@ import '../models/booking_models.dart';
 import '../exceptions.dart';
 
 class BookingService {
-  final ApiClient _api = ApiClient.instance;
+  final ApiClient _api = ApiClient();
 
   // ═══════════════════════════════════════════════════════════════════════
   // BOOKING CRUD
@@ -34,8 +34,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to create booking',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to create booking',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Create booking error: $e');
@@ -55,8 +55,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Booking not found',
-        statusCode: response.statusCode ?? 404,
+        response.data['message'] ?? 'Booking not found',
+        response.statusCode ?? 404,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Get booking error: $e');
@@ -97,8 +97,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: 'Failed to fetch bookings',
-        statusCode: response.statusCode ?? 500,
+        'Failed to fetch bookings',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Get bookings error: $e');
@@ -133,8 +133,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to confirm booking',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to confirm booking',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Confirm error: $e');
@@ -158,8 +158,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to cancel booking',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to cancel booking',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Cancel error: $e');
@@ -180,8 +180,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to mark complete',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to mark complete',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Mark complete error: $e');
@@ -206,8 +206,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to create payment',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to create payment',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Payment error: $e');
@@ -228,8 +228,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to create payment',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to create payment',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Payment error: $e');
@@ -238,7 +238,10 @@ class BookingService {
   }
 
   /// Confirm payment completion (webhook will handle this, but backup method)
-  Future<Booking> confirmPayment(String bookingId, String paymentIntentId) async {
+  Future<Booking> confirmPayment(
+    String bookingId,
+    String paymentIntentId,
+  ) async {
     debugPrint('💳 [BookingService] Confirming payment: $bookingId');
 
     try {
@@ -253,8 +256,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to confirm payment',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to confirm payment',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Confirm payment error: $e');
@@ -282,8 +285,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to upload contract',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to upload contract',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Contract upload error: $e');
@@ -304,8 +307,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to sign contract',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to sign contract',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Sign contract error: $e');
@@ -336,8 +339,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to send proposal',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to send proposal',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Send proposal error: $e');
@@ -358,8 +361,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to accept proposal',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to accept proposal',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Accept proposal error: $e');
@@ -383,8 +386,8 @@ class BookingService {
       }
 
       throw ApiException(
-        message: response.data['message'] ?? 'Failed to decline proposal',
-        statusCode: response.statusCode ?? 500,
+        response.data['message'] ?? 'Failed to decline proposal',
+        response.statusCode ?? 500,
       );
     } catch (e) {
       debugPrint('❌ [BookingService] Decline proposal error: $e');

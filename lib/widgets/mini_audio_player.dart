@@ -166,7 +166,6 @@ class MiniAudioPlayerState extends State<MiniAudioPlayer>
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     final displayDuration = widget.duration ?? _totalDuration;
 
     return Container(

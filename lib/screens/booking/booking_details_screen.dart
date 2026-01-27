@@ -250,7 +250,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     final booking = _booking!;
     final isArtist = auth.isArtist;
     final dateFormat = DateFormat('EEEE, MMMM d, yyyy');
-    final timeFormat = DateFormat('h:mm a');
+    // ignore: unused_local_variable
+    final _ = DateFormat('h:mm a'); // Available for future time formatting
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
