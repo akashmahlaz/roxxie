@@ -48,6 +48,10 @@ extension MessageTypeExtension on MessageType {
         return 'image';
       case MessageType.audio:
         return 'audio';
+      case MessageType.bookingRequest:
+        return 'booking_request';
+      case MessageType.bookingUpdate:
+        return 'booking_update';
       case MessageType.systemNotice:
         return 'system';
     }
@@ -61,6 +65,10 @@ extension MessageTypeExtension on MessageType {
         return MessageType.image;
       case 'audio':
         return MessageType.audio;
+      case 'booking_request':
+        return MessageType.bookingRequest;
+      case 'booking_update':
+        return MessageType.bookingUpdate;
       case 'system':
         return MessageType.systemNotice;
       default:
@@ -78,6 +86,10 @@ class MessageTypeHelper {
         return MessageType.image;
       case 'audio':
         return MessageType.audio;
+      case 'booking_request':
+        return MessageType.bookingRequest;
+      case 'booking_update':
+        return MessageType.bookingUpdate;
       case 'system':
         return MessageType.systemNotice;
       default:

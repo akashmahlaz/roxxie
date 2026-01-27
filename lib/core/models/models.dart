@@ -9,3 +9,4 @@ export 'venues_models.dart';
 export 'match_models.dart';
 export 'message_models.dart';
 export 'gig_models.dart';
+export 'booking_models.dart';

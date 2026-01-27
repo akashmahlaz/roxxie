@@ -7,6 +7,8 @@ enum MessageType {
   text('text'),
   image('image'),
   audio('audio'),
+  bookingRequest('booking_request'),
+  bookingUpdate('booking_update'),
   systemNotice('system');
 
   final String value;
@@ -18,6 +20,10 @@ enum MessageType {
       orElse: () => MessageType.text,
     );
   }
+
+  /// Check if this is a booking-related message
+  bool get isBookingRelated =>
+      this == MessageType.bookingRequest || this == MessageType.bookingUpdate;
 }
 
 /// Message Status

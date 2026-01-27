@@ -22,3 +22,4 @@ export 'review_service.dart';
 export 'notification_history_service.dart';
 export 'verification_service.dart';
 export 'wallet_service.dart';
+export 'booking_service.dart';
