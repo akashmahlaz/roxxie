@@ -12,7 +12,7 @@ library;
 import 'dart:async';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -66,13 +66,13 @@ class _MediaScreenState extends State<MediaScreen>
 
   bool get _isArtist => context.read<AuthProvider>().isArtist;
 
-    bool get _hasActiveUploads =>
+  bool get _hasActiveUploads =>
       _audioSamples.any((a) => a.isUploading) ||
       _videoSamples.any((v) => v.isUploading) ||
       _galleryPhotos.any((p) => p.isUploading) ||
       _newProfilePhoto != null;
 
-    int get _activeUploadCount =>
+  int get _activeUploadCount =>
       _audioSamples.where((a) => a.isUploading).length +
       _videoSamples.where((v) => v.isUploading).length +
       _galleryPhotos.where((p) => p.isUploading).length +
@@ -133,36 +133,42 @@ class _MediaScreenState extends State<MediaScreen>
           // Load audio samples
           _audioSamples.clear();
           for (final audio in artist.audioSamples) {
-            _audioSamples.add(_AudioItem(
-              id: audio.cloudinaryPublicId ?? DateTime.now().toString(),
-              url: audio.url,
-              title: audio.title ?? 'Untitled Track',
-              durationSeconds: audio.durationSeconds ?? 0,
-              isUploaded: true,
-            ));
+            _audioSamples.add(
+              _AudioItem(
+                id: audio.cloudinaryPublicId ?? DateTime.now().toString(),
+                url: audio.url,
+                title: audio.title ?? 'Unt5itled Track',
+                durationSeconds: audio.durationSeconds ?? 0,
+                isUploaded: true,
+              ),
+            );
           }
 
           // Load video samples
           _videoSamples.clear();
           for (final video in artist.videoSamples) {
-            _videoSamples.add(_VideoItem(
-              id: video.cloudinaryPublicId ?? DateTime.now().toString(),
-              url: video.url,
-              thumbnailUrl: video.thumbnailUrl,
-              title: video.title ?? 'Untitled Video',
-              durationSeconds: video.durationSeconds ?? 0,
-              isUploaded: true,
-            ));
+            _videoSamples.add(
+              _VideoItem(
+                id: video.cloudinaryPublicId ?? DateTime.now().toString(),
+                url: video.url,
+                thumbnailUrl: video.thumbnailUrl,
+                title: video.title ?? 'Untitled Video',
+                durationSeconds: video.durationSeconds ?? 0,
+                isUploaded: true,
+              ),
+            );
           }
 
           // Load gallery
           _galleryPhotos.clear();
           for (var i = 0; i < artist.galleryUrls.length; i++) {
-            _galleryPhotos.add(_PhotoItem(
-              id: 'gallery_$i',
-              url: artist.galleryUrls[i],
-              isUploaded: true,
-            ));
+            _galleryPhotos.add(
+              _PhotoItem(
+                id: 'gallery_$i',
+                url: artist.galleryUrls[i],
+                isUploaded: true,
+              ),
+            );
           }
         }
       } else {
@@ -174,11 +180,9 @@ class _MediaScreenState extends State<MediaScreen>
           _galleryPhotos.clear();
           final urls = venue.galleryUrls ?? [];
           for (var i = 0; i < urls.length; i++) {
-            _galleryPhotos.add(_PhotoItem(
-              id: 'gallery_$i',
-              url: urls[i],
-              isUploaded: true,
-            ));
+            _galleryPhotos.add(
+              _PhotoItem(id: 'gallery_$i', url: urls[i], isUploaded: true),
+            );
           }
         }
       }
@@ -207,24 +211,28 @@ class _MediaScreenState extends State<MediaScreen>
         // Build audio samples list
         final audioList = _audioSamples
             .where((a) => a.isUploaded && a.url != null)
-            .map((a) => AudioSample(
-                  url: a.url!,
-                  title: a.title,
-                  durationSeconds: a.durationSeconds,
-                  cloudinaryPublicId: a.id,
-                ))
+            .map(
+              (a) => AudioSample(
+                url: a.url!,
+                title: a.title,
+                durationSeconds: a.durationSeconds,
+                cloudinaryPublicId: a.id,
+              ),
+            )
             .toList();
 
         // Build video samples list
         final videoList = _videoSamples
             .where((v) => v.isUploaded && v.url != null)
-            .map((v) => VideoSample(
-                  url: v.url!,
-                  title: v.title,
-                  thumbnailUrl: v.thumbnailUrl,
-                  durationSeconds: v.durationSeconds,
-                  cloudinaryPublicId: v.id,
-                ))
+            .map(
+              (v) => VideoSample(
+                url: v.url!,
+                title: v.title,
+                thumbnailUrl: v.thumbnailUrl,
+                durationSeconds: v.durationSeconds,
+                cloudinaryPublicId: v.id,
+              ),
+            )
             .toList();
 
         // Build gallery URLs
@@ -297,7 +305,9 @@ class _MediaScreenState extends State<MediaScreen>
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       appBar: _buildAppBar(brightness),
-      body: _isLoading ? _buildLoadingState(brightness) : _buildBody(brightness),
+      body: _isLoading
+          ? _buildLoadingState(brightness)
+          : _buildBody(brightness),
       floatingActionButton: _isLoading ? null : _buildFAB(brightness),
     );
   }
@@ -332,7 +342,9 @@ class _MediaScreenState extends State<MediaScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
-                color: _isSaving ? AppColors.crimson.withValues(alpha: 0.5) : AppColors.crimson,
+                color: _isSaving
+                    ? AppColors.crimson.withValues(alpha: 0.5)
+                    : AppColors.crimson,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -379,10 +391,7 @@ class _MediaScreenState extends State<MediaScreen>
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: AppColors.border(brightness),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.border(brightness), width: 1),
       ),
       child: TabBar(
         controller: _tabController,
@@ -401,10 +410,7 @@ class _MediaScreenState extends State<MediaScreen>
         dividerColor: Colors.transparent,
         labelColor: Colors.white,
         unselectedLabelColor: AppColors.textSec(brightness),
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
@@ -466,19 +472,14 @@ class _MediaScreenState extends State<MediaScreen>
       ),
       child: Text(
         '$count',
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
       ),
     );
   }
 
   Widget _buildLoadingState(Brightness brightness) {
     return const Center(
-      child: CircularProgressIndicator(
-        color: AppColors.crimson,
-      ),
+      child: CircularProgressIndicator(color: AppColors.crimson),
     );
   }
 
@@ -523,11 +524,8 @@ class _MediaScreenState extends State<MediaScreen>
       padding: const EdgeInsets.all(20),
       itemCount: _audioSamples.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _buildAudioCard(
-        _audioSamples[index],
-        index,
-        brightness,
-      ),
+      itemBuilder: (context, index) =>
+          _buildAudioCard(_audioSamples[index], index, brightness),
     );
   }
 
@@ -734,22 +732,23 @@ class _MediaScreenState extends State<MediaScreen>
 
   Future<void> _addAudio() async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.audio,
-        allowMultiple: false,
+      const XTypeGroup audioTypeGroup = XTypeGroup(
+        label: 'audio',
+        extensions: <String>['mp3', 'wav', 'aac', 'm4a', 'ogg', 'flac'],
+        mimeTypes: <String>['audio/*'],
+      );
+      final XFile? result = await openFile(
+        acceptedTypeGroups: <XTypeGroup>[audioTypeGroup],
       );
 
-      if (result != null && result.files.isNotEmpty) {
-        final file = result.files.first;
-        final filePath = file.path;
-
-        if (filePath == null) return;
+      if (result != null) {
+        final filePath = result.path;
 
         // Add to list with uploading state
         final newAudio = _AudioItem(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           localPath: filePath,
-          title: file.name.split('.').first,
+          title: result.name.split('.').first,
           isUploading: true,
         );
 
@@ -829,11 +828,8 @@ class _MediaScreenState extends State<MediaScreen>
         childAspectRatio: 16 / 12,
       ),
       itemCount: _videoSamples.length,
-      itemBuilder: (context, index) => _buildVideoCard(
-        _videoSamples[index],
-        index,
-        brightness,
-      ),
+      itemBuilder: (context, index) =>
+          _buildVideoCard(_videoSamples[index], index, brightness),
     );
   }
 
@@ -844,10 +840,7 @@ class _MediaScreenState extends State<MediaScreen>
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-          border: Border.all(
-            color: AppColors.border(brightness),
-            width: 1,
-          ),
+          border: Border.all(color: AppColors.border(brightness), width: 1),
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -887,7 +880,9 @@ class _MediaScreenState extends State<MediaScreen>
                 color: Colors.black.withValues(alpha: 0.5),
                 child: Center(
                   child: CircularProgressIndicator(
-                    value: video.uploadProgress > 0 ? video.uploadProgress : null,
+                    value: video.uploadProgress > 0
+                        ? video.uploadProgress
+                        : null,
                     color: AppColors.crimson,
                     backgroundColor: Colors.white.withValues(alpha: 0.3),
                   ),
@@ -923,7 +918,10 @@ class _MediaScreenState extends State<MediaScreen>
                 bottom: 8,
                 right: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(6),
@@ -1078,7 +1076,10 @@ class _MediaScreenState extends State<MediaScreen>
     // Cloudinary auto-generates thumbnails - replace video with jpg
     if (videoUrl.contains('cloudinary.com')) {
       return videoUrl
-          .replaceAll('/video/upload/', '/video/upload/so_0,w_400,h_300,c_fill/')
+          .replaceAll(
+            '/video/upload/',
+            '/video/upload/so_0,w_400,h_300,c_fill/',
+          )
           .replaceAll('.mp4', '.jpg')
           .replaceAll('.mov', '.jpg')
           .replaceAll('.webm', '.jpg');
@@ -1148,10 +1149,7 @@ class _MediaScreenState extends State<MediaScreen>
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-        border: Border.all(
-          color: AppColors.border(brightness),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.border(brightness), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1199,7 +1197,7 @@ class _MediaScreenState extends State<MediaScreen>
                               image: _newProfilePhoto != null
                                   ? FileImage(_newProfilePhoto!)
                                   : NetworkImage(_profilePhotoUrl!)
-                                      as ImageProvider,
+                                        as ImageProvider,
                               fit: BoxFit.cover,
                             )
                           : null,
@@ -1297,11 +1295,7 @@ class _MediaScreenState extends State<MediaScreen>
           // Add button
           return _buildAddPhotoButton(brightness);
         }
-        return _buildGalleryPhotoCard(
-          _galleryPhotos[index],
-          index,
-          brightness,
-        );
+        return _buildGalleryPhotoCard(_galleryPhotos[index], index, brightness);
       },
     );
   }
@@ -1313,10 +1307,7 @@ class _MediaScreenState extends State<MediaScreen>
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-          border: Border.all(
-            color: AppColors.border(brightness),
-            width: 1,
-          ),
+          border: Border.all(color: AppColors.border(brightness), width: 1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1348,10 +1339,7 @@ class _MediaScreenState extends State<MediaScreen>
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-        border: Border.all(
-          color: AppColors.border(brightness),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.border(brightness), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -1359,10 +1347,7 @@ class _MediaScreenState extends State<MediaScreen>
         children: [
           // Image
           if (photo.localPath != null)
-            Image.file(
-              File(photo.localPath!),
-              fit: BoxFit.cover,
-            )
+            Image.file(File(photo.localPath!), fit: BoxFit.cover)
           else if (photo.url != null)
             Image.network(
               photo.url!,
@@ -1549,9 +1534,7 @@ class _MediaScreenState extends State<MediaScreen>
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-          border: Border.all(
-            color: AppColors.crimson.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: AppColors.crimson.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -1676,11 +1659,7 @@ class _MediaScreenState extends State<MediaScreen>
                 color: AppColors.crimson.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: AppColors.crimson,
-                size: 36,
-              ),
+              child: Icon(icon, color: AppColors.crimson, size: 36),
             ),
             const SizedBox(height: 20),
             Text(
@@ -1708,11 +1687,12 @@ class _MediaScreenState extends State<MediaScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.crimson,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.radiusChip),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
                   ),
                 ),
                 icon: const Icon(Icons.add_rounded, size: 18),
@@ -1752,9 +1732,7 @@ class _MediaScreenState extends State<MediaScreen>
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(28),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
@@ -1869,10 +1847,7 @@ class _MediaScreenState extends State<MediaScreen>
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.border(brightness),
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.border(brightness), width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -1897,11 +1872,7 @@ class _MediaScreenState extends State<MediaScreen>
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  icon,
-                  color: AppColors.crimson,
-                  size: 24,
-                ),
+                child: Icon(icon, color: AppColors.crimson, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -2023,10 +1994,7 @@ class _MediaScreenState extends State<MediaScreen>
           decoration: BoxDecoration(
             color: AppColors.charcoal,
             borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            border: Border.all(
-              color: AppColors.border(brightness),
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.border(brightness), width: 1),
           ),
           child: Column(
             children: [

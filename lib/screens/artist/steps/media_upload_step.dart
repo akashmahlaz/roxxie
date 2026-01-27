@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/services/upload_service.dart';
 import '../../../core/models/artist_models.dart';
@@ -69,18 +69,21 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
   }
 
   Future<void> _addAudioSample() async {
-    // Use file_picker for audio files
-    final result = await FilePicker.pickFiles(
-      type: FileType.audio,
-      allowMultiple: false,
+    // Use file_selector for audio files
+    const XTypeGroup audioTypeGroup = XTypeGroup(
+      label: 'audio',
+      extensions: <String>['mp3', 'wav', 'aac', 'm4a', 'ogg', 'flac'],
+      mimeTypes: <String>['audio/*'],
+    );
+    final XFile? result = await openFile(
+      acceptedTypeGroups: <XTypeGroup>[audioTypeGroup],
     );
 
-    if (result != null && result.files.isNotEmpty) {
-      final file = result.files.first;
-      if (file.path == null) return;
+    if (result != null) {
+      final filePath = result.path;
 
       // Check file size (max 10MB)
-      if (await _uploadService.isFileTooLarge(file.path!)) {
+      if (await _uploadService.isFileTooLarge(filePath)) {
         _showSnackBar('Audio file too large (max 10MB)');
         return;
       }
@@ -89,14 +92,14 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
       if (!mounted) return;
       final title = await showDialog<String>(
         context: context,
-        builder: (context) => _AudioTitleDialog(fileName: file.name),
+        builder: (context) => _AudioTitleDialog(fileName: result.name),
       );
 
       if (title != null && title.isNotEmpty) {
         setState(() {
           widget.profileData.audioSamples.add({
             'title': title,
-            'url': file.path!,
+            'url': filePath,
             'durationSeconds': null,
             'cloudinaryPublicId': null,
           });

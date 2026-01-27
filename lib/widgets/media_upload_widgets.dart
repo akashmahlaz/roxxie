@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import '../core/theme/theme.dart';
 import '../core/services/upload_service.dart';
 import '../core/models/models.dart';
@@ -48,11 +48,13 @@ class _GalleryUploadGridState extends State<GalleryUploadGrid> {
 
       final newUrls = List<String>.from(widget.imageUrls)..add(response.url);
       widget.onChanged(newUrls);
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text('Upload failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -86,7 +88,9 @@ class _GalleryUploadGridState extends State<GalleryUploadGrid> {
                 color: AppColors.surface(widget.brightness),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.textSec(widget.brightness).withValues(alpha: 0.3),
+                  color: AppColors.textSec(
+                    widget.brightness,
+                  ).withValues(alpha: 0.3),
                   style: BorderStyle.solid,
                 ),
               ),
@@ -178,15 +182,20 @@ class _AudioUploadListState extends State<AudioUploadList> {
 
   Future<void> _pickAndUploadAudio() async {
     try {
-      FilePickerResult? result = await FilePicker.pickFiles(
-        type: FileType.audio,
+      const XTypeGroup audioTypeGroup = XTypeGroup(
+        label: 'audio',
+        extensions: <String>['mp3', 'wav', 'aac', 'm4a', 'ogg', 'flac'],
+        mimeTypes: <String>['audio/*'],
+      );
+      final XFile? result = await openFile(
+        acceptedTypeGroups: <XTypeGroup>[audioTypeGroup],
       );
 
-      if (result == null || result.files.single.path == null) return;
+      if (result == null) return;
 
       setState(() => _isUploading = true);
 
-      final filePath = result.files.single.path!;
+      final filePath = result.path;
       UploadResponse response;
 
       // Try direct upload first if signed params endpoint exists (assumed true if method exists)
@@ -201,13 +210,16 @@ class _AudioUploadListState extends State<AudioUploadList> {
 
       // Ask for title
       if (!mounted) return;
-      final titleController = TextEditingController(text: result.files.single.name);
+      final titleController = TextEditingController(text: result.name);
 
       final String? title = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.surface(widget.brightness),
-          title: Text('Track Title', style: TextStyle(color: AppColors.text(widget.brightness))),
+          title: Text(
+            'Track Title',
+            style: TextStyle(color: AppColors.text(widget.brightness)),
+          ),
           content: TextField(
             controller: titleController,
             style: TextStyle(color: AppColors.text(widget.brightness)),
@@ -219,7 +231,10 @@ class _AudioUploadListState extends State<AudioUploadList> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, titleController.text),
-              child: const Text('Save', style: TextStyle(color: AppColors.crimson)),
+              child: const Text(
+                'Save',
+                style: TextStyle(color: AppColors.crimson),
+              ),
             ),
           ],
         ),
@@ -233,14 +248,17 @@ class _AudioUploadListState extends State<AudioUploadList> {
           // Duration could be extracted if needed, but not critical
         );
 
-        final newSamples = List<AudioSample>.from(widget.samples)..add(newSample);
+        final newSamples = List<AudioSample>.from(widget.samples)
+          ..add(newSample);
         widget.onChanged(newSamples);
       }
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Audio upload failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text('Audio upload failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -276,7 +294,10 @@ class _AudioUploadListState extends State<AudioUploadList> {
                     color: AppColors.crimson.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.music_note_rounded, color: AppColors.crimson),
+                  child: const Icon(
+                    Icons.music_note_rounded,
+                    color: AppColors.crimson,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -317,10 +338,14 @@ class _AudioUploadListState extends State<AudioUploadList> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
               border: Border.all(
-                color: AppColors.textSec(widget.brightness).withValues(alpha: 0.3),
+                color: AppColors.textSec(
+                  widget.brightness,
+                ).withValues(alpha: 0.3),
                 style: BorderStyle.none,
               ),
-              color: AppColors.surface(widget.brightness).withValues(alpha: 0.5),
+              color: AppColors.surface(
+                widget.brightness,
+              ).withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -333,7 +358,10 @@ class _AudioUploadListState extends State<AudioUploadList> {
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.add_circle_outline_rounded, color: AppColors.crimson),
+                        const Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: AppColors.crimson,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Upload Audio',
@@ -378,15 +406,20 @@ class _VideoUploadListState extends State<VideoUploadList> {
 
   Future<void> _pickAndUploadVideo() async {
     try {
-      FilePickerResult? result = await FilePicker.pickFiles(
-        type: FileType.video,
+      const XTypeGroup videoTypeGroup = XTypeGroup(
+        label: 'video',
+        extensions: <String>['mp4', 'mov', 'avi', 'mkv', 'webm'],
+        mimeTypes: <String>['video/*'],
+      );
+      final XFile? result = await openFile(
+        acceptedTypeGroups: <XTypeGroup>[videoTypeGroup],
       );
 
-      if (result == null || result.files.single.path == null) return;
+      if (result == null) return;
 
       setState(() => _isUploading = true);
 
-      final filePath = result.files.single.path!;
+      final filePath = result.path;
       UploadResponse response;
 
       try {
@@ -397,13 +430,16 @@ class _VideoUploadListState extends State<VideoUploadList> {
 
       // Ask for title
       if (!mounted) return;
-      final titleController = TextEditingController(text: result.files.single.name);
+      final titleController = TextEditingController(text: result.name);
 
       final String? title = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.surface(widget.brightness),
-          title: Text('Video Title', style: TextStyle(color: AppColors.text(widget.brightness))),
+          title: Text(
+            'Video Title',
+            style: TextStyle(color: AppColors.text(widget.brightness)),
+          ),
           content: TextField(
             controller: titleController,
             style: TextStyle(color: AppColors.text(widget.brightness)),
@@ -415,7 +451,10 @@ class _VideoUploadListState extends State<VideoUploadList> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, titleController.text),
-              child: const Text('Save', style: TextStyle(color: AppColors.crimson)),
+              child: const Text(
+                'Save',
+                style: TextStyle(color: AppColors.crimson),
+              ),
             ),
           ],
         ),
@@ -428,14 +467,17 @@ class _VideoUploadListState extends State<VideoUploadList> {
           cloudinaryPublicId: response.publicId,
         );
 
-        final newSamples = List<VideoSample>.from(widget.samples)..add(newSample);
+        final newSamples = List<VideoSample>.from(widget.samples)
+          ..add(newSample);
         widget.onChanged(newSamples);
       }
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Video upload failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text('Video upload failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -471,7 +513,10 @@ class _VideoUploadListState extends State<VideoUploadList> {
                     color: AppColors.crimson.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.videocam_rounded, color: AppColors.crimson),
+                  child: const Icon(
+                    Icons.videocam_rounded,
+                    color: AppColors.crimson,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -512,10 +557,14 @@ class _VideoUploadListState extends State<VideoUploadList> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
               border: Border.all(
-                color: AppColors.textSec(widget.brightness).withValues(alpha: 0.3),
+                color: AppColors.textSec(
+                  widget.brightness,
+                ).withValues(alpha: 0.3),
                 style: BorderStyle.none,
               ),
-              color: AppColors.surface(widget.brightness).withValues(alpha: 0.5),
+              color: AppColors.surface(
+                widget.brightness,
+              ).withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -528,7 +577,10 @@ class _VideoUploadListState extends State<VideoUploadList> {
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.add_circle_outline_rounded, color: AppColors.crimson),
+                        const Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: AppColors.crimson,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Upload Video',
