@@ -197,7 +197,7 @@ class _LocationScreenState extends State<LocationScreen>
               backgroundColor: AppColors.success,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
               ),
               margin: const EdgeInsets.all(16),
               duration: const Duration(seconds: 2),
@@ -294,7 +294,7 @@ class _LocationScreenState extends State<LocationScreen>
           ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 2),
         ),
@@ -320,7 +320,7 @@ class _LocationScreenState extends State<LocationScreen>
           ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -721,7 +721,7 @@ class _LocationScreenState extends State<LocationScreen>
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.warning.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
         border: Border.all(
           color: AppColors.warning.withValues(alpha: 0.3),
           width: 1,
@@ -825,7 +825,7 @@ class _LocationScreenState extends State<LocationScreen>
         Container(
           decoration: BoxDecoration(
             color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
             border: Border.all(
               color: AppColors.border(brightness),
               width: 1,
@@ -868,7 +868,7 @@ class _LocationScreenState extends State<LocationScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.success.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
         border: Border.all(
           color: AppColors.success.withValues(alpha: 0.25),
           width: 1,
@@ -979,7 +979,7 @@ class _LocationScreenState extends State<LocationScreen>
                 AppColors.crimson.withValues(alpha: 0.05),
               ],
             ),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           ),
           child: Column(
             children: [
@@ -1148,3 +1148,4 @@ class _LocationScreenState extends State<LocationScreen>
     return 'Long-distance gigs';
   }
 }
+

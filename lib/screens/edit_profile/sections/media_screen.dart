@@ -1,25 +1,31 @@
-/// 🖼️ MEDIA SCREEN - Edit Profile Sub-Screen
+/// 🎬 MEDIA SCREEN - PREMIUM TAB-BASED ARCHITECTURE
 ///
-/// Role-aware media management:
-/// - Profile photo upload
-/// - Gallery images
-/// - Audio samples (Artist only)
-/// - Video samples (Artist only)
-///
-/// Uses Cloudinary for all media uploads
+/// Professional media management with:
+/// ✅ Tab-based navigation (Audio | Video | Photos)
+/// ✅ Inline audio player with waveform-style progress
+/// ✅ Video grid with thumbnail previews
+/// ✅ Profile photo hero + gallery grid
+/// ✅ FAB with bottom sheet for add media
+/// ✅ Samsung-inspired premium UI (24px radius)
 library;
 
+import 'dart:async';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 
-import '../../../core/theme/theme.dart';
-import '../../../core/providers/providers.dart';
 import '../../../core/models/models.dart';
+import '../../../core/providers/providers.dart';
 import '../../../core/services/services.dart';
+import '../../../core/theme/theme.dart';
 
+/// Media Screen with Premium Tab Architecture
 class MediaScreen extends StatefulWidget {
   const MediaScreen({super.key});
 
@@ -27,410 +33,205 @@ class MediaScreen extends StatefulWidget {
   State<MediaScreen> createState() => _MediaScreenState();
 }
 
-class _MediaScreenState extends State<MediaScreen> {
-  final _uploadService = UploadService();
+class _MediaScreenState extends State<MediaScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // Services
   final _artistService = ArtistService();
   final _venueService = VenueService();
+  final _uploadService = UploadService();
   final _imagePicker = ImagePicker();
 
-  // Current media state
-  String? _profilePhotoUrl;
-  List<String> _galleryUrls = [];
-  List<AudioSample> _audioSamples = [];
-  List<VideoSample> _videoSamples = [];
-
-  // Upload state
-  bool _isUploadingPhoto = false;
-  bool _isUploadingGallery = false;
-  bool _isUploadingAudio = false;
-  bool _isUploadingVideo = false;
+  // State
+  bool _isLoading = true;
   bool _isSaving = false;
-  bool _hasChanges = false;
+  String? _profilePhotoUrl;
+  File? _newProfilePhoto;
+
+  // Audio
+  final List<_AudioItem> _audioSamples = [];
+  int? _playingAudioIndex;
+  Duration _audioDuration = Duration.zero;
+  Duration _audioPosition = Duration.zero;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
+
+  // Video
+  final List<_VideoItem> _videoSamples = [];
+
+  // Photos (Gallery)
+  final List<_PhotoItem> _galleryPhotos = [];
+
+  bool get _isArtist => context.read<AuthProvider>().isArtist;
 
   @override
   void initState() {
     super.initState();
-    _initializeData();
+    // Artists get 3 tabs (Audio, Video, Photos), Venues get 1 tab (Photos)
+    _tabController = TabController(
+      length: context.read<AuthProvider>().isArtist ? 3 : 1,
+      vsync: this,
+    );
+    _loadMedia();
+    _setupAudioListeners();
   }
 
-  void _initializeData() {
-    final auth = context.read<AuthProvider>();
-    final profile = context.read<ProfileProvider>();
-
-    if (auth.isArtist && profile.artist != null) {
-      final artist = profile.artist!;
-      _profilePhotoUrl = artist.profilePhoto;
-      _galleryUrls = List.from(artist.galleryUrls);
-      _audioSamples = List.from(artist.audioSamples);
-      _videoSamples = List.from(artist.videoSamples);
-    } else if (!auth.isArtist && profile.venue != null) {
-      final venue = profile.venue!;
-      _profilePhotoUrl = venue.profilePhotoUrl;
-      _galleryUrls = List.from(venue.galleryUrls ?? []);
-    }
-  }
-
-  void _markChanged() {
-    if (!_hasChanges) {
-      setState(() => _hasChanges = true);
-    }
-  }
-
-  Future<void> _pickProfilePhoto() async {
-    try {
-      final picked = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-
-      if (picked == null) return;
-
-      setState(() => _isUploadingPhoto = true);
-
-      final response = await _uploadService.uploadProfilePhoto(picked.path);
-
-      setState(() {
-        _profilePhotoUrl = response.url;
-      });
-      _markChanged();
-
+  void _setupAudioListeners() {
+    _positionSubscription = _audioPlayer.positionStream.listen((pos) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 12),
-                Text('Profile photo uploaded!'),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            ),
-          ),
-        );
+        setState(() => _audioPosition = pos);
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isUploadingPhoto = false);
-      }
-    }
-  }
+    });
 
-  Future<void> _pickGalleryImages() async {
-    if (_galleryUrls.length >= 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Maximum 6 gallery images allowed'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-          ),
-        ),
-      );
-      return;
-    }
-
-    try {
-      final picked = await _imagePicker.pickMultiImage(
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
-
-      if (picked.isEmpty) return;
-
-      final remaining = 6 - _galleryUrls.length;
-      final toUpload = picked.take(remaining).toList();
-
-      setState(() => _isUploadingGallery = true);
-
-      for (final image in toUpload) {
-        try {
-          final response = await _uploadService.uploadGalleryImage(
-            image.path,
-            index: _galleryUrls.length,
-          );
+    _playerStateSubscription = _audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
+        if (mounted) {
           setState(() {
-            _galleryUrls.add(response.url);
+            _playingAudioIndex = null;
+            _audioPosition = Duration.zero;
           });
-        } catch (e) {
-          debugPrint('Failed to upload gallery image: $e');
         }
       }
-
-      _markChanged();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${toUpload.length} image(s) uploaded!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isUploadingGallery = false);
-      }
-    }
+    });
   }
 
-  Future<void> _pickAudioFile() async {
-    if (_audioSamples.length >= 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Maximum 3 audio samples allowed'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-          ),
-        ),
-      );
-      return;
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _positionSubscription?.cancel();
+    _playerStateSubscription?.cancel();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMedia() async {
+    setState(() => _isLoading = true);
 
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.audio,
-        allowMultiple: false,
-      );
+      final profile = context.read<ProfileProvider>();
+      await profile.loadProfile(_isArtist);
 
-      if (result == null || result.files.isEmpty) return;
+      if (_isArtist) {
+        final artist = profile.artist;
+        if (artist != null) {
+          _profilePhotoUrl = artist.profilePhoto;
 
-      final file = result.files.first;
-      if (file.path == null) return;
+          // Load audio samples
+          _audioSamples.clear();
+          for (final audio in artist.audioSamples) {
+            _audioSamples.add(_AudioItem(
+              id: audio.cloudinaryPublicId ?? DateTime.now().toString(),
+              url: audio.url,
+              title: audio.title ?? 'Untitled Track',
+              durationSeconds: audio.durationSeconds ?? 0,
+              isUploaded: true,
+            ));
+          }
 
-      // Check file size (max 10MB)
-      final fileSize = await _uploadService.getFileSizeMB(file.path!);
-      if (fileSize > 10) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Audio file must be less than 10MB'),
-              backgroundColor: AppColors.warning,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-              ),
-            ),
-          );
+          // Load video samples
+          _videoSamples.clear();
+          for (final video in artist.videoSamples) {
+            _videoSamples.add(_VideoItem(
+              id: video.cloudinaryPublicId ?? DateTime.now().toString(),
+              url: video.url,
+              thumbnailUrl: video.thumbnailUrl,
+              title: video.title ?? 'Untitled Video',
+              durationSeconds: video.durationSeconds ?? 0,
+              isUploaded: true,
+            ));
+          }
+
+          // Load gallery
+          _galleryPhotos.clear();
+          for (var i = 0; i < artist.galleryUrls.length; i++) {
+            _galleryPhotos.add(_PhotoItem(
+              id: 'gallery_$i',
+              url: artist.galleryUrls[i],
+              isUploaded: true,
+            ));
+          }
         }
-        return;
-      }
+      } else {
+        final venue = profile.venue;
+        if (venue != null) {
+          _profilePhotoUrl = venue.profilePhotoUrl;
 
-      setState(() => _isUploadingAudio = true);
-
-      final response = await _uploadService.uploadAudio(file.path!);
-
-      setState(() {
-        _audioSamples.add(AudioSample(
-          url: response.url,
-          title: file.name.replaceAll(RegExp(r'\.[^.]+$'), ''),
-          cloudinaryPublicId: response.publicId,
-        ));
-      });
-      _markChanged();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Audio sample uploaded!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            ),
-          ),
-        );
+          // Venues only have gallery photos
+          _galleryPhotos.clear();
+          final urls = venue.galleryUrls ?? [];
+          for (var i = 0; i < urls.length; i++) {
+            _galleryPhotos.add(_PhotoItem(
+              id: 'gallery_$i',
+              url: urls[i],
+              isUploaded: true,
+            ));
+          }
+        }
       }
     } finally {
       if (mounted) {
-        setState(() => _isUploadingAudio = false);
+        setState(() => _isLoading = false);
       }
     }
-  }
-
-  Future<void> _pickVideoFile() async {
-    if (_videoSamples.length >= 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Maximum 2 video samples allowed'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-          ),
-        ),
-      );
-      return;
-    }
-
-    try {
-      final picked = await _imagePicker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: const Duration(minutes: 2),
-      );
-
-      if (picked == null) return;
-
-      // Check file size (max 50MB)
-      final fileSize = await _uploadService.getFileSizeMB(picked.path);
-      if (fileSize > 50) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Video file must be less than 50MB'),
-              backgroundColor: AppColors.warning,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-              ),
-            ),
-          );
-        }
-        return;
-      }
-
-      setState(() => _isUploadingVideo = true);
-
-      final response = await _uploadService.uploadVideo(picked.path);
-
-      setState(() {
-        _videoSamples.add(VideoSample(
-          url: response.url,
-          title: 'Video ${_videoSamples.length + 1}',
-          cloudinaryPublicId: response.publicId,
-        ));
-      });
-      _markChanged();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Video sample uploaded!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isUploadingVideo = false);
-      }
-    }
-  }
-
-  void _removeGalleryImage(int index) {
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _galleryUrls.removeAt(index);
-    });
-    _markChanged();
-  }
-
-  void _removeAudioSample(int index) {
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _audioSamples.removeAt(index);
-    });
-    _markChanged();
-  }
-
-  void _removeVideoSample(int index) {
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _videoSamples.removeAt(index);
-    });
-    _markChanged();
   }
 
   Future<void> _saveChanges() async {
-    final auth = context.read<AuthProvider>();
-    final navigator = Navigator.of(context);
+    if (_isSaving) return;
+
     final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
 
     setState(() => _isSaving = true);
 
     try {
-      if (auth.isArtist) {
-        await _artistService.updateMyProfile(
-          UpdateArtistRequest(
-            galleryUrls: _galleryUrls,
-            audioSamples: _audioSamples,
-            videoSamples: _videoSamples,
-          ),
+      // Upload new profile photo if changed (auto-updates profile on server)
+      if (_newProfilePhoto != null) {
+        await _uploadService.uploadProfilePhoto(_newProfilePhoto!.path);
+      }
+
+      if (_isArtist) {
+        // Build audio samples list
+        final audioList = _audioSamples
+            .where((a) => a.isUploaded && a.url != null)
+            .map((a) => AudioSample(
+                  url: a.url!,
+                  title: a.title,
+                  durationSeconds: a.durationSeconds,
+                  cloudinaryPublicId: a.id,
+                ))
+            .toList();
+
+        // Build video samples list
+        final videoList = _videoSamples
+            .where((v) => v.isUploaded && v.url != null)
+            .map((v) => VideoSample(
+                  url: v.url!,
+                  title: v.title,
+                  thumbnailUrl: v.thumbnailUrl,
+                  durationSeconds: v.durationSeconds,
+                  cloudinaryPublicId: v.id,
+                ))
+            .toList();
+
+        // Build gallery URLs
+        final galleryUrls = _galleryPhotos
+            .where((p) => p.isUploaded && p.url != null)
+            .map((p) => p.url!)
+            .toList();
+
+        final request = UpdateArtistRequest(
+          galleryUrls: galleryUrls.isNotEmpty ? galleryUrls : null,
+          audioSamples: audioList.isNotEmpty ? audioList : null,
+          videoSamples: videoList.isNotEmpty ? videoList : null,
         );
+
+        await _artistService.updateMyProfile(request);
       } else {
-        // Venue doesn't have audio/video samples
-        await _venueService.updateMyProfile(
-          UpdateVenueRequest(),
-        );
+        // Venue: profile photo is auto-updated via upload endpoint
+        // Touch venue service to refresh profile cache
+        await _venueService.getMyProfile();
       }
 
       messenger.showSnackBar(
@@ -439,24 +240,34 @@ class _MediaScreenState extends State<MediaScreen> {
             children: [
               Icon(Icons.check_circle, color: Colors.white, size: 20),
               SizedBox(width: 12),
-              Text('Media updated successfully!'),
+              Text('Media saved successfully'),
             ],
           ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
 
-      navigator.pop(true);
+      nav.pop();
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Failed to update: ${e.toString()}'),
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(child: Text('Failed to save: $e')),
+            ],
+          ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusInput)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -470,41 +281,12 @@ class _MediaScreenState extends State<MediaScreen> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final auth = context.watch<AuthProvider>();
-    final isArtist = auth.isArtist;
 
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       appBar: _buildAppBar(brightness),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile Photo Section
-            _buildProfilePhotoSection(brightness),
-
-            const SizedBox(height: 32),
-
-            // Gallery Section
-            _buildGallerySection(brightness),
-
-            // Audio Samples (Artist only)
-            if (isArtist) ...[
-              const SizedBox(height: 32),
-              _buildAudioSection(brightness),
-            ],
-
-            // Video Samples (Artist only)
-            if (isArtist) ...[
-              const SizedBox(height: 32),
-              _buildVideoSection(brightness),
-            ],
-
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
+      body: _isLoading ? _buildLoadingState(brightness) : _buildBody(brightness),
+      floatingActionButton: _isLoading ? null : _buildFAB(brightness),
     );
   }
 
@@ -531,545 +313,1626 @@ class _MediaScreenState extends State<MediaScreen> {
       ),
       centerTitle: true,
       actions: [
-        if (_hasChanges)
-          TextButton(
-            onPressed: _isSaving ? null : _saveChanges,
-            child: _isSaving
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.crimson,
-                    ),
-                  )
-                : Text(
-                    'Save',
-                    style: TextStyle(
-                      color: AppColors.crimson,
-                      fontWeight: FontWeight.w600,
-                    ),
+        TextButton(
+          onPressed: _isSaving ? null : _saveChanges,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.crimson,
                   ),
-          ),
+                )
+              : const Text(
+                  'Save',
+                  style: TextStyle(
+                    color: AppColors.crimson,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+        ),
         const SizedBox(width: 8),
       ],
+      bottom: _isArtist && !_isLoading
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(48),
+              child: _buildTabBar(brightness),
+            )
+          : null,
     );
   }
 
-  Widget _buildProfilePhotoSection(Brightness brightness) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Profile Photo',
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Your main profile picture',
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 13,
-          ),
-        ),
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: _isUploadingPhoto ? null : _pickProfilePhoto,
-          child: Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.surface(brightness),
-              border: Border.all(
-                color: AppColors.crimson.withValues(alpha: 0.3),
-                width: 2,
-              ),
-              image: _profilePhotoUrl != null && _profilePhotoUrl!.isNotEmpty
-                  ? DecorationImage(
-                      image: NetworkImage(_profilePhotoUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: _isUploadingPhoto
-                ? Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      color: AppColors.crimson,
-                    ),
-                  )
-                : _profilePhotoUrl == null || _profilePhotoUrl!.isEmpty
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_a_photo,
-                            color: AppColors.crimson,
-                            size: 28,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Add Photo',
-                            style: TextStyle(
-                              color: AppColors.crimson,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Align(
-                        alignment: Alignment.bottomRight,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppColors.crimson,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.edit,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGallerySection(Brightness brightness) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Gallery',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_galleryUrls.length}/6 photos',
-                  style: TextStyle(
-                    color: AppColors.textSec(brightness),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-            if (_galleryUrls.length < 6)
-              IconButton(
-                onPressed: _isUploadingGallery ? null : _pickGalleryImages,
-                icon: _isUploadingGallery
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.crimson,
-                        ),
-                      )
-                    : Icon(
-                        Icons.add_photo_alternate,
-                        color: AppColors.crimson,
-                        size: 26,
-                      ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (_galleryUrls.isEmpty)
-          _buildEmptyState(
-            brightness,
-            Icons.photo_library_outlined,
-            'No gallery photos',
-            'Add photos to showcase your work',
-          )
-        else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1,
-            ),
-            itemCount: _galleryUrls.length,
-            itemBuilder: (context, index) {
-              return _buildGalleryItem(_galleryUrls[index], index, brightness);
-            },
-          ),
-      ],
-    );
-  }
-
-  Widget _buildGalleryItem(String url, int index, Brightness brightness) {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            image: DecorationImage(
-              image: NetworkImage(url),
-              fit: BoxFit.cover,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 6,
-          right: 6,
-          child: GestureDetector(
-            onTap: () => _removeGalleryImage(index),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAudioSection(Brightness brightness) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Audio Samples',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_audioSamples.length}/3 tracks (max 10MB each)',
-                  style: TextStyle(
-                    color: AppColors.textSec(brightness),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-            if (_audioSamples.length < 3)
-              IconButton(
-                onPressed: _isUploadingAudio ? null : _pickAudioFile,
-                icon: _isUploadingAudio
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.crimson,
-                        ),
-                      )
-                    : Icon(
-                        Icons.add_circle_outline,
-                        color: AppColors.crimson,
-                        size: 26,
-                      ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (_audioSamples.isEmpty)
-          _buildEmptyState(
-            brightness,
-            Icons.audiotrack_outlined,
-            'No audio samples',
-            'Add audio to let venues hear your music',
-          )
-        else
-          ...List.generate(_audioSamples.length, (index) {
-            return _buildAudioItem(_audioSamples[index], index, brightness);
-          }),
-      ],
-    );
-  }
-
-  Widget _buildAudioItem(AudioSample sample, int index, Brightness brightness) {
+  Widget _buildTabBar(Brightness brightness) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-        border: Border.all(
-          color: AppColors.border(brightness),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.crimson.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
-            ),
-            child: Icon(
-              Icons.audiotrack,
-              color: AppColors.crimson,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              sample.title ?? 'Audio ${index + 1}',
-              style: TextStyle(
-                color: AppColors.text(brightness),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          IconButton(
-            onPressed: () => _removeAudioSample(index),
-            icon: Icon(
-              Icons.delete_outline,
-              color: AppColors.error,
-              size: 22,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVideoSection(Brightness brightness) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Video Samples',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_videoSamples.length}/2 videos (max 50MB each)',
-                  style: TextStyle(
-                    color: AppColors.textSec(brightness),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-            if (_videoSamples.length < 2)
-              IconButton(
-                onPressed: _isUploadingVideo ? null : _pickVideoFile,
-                icon: _isUploadingVideo
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.crimson,
-                        ),
-                      )
-                    : Icon(
-                        Icons.video_call,
-                        color: AppColors.crimson,
-                        size: 26,
-                      ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (_videoSamples.isEmpty)
-          _buildEmptyState(
-            brightness,
-            Icons.videocam_outlined,
-            'No video samples',
-            'Add videos to show your live performances',
-          )
-        else
-          ...List.generate(_videoSamples.length, (index) {
-            return _buildVideoItem(_videoSamples[index], index, brightness);
-          }),
-      ],
-    );
-  }
-
-  Widget _buildVideoItem(VideoSample sample, int index, Brightness brightness) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-        border: Border.all(
-          color: AppColors.border(brightness),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Thumbnail placeholder
-          Container(
-            height: 140,
-            decoration: BoxDecoration(
-              color: AppColors.graphite,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(AppSpacing.radiusCard - 1),
-              ),
-              image: sample.thumbnailUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(sample.thumbnailUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: sample.thumbnailUrl == null
-                ? Center(
-                    child: Icon(
-                      Icons.play_circle_filled,
-                      color: AppColors.crimson,
-                      size: 48,
-                    ),
-                  )
-                : null,
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    sample.title ?? 'Video ${index + 1}',
-                    style: TextStyle(
-                      color: AppColors.text(brightness),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => _removeVideoSample(index),
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: AppColors.error,
-                    size: 22,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(
-    Brightness brightness,
-    IconData icon,
-    String title,
-    String subtitle,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
         borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
         border: Border.all(
           color: AppColors.border(brightness),
           width: 1,
-          strokeAlign: BorderSide.strokeAlignInside,
         ),
       ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: AppColors.textSec(brightness),
-            size: 40,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              color: AppColors.text(brightness),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          color: AppColors.crimson,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusInput - 2),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        labelColor: Colors.white,
+        unselectedLabelColor: AppColors.textSec(brightness),
+        labelStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        tabs: [
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.audiotrack_rounded, size: 18),
+                const SizedBox(width: 6),
+                const Text('Audio'),
+                if (_audioSamples.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  _buildBadge(_audioSamples.length, brightness),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 13,
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.videocam_rounded, size: 18),
+                const SizedBox(width: 6),
+                const Text('Video'),
+                if (_videoSamples.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  _buildBadge(_videoSamples.length, brightness),
+                ],
+              ],
             ),
-            textAlign: TextAlign.center,
+          ),
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.photo_library_rounded, size: 18),
+                const SizedBox(width: 6),
+                const Text('Photos'),
+                if (_galleryPhotos.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  _buildBadge(_galleryPhotos.length, brightness),
+                ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildBadge(int count, Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState(Brightness brightness) {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: AppColors.crimson,
+      ),
+    );
+  }
+
+  Widget _buildBody(Brightness brightness) {
+    if (_isArtist) {
+      return TabBarView(
+        controller: _tabController,
+        children: [
+          _buildAudioTab(brightness),
+          _buildVideoTab(brightness),
+          _buildPhotosTab(brightness),
+        ],
+      );
+    } else {
+      // Venue - only photos tab
+      return _buildPhotosTab(brightness);
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 🎵 AUDIO TAB
+  // ════════════════════════════════════════════════════════════════════════════
+
+  Widget _buildAudioTab(Brightness brightness) {
+    if (_audioSamples.isEmpty) {
+      return _buildEmptyState(
+        brightness,
+        icon: Icons.audiotrack_rounded,
+        title: 'No Audio Samples',
+        subtitle: 'Add audio samples to showcase your music',
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(20),
+      itemCount: _audioSamples.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) => _buildAudioCard(
+        _audioSamples[index],
+        index,
+        brightness,
+      ),
+    );
+  }
+
+  Widget _buildAudioCard(_AudioItem audio, int index, Brightness brightness) {
+    final isPlaying = _playingAudioIndex == index;
+    final progress = _audioDuration.inMilliseconds > 0
+        ? _audioPosition.inMilliseconds / _audioDuration.inMilliseconds
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        border: Border.all(
+          color: isPlaying
+              ? AppColors.crimson.withValues(alpha: 0.5)
+              : AppColors.border(brightness),
+          width: isPlaying ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Play/Pause Button
+              GestureDetector(
+                onTap: () => _toggleAudioPlayback(index),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.crimson, AppColors.crimsonDark],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.crimson.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              // Title & Duration
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      audio.title,
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_formatDuration(isPlaying ? _audioPosition : Duration.zero)} / ${_formatDuration(Duration(seconds: audio.durationSeconds))}',
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Upload progress or delete button
+              if (audio.isUploading)
+                SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: CircularProgressIndicator(
+                    value: audio.uploadProgress,
+                    strokeWidth: 3,
+                    color: AppColors.crimson,
+                    backgroundColor: AppColors.border(brightness),
+                  ),
+                )
+              else
+                IconButton(
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.textSec(brightness),
+                    size: 22,
+                  ),
+                  onPressed: () => _confirmDeleteAudio(index),
+                ),
+            ],
+          ),
+
+          // Progress bar
+          if (isPlaying) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: AppColors.border(brightness),
+                color: AppColors.crimson,
+                minHeight: 4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleAudioPlayback(int index) async {
+    final audio = _audioSamples[index];
+
+    if (_playingAudioIndex == index) {
+      // Currently playing this - pause it
+      await _audioPlayer.pause();
+      setState(() => _playingAudioIndex = null);
+    } else {
+      // Stop current and play new
+      await _audioPlayer.stop();
+
+      if (audio.url != null) {
+        try {
+          await _audioPlayer.setUrl(audio.url!);
+          _audioDuration = _audioPlayer.duration ?? Duration.zero;
+          await _audioPlayer.play();
+          setState(() => _playingAudioIndex = index);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to play audio: $e'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      }
+    }
+  }
+
+  void _confirmDeleteAudio(int index) {
+    final brightness = Theme.of(context).brightness;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        ),
+        title: Text(
+          'Delete Audio?',
+          style: TextStyle(color: AppColors.text(brightness)),
+        ),
+        content: Text(
+          'This will remove "${_audioSamples[index].title}" from your profile.',
+          style: TextStyle(color: AppColors.textSec(brightness)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                if (_playingAudioIndex == index) {
+                  _audioPlayer.stop();
+                  _playingAudioIndex = null;
+                }
+                _audioSamples.removeAt(index);
+              });
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addAudio() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        final filePath = file.path;
+
+        if (filePath == null) return;
+
+        // Add to list with uploading state
+        final newAudio = _AudioItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          localPath: filePath,
+          title: file.name.split('.').first,
+          isUploading: true,
+        );
+
+        setState(() => _audioSamples.add(newAudio));
+        final index = _audioSamples.length - 1;
+
+        // Upload
+        try {
+          final response = await _uploadService.uploadAudio(filePath);
+
+          if (mounted) {
+            setState(() {
+              _audioSamples[index] = _AudioItem(
+                id: response.publicId,
+                url: response.url,
+                title: newAudio.title,
+                durationSeconds: 0,
+                isUploaded: true,
+              );
+            });
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() => _audioSamples.removeAt(index));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to upload audio: $e'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      }
+    } on PlatformException catch (e) {
+      debugPrint('Audio picker error: $e');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 🎬 VIDEO TAB
+  // ════════════════════════════════════════════════════════════════════════════
+
+  Widget _buildVideoTab(Brightness brightness) {
+    if (_videoSamples.isEmpty) {
+      return _buildEmptyState(
+        brightness,
+        icon: Icons.videocam_rounded,
+        title: 'No Video Samples',
+        subtitle: 'Add video samples to show your performances',
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 16 / 12,
+      ),
+      itemCount: _videoSamples.length,
+      itemBuilder: (context, index) => _buildVideoCard(
+        _videoSamples[index],
+        index,
+        brightness,
+      ),
+    );
+  }
+
+  Widget _buildVideoCard(_VideoItem video, int index, Brightness brightness) {
+    return GestureDetector(
+      onTap: () => _previewVideo(video),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+          border: Border.all(
+            color: AppColors.border(brightness),
+            width: 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Thumbnail
+            if (video.thumbnailUrl != null)
+              Image.network(
+                video.thumbnailUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, e, s) => _buildVideoPlaceholder(brightness),
+              )
+            else
+              _buildVideoPlaceholder(brightness),
+
+            // Play overlay
+            if (!video.isUploading)
+              Center(
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+
+            // Upload progress
+            if (video.isUploading)
+              Container(
+                color: Colors.black.withValues(alpha: 0.5),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    value: video.uploadProgress > 0 ? video.uploadProgress : null,
+                    color: AppColors.crimson,
+                    backgroundColor: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+              ),
+
+            // Delete button
+            if (!video.isUploading)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () => _confirmDeleteVideo(index),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+
+            // Duration badge
+            if (video.durationSeconds > 0)
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    _formatDuration(Duration(seconds: video.durationSeconds)),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoPlaceholder(Brightness brightness) {
+    return Container(
+      color: AppColors.charcoal,
+      child: Icon(
+        Icons.videocam_rounded,
+        color: AppColors.textSec(brightness),
+        size: 40,
+      ),
+    );
+  }
+
+  void _previewVideo(_VideoItem video) {
+    if (video.url == null) return;
+
+    // Open video in dialog
+    showDialog(
+      context: context,
+      builder: (ctx) => _VideoPreviewDialog(videoUrl: video.url!),
+    );
+  }
+
+  void _confirmDeleteVideo(int index) {
+    final brightness = Theme.of(context).brightness;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        ),
+        title: Text(
+          'Delete Video?',
+          style: TextStyle(color: AppColors.text(brightness)),
+        ),
+        content: Text(
+          'This will remove the video from your profile.',
+          style: TextStyle(color: AppColors.textSec(brightness)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _videoSamples.removeAt(index));
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addVideo() async {
+    try {
+      final file = await _imagePicker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 5),
+      );
+
+      if (file == null) return;
+
+      // Add to list with uploading state
+      final newVideo = _VideoItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        localPath: file.path,
+        title: file.name.split('.').first,
+        isUploading: true,
+      );
+
+      setState(() => _videoSamples.add(newVideo));
+      final index = _videoSamples.length - 1;
+
+      // Upload
+      try {
+        final response = await _uploadService.uploadVideo(file.path);
+
+        if (mounted) {
+          setState(() {
+            _videoSamples[index] = _VideoItem(
+              id: response.publicId,
+              url: response.url,
+              thumbnailUrl: _generateVideoThumbnailUrl(response.url),
+              title: newVideo.title,
+              durationSeconds: 0,
+              isUploaded: true,
+            );
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _videoSamples.removeAt(index));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload video: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } on PlatformException catch (e) {
+      debugPrint('Video picker error: $e');
+    }
+  }
+
+  String? _generateVideoThumbnailUrl(String videoUrl) {
+    // Cloudinary auto-generates thumbnails - replace video with jpg
+    if (videoUrl.contains('cloudinary.com')) {
+      return videoUrl
+          .replaceAll('/video/upload/', '/video/upload/so_0,w_400,h_300,c_fill/')
+          .replaceAll('.mp4', '.jpg')
+          .replaceAll('.mov', '.jpg')
+          .replaceAll('.webm', '.jpg');
+    }
+    return null;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 📸 PHOTOS TAB
+  // ════════════════════════════════════════════════════════════════════════════
+
+  Widget _buildPhotosTab(Brightness brightness) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Profile Photo Hero
+          _buildProfilePhotoSection(brightness),
+
+          const SizedBox(height: 28),
+
+          // Gallery Section
+          Text(
+            'Gallery',
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _isArtist
+                ? 'Add photos to showcase your performances and style'
+                : 'Add photos to showcase your venue and atmosphere',
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 14,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Gallery Grid
+          _buildGalleryGrid(brightness),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfilePhotoSection(Brightness brightness) {
+    final hasPhoto =
+        _newProfilePhoto != null || (_profilePhotoUrl?.isNotEmpty ?? false);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        border: Border.all(
+          color: AppColors.border(brightness),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.account_circle_outlined,
+                color: AppColors.crimson,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Profile Photo',
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          Center(
+            child: GestureDetector(
+              onTap: _changeProfilePhoto,
+              child: Stack(
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.charcoal,
+                      border: Border.all(
+                        color: hasPhoto
+                            ? AppColors.crimson.withValues(alpha: 0.5)
+                            : AppColors.border(brightness),
+                        width: 3,
+                      ),
+                      image: hasPhoto
+                          ? DecorationImage(
+                              image: _newProfilePhoto != null
+                                  ? FileImage(_newProfilePhoto!)
+                                  : NetworkImage(_profilePhotoUrl!)
+                                      as ImageProvider,
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: !hasPhoto
+                        ? Icon(
+                            Icons.person_rounded,
+                            color: AppColors.textSec(brightness),
+                            size: 48,
+                          )
+                        : null,
+                  ),
+
+                  // Edit badge
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.crimson,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.surface(brightness),
+                          width: 3,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Center(
+            child: Text(
+              'Tap to change photo',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _changeProfilePhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _buildImageSourceSheet(ctx),
+    );
+
+    if (source == null) return;
+
+    try {
+      final file = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (file != null && mounted) {
+        setState(() => _newProfilePhoto = File(file.path));
+      }
+    } on PlatformException catch (e) {
+      debugPrint('Image picker error: $e');
+    }
+  }
+
+  Widget _buildGalleryGrid(Brightness brightness) {
+    // 3-column grid
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: _galleryPhotos.length + 1, // +1 for add button
+      itemBuilder: (context, index) {
+        if (index == _galleryPhotos.length) {
+          // Add button
+          return _buildAddPhotoButton(brightness);
+        }
+        return _buildGalleryPhotoCard(
+          _galleryPhotos[index],
+          index,
+          brightness,
+        );
+      },
+    );
+  }
+
+  Widget _buildAddPhotoButton(Brightness brightness) {
+    return GestureDetector(
+      onTap: _addGalleryPhoto,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+          border: Border.all(
+            color: AppColors.border(brightness),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.add_photo_alternate_outlined,
+              color: AppColors.crimson,
+              size: 28,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Add',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGalleryPhotoCard(
+    _PhotoItem photo,
+    int index,
+    Brightness brightness,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+        border: Border.all(
+          color: AppColors.border(brightness),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Image
+          if (photo.localPath != null)
+            Image.file(
+              File(photo.localPath!),
+              fit: BoxFit.cover,
+            )
+          else if (photo.url != null)
+            Image.network(
+              photo.url!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, e, s) => Container(
+                color: AppColors.charcoal,
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: AppColors.textSec(brightness),
+                ),
+              ),
+            ),
+
+          // Upload overlay
+          if (photo.isUploading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: photo.uploadProgress > 0 ? photo.uploadProgress : null,
+                  color: AppColors.crimson,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+
+          // Delete button
+          if (!photo.isUploading)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () => _confirmDeletePhoto(index),
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addGalleryPhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _buildImageSourceSheet(ctx),
+    );
+
+    if (source == null) return;
+
+    try {
+      final file = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+
+      if (file == null) return;
+
+      // Add to list with uploading state
+      final newPhoto = _PhotoItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        localPath: file.path,
+        isUploading: true,
+      );
+
+      setState(() => _galleryPhotos.add(newPhoto));
+      final index = _galleryPhotos.length - 1;
+
+      // Upload
+      try {
+        final response = await _uploadService.uploadGalleryImage(
+          file.path,
+          index: index,
+        );
+
+        if (mounted) {
+          setState(() {
+            _galleryPhotos[index] = _PhotoItem(
+              id: response.publicId,
+              url: response.url,
+              isUploaded: true,
+            );
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _galleryPhotos.removeAt(index));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload photo: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } on PlatformException catch (e) {
+      debugPrint('Image picker error: $e');
+    }
+  }
+
+  void _confirmDeletePhoto(int index) {
+    final brightness = Theme.of(context).brightness;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        ),
+        title: Text(
+          'Delete Photo?',
+          style: TextStyle(color: AppColors.text(brightness)),
+        ),
+        content: Text(
+          'This will remove the photo from your gallery.',
+          style: TextStyle(color: AppColors.textSec(brightness)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _galleryPhotos.removeAt(index));
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // 🔧 HELPERS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  Widget _buildEmptyState(
+    Brightness brightness, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.audiotrack_rounded,
+                color: AppColors.crimson,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFAB(Brightness brightness) {
+    return FloatingActionButton.extended(
+      onPressed: _showAddMediaSheet,
+      backgroundColor: AppColors.crimson,
+      foregroundColor: Colors.white,
+      elevation: 4,
+      icon: const Icon(Icons.add_rounded),
+      label: const Text(
+        'Add Media',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  void _showAddMediaSheet() {
+    final brightness = Theme.of(context).brightness;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppSpacing.radiusSection),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border(brightness),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              'Add Media',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Options
+            if (_isArtist) ...[
+              _buildMediaOption(
+                ctx,
+                icon: Icons.audiotrack_rounded,
+                title: 'Audio Sample',
+                subtitle: 'MP3, WAV, M4A up to 10MB',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _tabController.animateTo(0);
+                  _addAudio();
+                },
+                brightness: brightness,
+              ),
+              const SizedBox(height: 12),
+              _buildMediaOption(
+                ctx,
+                icon: Icons.videocam_rounded,
+                title: 'Video Sample',
+                subtitle: 'MP4, MOV up to 50MB',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _tabController.animateTo(1);
+                  _addVideo();
+                },
+                brightness: brightness,
+              ),
+              const SizedBox(height: 12),
+            ],
+            _buildMediaOption(
+              ctx,
+              icon: Icons.photo_library_rounded,
+              title: 'Gallery Photo',
+              subtitle: 'JPG, PNG up to 10MB',
+              onTap: () {
+                Navigator.pop(ctx);
+                if (_isArtist) {
+                  _tabController.animateTo(2);
+                }
+                _addGalleryPhoto();
+              },
+              brightness: brightness,
+            ),
+
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaOption(
+    BuildContext ctx, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required Brightness brightness,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.charcoal,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+            border: Border.all(
+              color: AppColors.border(brightness),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.crimson.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppColors.crimson,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSec(brightness),
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageSourceSheet(BuildContext ctx) {
+    final brightness = Theme.of(ctx).brightness;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusSection),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.border(brightness),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Text(
+            'Choose Source',
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildSourceButton(
+                  ctx,
+                  icon: Icons.camera_alt_rounded,
+                  label: 'Camera',
+                  source: ImageSource.camera,
+                  brightness: brightness,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSourceButton(
+                  ctx,
+                  icon: Icons.photo_library_rounded,
+                  label: 'Gallery',
+                  source: ImageSource.gallery,
+                  brightness: brightness,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSourceButton(
+    BuildContext ctx, {
+    required IconData icon,
+    required String label,
+    required ImageSource source,
+    required Brightness brightness,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pop(ctx, source),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          decoration: BoxDecoration(
+            color: AppColors.charcoal,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+            border: Border.all(
+              color: AppColors.border(brightness),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: AppColors.crimson, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
 }
 
+// ════════════════════════════════════════════════════════════════════════════════
+// 📦 DATA CLASSES
+// ════════════════════════════════════════════════════════════════════════════════
+
+class _AudioItem {
+  final String id;
+  final String? localPath;
+  final String? url;
+  final String title;
+  final int durationSeconds;
+  final bool isUploading;
+  final double uploadProgress;
+  final bool isUploaded;
+
+  _AudioItem({
+    required this.id,
+    this.localPath,
+    this.url,
+    this.title = 'Untitled',
+    this.durationSeconds = 0,
+    this.isUploading = false,
+    // ignore: unused_element_parameter
+    this.uploadProgress = 0,
+    this.isUploaded = false,
+  });
+}
+
+class _VideoItem {
+  final String id;
+  final String? localPath;
+  final String? url;
+  final String? thumbnailUrl;
+  final String title;
+  final int durationSeconds;
+  final bool isUploading;
+  final double uploadProgress;
+  final bool isUploaded;
+
+  _VideoItem({
+    required this.id,
+    this.localPath,
+    this.url,
+    this.thumbnailUrl,
+    this.title = 'Untitled',
+    this.durationSeconds = 0,
+    this.isUploading = false,
+    // ignore: unused_element_parameter
+    this.uploadProgress = 0,
+    this.isUploaded = false,
+  });
+}
+
+class _PhotoItem {
+  final String id;
+  final String? localPath;
+  final String? url;
+  final bool isUploading;
+  final double uploadProgress;
+  final bool isUploaded;
+
+  _PhotoItem({
+    required this.id,
+    this.localPath,
+    this.url,
+    this.isUploading = false,
+    // ignore: unused_element_parameter
+    this.uploadProgress = 0,
+    this.isUploaded = false,
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎬 VIDEO PREVIEW DIALOG
+// ════════════════════════════════════════════════════════════════════════════════
+
+class _VideoPreviewDialog extends StatefulWidget {
+  final String videoUrl;
+
+  const _VideoPreviewDialog({required this.videoUrl});
+
+  @override
+  State<_VideoPreviewDialog> createState() => _VideoPreviewDialogState();
+}
+
+class _VideoPreviewDialogState extends State<_VideoPreviewDialog> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..initialize().then((_) {
+        if (mounted) {
+          setState(() => _isInitialized = true);
+          _controller.play();
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+      ),
+      child: AspectRatio(
+        aspectRatio: _isInitialized ? _controller.value.aspectRatio : 16 / 9,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_isInitialized)
+              VideoPlayer(_controller)
+            else
+              const Center(
+                child: CircularProgressIndicator(color: AppColors.crimson),
+              ),
+
+            // Close button
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

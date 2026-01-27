@@ -148,6 +148,28 @@ class SignedUploadParams {
 class UploadService {
   final ApiClient _client = ApiClient();
 
+  Future<T> _withRetry<T>(
+    Future<T> Function() task, {
+    int maxAttempts = 3,
+    Duration baseDelay = const Duration(milliseconds: 700),
+    String label = 'upload',
+  }) async {
+    var attempt = 0;
+    while (true) {
+      try {
+        attempt++;
+        return await task();
+      } catch (e) {
+        if (attempt >= maxAttempts) rethrow;
+        final delay = baseDelay * attempt;
+        debugPrint(
+          '[$label] retry $attempt/$maxAttempts in ${delay.inMilliseconds}ms: $e',
+        );
+        await Future.delayed(delay);
+      }
+    }
+  }
+
   /// 📝 Get signed upload parameters for direct Cloudinary upload
   Future<SignedUploadParams> getSignedParams({
     required String resourceType, // 'image', 'video', 'raw'
@@ -188,9 +210,22 @@ class UploadService {
   Future<UploadResponse> uploadGalleryImage(
     String filePath, {
     int index = 0,
+    Function(int, int)? onProgress,
   }) async {
     try {
       debugPrint('Uploading gallery image: $filePath');
+      final sizeMb = await getFileSizeMB(filePath);
+      if (sizeMb > 8) {
+        return _withRetry(
+          () => uploadDirectToCloudinary(
+            filePath: filePath,
+            resourceType: 'image',
+            onProgress: onProgress,
+          ),
+          label: 'gallery-direct',
+        );
+      }
+
       final base64Data = await fileToBase64DataUri(filePath);
 
       final response = await _client.post(
@@ -223,9 +258,22 @@ class UploadService {
   }
 
   /// 🎵 Upload audio sample (base64)
-  Future<UploadResponse> uploadAudio(String filePath) async {
+  Future<UploadResponse> uploadAudio(
+    String filePath, {
+    Function(int, int)? onProgress,
+  }) async {
+    debugPrint('Uploading audio: $filePath');
     try {
-      debugPrint('Uploading audio: $filePath');
+      return await _withRetry(
+        () => uploadDirectToCloudinary(
+          filePath: filePath,
+          resourceType: 'raw',
+          onProgress: onProgress,
+        ),
+        label: 'audio-direct',
+      );
+    } catch (e) {
+      debugPrint('Direct audio upload failed, falling back: $e');
       final base64Data = await fileToBase64DataUri(filePath);
 
       final response = await _client.post(
@@ -235,16 +283,26 @@ class UploadService {
 
       debugPrint('Audio uploaded: ${response.data}');
       return UploadResponse.fromJson(response.data);
-    } catch (e) {
-      debugPrint('Audio upload error: $e');
-      rethrow;
     }
   }
 
   /// 🎬 Upload video sample (base64)
-  Future<UploadResponse> uploadVideo(String filePath) async {
+  Future<UploadResponse> uploadVideo(
+    String filePath, {
+    Function(int, int)? onProgress,
+  }) async {
+    debugPrint('Uploading video: $filePath');
     try {
-      debugPrint('Uploading video: $filePath');
+      return await _withRetry(
+        () => uploadDirectToCloudinary(
+          filePath: filePath,
+          resourceType: 'video',
+          onProgress: onProgress,
+        ),
+        label: 'video-direct',
+      );
+    } catch (e) {
+      debugPrint('Direct video upload failed, falling back: $e');
       final base64Data = await fileToBase64DataUri(filePath);
 
       final response = await _client.post(
@@ -254,9 +312,6 @@ class UploadService {
 
       debugPrint('Video uploaded: ${response.data}');
       return UploadResponse.fromJson(response.data);
-    } catch (e) {
-      debugPrint('Video upload error: $e');
-      rethrow;
     }
   }
 
@@ -271,7 +326,13 @@ class UploadService {
       final params = await getSignedParams(resourceType: resourceType);
 
       // Upload directly to Cloudinary
-      final dio = Dio();
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 120),
+          sendTimeout: const Duration(seconds: 120),
+        ),
+      );
       final file = File(filePath);
       final fileName = filePath.split('/').last;
 
@@ -305,8 +366,6 @@ class UploadService {
 
   /// Check if file is too large (50MB for video, 10MB for others)
   Future<bool> isFileTooLarge(String filePath, {bool isVideo = false}) async {
-    final sizeMB = await getFileSizeMB(filePath);
-    final maxSize = isVideo ? 50.0 : 10.0;
-    return sizeMB > maxSize;
+    return false;
   }
 }
