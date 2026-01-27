@@ -178,7 +178,7 @@ class _AudioUploadListState extends State<AudioUploadList> {
 
   Future<void> _pickAndUploadAudio() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.audio,
       );
 
@@ -378,7 +378,7 @@ class _VideoUploadListState extends State<VideoUploadList> {
 
   Future<void> _pickAndUploadVideo() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.video,
       );
 

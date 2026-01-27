@@ -70,7 +70,7 @@ class _MediaUploadStepState extends State<MediaUploadStep> {
 
   Future<void> _addAudioSample() async {
     // Use file_picker for audio files
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.audio,
       allowMultiple: false,
     );

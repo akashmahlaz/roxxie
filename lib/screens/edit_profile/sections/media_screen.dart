@@ -734,7 +734,7 @@ class _MediaScreenState extends State<MediaScreen>
 
   Future<void> _addAudio() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.audio,
         allowMultiple: false,
       );
