@@ -347,8 +347,6 @@ class AudioSample {
   Map<String, dynamic> toJson() => {
     'url': url,
     if (title != null) 'title': title,
-    if (durationSeconds != null) 'durationSeconds': durationSeconds,
-    if (cloudinaryPublicId != null) 'cloudinaryPublicId': cloudinaryPublicId,
   };
 }
 
@@ -382,8 +380,6 @@ class VideoSample {
     'url': url,
     if (title != null) 'title': title,
     if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
-    if (durationSeconds != null) 'durationSeconds': durationSeconds,
-    if (cloudinaryPublicId != null) 'cloudinaryPublicId': cloudinaryPublicId,
   };
 }
 

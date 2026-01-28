@@ -166,8 +166,9 @@ class AppBottomSheet {
                   child: FilledButton(
                     onPressed: () => Navigator.of(context).pop(true),
                     style: FilledButton.styleFrom(
-                      backgroundColor:
-                          isDestructive ? AppColors.error : AppColors.crimson,
+                      backgroundColor: isDestructive
+                          ? AppColors.error
+                          : AppColors.crimson,
                       foregroundColor: AppColors.pureWhite,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -259,10 +260,8 @@ class _BottomSheetContent extends StatelessWidget {
       maxChildSize: maxChildSize,
       snap: useSnapSizes,
       snapSizes: snapSizes,
-      builder: (context, scrollController) => SingleChildScrollView(
-        controller: scrollController,
-        child: content,
-      ),
+      builder: (context, scrollController) =>
+          SingleChildScrollView(controller: scrollController, child: content),
     );
   }
 }
@@ -296,8 +295,8 @@ class _ActionTile<T> extends StatelessWidget {
     final color = action.isDestructive
         ? AppColors.error
         : action.isSelected
-            ? AppColors.crimson
-            : AppColors.textPrimary;
+        ? AppColors.crimson
+        : AppColors.textPrimary;
 
     return ListTile(
       leading: action.icon != null

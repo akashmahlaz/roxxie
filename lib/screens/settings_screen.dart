@@ -497,7 +497,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        authProvider.errorMessage ?? 'Failed to change password',
+                        authProvider.errorMessage ??
+                            'Failed to change password',
                       ),
                       backgroundColor: AppColors.error,
                       behavior: SnackBarBehavior.floating,
@@ -534,14 +535,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         nav.pop(); // Close loading dialog
 
         if (success) {
-          nav.pushNamedAndRemoveUntil(
-            '/role-selection',
-            (route) => false,
-          );
+          nav.pushNamedAndRemoveUntil('/role-selection', (route) => false);
         } else {
           scaffoldMessenger.showSnackBar(
             SnackBar(
-              content: const Text('Failed to delete account. Please try again.'),
+              content: const Text(
+                'Failed to delete account. Please try again.',
+              ),
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
               margin: const EdgeInsets.all(16),

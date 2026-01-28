@@ -120,25 +120,31 @@ class AppBadge extends StatelessWidget {
               ? -4
               : null,
           right:
-              alignment == Alignment.topRight || alignment == Alignment.bottomRight
-                  ? -4
-                  : null,
-          left: alignment == Alignment.topLeft || alignment == Alignment.bottomLeft
+              alignment == Alignment.topRight ||
+                  alignment == Alignment.bottomRight
               ? -4
               : null,
-          bottom: alignment == Alignment.bottomRight ||
+          left:
+              alignment == Alignment.topLeft ||
+                  alignment == Alignment.bottomLeft
+              ? -4
+              : null,
+          bottom:
+              alignment == Alignment.bottomRight ||
                   alignment == Alignment.bottomLeft
               ? -4
               : null,
           child: AnimatedScale(
             scale: showBadge ? 1.0 : 0.0,
-            duration:
-                animate ? const Duration(milliseconds: 200) : Duration.zero,
+            duration: animate
+                ? const Duration(milliseconds: 200)
+                : Duration.zero,
             curve: Curves.easeOutBack,
             child: AnimatedOpacity(
               opacity: showBadge ? 1.0 : 0.0,
-              duration:
-                  animate ? const Duration(milliseconds: 150) : Duration.zero,
+              duration: animate
+                  ? const Duration(milliseconds: 150)
+                  : Duration.zero,
               child: Container(
                 constraints: BoxConstraints(
                   minWidth: badgeSize,
@@ -150,10 +156,7 @@ class AppBadge extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: backgroundColor ?? AppColors.error,
                   borderRadius: BorderRadius.circular(badgeSize / 2),
-                  border: Border.all(
-                    color: AppColors.obsidian,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: AppColors.obsidian, width: 1.5),
                 ),
                 child: isDot
                     ? null
@@ -314,11 +317,12 @@ class AppStatusBadge extends StatelessWidget {
           ],
           Text(
             label,
-            style: (small ? AppTypography.labelSmall : AppTypography.labelMedium)
-                .copyWith(
-              color: textColor ?? AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+            style:
+                (small ? AppTypography.labelSmall : AppTypography.labelMedium)
+                    .copyWith(
+                      color: textColor ?? AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
           ),
         ],
       ),

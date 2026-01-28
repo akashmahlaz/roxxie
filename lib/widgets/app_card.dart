@@ -125,8 +125,9 @@ class AppCard extends StatelessWidget {
       key: key,
       padding: padding,
       margin: margin,
-      backgroundColor:
-          selected ? AppColors.crimson.withValues(alpha: 0.15) : AppColors.charcoal,
+      backgroundColor: selected
+          ? AppColors.crimson.withValues(alpha: 0.15)
+          : AppColors.charcoal,
       borderColor: selected ? AppColors.crimson : AppColors.slate,
       borderWidth: 1,
       elevation: 0,
@@ -158,8 +159,7 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderRadius =
-        borderRadius ?? BorderRadius.circular(16);
+    final effectiveBorderRadius = borderRadius ?? BorderRadius.circular(16);
 
     final decoration = BoxDecoration(
       color: backgroundColor ?? AppColors.charcoal,
@@ -247,11 +247,7 @@ class _PremiumCard extends StatelessWidget {
       card = Material(
         color: Colors.transparent,
         borderRadius: borderRadius,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: borderRadius,
-          child: card,
-        ),
+        child: InkWell(onTap: onTap, borderRadius: borderRadius, child: card),
       );
     }
 
@@ -293,7 +289,9 @@ class AppStatsCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (iconColor ?? AppColors.crimson).withValues(alpha: 0.15),
+                    color: (iconColor ?? AppColors.crimson).withValues(
+                      alpha: 0.15,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(

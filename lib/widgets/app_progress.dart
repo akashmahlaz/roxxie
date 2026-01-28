@@ -410,7 +410,8 @@ class _CircularPercentage extends StatelessWidget {
           // Percentage text
           Text(
             '$percentage%',
-            style: textStyle ??
+            style:
+                textStyle ??
                 AppTypography.labelLarge.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,

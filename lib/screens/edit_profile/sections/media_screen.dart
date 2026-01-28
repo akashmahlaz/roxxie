@@ -98,13 +98,15 @@ class _MediaScreenState extends State<MediaScreen>
     });
 
     _playerStateSubscription = _audioPlayer.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed) {
-        if (mounted) {
+      if (mounted) {
+        if (state.processingState == ProcessingState.completed) {
           setState(() {
             _playingAudioIndex = null;
             _audioPosition = Duration.zero;
           });
         }
+        // Trigger rebuild for play/pause icon updates
+        setState(() {});
       }
     });
   }
@@ -410,21 +412,25 @@ class _MediaScreenState extends State<MediaScreen>
         dividerColor: Colors.transparent,
         labelColor: Colors.white,
         unselectedLabelColor: AppColors.textSec(brightness),
-        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
+        labelPadding: EdgeInsets.zero,
         tabs: [
           Tab(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.audiotrack_rounded, size: 18),
-                const SizedBox(width: 6),
-                const Text('Audio'),
+                const Icon(Icons.audiotrack_rounded, size: 16),
+                const SizedBox(width: 4),
+                const Flexible(
+                  child: Text('Audio', overflow: TextOverflow.ellipsis),
+                ),
                 if (_audioSamples.isNotEmpty) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   _buildBadge(_audioSamples.length, brightness),
                 ],
               ],
@@ -433,12 +439,15 @@ class _MediaScreenState extends State<MediaScreen>
           Tab(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.videocam_rounded, size: 18),
-                const SizedBox(width: 6),
-                const Text('Video'),
+                const Icon(Icons.videocam_rounded, size: 16),
+                const SizedBox(width: 4),
+                const Flexible(
+                  child: Text('Video', overflow: TextOverflow.ellipsis),
+                ),
                 if (_videoSamples.isNotEmpty) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   _buildBadge(_videoSamples.length, brightness),
                 ],
               ],
@@ -447,12 +456,15 @@ class _MediaScreenState extends State<MediaScreen>
           Tab(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.photo_library_rounded, size: 18),
-                const SizedBox(width: 6),
-                const Text('Photos'),
+                const Icon(Icons.photo_library_rounded, size: 16),
+                const SizedBox(width: 4),
+                const Flexible(
+                  child: Text('Photos', overflow: TextOverflow.ellipsis),
+                ),
                 if (_galleryPhotos.isNotEmpty) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   _buildBadge(_galleryPhotos.length, brightness),
                 ],
               ],
@@ -530,7 +542,7 @@ class _MediaScreenState extends State<MediaScreen>
   }
 
   Widget _buildAudioCard(_AudioItem audio, int index, Brightness brightness) {
-    final isPlaying = _playingAudioIndex == index;
+    final isPlaying = _playingAudioIndex == index && _audioPlayer.playing;
     final progress = _audioDuration.inMilliseconds > 0
         ? _audioPosition.inMilliseconds / _audioDuration.inMilliseconds
         : 0.0;
@@ -539,13 +551,22 @@ class _MediaScreenState extends State<MediaScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isPlaying
               ? AppColors.crimson.withValues(alpha: 0.5)
               : AppColors.border(brightness),
           width: isPlaying ? 2 : 1,
         ),
+        boxShadow: isPlaying
+            ? [
+                BoxShadow(
+                  color: AppColors.crimson.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -555,21 +576,18 @@ class _MediaScreenState extends State<MediaScreen>
               // Play/Pause Button
               GestureDetector(
                 onTap: () => _toggleAudioPlayback(index),
-                child: Container(
-                  width: 48,
-                  height: 48,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.crimson, AppColors.crimsonDark],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusIcon),
+                    color: AppColors.crimson,
+                    borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.crimson.withValues(alpha: 0.3),
                         blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -592,18 +610,24 @@ class _MediaScreenState extends State<MediaScreen>
                       audio.title,
                       style: TextStyle(
                         color: AppColors.text(brightness),
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      '${_formatDuration(isPlaying ? _audioPosition : Duration.zero)} / ${_formatDuration(Duration(seconds: audio.durationSeconds))}',
+                      '${_formatDuration(isPlaying ? _audioPosition : Duration.zero)} / ${_formatDuration(_audioDuration.inSeconds > 0 ? _audioDuration : Duration(seconds: audio.durationSeconds))}',
                       style: TextStyle(
-                        color: AppColors.textSec(brightness),
+                        color: isPlaying
+                            ? AppColors.crimson
+                            : AppColors.textSec(brightness),
                         fontSize: 13,
+                        fontWeight: isPlaying
+                            ? FontWeight.w500
+                            : FontWeight.w400,
                       ),
                     ),
                   ],
@@ -613,8 +637,8 @@ class _MediaScreenState extends State<MediaScreen>
               // Upload progress or delete button
               if (audio.isUploading)
                 SizedBox(
-                  width: 36,
-                  height: 36,
+                  width: 40,
+                  height: 40,
                   child: CircularProgressIndicator(
                     value: audio.uploadProgress,
                     strokeWidth: 3,
@@ -623,30 +647,35 @@ class _MediaScreenState extends State<MediaScreen>
                   ),
                 )
               else
-                IconButton(
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    color: AppColors.textSec(brightness),
-                    size: 22,
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.background(brightness),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  onPressed: () => _confirmDeleteAudio(index),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColors.textSec(brightness),
+                      size: 20,
+                    ),
+                    onPressed: () => _confirmDeleteAudio(index),
+                    splashRadius: 20,
+                  ),
                 ),
             ],
           ),
 
-          // Progress bar
-          if (isPlaying) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: AppColors.border(brightness),
-                color: AppColors.crimson,
-                minHeight: 4,
-              ),
+          // Progress bar - always show for better UX
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: isPlaying ? progress : 0.0,
+              backgroundColor: AppColors.border(brightness),
+              color: AppColors.crimson,
+              minHeight: 4,
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -655,28 +684,40 @@ class _MediaScreenState extends State<MediaScreen>
   Future<void> _toggleAudioPlayback(int index) async {
     final audio = _audioSamples[index];
 
-    if (_playingAudioIndex == index) {
+    if (_playingAudioIndex == index && _audioPlayer.playing) {
       // Currently playing this - pause it
       await _audioPlayer.pause();
-      setState(() => _playingAudioIndex = null);
+      // Keep the index so we can resume
+    } else if (_playingAudioIndex == index && !_audioPlayer.playing) {
+      // Paused on this track - resume
+      await _audioPlayer.play();
     } else {
-      // Stop current and play new
+      // Different track or no track - stop current and play new
       await _audioPlayer.stop();
+      setState(() {
+        _playingAudioIndex = index;
+        _audioPosition = Duration.zero;
+      });
 
       if (audio.url != null) {
         try {
           await _audioPlayer.setUrl(audio.url!);
           _audioDuration = _audioPlayer.duration ?? Duration.zero;
           await _audioPlayer.play();
-          setState(() => _playingAudioIndex = index);
         } catch (e) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Failed to play audio: $e'),
                 backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             );
+            setState(() => _playingAudioIndex = null);
           }
         }
       }

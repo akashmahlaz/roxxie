@@ -36,9 +36,7 @@ class AppDialog {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.charcoal,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         title: Text(
           title,
           style: AppTypography.headlineSmall.copyWith(
@@ -74,7 +72,9 @@ class AppDialog {
               onConfirm?.call();
             },
             style: FilledButton.styleFrom(
-              backgroundColor: isDestructive ? AppColors.error : AppColors.crimson,
+              backgroundColor: isDestructive
+                  ? AppColors.error
+                  : AppColors.crimson,
               foregroundColor: AppColors.pureWhite,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -121,9 +121,7 @@ class AppDialog {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.charcoal,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         icon: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -159,7 +157,10 @@ class AppDialog {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.crimson,
                 foregroundColor: AppColors.pureWhite,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -186,9 +187,7 @@ class AppDialog {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.charcoal,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         icon: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -224,7 +223,10 @@ class AppDialog {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: AppColors.pureWhite,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -253,9 +255,7 @@ class AppDialog {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.charcoal,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         title: title != null
             ? Text(
                 title,

@@ -73,7 +73,7 @@ class _VerificationScreenState extends State<VerificationScreen>
       curve: Curves.easeOut,
     );
     _animationController.forward();
-    
+
     // Load current verification status
     _loadVerificationStatus();
   }
@@ -246,10 +246,7 @@ class _VerificationScreenState extends State<VerificationScreen>
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
@@ -525,7 +522,10 @@ class _VerificationScreenState extends State<VerificationScreen>
                     )
                   : const Text(
                       'Start Verification',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
             ),
           ),

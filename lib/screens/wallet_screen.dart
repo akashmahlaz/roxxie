@@ -126,7 +126,8 @@ class _WalletScreenState extends State<WalletScreen>
         }
 
         // Show error state
-        if (walletProvider.hasError && walletProvider.balance.availableBalance == 0) {
+        if (walletProvider.hasError &&
+            walletProvider.balance.availableBalance == 0) {
           return Scaffold(
             backgroundColor: AppColors.background(brightness),
             body: Center(
@@ -192,9 +193,15 @@ class _WalletScreenState extends State<WalletScreen>
               children: [
                 _buildTransactionsList(brightness, walletProvider, null),
                 _buildTransactionsList(
-                    brightness, walletProvider, WalletTransactionType.earning),
+                  brightness,
+                  walletProvider,
+                  WalletTransactionType.earning,
+                ),
                 _buildTransactionsList(
-                    brightness, walletProvider, WalletTransactionType.payout),
+                  brightness,
+                  walletProvider,
+                  WalletTransactionType.payout,
+                ),
               ],
             ),
           ),
@@ -480,7 +487,10 @@ class _WalletScreenState extends State<WalletScreen>
   // ⚡ QUICK ACTIONS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildQuickActions(Brightness brightness, WalletProvider walletProvider) {
+  Widget _buildQuickActions(
+    Brightness brightness,
+    WalletProvider walletProvider,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       child: Row(
@@ -532,7 +542,9 @@ class _WalletScreenState extends State<WalletScreen>
     WalletTransactionType? filterType,
   ) {
     final filtered = filterType != null
-        ? walletProvider.transactions.where((t) => t.type == filterType).toList()
+        ? walletProvider.transactions
+              .where((t) => t.type == filterType)
+              .toList()
         : walletProvider.transactions;
 
     if (walletProvider.isLoading) {
@@ -573,7 +585,8 @@ class _WalletScreenState extends State<WalletScreen>
               _TransactionCardReal(
                 transaction: transaction,
                 brightness: brightness,
-                onTap: () => _showTransactionDetailsReal(transaction, brightness),
+                onTap: () =>
+                    _showTransactionDetailsReal(transaction, brightness),
               ),
             ],
           );
@@ -671,7 +684,10 @@ class _WalletScreenState extends State<WalletScreen>
   // 🎭 BOTTOM SHEETS & DIALOGS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  void _showWithdrawSheet(Brightness brightness, WalletProvider walletProvider) {
+  void _showWithdrawSheet(
+    Brightness brightness,
+    WalletProvider walletProvider,
+  ) {
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
@@ -684,7 +700,10 @@ class _WalletScreenState extends State<WalletScreen>
     );
   }
 
-  void _showTransactionDetailsReal(WalletTransaction transaction, Brightness brightness) {
+  void _showTransactionDetailsReal(
+    WalletTransaction transaction,
+    Brightness brightness,
+  ) {
     HapticFeedback.selectionClick();
     showModalBottomSheet(
       context: context,
@@ -1087,7 +1106,10 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
 
     if (mounted) {
       Navigator.pop(context);
-      AppSnackBar.success(context, message: 'Withdrawal of \$$amount initiated!');
+      AppSnackBar.success(
+        context,
+        message: 'Withdrawal of \$$amount initiated!',
+      );
     }
   }
 
@@ -1863,7 +1885,8 @@ class _TransactionCardReal extends StatelessWidget {
                           fontSize: 13,
                         ),
                       ),
-                      if (transaction.status == WalletTransactionStatus.pending) ...[
+                      if (transaction.status ==
+                          WalletTransactionStatus.pending) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -1967,7 +1990,8 @@ class _WithdrawSheetRealState extends State<_WithdrawSheetReal> {
 
   Future<void> _withdraw() async {
     final amount = double.tryParse(_amountController.text) ?? 0;
-    if (amount <= 0 || amount > widget.walletProvider.balance.availableBalance) {
+    if (amount <= 0 ||
+        amount > widget.walletProvider.balance.availableBalance) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please enter a valid amount'),
@@ -2453,7 +2477,9 @@ class _TransactionDetailSheetReal extends StatelessWidget {
       'Nov',
       'Dec',
     ];
-    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final hour = date.hour > 12
+        ? date.hour - 12
+        : (date.hour == 0 ? 12 : date.hour);
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return '${months[date.month - 1]} ${date.day}, ${date.year} at $hour:${date.minute.toString().padLeft(2, '0')} $period';
   }
