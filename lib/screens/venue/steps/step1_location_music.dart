@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../core/models/venues_models.dart';
+import '../../../core/services/services.dart';
 import '../../../core/theme/theme.dart';
 
 /// 🏢 STEP 1: LOCATION & MUSIC PREFERENCES
@@ -36,6 +35,7 @@ class Step1LocationMusic extends StatefulWidget {
 
 class _Step1LocationMusicState extends State<Step1LocationMusic> {
   final MapController _mapController = MapController();
+  final LocationService _locationService = LocationService();
 
   // Location state
   bool _isDetectingLocation = false;
@@ -89,38 +89,36 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
     HapticFeedback.lightImpact();
 
     try {
-      // Check permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _showLocationError('Location permission denied');
+      final result = await _locationService.getCurrentLocationWithAddress();
+      if (!mounted) return;
+
+      if (result == null) {
+        final state = await _locationService.getPermissionState();
+        if (!mounted) return;
+
+        if (state == LocationPermissionState.serviceDisabled) {
+          _showLocationError(
+            'Location services are disabled. Please enable GPS.',
+            actionLabel: 'Settings',
+            onAction: _locationService.openDeviceLocationSettings,
+          );
           return;
         }
-      }
 
-      if (permission == LocationPermission.deniedForever) {
-        _showLocationError(
-          'Location permission permanently denied. Enable in settings.',
-        );
+        if (state == LocationPermissionState.deniedForever) {
+          _showLocationError(
+            'Location permission denied. Enable it in Settings.',
+            actionLabel: 'Settings',
+            onAction: _locationService.openLocationSettings,
+          );
+          return;
+        }
+
+        _showLocationError('Could not detect location. Try again.');
         return;
       }
 
-      // Try last known position first (fast)
-      final lastKnown = await Geolocator.getLastKnownPosition();
-      if (lastKnown != null && mounted) {
-        _applyPosition(lastKnown, quick: true);
-      }
-
-      // Get current position with faster settings
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 6),
-        ),
-      );
-
-      _applyPosition(position, quick: false);
+      _applyLocationResult(result, quick: false);
     } catch (e) {
       _showLocationError('Could not detect location. Try again.');
     } finally {
@@ -128,57 +126,33 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
     }
   }
 
-  Future<void> _applyPosition(Position position, {required bool quick}) async {
-    try {
-      // Reverse geocode with timeout to avoid long waits
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      ).timeout(const Duration(seconds: 4));
+  void _applyLocationResult(LocationResult result, {required bool quick}) {
+    setState(() {
+      _currentPosition = LatLng(result.latitude, result.longitude);
+      _detectedCity = result.city ?? _detectedCity ?? 'Unknown';
+      _detectedCountry = result.country ?? _detectedCountry ?? 'Unknown';
+      _locationDetected = true;
 
-      String? city;
-      String? country;
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        city = place.locality ?? place.subAdministrativeArea;
-        country = place.country;
-      }
+      // Update profile data
+      widget.profileData.location.city = _detectedCity;
+      widget.profileData.location.country = _detectedCountry;
+      widget.profileData.location.coordinates = [
+        result.longitude,
+        result.latitude,
+      ];
+      widget.profileData.location.formattedAddress = result.address;
+    });
 
-      setState(() {
-        _currentPosition = LatLng(position.latitude, position.longitude);
-        _detectedCity = city ?? _detectedCity ?? 'Unknown';
-        _detectedCountry = country ?? _detectedCountry ?? 'Unknown';
-        _locationDetected = true;
-
-        // Update profile data
-        widget.profileData.location.city = _detectedCity;
-        widget.profileData.location.country = _detectedCountry;
-        widget.profileData.location.coordinates = [
-          position.longitude,
-          position.latitude,
-        ];
-      });
-
-      _mapController.move(_currentPosition, quick ? 12 : 14);
-      widget.onDataChanged();
-      if (!quick) HapticFeedback.mediumImpact();
-    } catch (_) {
-      // If reverse geocode fails, still save coordinates
-      setState(() {
-        _currentPosition = LatLng(position.latitude, position.longitude);
-        _locationDetected = true;
-        widget.profileData.location.coordinates = [
-          position.longitude,
-          position.latitude,
-        ];
-      });
-
-      _mapController.move(_currentPosition, quick ? 12 : 14);
-      widget.onDataChanged();
-    }
+    _mapController.move(_currentPosition, quick ? 12 : 14);
+    widget.onDataChanged();
+    if (!quick) HapticFeedback.mediumImpact();
   }
 
-  void _showLocationError(String message) {
+  void _showLocationError(
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -186,6 +160,13 @@ class _Step1LocationMusicState extends State<Step1LocationMusic> {
         backgroundColor: AppColors.crimson,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: actionLabel != null && onAction != null
+            ? SnackBarAction(
+                label: actionLabel,
+                textColor: Colors.white,
+                onPressed: onAction,
+              )
+            : null,
       ),
     );
     setState(() => _isDetectingLocation = false);

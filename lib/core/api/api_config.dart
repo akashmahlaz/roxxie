@@ -4,14 +4,20 @@ library;
 
 class ApiConfig {
   // 🌐 Base URLs
-  // Production:
-  // static const String baseUrl = 'https://gigmatch.onrender.com/api/v1';
-  // static const String wsUrl = 'wss://gigmatch.onrender.com';
+  // Defaults to production. Override for local/dev with:
+  // flutter run --dart-define=API_BASE_URL=http://<LAN-IP>:3000/api/v1 \
+  //             --dart-define=WS_BASE_URL=ws://<LAN-IP>:3000
+  static const String _defaultBaseUrl = 'http://10.188.28.168:3000/api/v1';
+  static const String _defaultWsUrl = 'ws://10.188.28.168:3000';
 
-  // Local development (use your computer's IP for physical device)
-  // For Android emulator use 10.0.2.2, for physical device use your LAN IP
-  static const String baseUrl = 'http://10.188.28.168:3000/api/v1';
-  static const String wsUrl = 'ws://10.188.28.168:3000';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: _defaultBaseUrl,
+  );
+  static const String wsUrl = String.fromEnvironment(
+    'WS_BASE_URL',
+    defaultValue: _defaultWsUrl,
+  );
 
   // ⏱️ Timeouts
   static const Duration connectTimeout = Duration(seconds: 30);
