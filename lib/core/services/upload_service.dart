@@ -247,9 +247,27 @@ class UploadService {
         data: {'resourceType': resourceType},
       );
       return SignedUploadParams.fromJson(response.data);
+    } on DioException catch (e) {
+      debugPrint('Get signed params error: $e');
+      if (e.response?.statusCode == 401) {
+        throw UploadException(
+          'Session expired. Please log in again.',
+          code: 'AUTH_EXPIRED',
+          cause: e,
+        );
+      }
+      throw UploadException(
+        'Failed to prepare upload. Please try again.',
+        code: 'SIGNED_PARAMS_FAILED',
+        cause: e,
+      );
     } catch (e) {
       debugPrint('Get signed params error: $e');
-      rethrow;
+      throw UploadException(
+        'Failed to prepare upload. Please try again.',
+        code: 'SIGNED_PARAMS_FAILED',
+        cause: e,
+      );
     }
   }
 
