@@ -25,6 +25,15 @@ export 'animated_micro_interactions.dart';
 export 'adaptive_ui.dart';
 export 'skeleton_screens.dart';
 
+// Material 3 UI Helpers (2026 Standards)
+export 'app_snackbar.dart';
+export 'app_dialog.dart';
+export 'app_bottom_sheet.dart';
+export 'app_card.dart';
+export 'app_progress.dart';
+export 'app_badge.dart';
+export 'app_segmented_button.dart';
+
 // New UX Components (2026 Standards)
 export 'password_strength_indicator.dart';
 export 'profile_completion_tracker.dart';
@@ -34,3 +43,4 @@ export 'smart_location_picker.dart';
 export 'mini_audio_player.dart';
 export 'audio_message_bubble.dart';
 export 'voice_recorder_button.dart';
+

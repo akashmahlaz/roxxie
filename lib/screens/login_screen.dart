@@ -16,6 +16,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../widgets/app_snackbar.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 
@@ -181,17 +182,10 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _showErrorSnackBar(String message) {
     HapticFeedback.heavyImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        backgroundColor: Colors.red.shade400,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.all(16),
-      ),
+    AppSnackBar.show(
+      context,
+      message: message,
+      backgroundColor: AppColors.error,
     );
   }
 

@@ -676,13 +676,30 @@ class AuthProvider extends ChangeNotifier {
   void _handleDioError(DioException e) {
     final data = e.response?.data;
     if (data is Map && data['message'] != null) {
-      _setError(data['message']);
-    } else if (e.response?.statusCode == 401) {
-      _setError('Invalid credentials');
-    } else if (e.response?.statusCode == 409) {
-      _setError('Email already registered');
-    } else {
-      _setError('Network error. Please try again.');
+      final message = data['message'];
+      if (message is List && message.isNotEmpty) {
+        _setError(message.first.toString());
+        return;
+      }
+      _setError(message.toString());
+      return;
     }
+
+    if (data is Map && data['error'] != null) {
+      _setError(data['error'].toString());
+      return;
+    }
+
+    if (e.response?.statusCode == 401) {
+      _setError('Invalid credentials');
+      return;
+    }
+
+    if (e.response?.statusCode == 409) {
+      _setError('Email already registered');
+      return;
+    }
+
+    _setError('Network error. Please try again.');
   }
 }

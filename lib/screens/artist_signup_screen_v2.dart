@@ -16,6 +16,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../widgets/app_snackbar.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
@@ -149,20 +150,6 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
     super.dispose();
   }
 
-  SnackBar _buildPremiumSnackBar(String message, Color color) {
-    return SnackBar(
-      content: Text(
-        message,
-        style: const TextStyle(fontWeight: FontWeight.w500),
-      ),
-      backgroundColor: color,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.all(16),
-      elevation: 8,
-    );
-  }
-
   // ═══════════════════════════════════════════════════════════════════════════
   // SIGNUP HANDLER
   // ═══════════════════════════════════════════════════════════════════════════
@@ -176,18 +163,16 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
     }
 
     if (!_acceptTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        _buildPremiumSnackBar(
-          'Please accept the Terms & Conditions',
-          AppColors.crimson,
-        ),
+      AppSnackBar.show(
+        context,
+        message: 'Please accept the Terms & Conditions',
+        backgroundColor: AppColors.crimson,
       );
       return;
     }
 
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
-    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final authProvider = context.read<AuthProvider>();
@@ -204,11 +189,10 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
 
       if (success) {
         HapticFeedback.heavyImpact();
-        messenger.showSnackBar(
-          _buildPremiumSnackBar(
-            '✅ Account created! Complete your profile',
-            Colors.green,
-          ),
+        AppSnackBar.show(
+          context,
+          message: '✅ Account created! Complete your profile',
+          backgroundColor: AppColors.success,
         );
 
         Navigator.pushReplacement(
@@ -240,16 +224,17 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
         throw Exception(authProvider.errorMessage ?? 'Registration failed');
       }
     } on _ValidationException catch (e) {
-      messenger.showSnackBar(
-        _buildPremiumSnackBar('⚠️ ${e.message}', AppColors.crimson),
+      AppSnackBar.show(
+        context,
+        message: '⚠️ ${e.message}',
+        backgroundColor: AppColors.crimson,
       );
     } catch (e) {
       HapticFeedback.heavyImpact();
-      messenger.showSnackBar(
-        _buildPremiumSnackBar(
-          '❌ ${e.toString().replaceAll('Exception: ', '')}',
-          Colors.red.shade400,
-        ),
+      AppSnackBar.show(
+        context,
+        message: '❌ ${e.toString().replaceAll('Exception: ', '')}',
+        backgroundColor: AppColors.error,
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
