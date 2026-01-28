@@ -38,6 +38,18 @@ class UploadResponse {
   }
 }
 
+/// Exception for upload failures with user-friendly messages
+class UploadException implements Exception {
+  final String message;
+  final String? code;
+  final Object? cause;
+
+  UploadException(this.message, {this.code, this.cause});
+
+  @override
+  String toString() => message;
+}
+
 /// Private helper to read and encode file in an isolate
 Future<String> _readAndEncodeFile(String filePath) async {
   final file = File(filePath);
@@ -170,6 +182,60 @@ class UploadService {
     }
   }
 
+  /// Size limits in MB by media type
+  static const _maxImageMB = 10;
+  static const _maxAudioMB = 25;
+  static const _maxVideoMB = 50;
+
+  /// Allowed extensions by type
+  static const _imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'];
+  static const _audioExtensions = ['mp3', 'wav', 'aac', 'm4a', 'ogg', 'flac'];
+  static const _videoExtensions = ['mp4', 'mov', 'avi', 'webm', 'mkv', '3gp'];
+
+  /// Validate file before upload - throws UploadException if invalid
+  Future<void> _ensureFileReady(
+    String filePath, {
+    required String type, // 'image', 'audio', 'video'
+  }) async {
+    final file = File(filePath);
+
+    // Check file exists
+    if (!await file.exists()) {
+      throw UploadException('File not found', code: 'FILE_NOT_FOUND');
+    }
+
+    // Check file size
+    final bytes = await file.length();
+    final sizeMB = bytes / (1024 * 1024);
+    final maxMB = switch (type) {
+      'audio' => _maxAudioMB,
+      'video' => _maxVideoMB,
+      _ => _maxImageMB,
+    };
+
+    if (sizeMB > maxMB) {
+      throw UploadException(
+        'File too large (${sizeMB.toStringAsFixed(1)}MB). Max ${maxMB}MB allowed.',
+        code: 'FILE_TOO_LARGE',
+      );
+    }
+
+    // Check extension
+    final ext = filePath.split('.').last.toLowerCase();
+    final allowed = switch (type) {
+      'audio' => _audioExtensions,
+      'video' => _videoExtensions,
+      _ => _imageExtensions,
+    };
+
+    if (!allowed.contains(ext)) {
+      throw UploadException(
+        'Unsupported file type (.$ext). Allowed: ${allowed.join(', ')}',
+        code: 'INVALID_TYPE',
+      );
+    }
+  }
+
   /// 📝 Get signed upload parameters for direct Cloudinary upload
   Future<SignedUploadParams> getSignedParams({
     required String resourceType, // 'image', 'video', 'raw'
@@ -189,6 +255,7 @@ class UploadService {
 
   /// 🖼️ Upload profile photo (base64)
   Future<UploadResponse> uploadProfilePhoto(String filePath) async {
+    await _ensureFileReady(filePath, type: 'image');
     try {
       debugPrint('Uploading profile photo: $filePath');
       final base64Data = await fileToBase64DataUri(filePath);
@@ -212,6 +279,7 @@ class UploadService {
     int index = 0,
     Function(int, int)? onProgress,
   }) async {
+    await _ensureFileReady(filePath, type: 'image');
     try {
       debugPrint('Uploading gallery image: $filePath');
       final sizeMb = await getFileSizeMB(filePath);
@@ -262,6 +330,7 @@ class UploadService {
     String filePath, {
     Function(int, int)? onProgress,
   }) async {
+    await _ensureFileReady(filePath, type: 'audio');
     debugPrint('Uploading audio: $filePath');
     try {
       return await _withRetry(
@@ -291,6 +360,7 @@ class UploadService {
     String filePath, {
     Function(int, int)? onProgress,
   }) async {
+    await _ensureFileReady(filePath, type: 'video');
     debugPrint('Uploading video: $filePath');
     try {
       return await _withRetry(

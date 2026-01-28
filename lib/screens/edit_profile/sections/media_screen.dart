@@ -86,7 +86,10 @@ class _MediaScreenState extends State<MediaScreen>
       length: context.read<AuthProvider>().isArtist ? 3 : 1,
       vsync: this,
     );
-    _loadMedia();
+    // Defer loading to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMedia();
+    });
     _setupAudioListeners();
   }
 
@@ -547,136 +550,437 @@ class _MediaScreenState extends State<MediaScreen>
         ? _audioPosition.inMilliseconds / _audioDuration.inMilliseconds
         : 0.0;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showNowPlaying(index),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isPlaying
-              ? AppColors.crimson.withValues(alpha: 0.5)
-              : AppColors.border(brightness),
-          width: isPlaying ? 2 : 1,
-        ),
-        boxShadow: isPlaying
-            ? [
-                BoxShadow(
-                  color: AppColors.crimson.withValues(alpha: 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface(brightness),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isPlaying
+                  ? AppColors.crimson.withValues(alpha: 0.5)
+                  : AppColors.border(brightness),
+              width: isPlaying ? 2 : 1,
+            ),
+            boxShadow: isPlaying
+                ? [
+                    BoxShadow(
+                      color: AppColors.crimson.withValues(alpha: 0.15),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Play/Pause Button
-              GestureDetector(
-                onTap: () => _toggleAudioPlayback(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.crimson,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.crimson.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+              Row(
+                children: [
+                  // Play/Pause Button
+                  GestureDetector(
+                    onTap: () => _toggleAudioPlayback(index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppColors.crimson,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.crimson.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                    ],
+                      child: Icon(
+                        isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
                   ),
-                  child: Icon(
-                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 28,
+
+                  const SizedBox(width: 14),
+
+                  // Title & Duration
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          audio.title,
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${_formatDuration(isPlaying ? _audioPosition : Duration.zero)} / ${_formatDuration(_audioDuration.inSeconds > 0 ? _audioDuration : Duration(seconds: audio.durationSeconds))}',
+                          style: TextStyle(
+                            color: isPlaying
+                                ? AppColors.crimson
+                                : AppColors.textSec(brightness),
+                            fontSize: 13,
+                            fontWeight:
+                                isPlaying ? FontWeight.w500 : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+
+                  // Upload progress or delete button
+                  if (audio.isUploading)
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        value: audio.uploadProgress,
+                        strokeWidth: 3,
+                        color: AppColors.crimson,
+                        backgroundColor: AppColors.border(brightness),
+                      ),
+                    )
+                  else
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.background(brightness),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppColors.textSec(brightness),
+                          size: 20,
+                        ),
+                        onPressed: () => _confirmDeleteAudio(index),
+                        splashRadius: 20,
+                      ),
+                    ),
+                ],
               ),
 
-              const SizedBox(width: 14),
+              // Progress bar - always show for better UX
+              const SizedBox(height: 14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: isPlaying ? progress : 0.0,
+                  backgroundColor: AppColors.border(brightness),
+                  color: AppColors.crimson,
+                  minHeight: 4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-              // Title & Duration
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+  /// Show Spotify-style Now Playing sheet
+  void _showNowPlaying(int index) {
+    final audio = _audioSamples[index];
+    final brightness = Theme.of(context).brightness;
+
+    // Start playing if not already
+    if (_playingAudioIndex != index) {
+      _toggleAudioPlayback(index);
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          // Subscribe to audio state for real-time updates
+          final isPlaying =
+              _playingAudioIndex == index && _audioPlayer.playing;
+          final position = _audioPosition;
+          final duration = _audioDuration.inSeconds > 0
+              ? _audioDuration
+              : Duration(seconds: audio.durationSeconds);
+          final progress = duration.inMilliseconds > 0
+              ? position.inMilliseconds / duration.inMilliseconds
+              : 0.0;
+
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.7,
+            decoration: BoxDecoration(
+              color: AppColors.surface(brightness),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  // Drag handle
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 8),
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border(brightness),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Album art placeholder with waveform
+                  Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: AppColors.crimson.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: AppColors.crimson.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Waveform visualization
+                        CustomPaint(
+                          size: const Size(160, 80),
+                          painter: _WaveformPainter(
+                            progress: progress,
+                            color: AppColors.crimson,
+                            backgroundColor:
+                                AppColors.crimson.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        // Music icon overlay
+                        Icon(
+                          Icons.music_note_rounded,
+                          color: AppColors.crimson.withValues(alpha: 0.5),
+                          size: 64,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Track title
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
                       audio.title,
                       style: TextStyle(
                         color: AppColors.text(brightness),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.2,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
                       ),
-                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${_formatDuration(isPlaying ? _audioPosition : Duration.zero)} / ${_formatDuration(_audioDuration.inSeconds > 0 ? _audioDuration : Duration(seconds: audio.durationSeconds))}',
-                      style: TextStyle(
-                        color: isPlaying
-                            ? AppColors.crimson
-                            : AppColors.textSec(brightness),
-                        fontSize: 13,
-                        fontWeight: isPlaying
-                            ? FontWeight.w500
-                            : FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Upload progress or delete button
-              if (audio.isUploading)
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CircularProgressIndicator(
-                    value: audio.uploadProgress,
-                    strokeWidth: 3,
-                    color: AppColors.crimson,
-                    backgroundColor: AppColors.border(brightness),
-                  ),
-                )
-              else
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.background(brightness),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.delete_outline_rounded,
+                  const SizedBox(height: 8),
+
+                  // Artist name
+                  Text(
+                    'Your Track',
+                    style: TextStyle(
                       color: AppColors.textSec(brightness),
-                      size: 20,
+                      fontSize: 16,
                     ),
-                    onPressed: () => _confirmDeleteAudio(index),
-                    splashRadius: 20,
                   ),
-                ),
-            ],
-          ),
 
-          // Progress bar - always show for better UX
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: isPlaying ? progress : 0.0,
-              backgroundColor: AppColors.border(brightness),
-              color: AppColors.crimson,
-              minHeight: 4,
+                  const Spacer(),
+
+                  // Progress slider
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      children: [
+                        SliderTheme(
+                          data: SliderThemeData(
+                            activeTrackColor: AppColors.crimson,
+                            inactiveTrackColor:
+                                AppColors.crimson.withValues(alpha: 0.2),
+                            thumbColor: AppColors.crimson,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 6,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 14,
+                            ),
+                            trackHeight: 4,
+                          ),
+                          child: Slider(
+                            value: progress.clamp(0.0, 1.0),
+                            onChanged: (value) {
+                              final newPosition = Duration(
+                                milliseconds:
+                                    (value * duration.inMilliseconds).toInt(),
+                              );
+                              _audioPlayer.seek(newPosition);
+                            },
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _formatDuration(position),
+                              style: TextStyle(
+                                color: AppColors.textSec(brightness),
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              _formatDuration(duration),
+                              style: TextStyle(
+                                color: AppColors.textSec(brightness),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Playback controls
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Skip back 10s
+                      IconButton(
+                        onPressed: () {
+                          final newPos = position - const Duration(seconds: 10);
+                          _audioPlayer.seek(
+                            newPos < Duration.zero ? Duration.zero : newPos,
+                          );
+                          setSheetState(() {});
+                        },
+                        icon: Icon(
+                          Icons.replay_10_rounded,
+                          color: AppColors.text(brightness),
+                          size: 32,
+                        ),
+                      ),
+
+                      // Previous track
+                      IconButton(
+                        onPressed: index > 0
+                            ? () {
+                                Navigator.pop(ctx);
+                                _showNowPlaying(index - 1);
+                              }
+                            : null,
+                        icon: Icon(
+                          Icons.skip_previous_rounded,
+                          color: index > 0
+                              ? AppColors.text(brightness)
+                              : AppColors.textSec(brightness)
+                                  .withValues(alpha: 0.3),
+                          size: 36,
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // Play/Pause
+                      GestureDetector(
+                        onTap: () {
+                          _toggleAudioPlayback(index);
+                          setSheetState(() {});
+                        },
+                        child: Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: AppColors.crimson,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.crimson.withValues(alpha: 0.4),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 36,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // Next track
+                      IconButton(
+                        onPressed: index < _audioSamples.length - 1
+                            ? () {
+                                Navigator.pop(ctx);
+                                _showNowPlaying(index + 1);
+                              }
+                            : null,
+                        icon: Icon(
+                          Icons.skip_next_rounded,
+                          color: index < _audioSamples.length - 1
+                              ? AppColors.text(brightness)
+                              : AppColors.textSec(brightness)
+                                  .withValues(alpha: 0.3),
+                          size: 36,
+                        ),
+                      ),
+
+                      // Skip forward 10s
+                      IconButton(
+                        onPressed: () {
+                          final newPos = position + const Duration(seconds: 10);
+                          _audioPlayer.seek(
+                            newPos > duration ? duration : newPos,
+                          );
+                          setSheetState(() {});
+                        },
+                        icon: Icon(
+                          Icons.forward_10_rounded,
+                          color: AppColors.text(brightness),
+                          size: 32,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const Spacer(),
+                ],
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -1750,16 +2054,12 @@ class _MediaScreenState extends State<MediaScreen>
   }
 
   Widget _buildFAB(Brightness brightness) {
-    return FloatingActionButton.extended(
+    return FloatingActionButton(
       onPressed: _showAddMediaSheet,
       backgroundColor: AppColors.crimson,
       foregroundColor: Colors.white,
       elevation: 4,
-      icon: const Icon(Icons.add_rounded),
-      label: const Text(
-        'Add Media',
-        style: TextStyle(fontWeight: FontWeight.w600),
-      ),
+      child: const Icon(Icons.add_rounded, size: 28),
     );
   }
 
@@ -1770,7 +2070,6 @@ class _MediaScreenState extends State<MediaScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -1782,22 +2081,26 @@ class _MediaScreenState extends State<MediaScreen>
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 48,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.textSec(brightness).withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(3),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.textSec(brightness).withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
             const SizedBox(height: 20),
 
@@ -1856,8 +2159,10 @@ class _MediaScreenState extends State<MediaScreen>
               brightness: brightness,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
           ],
+        ),
+          ),
         ),
       ),
     );
@@ -1955,14 +2260,17 @@ class _MediaScreenState extends State<MediaScreen>
     final brightness = Theme.of(ctx).brightness;
 
     return Container(
-      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusSection),
         ),
       ),
-      child: Column(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Handle
@@ -2012,8 +2320,10 @@ class _MediaScreenState extends State<MediaScreen>
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -2135,7 +2445,73 @@ class _PhotoItem {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
-// 🎬 VIDEO PREVIEW DIALOG
+// � WAVEFORM PAINTER
+// ════════════════════════════════════════════════════════════════════════════════
+
+class _WaveformPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color backgroundColor;
+
+  _WaveformPainter({
+    required this.progress,
+    required this.color,
+    required this.backgroundColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final barCount = 32;
+    final barWidth = size.width / (barCount * 2);
+    final maxHeight = size.height;
+
+    final backgroundPaint = Paint()
+      ..color = backgroundColor
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = barWidth;
+
+    final activePaint = Paint()
+      ..color = color
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = barWidth;
+
+    for (var i = 0; i < barCount; i++) {
+      // Generate pseudo-random heights for waveform effect
+      final seed = (i * 7 + 3) % 11;
+      final heightFactor = 0.3 + (seed / 11) * 0.7;
+      final barHeight = maxHeight * heightFactor;
+
+      final x = i * (barWidth * 2) + barWidth;
+      final top = (maxHeight - barHeight) / 2;
+      final bottom = top + barHeight;
+
+      // Draw background bar
+      canvas.drawLine(
+        Offset(x, top),
+        Offset(x, bottom),
+        backgroundPaint,
+      );
+
+      // Draw active portion based on progress
+      final progressX = size.width * progress;
+      if (x <= progressX) {
+        canvas.drawLine(
+          Offset(x, top),
+          Offset(x, bottom),
+          activePaint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WaveformPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// �🎬 VIDEO PREVIEW DIALOG
 // ════════════════════════════════════════════════════════════════════════════════
 
 class _VideoPreviewDialog extends StatefulWidget {
