@@ -515,73 +515,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showDeleteAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface(Theme.of(context).brightness),
-        title: const Text('Delete Account?'),
-        content: const Text(
+    final nav = Navigator.of(context);
+    final authProvider = context.read<AuthProvider>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    AppDialog.destructive(
+      context,
+      title: 'Delete Account?',
+      content:
           'This action cannot be undone. All your data will be permanently deleted.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: AppColors.textSec(Theme.of(context).brightness),
+      confirmText: 'Delete Account',
+      onConfirm: () async {
+        // Show loading dialog
+        AppDialog.showLoading(context, message: 'Deleting account...');
+
+        final success = await authProvider.deleteAccount();
+
+        nav.pop(); // Close loading dialog
+
+        if (success) {
+          nav.pushNamedAndRemoveUntil(
+            '/role-selection',
+            (route) => false,
+          );
+        } else {
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: const Text('Failed to delete account. Please try again.'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context); // Close confirmation dialog
-
-              // Show loading dialog
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder:
-                    (context) => const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.crimson,
-                      ),
-                    ),
-              );
-
-              final success =
-                  await context.read<AuthProvider>().deleteAccount();
-
-              if (context.mounted) {
-                Navigator.pop(context); // Close loading dialog
-
-                if (success) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/role-selection',
-                    (route) => false,
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        'Failed to delete account. Please try again.',
-                      ),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Delete Account'),
-          ),
-        ],
-      ),
+          );
+        }
+      },
     );
   }
 }

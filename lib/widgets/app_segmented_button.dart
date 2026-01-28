@@ -174,18 +174,16 @@ class _SegmentButton<T> extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isSelected && showSelectedIcon) ...[
-                Icon(
-                  Icons.check,
-                  size: 18,
-                  color: AppColors.crimson,
-                ),
+                Icon(Icons.check, size: 18, color: AppColors.crimson),
                 const SizedBox(width: 8),
               ],
               if (segment.icon != null) ...[
                 Icon(
                   segment.icon,
                   size: 20,
-                  color: isSelected ? AppColors.crimson : AppColors.textSecondary,
+                  color: isSelected
+                      ? AppColors.crimson
+                      : AppColors.textSecondary,
                 ),
                 if (segment.label != null) const SizedBox(width: 8),
               ],
@@ -193,8 +191,12 @@ class _SegmentButton<T> extends StatelessWidget {
                 Text(
                   segment.label!,
                   style: AppTypography.labelMedium.copyWith(
-                    color: isSelected ? AppColors.crimson : AppColors.textSecondary,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected
+                        ? AppColors.crimson
+                        : AppColors.textSecondary,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
             ],
@@ -275,9 +277,21 @@ class MediaTypeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppSegmentedButton<MediaType>(
       segments: const [
-        AppSegment(value: MediaType.photos, label: 'Photos', icon: Icons.photo_library_rounded),
-        AppSegment(value: MediaType.videos, label: 'Videos', icon: Icons.videocam_rounded),
-        AppSegment(value: MediaType.audio, label: 'Audio', icon: Icons.music_note_rounded),
+        AppSegment(
+          value: MediaType.photos,
+          label: 'Photos',
+          icon: Icons.photo_library_rounded,
+        ),
+        AppSegment(
+          value: MediaType.videos,
+          label: 'Videos',
+          icon: Icons.videocam_rounded,
+        ),
+        AppSegment(
+          value: MediaType.audio,
+          label: 'Audio',
+          icon: Icons.music_note_rounded,
+        ),
       ],
       selected: selected,
       onChanged: onChanged,

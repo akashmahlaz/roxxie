@@ -1062,27 +1062,13 @@ class _VenueProfileViewScreenState extends State<VenueProfileViewScreen>
   }
 
   void _showApplySheet(Brightness brightness) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+    AppBottomSheet.show(
+      context,
+      child: Padding(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppColors.surface(brightness),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border(brightness),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
             Text(
               'Apply to ${_venue!.name}',
               style: TextStyle(

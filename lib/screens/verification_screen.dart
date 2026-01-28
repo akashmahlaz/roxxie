@@ -1766,61 +1766,41 @@ class _VerificationScreenState extends State<VerificationScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   void _showUploadOptions(Brightness brightness, String type) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(24),
-        ),
+    AppBottomSheet.show(
+      context,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border(brightness),
-                borderRadius: BorderRadius.circular(2),
+            Text(
+              'Upload Document',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Text(
-                    'Upload Document',
-                    style: TextStyle(
-                      color: AppColors.text(brightness),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildUploadOption(
-                    brightness,
-                    Icons.camera_alt_rounded,
-                    'Take Photo',
-                    () {
-                      Navigator.pop(context);
-                      _pickImage(type, ImageSource.camera);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildUploadOption(
-                    brightness,
-                    Icons.photo_library_rounded,
-                    'Choose from Gallery',
-                    () {
-                      Navigator.pop(context);
-                      _pickImage(type, ImageSource.gallery);
-                    },
-                  ),
-                ],
-              ),
+            const SizedBox(height: 20),
+            _buildUploadOption(
+              brightness,
+              Icons.camera_alt_rounded,
+              'Take Photo',
+              () {
+                Navigator.pop(context);
+                _pickImage(type, ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildUploadOption(
+              brightness,
+              Icons.photo_library_rounded,
+              'Choose from Gallery',
+              () {
+                Navigator.pop(context);
+                _pickImage(type, ImageSource.gallery);
+              },
             ),
           ],
         ),
@@ -1874,67 +1854,46 @@ class _VerificationScreenState extends State<VerificationScreen>
   }
 
   void _showHelpSheet(Brightness brightness) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(24),
-        ),
+    AppBottomSheet.show(
+      context,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border(brightness),
-                borderRadius: BorderRadius.circular(2),
+            Text(
+              'Need Help?',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Need Help?',
-                    style: TextStyle(
-                      color: AppColors.text(brightness),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
+            const SizedBox(height: 16),
+            Text(
+              'If you\'re having trouble with verification, please contact our support team.',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'If you\'re having trouble with verification, please contact our support team.',
-                    style: TextStyle(
-                      color: AppColors.textSec(brightness),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.crimson,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Contact Support'),
-                    ),
-                  ),
-                ],
+                ),
+                child: const Text('Contact Support'),
               ),
             ),
           ],

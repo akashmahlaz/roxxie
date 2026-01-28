@@ -585,59 +585,33 @@ class _MessagesListScreenState extends State<MessagesListScreen>
 
   void _deleteConversation(Conversation conversation, Brightness brightness) {
     HapticFeedback.mediumImpact();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface(brightness),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Delete conversation?',
-          style: TextStyle(color: AppColors.text(brightness)),
-        ),
-        content: Text(
+    AppDialog.destructive(
+      context,
+      title: 'Delete conversation?',
+      content:
           'This will permanently delete all messages with ${conversation.participantName}.',
-          style: TextStyle(color: AppColors.textSec(brightness)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSec(brightness)),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                _conversations.remove(conversation);
-                _archivedConversations.remove(conversation);
-              });
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
+      confirmText: 'Delete',
+      onConfirm: () {
+        setState(() {
+          _conversations.remove(conversation);
+          _archivedConversations.remove(conversation);
+        });
+      },
     );
   }
 
   void _showNewMessageSheet(Brightness brightness) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => _NewMessageSheet(brightness: brightness),
+    AppBottomSheet.show(
+      context,
+      child: _NewMessageSheet(brightness: brightness),
     );
   }
 
   void _showSettingsSheet(Brightness brightness) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _MessageSettingsSheet(brightness: brightness),
+    AppBottomSheet.show(
+      context,
+      isScrollControlled: false,
+      child: _MessageSettingsSheet(brightness: brightness),
     );
   }
 }

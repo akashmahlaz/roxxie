@@ -4,6 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import '../core/theme/theme.dart';
 import '../core/services/upload_service.dart';
 import '../core/models/models.dart';
+import 'app_snackbar.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 📸 GALLERY UPLOAD GRID
@@ -50,12 +51,7 @@ class _GalleryUploadGridState extends State<GalleryUploadGrid> {
       widget.onChanged(newUrls);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AppSnackBar.error(context, message: 'Upload failed: $e');
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -254,12 +250,7 @@ class _AudioUploadListState extends State<AudioUploadList> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Audio upload failed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AppSnackBar.error(context, message: 'Audio upload failed: $e');
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -473,12 +464,7 @@ class _VideoUploadListState extends State<VideoUploadList> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Video upload failed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AppSnackBar.error(context, message: 'Video upload failed: $e');
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);

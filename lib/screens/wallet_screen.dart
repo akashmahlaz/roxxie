@@ -709,14 +709,7 @@ class _WalletScreenState extends State<WalletScreen>
 
   void _showInvoices(Brightness brightness) {
     HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Invoices coming soon!'),
-        backgroundColor: AppColors.info,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    AppSnackBar.info(context, message: 'Invoices coming soon!');
   }
 }
 
@@ -1082,16 +1075,7 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
   Future<void> _withdraw() async {
     final amount = double.tryParse(_amountController.text) ?? 0;
     if (amount <= 0 || amount > widget.availableBalance) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter a valid amount'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnackBar.error(context, message: 'Please enter a valid amount');
       return;
     }
 
@@ -1103,22 +1087,7 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
 
     if (mounted) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const AnimatedSuccessCheck(size: 20, color: Colors.white),
-              const SizedBox(width: 12),
-              Text('Withdrawal of \$$amount initiated!'),
-            ],
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnackBar.success(context, message: 'Withdrawal of \$$amount initiated!');
     }
   }
 

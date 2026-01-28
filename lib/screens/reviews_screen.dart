@@ -701,11 +701,10 @@ class _ReviewsScreenState extends State<ReviewsScreen>
 
   void _showReplySheet(Review review, Brightness brightness) {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
+    AppBottomSheet.show(
+      context,
       isScrollControlled: true,
-      builder: (context) => _ReplySheet(
+      child: _ReplySheet(
         review: review,
         brightness: brightness,
         onReplySuccess: () {
