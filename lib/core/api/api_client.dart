@@ -220,21 +220,42 @@ class ApiClient {
   Future<bool> refreshTokens() async {
     try {
       final refreshToken = await getRefreshToken();
-      if (refreshToken == null) return false;
+      if (refreshToken == null) {
+        debugPrint('❌ No refresh token available');
+        return false;
+      }
+
+      debugPrint('🔄 Attempting token refresh...');
 
       final response = await Dio().post(
         '${ApiConfig.baseUrl}${Endpoints.authRefresh}',
         data: {'refreshToken': refreshToken},
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+          validateStatus: (status) => true, // Accept all status codes
+        ),
       );
+
+      debugPrint('🔄 Refresh response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final tokens = AuthTokens.fromJson(response.data);
         await saveTokens(tokens);
+        debugPrint('✅ Tokens refreshed successfully');
         return true;
+      } else if (response.statusCode == 401) {
+        debugPrint('❌ Refresh token invalid/expired: ${response.data}');
+        // Clear tokens since refresh failed
+        await clearTokens();
+        return false;
+      } else {
+        debugPrint(
+          '❌ Refresh failed with status ${response.statusCode}: ${response.data}',
+        );
+        return false;
       }
-      return false;
     } catch (e) {
-      debugPrint('Token refresh failed: $e');
+      debugPrint('❌ Token refresh error: $e');
       return false;
     }
   }
@@ -312,6 +333,9 @@ class ApiClient {
 /// 🔐 Auth Interceptor - Adds token to requests, handles 401
 class _AuthInterceptor extends Interceptor {
   final ApiClient _client;
+  bool _isRefreshing = false;
+  final List<({ErrorInterceptorHandler handler, DioException error})>
+  _pendingRequests = [];
 
   _AuthInterceptor(this._client);
 
@@ -342,23 +366,60 @@ class _AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
+      // Prevent duplicate refresh attempts
+      if (_isRefreshing) {
+        // Queue this request to retry after refresh completes
+        _pendingRequests.add((handler: handler, error: err));
+        return;
+      }
+
+      _isRefreshing = true;
+
       // Try to refresh token
       final refreshed = await _client.refreshTokens();
+
       if (refreshed) {
-        // Retry original request
+        // Get new token and retry original request
+        final token = await _client.getAccessToken();
+
+        // Retry the original failed request
         try {
-          final token = await _client.getAccessToken();
           err.requestOptions.headers['Authorization'] = 'Bearer $token';
           final response = await _client.dio.fetch(err.requestOptions);
-          return handler.resolve(response);
+          handler.resolve(response);
         } catch (e) {
-          // Refresh failed, clear tokens
-          await _client.clearTokens();
+          handler.next(err);
         }
+
+        // Retry all pending requests with new token
+        for (final pending in _pendingRequests) {
+          try {
+            pending.error.requestOptions.headers['Authorization'] =
+                'Bearer $token';
+            final response = await _client.dio.fetch(
+              pending.error.requestOptions,
+            );
+            pending.handler.resolve(response);
+          } catch (e) {
+            pending.handler.next(pending.error);
+          }
+        }
+        _pendingRequests.clear();
       } else {
+        // Refresh failed, clear tokens and reject all pending
         await _client.clearTokens();
+        handler.next(err);
+
+        for (final pending in _pendingRequests) {
+          pending.handler.next(pending.error);
+        }
+        _pendingRequests.clear();
       }
+
+      _isRefreshing = false;
+      return;
     }
+
     handler.next(err);
   }
 }

@@ -140,12 +140,14 @@ class _MediaScreenState extends State<MediaScreen>
 
     try {
       final profile = context.read<ProfileProvider>();
+      final auth = context.read<AuthProvider>();
       await profile.loadProfile(_isArtist);
 
       if (_isArtist) {
         final artist = profile.artist;
         if (artist != null) {
-          _profilePhotoUrl = artist.profilePhoto;
+          // Use artist profile photo, fallback to Google/social photo
+          _profilePhotoUrl = artist.profilePhoto ?? auth.user?.profilePhotoUrl;
 
           // Load audio samples
           _audioSamples.clear();
@@ -154,7 +156,7 @@ class _MediaScreenState extends State<MediaScreen>
               _AudioItem(
                 id: audio.cloudinaryPublicId ?? DateTime.now().toString(),
                 url: audio.url,
-                title: audio.title ?? 'Unt5itled Track',
+                title: audio.title ?? 'Untitled Track',
                 durationSeconds: audio.durationSeconds ?? 0,
                 isUploaded: true,
               ),
@@ -191,7 +193,9 @@ class _MediaScreenState extends State<MediaScreen>
       } else {
         final venue = profile.venue;
         if (venue != null) {
-          _profilePhotoUrl = venue.profilePhotoUrl;
+          // Use venue profile photo, fallback to Google/social photo
+          _profilePhotoUrl =
+              venue.profilePhotoUrl ?? auth.user?.profilePhotoUrl;
 
           // Venues only have gallery photos
           _galleryPhotos.clear();
@@ -364,44 +368,37 @@ class _MediaScreenState extends State<MediaScreen>
       centerTitle: true,
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
-          child: GestureDetector(
-            onTap: _isSaving ? null : _saveChanges,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 70, minHeight: 36),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: _isSaving
-                    ? AppColors.crimson.withValues(alpha: 0.5)
-                    : AppColors.crimson,
+          padding: const EdgeInsets.only(right: 16, top: 6, bottom: 6),
+          child: FilledButton(
+            onPressed: _isSaving ? null : _saveChanges,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.crimson,
+              disabledBackgroundColor: AppColors.crimson.withValues(alpha: 0.5),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+              minimumSize: const Size(80, 40),
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.crimson.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              alignment: Alignment.center,
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Save',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+              elevation: 2,
+              shadowColor: AppColors.crimson.withValues(alpha: 0.4),
             ),
+            child: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text(
+                    'Save',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ),
         ),
       ],

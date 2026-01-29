@@ -116,13 +116,13 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
           _artist = await _artistService.getArtistById(widget.profileId!);
         }
       } else {
-        // Own profile preview
+        // Own profile preview - always fetch fresh data to show latest updates
         _isOwnProfile = true;
         _isArtist = auth.isArtist;
         if (_isArtist) {
-          _artist = auth.artistProfile ?? await _artistService.getMyProfile();
+          _artist = await _artistService.getMyProfile();
         } else {
-          _venue = auth.venueProfile ?? await _venueService.getMyProfile();
+          _venue = await _venueService.getMyProfile();
         }
       }
 
@@ -467,44 +467,6 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                   }),
                 ),
               ),
-
-            // Own profile preview banner
-            if (_isOwnProfile)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 56,
-                left: 20,
-                right: 20,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.crimson.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.visibility,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Preview Mode — This is how others see your profile',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -546,16 +508,57 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   // PROFILE INFO CARD
   // ══════════════════════════════════════════════════════════════════════════
 
+  String? _getDisplayLocation() {
+    // Use built-in display location getters when available
+    if (_isArtist) {
+      final artist = _artist;
+      if (artist == null) return null;
+
+      // Artist has displayLocation getter
+      final display = artist.displayLocation;
+      if (display == 'Location not set' || display.contains('+')) {
+        return null;
+      }
+      return display;
+    } else {
+      final venue = _venue;
+      if (venue == null) return null;
+
+      // Venue has displayLocation field
+      if (venue.displayLocation != null &&
+          venue.displayLocation!.isNotEmpty &&
+          !venue.displayLocation!.contains('+')) {
+        return venue.displayLocation;
+      }
+
+      // Fallback to location city
+      final loc = venue.location;
+      if (loc != null &&
+          loc.city != null &&
+          loc.city!.isNotEmpty &&
+          !loc.city!.contains('+')) {
+        return loc.city;
+      }
+      return null;
+    }
+  }
+
   Widget _buildProfileInfoCard(Brightness brightness) {
-    final avatarUrl = _isArtist
-        ? _artist?.profilePhoto
-        : _venue?.profilePhotoUrl;
+    // Get avatar URL with Google photo fallback
+    final auth = context.read<AuthProvider>();
+    String? avatarUrl;
+    if (_isArtist) {
+      avatarUrl = _artist?.profilePhoto;
+    } else {
+      avatarUrl = _venue?.profilePhotoUrl;
+    }
+    // Fallback to Google/social profile photo from user account
+    avatarUrl ??= auth.user?.profilePhotoUrl;
+
     final isVerified = _isArtist
         ? (_artist?.isVerified ?? false)
         : (_venue?.isVerified ?? false);
-    final location = _isArtist
-        ? _artist?.location?.city
-        : _venue?.location?.city;
+    final location = _getDisplayLocation();
     final artistType = _artist?.artistType.name.toUpperCase();
 
     return Transform.translate(
