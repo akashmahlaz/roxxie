@@ -72,8 +72,7 @@ class MatchProvider extends ChangeNotifier {
         result = result.where((m) => m.status == MatchStatus.active).toList();
         break;
       case MatchFilterType.unread:
-        result =
-            result.where((m) => m.status == MatchStatus.active).toList();
+        result = result.where((m) => m.status == MatchStatus.active).toList();
         // TODO: Add unread flag to Match model when available from backend
         break;
       case MatchFilterType.archived:
@@ -185,10 +184,7 @@ class MatchProvider extends ChangeNotifier {
 
   /// 🔄 Refresh all data
   Future<void> refreshAll() async {
-    await Future.wait([
-      loadMatches(refresh: true),
-      loadWhoLikedMe(),
-    ]);
+    await Future.wait([loadMatches(refresh: true), loadWhoLikedMe()]);
   }
 
   /// 🔢 Refresh unread count
@@ -234,7 +230,35 @@ class MatchProvider extends ChangeNotifier {
     }
   }
 
-  /// 🚫 Block match
+  /// � Unarchive match
+  Future<bool> unarchiveMatch(String matchId) async {
+    try {
+      await _matchService.unarchiveMatch(matchId);
+      // Reload to get the match back
+      await loadMatches(refresh: true);
+      return true;
+    } catch (e) {
+      debugPrint('Unarchive match error: $e');
+      return false;
+    }
+  }
+
+  /// 💔 Unmatch (delete conversation)
+  Future<bool> unmatch(String matchId) async {
+    try {
+      await _matchService.unmatch(matchId);
+
+      // Remove from list
+      _matches.removeWhere((m) => m.id == matchId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Unmatch error: $e');
+      return false;
+    }
+  }
+
+  /// �🚫 Block match
   Future<bool> blockMatch(String matchId) async {
     try {
       await _matchService.blockMatch(matchId);

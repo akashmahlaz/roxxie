@@ -34,7 +34,7 @@ import '../core/theme/theme.dart';
 // Existing screens
 import 'home_screen.dart';
 import 'discovery_screen.dart';
-import 'matches_screen_v2.dart';
+import 'messages_screen.dart';
 import 'profile_screen_v3.dart';
 
 // New screens
@@ -54,9 +54,9 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
+class _AppShellState extends State<AppShell>
+    with SingleTickerProviderStateMixin {
   late int _index;
-  late AnimationController _badgeController;
   bool _didRedirectAuth = false;
 
   // Nested navigators to preserve state per tab
@@ -66,24 +66,15 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
   final _messagesNavKey = GlobalKey<NavigatorState>();
   final _meNavKey = GlobalKey<NavigatorState>();
 
-  // Badge counts (would come from providers in production)
-  final int _unreadMessages = 3;
-  final int _pendingRequests = 2;
-
   @override
   void initState() {
     super.initState();
     _index = widget.initialTab.index;
-    _badgeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-  }
 
-  @override
-  void dispose() {
-    _badgeController.dispose();
-    super.dispose();
+    // Load initial match data for badge counts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MatchProvider>().refreshUnreadCount();
+    });
   }
 
   @override
@@ -172,7 +163,7 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
             ),
             _TabNavigator(
               navigatorKey: _messagesNavKey,
-              root: const MatchesScreenV2(),
+              root: const MessagesScreen(),
             ),
             _TabNavigator(
               navigatorKey: _meNavKey,
@@ -212,51 +203,57 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
             top: false,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildNavItem(
-                    index: 0,
-                    icon: Icons.home_outlined,
-                    activeIcon: Icons.home_rounded,
-                    label: 'Home',
-                    brightness: brightness,
-                  ),
-                  _buildNavItem(
-                    index: 1,
-                    icon: Icons.explore_outlined,
-                    activeIcon: Icons.explore_rounded,
-                    label: 'Discover',
-                    brightness: brightness,
-                  ),
-                  _buildNavItem(
-                    index: 2,
-                    icon: isArtist
-                        ? Icons.calendar_month_outlined
-                        : Icons.work_outline_rounded,
-                    activeIcon: isArtist
-                        ? Icons.calendar_month_rounded
-                        : Icons.work_rounded,
-                    label: isArtist ? 'Calendar' : 'Gigs',
-                    brightness: brightness,
-                    badgeCount: isArtist ? 0 : _pendingRequests,
-                  ),
-                  _buildNavItem(
-                    index: 3,
-                    icon: Icons.chat_bubble_outline_rounded,
-                    activeIcon: Icons.chat_bubble_rounded,
-                    label: 'Messages',
-                    brightness: brightness,
-                    badgeCount: _unreadMessages,
-                  ),
-                  _buildNavItem(
-                    index: 4,
-                    icon: Icons.person_outline_rounded,
-                    activeIcon: Icons.person_rounded,
-                    label: 'Me',
-                    brightness: brightness,
-                  ),
-                ],
+              child: Consumer<MatchProvider>(
+                builder: (context, matchProvider, _) {
+                  // Get actual unread count from provider
+                  final unreadMessages = matchProvider.unreadCount;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildNavItem(
+                        index: 0,
+                        icon: Icons.home_outlined,
+                        activeIcon: Icons.home_rounded,
+                        label: 'Home',
+                        brightness: brightness,
+                      ),
+                      _buildNavItem(
+                        index: 1,
+                        icon: Icons.explore_outlined,
+                        activeIcon: Icons.explore_rounded,
+                        label: 'Discover',
+                        brightness: brightness,
+                      ),
+                      _buildNavItem(
+                        index: 2,
+                        icon: isArtist
+                            ? Icons.calendar_month_outlined
+                            : Icons.work_outline_rounded,
+                        activeIcon: isArtist
+                            ? Icons.calendar_month_rounded
+                            : Icons.work_rounded,
+                        label: isArtist ? 'Calendar' : 'Gigs',
+                        brightness: brightness,
+                      ),
+                      _buildNavItem(
+                        index: 3,
+                        icon: Icons.chat_bubble_outline_rounded,
+                        activeIcon: Icons.chat_bubble_rounded,
+                        label: 'Messages',
+                        brightness: brightness,
+                        badgeCount: unreadMessages,
+                      ),
+                      _buildNavItem(
+                        index: 4,
+                        icon: Icons.person_outline_rounded,
+                        activeIcon: Icons.person_rounded,
+                        label: 'Me',
+                        brightness: brightness,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -275,6 +272,34 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
   }) {
     final isSelected = _index == index;
 
+    // Build the icon widget
+    Widget iconWidget = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.crimson.withValues(alpha: 0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        isSelected ? activeIcon : icon,
+        size: 24,
+        color: isSelected ? AppColors.crimson : AppColors.textSec(brightness),
+      ),
+    );
+
+    // Wrap with Badge if there's an unread count
+    if (badgeCount > 0) {
+      iconWidget = Badge(
+        label: Text(badgeCount > 99 ? '99+' : '$badgeCount'),
+        backgroundColor: AppColors.crimson,
+        textColor: Colors.white,
+        textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        child: iconWidget,
+      );
+    }
+
     return GestureDetector(
       onTap: () => _onTap(index),
       behavior: HitTestBehavior.opaque,
@@ -285,75 +310,11 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Icon with scale animation
-                AnimatedScale(
-                  scale: isSelected ? 1.1 : 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.crimson.withValues(alpha: 0.12)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      isSelected ? activeIcon : icon,
-                      size: 24,
-                      color: isSelected
-                          ? AppColors.crimson
-                          : AppColors.textSec(brightness),
-                    ),
-                  ),
-                ),
-
-                // Badge
-                if (badgeCount > 0)
-                  Positioned(
-                    right: -2,
-                    top: -2,
-                    child: AnimatedBuilder(
-                      animation: _badgeController,
-                      builder: (context, child) {
-                        final scale = 1.0 + (_badgeController.value * 0.15);
-                        return Transform.scale(
-                          scale: scale,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.crimson,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.crimson.withValues(
-                                    alpha: 0.4,
-                                  ),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              badgeCount > 9 ? '9+' : badgeCount.toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-              ],
+            // Icon with scale animation
+            AnimatedScale(
+              scale: isSelected ? 1.1 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: iconWidget,
             ),
             const SizedBox(height: 4),
             AnimatedDefaultTextStyle(

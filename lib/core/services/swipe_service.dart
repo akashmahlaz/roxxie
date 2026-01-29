@@ -175,7 +175,7 @@ class MatchService {
     }
   }
 
-  /// 🗑️ Archive/unmatch
+  /// 🗑️ Archive match
   Future<void> archiveMatch(String matchId) async {
     try {
       await _client.patch(
@@ -184,6 +184,29 @@ class MatchService {
       );
     } catch (e) {
       debugPrint('Archive match error: $e');
+      rethrow;
+    }
+  }
+
+  /// 📤 Unarchive match
+  Future<void> unarchiveMatch(String matchId) async {
+    try {
+      await _client.patch(
+        Endpoints.matchById(matchId),
+        data: {'status': MatchStatus.active.value},
+      );
+    } catch (e) {
+      debugPrint('Unarchive match error: $e');
+      rethrow;
+    }
+  }
+
+  /// 💔 Unmatch (delete match completely)
+  Future<void> unmatch(String matchId) async {
+    try {
+      await _client.delete(Endpoints.matchById(matchId));
+    } catch (e) {
+      debugPrint('Unmatch error: $e');
       rethrow;
     }
   }
