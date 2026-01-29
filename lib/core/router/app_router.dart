@@ -26,6 +26,7 @@ import '../../screens/chat_screen.dart';
 import '../../screens/gig_details_screen.dart';
 import '../../screens/gig_contract_screen.dart';
 import '../../screens/artist_public_profile_screen.dart';
+import '../../screens/profile_preview_screen.dart';
 import '../../screens/profile_screen_v3.dart';
 import '../../screens/edit_profile/edit_profile_hub_screen.dart';
 import '../../screens/settings_screen.dart';
@@ -245,7 +246,21 @@ class AppRouter {
         name: 'artist-profile',
         builder: (context, state) {
           final artistId = state.pathParameters['artistId']!;
-          return ArtistPublicProfileScreen(artistId: artistId);
+          return ProfilePreviewScreen(
+            profileId: artistId,
+            profileType: ProfileViewType.artist,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/venue/:venueId',
+        name: 'venue-profile',
+        builder: (context, state) {
+          final venueId = state.pathParameters['venueId']!;
+          return ProfilePreviewScreen(
+            profileId: venueId,
+            profileType: ProfileViewType.venue,
+          );
         },
       ),
       GoRoute(
@@ -255,6 +270,11 @@ class AppRouter {
           final userId = state.pathParameters['userId']!;
           return ArtistPublicProfileScreen(artistId: userId);
         },
+      ),
+      GoRoute(
+        path: '/profile-preview',
+        name: 'profile-preview',
+        builder: (context, state) => const ProfilePreviewScreen(),
       ),
 
       // ══════════════════════════════════════════════════════════════════

@@ -27,6 +27,7 @@ import 'screens/artist/artist_profile_setup_screen.dart';
 import 'screens/venue/venue_profile_setup_screen.dart';
 import 'screens/artist_public_profile_screen.dart';
 import 'screens/public_profile_screen.dart';
+import 'screens/profile_preview_screen.dart';
 import 'screens/edit_profile/edit_profile_hub_screen.dart';
 
 // New Enterprise Screens
@@ -127,6 +128,7 @@ class GigMatchApp extends StatelessWidget {
           '/profile-old': (context) => const ProfileScreen(),
           '/edit-profile': (context) => const EditProfileHubScreen(),
           '/public-profile': (context) => const PublicProfileScreen(),
+          '/profile-preview': (context) => const ProfilePreviewScreen(),
           '/settings': (context) => const SettingsScreen(),
           '/premium': (context) => const PremiumScreen(),
           '/about': (context) => const AboutScreen(),
@@ -183,7 +185,22 @@ class GigMatchApp extends StatelessWidget {
           if (settings.name?.startsWith('/artist/') ?? false) {
             final artistId = settings.name!.split('/').last;
             return _createFadeRoute(
-              ArtistPublicProfileScreen(artistId: artistId),
+              ProfilePreviewScreen(
+                profileId: artistId,
+                profileType: ProfileViewType.artist,
+              ),
+              settings,
+            );
+          }
+
+          // Venue profile route
+          if (settings.name?.startsWith('/venue/') ?? false) {
+            final venueId = settings.name!.split('/').last;
+            return _createFadeRoute(
+              ProfilePreviewScreen(
+                profileId: venueId,
+                profileType: ProfileViewType.venue,
+              ),
               settings,
             );
           }
