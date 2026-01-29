@@ -396,12 +396,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         ),
       ),
       actions: [
-        // Boost button
-        IconButton(
-          icon: Icon(Icons.rocket_launch_rounded, color: AppColors.crimson),
-          onPressed: _showBoostDialog,
-          tooltip: 'Boost visibility',
-        ),
+        // Boost button - only for Artists
+        if (isArtist)
+          IconButton(
+            icon: Icon(Icons.rocket_launch_rounded, color: AppColors.crimson),
+            onPressed: _showBoostDialog,
+            tooltip: 'Boost visibility',
+          ),
       ],
     );
   }

@@ -287,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: _ActionCard(
                   icon: Icons.explore_rounded,
                   title: 'Discover',
-                  subtitle: isArtist ? 'Find venues' : 'Find artists',
+                  subtitle: isArtist ? 'Find gigs' : 'Find artists',
                   gradient: [AppColors.crimson, Colors.deepOrange],
                   onTap: () {},
                   brightness: brightness,
@@ -295,14 +295,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _ActionCard(
-                  icon: Icons.rocket_launch_rounded,
-                  title: 'Boost',
-                  subtitle: 'Get more views',
-                  gradient: [Colors.purple, Colors.deepPurple],
-                  onTap: () => Navigator.pushNamed(context, '/premium'),
-                  brightness: brightness,
-                ),
+                child: isArtist
+                    ? _ActionCard(
+                        icon: Icons.rocket_launch_rounded,
+                        title: 'Boost',
+                        subtitle: 'Get more views',
+                        gradient: [Colors.purple, Colors.deepPurple],
+                        onTap: () => Navigator.pushNamed(context, '/premium'),
+                        brightness: brightness,
+                      )
+                    : _ActionCard(
+                        icon: Icons.add_circle_rounded,
+                        title: 'Post Gig',
+                        subtitle: 'Find artists',
+                        gradient: [Colors.teal, Colors.cyan],
+                        onTap: () => Navigator.pushNamed(context, '/create-gig'),
+                        brightness: brightness,
+                      ),
               ),
             ],
           ),

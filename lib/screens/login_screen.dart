@@ -45,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen>
   // ═══════════════════════════════════════════════════════════════════════════
   // ANIMATION CONTROLLERS
   // ═══════════════════════════════════════════════════════════════════════════
-  late AnimationController _particleController;
   late AnimationController _floatController;
   late AnimationController _pulseController;
   late AnimationController _enterController;
@@ -56,10 +55,6 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _pulseAnimation;
   late Animation<double> _enterAnimation;
 
-  // Particles
-  final List<_LoginParticle> _particles = [];
-  final math.Random _random = math.Random();
-
   // ═══════════════════════════════════════════════════════════════════════════
   // LIFECYCLE
   // ═══════════════════════════════════════════════════════════════════════════
@@ -67,30 +62,10 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
-    _initParticles();
     _initAnimations();
   }
 
-  void _initParticles() {
-    for (int i = 0; i < 35; i++) {
-      _particles.add(
-        _LoginParticle(
-          x: _random.nextDouble(),
-          y: _random.nextDouble(),
-          size: _random.nextDouble() * 3 + 1,
-          speed: _random.nextDouble() * 0.15 + 0.05,
-          opacity: _random.nextDouble() * 0.4 + 0.1,
-        ),
-      );
-    }
-  }
-
   void _initAnimations() {
-    _particleController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 25),
-    )..repeat();
-
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
@@ -127,7 +102,6 @@ class _LoginScreenState extends State<LoginScreen>
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _particleController.dispose();
     _floatController.dispose();
     _pulseController.dispose();
     _enterController.dispose();
@@ -375,25 +349,10 @@ class _LoginScreenState extends State<LoginScreen>
         backgroundColor: AppColors.background(brightness),
         body: Stack(
           children: [
-            // Layer 1: Particle background
-            AnimatedBuilder(
-              animation: _particleController,
-              builder: (context, _) {
-                return CustomPaint(
-                  painter: _ParticleFieldPainter(
-                    particles: _particles,
-                    progress: _particleController.value,
-                    color: isDark ? Colors.white : AppColors.crimson,
-                  ),
-                  size: Size.infinite,
-                );
-              },
-            ),
-
-            // Layer 2: Gradient orbs
+            // Layer 1: Gradient orbs (subtle background)
             _buildGradientOrbs(isDark),
 
-            // Layer 3: Main content
+            // Layer 2: Main content
             SafeArea(
               child: FadeTransition(
                 opacity: _enterAnimation,
@@ -981,33 +940,52 @@ class _LoginScreenState extends State<LoginScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildSocialButtons(Brightness brightness) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSocialButton(
-            icon: Icons.g_mobiledata_rounded,
-            label: 'Google',
-            onTap: _handleGoogleSignIn,
-            brightness: brightness,
+    return GestureDetector(
+      onTap: _isLoading ? null : _handleGoogleSignIn,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: AppColors.border(brightness),
+            width: 1.5,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: FutureBuilder<bool>(
-            future: context.read<AuthProvider>().isAppleSignInAvailable(),
-            builder: (context, snapshot) {
-              final isAvailable = snapshot.data ?? false;
-              return _buildSocialButton(
-                icon: Icons.apple_rounded,
-                label: 'Apple',
-                onTap: isAvailable ? _handleAppleSignIn : null,
-                brightness: brightness,
-                disabled: !isAvailable,
-              );
-            },
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Google "G" icon
+            Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  'G',
+                  style: TextStyle(
+                    color: Colors.red.shade500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Continue with Google',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -1039,34 +1017,6 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  Future<void> _handleAppleSignIn() async {
-    HapticFeedback.lightImpact();
-    if (_isLoading) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      final authProvider = context.read<AuthProvider>();
-      final success = await authProvider.signInWithApple();
-
-      if (!mounted) return;
-
-      if (success) {
-        HapticFeedback.heavyImpact();
-        _navigateAfterSocialLogin(authProvider);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Apple sign-in failed'),
-            backgroundColor: AppColors.crimson,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   void _navigateAfterSocialLogin(AuthProvider authProvider) {
     if (authProvider.status == AuthStatus.needsRoleSelection) {
       // User needs to select artist or venue role
@@ -1082,45 +1032,6 @@ class _LoginScreenState extends State<LoginScreen>
       // User is fully set up
       Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     }
-  }
-
-  Widget _buildSocialButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-    required Brightness brightness,
-    bool disabled = false,
-  }) {
-    return GestureDetector(
-      onTap: disabled || _isLoading ? null : onTap,
-      child: AnimatedOpacity(
-        opacity: disabled ? 0.5 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          height: 54,
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground(brightness),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border(brightness)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: AppColors.text(brightness), size: 24),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: AppColors.text(brightness),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1152,67 +1063,6 @@ class _LoginScreenState extends State<LoginScreen>
       ],
     );
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PARTICLE CLASS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _LoginParticle {
-  double x;
-  double y;
-  double size;
-  double speed;
-  double opacity;
-
-  _LoginParticle({
-    required this.x,
-    required this.y,
-    required this.size,
-    required this.speed,
-    required this.opacity,
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PARTICLE PAINTER
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _ParticleFieldPainter extends CustomPainter {
-  final List<_LoginParticle> particles;
-  final double progress;
-  final Color color;
-
-  _ParticleFieldPainter({
-    required this.particles,
-    required this.progress,
-    required this.color,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (final particle in particles) {
-      final y = (particle.y - progress * particle.speed) % 1.0;
-      final x =
-          particle.x +
-          math.sin(progress * math.pi * 2 + particle.x * 10) * 0.02;
-      final twinkle =
-          0.5 + 0.5 * math.sin(progress * math.pi * 4 + particle.x * 15);
-
-      final paint = Paint()
-        ..color = color.withValues(alpha: particle.opacity * twinkle * 0.5)
-        ..style = PaintingStyle.fill;
-
-      canvas.drawCircle(
-        Offset(x * size.width, y * size.height),
-        particle.size,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ParticleFieldPainter oldDelegate) => true;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

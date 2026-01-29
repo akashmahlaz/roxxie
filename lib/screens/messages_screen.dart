@@ -48,13 +48,19 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   void initState() {
     super.initState();
+    _searchFocusNode.addListener(_onFocusChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
   }
 
+  void _onFocusChange() {
+    setState(() {}); // Rebuild to update border color on focus change
+  }
+
   @override
   void dispose() {
+    _searchFocusNode.removeListener(_onFocusChange);
     _searchController.dispose();
     _scrollController.dispose();
     _searchFocusNode.dispose();
@@ -173,12 +179,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
                             color: AppColors.textTert(brightness),
                           ),
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
                           isDense: true,
+                          filled: false,
                         ),
                         style: AppTypography.bodyMedium.copyWith(
                           color: AppColors.text(brightness),
                         ),
+                        cursorColor: AppColors.crimson,
                         onChanged: (value) {
                           setState(() => _searchQuery = value);
                           context.read<MatchProvider>().setSearchQuery(value);
