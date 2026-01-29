@@ -1771,10 +1771,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     final provider = context.read<DiscoveryProvider>();
     final minPrice = _priceRange.start <= 0 ? null : _priceRange.start;
     final maxPrice = _priceRange.end >= _maxPrice ? null : _priceRange.end;
-    provider.setPriceRangeFilter(minPrice: minPrice, maxPrice: maxPrice);
-
     final minRating = _minRating > 0 ? _minRating : null;
-    provider.setMinRatingFilter(minRating);
+    provider.setPriceAndRatingFilters(
+      minPrice: minPrice,
+      maxPrice: maxPrice,
+      minRating: minRating,
+    );
   }
 
   Future<void> _undoLastSwipe() async {

@@ -404,9 +404,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                               (isArtist
                                       ? (artist?.genres ?? [])
                                       : (venue
-                                              ?.gigPreferences
-                                              ?.preferredGenres ??
-                                          []))
+                                                ?.gigPreferences
+                                                ?.preferredGenres ??
+                                            []))
                                   .take(4)
                                   .map(
                                     (genre) => Container(
@@ -450,8 +450,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     Artist? artist,
     Venue? venue,
   ) {
-    final avatarUrl =
-        isArtist ? artist?.profilePhoto : venue?.profilePhotoUrl;
+    final avatarUrl = isArtist ? artist?.profilePhoto : venue?.profilePhotoUrl;
 
     return Container(
       width: 72,
@@ -853,9 +852,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
         children: [
           // Play button
           GestureDetector(
-            onTap: hasUrl
-                ? () => _toggleAudioPlayback(sample, index)
-                : null,
+            onTap: hasUrl ? () => _toggleAudioPlayback(sample, index) : null,
             child: Container(
               width: 44,
               height: 44,
@@ -897,10 +894,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                 if (_audioError != null && isPlaying) ...[
                   Text(
                     _audioError!,
-                    style: TextStyle(
-                      color: AppColors.warning,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: AppColors.warning, fontSize: 12),
                   ),
                   const SizedBox(height: 6),
                 ],
@@ -1226,10 +1220,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     final messenger = ScaffoldMessenger.of(context);
     final uri = _normalizeUrl(url);
     try {
-      final opened = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened && mounted) {
         messenger.showSnackBar(
           SnackBar(
@@ -1365,9 +1356,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        participantId: widget.userId,
-                      ),
+                      builder: (context) =>
+                          ChatScreen(participantId: widget.userId),
                     ),
                   );
                 }
@@ -1483,7 +1473,9 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.textSec(widget.brightness).withValues(alpha: 0.4),
+              color: AppColors.textSec(
+                widget.brightness,
+              ).withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -1511,7 +1503,9 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
           ),
           const SizedBox(height: 12),
           AspectRatio(
-            aspectRatio: _isInitialized ? _controller.value.aspectRatio : 16 / 9,
+            aspectRatio: _isInitialized
+                ? _controller.value.aspectRatio
+                : 16 / 9,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: _hasError
@@ -1520,7 +1514,9 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
                       child: Center(
                         child: Text(
                           'Unable to play video',
-                          style: TextStyle(color: AppColors.textSec(widget.brightness)),
+                          style: TextStyle(
+                            color: AppColors.textSec(widget.brightness),
+                          ),
                         ),
                       ),
                     )
@@ -1534,12 +1530,12 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
                           allowScrubbing: true,
                           colors: VideoProgressColors(
                             playedColor: AppColors.crimson,
-                            bufferedColor:
-                                AppColors.crimson.withValues(alpha: 0.3),
-                            backgroundColor:
-                                AppColors.textSec(widget.brightness).withValues(
-                                      alpha: 0.2,
-                                    ),
+                            bufferedColor: AppColors.crimson.withValues(
+                              alpha: 0.3,
+                            ),
+                            backgroundColor: AppColors.textSec(
+                              widget.brightness,
+                            ).withValues(alpha: 0.2),
                           ),
                         ),
                         Positioned(
@@ -1577,8 +1573,7 @@ class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
                       color: AppColors.surface(widget.brightness),
                       child: Center(
                         child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation(AppColors.crimson),
+                          valueColor: AlwaysStoppedAnimation(AppColors.crimson),
                         ),
                       ),
                     ),

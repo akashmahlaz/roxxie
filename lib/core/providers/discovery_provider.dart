@@ -210,6 +210,18 @@ class DiscoveryProvider extends ChangeNotifier {
     loadCards(refresh: true);
   }
 
+  /// 💵⭐ Set price and rating filters together
+  void setPriceAndRatingFilters({
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+  }) {
+    _minPrice = minPrice;
+    _maxPrice = maxPrice;
+    _minRating = minRating;
+    loadCards(refresh: true);
+  }
+
   /// 📍 Clear location filter
   void clearLocationFilter() {
     _latitude = null;
