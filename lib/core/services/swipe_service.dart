@@ -17,6 +17,9 @@ class SwipeService {
     double? longitude,
     int? maxDistance,
     List<String>? genres,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -32,6 +35,9 @@ class SwipeService {
       if (genres != null && genres.isNotEmpty) {
         queryParams['genres'] = genres.join(',');
       }
+      if (minPrice != null) queryParams['minPrice'] = minPrice.toString();
+      if (maxPrice != null) queryParams['maxPrice'] = maxPrice.toString();
+      if (minRating != null) queryParams['minRating'] = minRating.toString();
 
       final response = await _client.get(
         Endpoints.discover,

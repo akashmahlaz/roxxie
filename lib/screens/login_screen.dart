@@ -7,8 +7,7 @@
 /// ✅ Shimmer text effects
 /// ✅ Premium field animations
 /// ✅ Haptic feedback integration
-/// ✅ Biometric login option
-/// ✅ Social login buttons
+/// ✅ Social login button
 library;
 
 import 'dart:math' as math;
@@ -39,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen>
   // State
   bool _obscurePassword = true;
   bool _isLoading = false;
-  bool _rememberMe = false;
+  bool _rememberMe = true;
   final Map<String, bool> _fieldFocus = {};
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -127,6 +126,7 @@ class _LoginScreenState extends State<LoginScreen>
       final success = await authProvider.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        rememberMe: _rememberMe,
       );
 
       if (!mounted) return;

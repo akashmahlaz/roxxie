@@ -28,6 +28,9 @@ class DiscoveryProvider extends ChangeNotifier {
   double? _longitude;
   int? _maxDistance;
   List<String>? _genres;
+  double? _minPrice;
+  double? _maxPrice;
+  double? _minRating;
 
   // Getters
   DiscoveryStatus get status => _status;
@@ -69,6 +72,9 @@ class DiscoveryProvider extends ChangeNotifier {
         longitude: _longitude,
         maxDistance: _maxDistance,
         genres: _genres,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        minRating: _minRating,
       );
 
       if (refresh) {
@@ -191,12 +197,36 @@ class DiscoveryProvider extends ChangeNotifier {
     loadCards(refresh: true);
   }
 
+  /// 💵 Set price range filter
+  void setPriceRangeFilter({double? minPrice, double? maxPrice}) {
+    _minPrice = minPrice;
+    _maxPrice = maxPrice;
+    loadCards(refresh: true);
+  }
+
+  /// ⭐ Set minimum rating filter
+  void setMinRatingFilter(double? minRating) {
+    _minRating = minRating;
+    loadCards(refresh: true);
+  }
+
+  /// 📍 Clear location filter
+  void clearLocationFilter() {
+    _latitude = null;
+    _longitude = null;
+    _maxDistance = null;
+    loadCards(refresh: true);
+  }
+
   /// 🧹 Clear filters
   void clearFilters() {
     _latitude = null;
     _longitude = null;
     _maxDistance = null;
     _genres = null;
+    _minPrice = null;
+    _maxPrice = null;
+    _minRating = null;
     loadCards(refresh: true);
   }
 

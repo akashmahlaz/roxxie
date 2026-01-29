@@ -135,6 +135,7 @@ class ApiClient {
       await _storage.delete(key: ApiConfig.refreshTokenKey);
       await _storage.delete(key: ApiConfig.userKey);
       await _storage.delete(key: ApiConfig.onboardingSkippedKey);
+      await _storage.delete(key: ApiConfig.rememberMeKey);
     } catch (e) {
       debugPrint('⚠️ Error clearing tokens: $e');
       // Force clear all storage on error
@@ -158,6 +159,29 @@ class ApiClient {
     } catch (e) {
       debugPrint('⚠️ Error reading user: $e');
       return null;
+    }
+  }
+
+  // ✅ Remember me flag
+  Future<void> saveRememberMe(bool value) async {
+    try {
+      await _storage.write(
+        key: ApiConfig.rememberMeKey,
+        value: value ? 'true' : 'false',
+      );
+    } catch (e) {
+      debugPrint('⚠️ Error saving remember me: $e');
+    }
+  }
+
+  Future<bool> getRememberMe() async {
+    try {
+      final value = await _storage.read(key: ApiConfig.rememberMeKey);
+      if (value == null) return true;
+      return value == 'true';
+    } catch (e) {
+      debugPrint('⚠️ Error reading remember me: $e');
+      return true;
     }
   }
 

@@ -7,7 +7,6 @@
 /// - Booking CTA
 library;
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
@@ -146,13 +145,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
     Artist? artist,
   ) {
     return AppBar(
-      backgroundColor: _headerOpacity > 0.2
+      backgroundColor: _headerOpacity > 0.5
           ? AppColors.surface(brightness).withValues(alpha: _headerOpacity)
           : Colors.transparent,
-      surfaceTintColor: Colors.transparent,
       elevation: 0,
-      centerTitle: false,
-      titleSpacing: 12,
       leading: GlassBackButton(onPressed: () => Navigator.pop(context)),
       title: AnimatedOpacity(
         opacity: _headerOpacity,
@@ -168,56 +164,40 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
         ),
       ),
       actions: [
-        _buildHeaderAction(
-          icon: Icons.share_rounded,
-          brightness: brightness,
+        IconButton(
           onPressed: _shareProfile,
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.share_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
         ),
         if (isOwnProfile)
-          _buildHeaderAction(
-            icon: Icons.edit_rounded,
-            brightness: brightness,
-            onPressed: () => Navigator.pop(context),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildHeaderAction({
-    required IconData icon,
-    required Brightness brightness,
-    required VoidCallback onPressed,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onPressed();
-        },
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
+          IconButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.cardBackground(brightness)
-                    .withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.border(brightness).withValues(alpha: 0.4),
-                ),
+                color: Colors.black.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: AppColors.text(brightness),
+              child: const Icon(
+                Icons.edit_rounded,
+                color: Colors.white,
                 size: 20,
               ),
             ),
           ),
-        ),
-      ),
+      ],
     );
   }
 
@@ -248,7 +228,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
         : (photos.isNotEmpty ? photos.first : null);
 
     return SizedBox(
-      height: screenHeight * 0.52,
+      height: screenHeight * 0.55,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -283,12 +263,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.35),
                     Colors.transparent,
-                    AppColors.background(brightness).withValues(alpha: 0.75),
+                    Colors.transparent,
+                    AppColors.background(brightness).withValues(alpha: 0.8),
                     AppColors.background(brightness),
                   ],
-                  stops: const [0.0, 0.35, 0.75, 1.0],
+                  stops: const [0.0, 0.4, 0.8, 1.0],
                 ),
               ),
             ),
@@ -320,185 +300,146 @@ class _PublicProfileScreenState extends State<PublicProfileScreen>
               ),
             ),
 
-          // Profile info card
+          // Profile info at bottom of hero
           Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: _buildHeroInfoCard(brightness, isArtist, artist, venue),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeroInfoCard(
-    Brightness brightness,
-    bool isArtist,
-    Artist? artist,
-    Venue? venue,
-  ) {
-    final name = isArtist
-        ? (artist?.stageName ?? artist?.displayName ?? 'Artist')
-        : (venue?.name ?? 'Venue');
-    final location =
-        isArtist ? artist?.location?.city : venue?.location?.city;
-    final rating = isArtist
-        ? (artist?.averageRating ?? 0)
-        : (venue?.reviewStatsAverageRating ?? venue?.rating ?? 0);
-    final reviews =
-        isArtist ? (artist?.totalReviews ?? 0) : (venue?.reviewCount ?? 0);
-    final typeLabel = isArtist ? 'Artist' : (venue?.venueType ?? 'Venue');
-    final hasReviews = rating > 0 && reviews > 0;
-    final isVerified =
-        (isArtist && artist?.isVerified == true) ||
-        (!isArtist && venue?.isVerified == true);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface(brightness).withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: AppColors.border(brightness).withValues(alpha: 0.4),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildProfileAvatar(brightness, isArtist, artist, venue),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _buildProfileAvatar(brightness, isArtist, artist, venue),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: TextStyle(
-                              color: AppColors.text(brightness),
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                        // Name and verified badge
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                isArtist
+                                    ? (artist?.stageName ??
+                                          artist?.displayName ??
+                                          'Artist')
+                                    : (venue?.name ?? 'Venue'),
+                                style: TextStyle(
+                                  color: AppColors.text(brightness),
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                            if ((isArtist && artist?.isVerified == true) ||
+                                (!isArtist && venue?.isVerified == true))
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.crimson,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.verified_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                          ],
                         ),
-                        if (isVerified)
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.crimson,
-                              shape: BoxShape.circle,
+                        const SizedBox(height: 6),
+
+                        // Location and artist type
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_rounded,
+                              color: AppColors.textSec(brightness),
+                              size: 16,
                             ),
-                            child: const Icon(
-                              Icons.verified_rounded,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (location != null && location.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_rounded,
-                            color: AppColors.textSec(brightness),
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              location,
+                            const SizedBox(width: 4),
+                            Text(
+                              isArtist
+                                  ? (artist?.location?.city ??
+                                        'Location not set')
+                                  : (venue?.location?.city ??
+                                        'Location not set'),
                               style: TextStyle(
                                 color: AppColors.textSec(brightness),
-                                fontSize: 12,
+                                fontSize: 14,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        _buildHeaderTag(typeLabel, AppColors.crimson),
-                        if (isArtist && artist != null)
-                          _buildHeaderTag(
-                            '${artist.artistType.name}',
-                            AppColors.rose,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.star_rounded,
-                          color: AppColors.warning,
-                          size: 16,
+                            const SizedBox(width: 12),
+                            if (isArtist && artist != null) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.rose.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  artist.artistType.name.toUpperCase(),
+                                  style: TextStyle(
+                                    color: AppColors.rose,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          hasReviews ? rating.toStringAsFixed(1) : 'New',
-                          style: TextStyle(
-                            color: AppColors.text(brightness),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (hasReviews) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            '($reviews reviews)',
-                            style: TextStyle(
-                              color: AppColors.textSec(brightness),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                        const SizedBox(height: 10),
 
-  Widget _buildHeaderTag(
-    String label,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
+                        // Genres
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children:
+                              (isArtist
+                                      ? (artist?.genres ?? [])
+                                      : (venue
+                                              ?.gigPreferences
+                                              ?.preferredGenres ??
+                                          []))
+                                  .take(4)
+                                  .map(
+                                    (genre) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.crimson.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        genre,
+                                        style: TextStyle(
+                                          color: AppColors.crimson,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

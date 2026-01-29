@@ -73,6 +73,13 @@ class AuthProvider extends ChangeNotifier {
     debugPrint('🔐 AuthProvider.init() starting...');
     _setLoading(true);
     try {
+      final rememberMe = await _authService.getRememberMe();
+      if (!rememberMe) {
+        await _authService.clearLocalSession();
+        _status = AuthStatus.unauthenticated;
+        return;
+      }
+
       final isLoggedIn = await _authService.isLoggedIn();
       debugPrint('🔐 isLoggedIn check: $isLoggedIn');
 
@@ -203,13 +210,18 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// 🔑 Login
-  Future<bool> login({required String email, required String password}) async {
+  Future<bool> login({
+    required String email,
+    required String password,
+    bool rememberMe = true,
+  }) async {
     _setLoading(true);
     _clearError();
 
     try {
       final response = await _authService.login(
         LoginRequest(email: email, password: password),
+        rememberMe: rememberMe,
       );
 
       _user = response.user;

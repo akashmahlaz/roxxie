@@ -63,7 +63,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   final ScrollController _scrollController = ScrollController();
 
   // Price range filter state
-  RangeValues _priceRange = const RangeValues(0, 1000);
+  static const double _maxPrice = 2000;
+  RangeValues _priceRange = const RangeValues(0, _maxPrice);
   double _minRating = 0;
 
   @override
@@ -173,7 +174,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
     // Animate card off screen
     _cardController.reset();
-    _cardController.addListener(() {
+    void handleTick() {
       setState(() {
         _dragOffset = Offset.lerp(
           _dragOffset,
@@ -182,10 +183,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         )!;
         _dragAngle = _dragAngle + (isLike ? 0.3 : -0.3) * _cardController.value;
       });
-    });
+    }
+
+    _cardController.addListener(handleTick);
 
     await _cardController.forward(from: 0);
-    _cardController.removeListener(() {});
+    _cardController.removeListener(handleTick);
 
     // Perform swipe action
     try {
@@ -222,7 +225,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   Future<void> _animateReturn() async {
     _cardController.reset();
-    _cardController.addListener(() {
+    void handleTick() {
       setState(() {
         _dragOffset = Offset.lerp(
           _dragOffset,
@@ -231,10 +234,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         )!;
         _dragAngle = _dragAngle * (1 - _cardController.value);
       });
-    });
+    }
+
+    _cardController.addListener(handleTick);
 
     await _cardController.forward(from: 0);
-    _cardController.removeListener(() {});
+    _cardController.removeListener(handleTick);
 
     setState(() {
       _dragOffset = Offset.zero;
@@ -343,7 +348,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   PreferredSizeWidget _buildAppBar(Brightness brightness, bool isArtist) {
-    final hasPriceFilter = _priceRange.start > 0 || _priceRange.end < 1000;
+    final hasPriceFilter = _priceRange.start > 0 || _priceRange.end < _maxPrice;
     final hasRatingFilter = _minRating > 0;
     final activeFilterCount =
         _selectedGenres.length +
@@ -540,13 +545,14 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           final item = entry.value;
           final scale = 1.0 - index * 0.05;
           final offset = Offset(0, index * 8.0);
+          final isTopCard = index == 0;
 
           return Positioned.fill(
             child: Transform.translate(
               offset: offset,
               child: Transform.scale(
                 scale: scale,
-                child: _buildCard(item, brightness),
+                child: _buildCard(item, brightness, isTopCard: isTopCard),
               ),
             ),
           );
@@ -587,6 +593,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     DiscoveryCard card,
     Brightness brightness, {
     double opacity = 1,
+    bool isTopCard = false,
   }) {
     final discoveryProvider = context.read<DiscoveryProvider>();
 
@@ -610,83 +617,85 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         }
       },
 
-      child: GestureDetector(
-        onPanStart: _onPanStart,
-
-        onPanUpdate: _onPanUpdate,
-
-        onPanEnd: _onPanEnd,
-
-        child: Transform.rotate(
-          angle: _dragAngle,
-
-          child: Transform.translate(
-            offset: _dragOffset,
-
-            child: Opacity(
-              opacity: opacity,
-
-              child: Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-
-                width: cardWidth,
-
-                height: cardHeight,
-
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-
-                      blurRadius: 20,
-
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-
-                  child: Stack(
-                    fit: StackFit.expand,
-
-                    children: [
-                      _buildCardBackground(item, brightness),
-
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-
-                              end: Alignment.bottomCenter,
-
-                              colors: [
-                                Colors.transparent,
-
-                                Colors.black.withValues(alpha: 0.8),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      _buildBadges(item, brightness),
-
-                      _buildCardContent(item, brightness),
-
-                      _buildSwipeIndicators(brightness),
-                    ],
+      child: isTopCard
+          ? GestureDetector(
+              onPanStart: _onPanStart,
+              onPanUpdate: _onPanUpdate,
+              onPanEnd: _onPanEnd,
+              child: Transform.rotate(
+                angle: _dragAngle,
+                child: Transform.translate(
+                  offset: _dragOffset,
+                  child: _buildCardBody(
+                    item,
+                    brightness,
+                    opacity,
+                    cardWidth,
+                    cardHeight,
                   ),
                 ),
               ),
+            )
+          : _buildCardBody(
+              item,
+              brightness,
+              opacity,
+              cardWidth,
+              cardHeight,
             ),
+    );
+  }
+
+  Widget _buildCardBody(
+    DiscoveryItem item,
+    Brightness brightness,
+    double opacity,
+    double cardWidth,
+    double cardHeight,
+  ) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        margin: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 16,
+        ),
+        width: cardWidth,
+        height: cardHeight,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _buildCardBackground(item, brightness),
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.8),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              _buildBadges(item, brightness),
+              _buildCardContent(item, brightness),
+              _buildSwipeIndicators(brightness),
+            ],
           ),
         ),
       ),
@@ -1315,9 +1324,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   void _toggleLocationFilter(bool enabled) {
     final provider = context.read<DiscoveryProvider>();
-    setState(() {
-      _useLocationFilter = enabled;
-    });
+    setState(() => _useLocationFilter = enabled);
     if (enabled) {
       provider.setLocationFilter(
         latitude: 40.7128,
@@ -1325,10 +1332,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         maxDistance: 50,
       );
     } else {
-      provider.clearFilters();
-      setState(() {
-        _selectedGenres.clear();
-      });
+      provider.clearLocationFilter();
     }
   }
 
@@ -1350,7 +1354,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       animation: _filterController,
       builder: (context, child) {
         final panelWidth = MediaQuery.of(context).size.width * 0.85;
-        final hasPriceFilter = _priceRange.start > 0 || _priceRange.end < 1000;
+        final hasPriceFilter =
+            _priceRange.start > 0 || _priceRange.end < _maxPrice;
         final hasRatingFilter = _minRating > 0;
         final appliedCount =
             _selectedGenres.length +
@@ -1462,8 +1467,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
+                          _applyPriceAndRatingFilters();
                           _toggleFilters();
-                          _loadDiscoveryFeed();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.crimson,
@@ -1748,24 +1753,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   // ═══════════════════════════════════════════════════════
 
   void _onLocationFilterChanged(bool enabled) {
-    // Get current location and update filters
-    final provider = context.read<DiscoveryProvider>();
-    setState(() {
-      _useLocationFilter = enabled;
-    });
-
-    if (enabled) {
-      provider.setLocationFilter(
-        latitude: 40.7128,
-        longitude: -74.0060,
-        maxDistance: 50,
-      );
-    } else {
-      provider.clearFilters();
-      setState(() {
-        _selectedGenres.clear();
-      });
-    }
+    _toggleLocationFilter(enabled);
   }
 
   void _clearAllFilters() {
@@ -1774,9 +1762,19 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     setState(() {
       _selectedGenres.clear();
       _useLocationFilter = false;
-      _priceRange = const RangeValues(0, 1000);
+      _priceRange = const RangeValues(0, _maxPrice);
       _minRating = 0;
     });
+  }
+
+  void _applyPriceAndRatingFilters() {
+    final provider = context.read<DiscoveryProvider>();
+    final minPrice = _priceRange.start <= 0 ? null : _priceRange.start;
+    final maxPrice = _priceRange.end >= _maxPrice ? null : _priceRange.end;
+    provider.setPriceRangeFilter(minPrice: minPrice, maxPrice: maxPrice);
+
+    final minRating = _minRating > 0 ? _minRating : null;
+    provider.setMinRatingFilter(minRating);
   }
 
   Future<void> _undoLastSwipe() async {

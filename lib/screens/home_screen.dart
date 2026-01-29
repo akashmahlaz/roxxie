@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../core/models/models.dart';
 import '../widgets/widgets.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -112,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               // Recent Matches Preview
               SliverToBoxAdapter(
-                child: _buildRecentMatches(brightness, matchProvider),
+                child: _buildRecentMatches(brightness, matchProvider, isArtist),
               ),
 
               // Activity Feed
@@ -289,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   title: 'Discover',
                   subtitle: isArtist ? 'Find gigs' : 'Find artists',
                   gradient: [AppColors.crimson, Colors.deepOrange],
-                  onTap: () {},
+                  onTap: () => Navigator.pushNamed(context, '/discovery'),
                   brightness: brightness,
                 ),
               ),
@@ -324,6 +325,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildRecentMatches(
     Brightness brightness,
     MatchProvider matchProvider,
+    bool isArtist,
   ) {
     final recentMatches = matchProvider.newMatches.take(5).toList();
 
@@ -362,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           if (recentMatches.isEmpty)
             _buildEmptyMatchesCard(brightness)
           else
-            _buildMatchesList(recentMatches, brightness),
+            _buildMatchesList(recentMatches, brightness, isArtist),
         ],
       ),
     );
@@ -422,7 +424,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildMatchesList(List<dynamic> recentMatches, Brightness brightness) {
+  Widget _buildMatchesList(
+    List<Match> recentMatches,
+    Brightness brightness,
+    bool isArtist,
+  ) {
     return SizedBox(
       height: 100,
       child: ListView.builder(
@@ -438,6 +444,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: _MatchPreviewCard(
               match: match,
               brightness: brightness,
+              isArtist: isArtist,
               onTap: () => Navigator.pushNamed(context, '/chat/${match.id}'),
             ),
           );
@@ -648,18 +655,27 @@ class _ActionCard extends StatelessWidget {
 }
 
 class _MatchPreviewCard extends StatelessWidget {
-  final dynamic match;
+  final Match match;
   final Brightness brightness;
+  final bool isArtist;
   final VoidCallback onTap;
 
   const _MatchPreviewCard({
     required this.match,
     required this.brightness,
+    required this.isArtist,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final name = isArtist
+        ? (match.venue?.name ?? 'Venue')
+        : (match.artist?.stageName ?? 'Artist');
+    final photo = isArtist
+        ? match.venue?.profilePhotoUrl
+        : match.artist?.profilePhoto;
+
     return AnimatedTapFeedback(
       onTap: onTap,
       child: SizedBox(
@@ -688,23 +704,24 @@ class _MatchPreviewCard extends StatelessWidget {
                 ],
               ),
               padding: const EdgeInsets.all(2),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surface(brightness),
-                ),
-                child: ClipOval(
-                  child: Icon(
-                    Icons.person_rounded,
-                    color: AppColors.textSec(brightness),
-                    size: 32,
-                  ),
-                ),
+              child: CircleAvatar(
+                backgroundColor: AppColors.surface(brightness),
+                backgroundImage:
+                    photo != null && photo.isNotEmpty ? NetworkImage(photo) : null,
+                child: photo == null || photo.isEmpty
+                    ? Icon(
+                        isArtist
+                            ? Icons.location_city_rounded
+                            : Icons.music_note_rounded,
+                        color: AppColors.textSec(brightness),
+                        size: 32,
+                      )
+                    : null,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Match',
+              name,
               style: TextStyle(
                 color: AppColors.text(brightness),
                 fontSize: 12,

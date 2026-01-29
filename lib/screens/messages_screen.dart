@@ -82,6 +82,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final brightness = theme.brightness;
+    final isArtist = context.watch<AuthProvider>().isArtist;
+
+    _ensureValidFilter(isArtist);
 
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
@@ -96,7 +99,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
               _buildAppBar(theme, colorScheme, brightness),
 
               // Quick Filters
-              SliverToBoxAdapter(child: _buildFilters(colorScheme, brightness)),
+              SliverToBoxAdapter(
+                child: _buildFilters(colorScheme, brightness, isArtist),
+              ),
 
               // New Matches Section
               SliverToBoxAdapter(child: _buildNewMatchesSection(brightness)),
@@ -247,7 +252,23 @@ class _MessagesScreenState extends State<MessagesScreen> {
   // 🏷️ QUICK FILTERS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildFilters(ColorScheme colorScheme, Brightness brightness) {
+  void _ensureValidFilter(bool isArtist) {
+    final invalidFilter = isArtist
+        ? _activeFilter == MessageFilter.artists
+        : _activeFilter == MessageFilter.venues;
+    if (!invalidFilter) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _activeFilter = MessageFilter.all);
+    });
+  }
+
+  Widget _buildFilters(
+    ColorScheme colorScheme,
+    Brightness brightness,
+    bool isArtist,
+  ) {
     // Get unread count for badge
     final unreadCount = context.watch<MatchProvider>().unreadCount;
 
@@ -265,9 +286,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
             badgeCount: unreadCount,
           ),
           const SizedBox(width: 8),
-          _buildFilterChip(MessageFilter.venues, 'Venues', brightness),
-          const SizedBox(width: 8),
-          _buildFilterChip(MessageFilter.artists, 'Artists', brightness),
+          if (isArtist) ...[
+            _buildFilterChip(MessageFilter.venues, 'Venues', brightness),
+          ] else ...[
+            _buildFilterChip(MessageFilter.artists, 'Artists', brightness),
+          ],
         ],
       ),
     );
@@ -528,8 +551,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {
-              // Navigate to Discovery tab
-              // This would be handled by parent navigation
+              Navigator.of(context).pushNamed('/discovery');
             },
             icon: const Icon(Icons.explore_rounded),
             label: const Text('Discover'),

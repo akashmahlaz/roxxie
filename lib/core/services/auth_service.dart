@@ -11,7 +11,10 @@ class AuthService {
   final ApiClient _client = ApiClient();
 
   /// 📝 Register new user
-  Future<LoginResponse> register(RegisterRequest request) async {
+  Future<LoginResponse> register(
+    RegisterRequest request, {
+    bool rememberMe = true,
+  }) async {
     try {
       final response = await _client.post(
         Endpoints.authRegister,
@@ -20,9 +23,10 @@ class AuthService {
 
       final loginResponse = LoginResponse.fromJson(response.data);
 
-      // Save tokens and user data
+      // Save tokens, user data, and remember-me preference
       await _client.saveTokens(loginResponse.tokens);
       await _client.saveUser(jsonEncode(loginResponse.user.toJson()));
+      await _client.saveRememberMe(rememberMe);
 
       return loginResponse;
     } catch (e) {
@@ -32,7 +36,10 @@ class AuthService {
   }
 
   /// 🔑 Login with email and password
-  Future<LoginResponse> login(LoginRequest request) async {
+  Future<LoginResponse> login(
+    LoginRequest request, {
+    bool rememberMe = true,
+  }) async {
     try {
       final response = await _client.post(
         Endpoints.authLogin,
@@ -41,9 +48,10 @@ class AuthService {
 
       final loginResponse = LoginResponse.fromJson(response.data);
 
-      // Save tokens and user data
+      // Save tokens, user data, and remember-me preference
       await _client.saveTokens(loginResponse.tokens);
       await _client.saveUser(jsonEncode(loginResponse.user.toJson()));
+      await _client.saveRememberMe(rememberMe);
 
       return loginResponse;
     } catch (e) {
@@ -61,6 +69,11 @@ class AuthService {
     } finally {
       await _client.clearTokens();
     }
+  }
+
+  /// 🧹 Clear local session without server call
+  Future<void> clearLocalSession() async {
+    await _client.clearTokens();
   }
 
   /// 🗑️ Delete account
@@ -166,6 +179,10 @@ class AuthService {
   Future<bool> isLoggedIn() async {
     final token = await _client.getAccessToken();
     return token != null && token.isNotEmpty;
+  }
+
+  Future<bool> getRememberMe() async {
+    return _client.getRememberMe();
   }
 
   /// 📦 Get cached user

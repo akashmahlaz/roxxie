@@ -30,6 +30,7 @@ class ApiConfig {
   static const String userKey = 'user_data';
   static const String onboardingSkippedKey = 'onboarding_skipped';
   static const String hasSeenOnboardingKey = 'has_seen_onboarding';
+  static const String rememberMeKey = 'remember_me';
 
   // 📡 Endpoints
   static const String auth = '/auth';

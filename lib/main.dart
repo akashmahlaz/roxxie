@@ -41,6 +41,9 @@ import 'screens/notifications_screen.dart';
 import 'screens/gig_details_screen.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/artist/calendar_screen.dart';
+import 'screens/venue/create_gig_screen.dart';
+import 'screens/venue/gigs_screen.dart';
+import 'screens/booking_requests_screen.dart';
 
 // App Shell (5-tab navigation)
 import 'screens/app_shell.dart';
@@ -147,6 +150,9 @@ class GigMatchApp extends StatelessWidget {
           '/notifications': (context) => const NotificationsScreen(),
           '/analytics': (context) => const AnalyticsScreen(),
           '/calendar': (context) => const ArtistCalendarScreen(),
+          '/create-gig': (context) => const CreateGigScreen(),
+          '/my-gigs': (context) => const GigsScreen(),
+          '/booking-requests': (context) => const BookingRequestsScreen(),
         },
 
         // Handle dynamic routes with smooth transitions
