@@ -62,7 +62,8 @@ class AppRouter {
     redirect: (context, state) {
       final isLoggedIn = authProvider.isAuthenticated;
       final isOnboarding = state.matchedLocation == '/onboarding';
-      final isAuthRoute = state.matchedLocation.startsWith('/login') ||
+      final isAuthRoute =
+          state.matchedLocation.startsWith('/login') ||
           state.matchedLocation.startsWith('/register') ||
           state.matchedLocation.startsWith('/artist-signup') ||
           state.matchedLocation.startsWith('/venue-signup') ||

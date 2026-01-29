@@ -7,25 +7,29 @@
 /// - Works for own profile preview (from Me tab)
 /// - Works for external viewing via deep link (/artist/:id or /venue/:id)
 /// - Responsive layout with beautiful animations
-/// - Audio/video player for artists
-/// - Photo gallery for venues
+/// - Advanced audio player with waveform and seek
+/// - Video carousel with auto-play
+/// - Photo gallery with lightbox
 /// - Ratings and reviews section
 /// - Share with deep link support
+/// - Material 3 components throughout
 library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:video_player/video_player.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/services/services.dart';
 import '../core/models/models.dart';
+import '../widgets/media/media.dart';
 import 'chat_screen.dart';
+
+/// Media type for segmented button
+enum MediaType { audio, video, photos }
 
 /// Profile type for the screen
 enum ProfileViewType { artist, venue }
@@ -37,11 +41,7 @@ class ProfilePreviewScreen extends StatefulWidget {
   /// The type of profile (artist/venue). If null, auto-detected from auth.
   final ProfileViewType? profileType;
 
-  const ProfilePreviewScreen({
-    super.key,
-    this.profileId,
-    this.profileType,
-  });
+  const ProfilePreviewScreen({super.key, this.profileId, this.profileType});
 
   @override
   State<ProfilePreviewScreen> createState() => _ProfilePreviewScreenState();
@@ -52,7 +52,6 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   // Controllers
   late ScrollController _scrollController;
   late AnimationController _fadeController;
-  late AudioPlayer _audioPlayer;
 
   // State
   bool _isLoading = true;
@@ -65,14 +64,8 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   bool _isArtist = true;
   bool _isOwnProfile = true;
 
-  // Audio state
-  Duration _audioPosition = Duration.zero;
-  Duration _audioDuration = Duration.zero;
-  bool _audioLoading = false;
-  String? _audioError;
-  int? _playingAudioIndex;
-
-  // Photo state
+  // Media state
+  MediaType _selectedMediaType = MediaType.audio;
   int _currentPhotoIndex = 0;
 
   // Reviews (loaded for future enhancement - show individual reviews)
@@ -94,30 +87,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _audioPlayer = AudioPlayer();
-    _setupAudioListeners();
     _loadProfile();
-  }
-
-  void _setupAudioListeners() {
-    _audioPlayer.positionStream.listen((position) {
-      if (mounted) {
-        setState(() => _audioPosition = position);
-      }
-    });
-    _audioPlayer.durationStream.listen((duration) {
-      if (mounted) {
-        setState(() => _audioDuration = duration ?? Duration.zero);
-      }
-    });
-    _audioPlayer.playerStateStream.listen((state) {
-      if (mounted && state.processingState == ProcessingState.completed) {
-        setState(() {
-          _playingAudioIndex = null;
-          _audioPosition = Duration.zero;
-        });
-      }
-    });
   }
 
   void _onScroll() {
@@ -193,7 +163,6 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   void dispose() {
     _scrollController.dispose();
     _fadeController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -225,12 +194,11 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       body: _isLoading
           ? _buildLoading(brightness)
           : _error != null
-              ? _buildError(brightness)
-              : _buildContent(brightness),
-      bottomNavigationBar:
-          !_isLoading && _error == null && !_isOwnProfile
-              ? _buildActionBar(brightness)
-              : null,
+          ? _buildError(brightness)
+          : _buildContent(brightness),
+      bottomNavigationBar: !_isLoading && _error == null && !_isOwnProfile
+          ? _buildActionBar(brightness)
+          : null,
     );
   }
 
@@ -334,9 +302,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
         _buildSliverAppBar(brightness),
 
         // Profile Info Card
-        SliverToBoxAdapter(
-          child: _buildProfileInfoCard(brightness),
-        ),
+        SliverToBoxAdapter(child: _buildProfileInfoCard(brightness)),
 
         // Stats Row
         SliverToBoxAdapter(
@@ -359,12 +325,8 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                 // Genres Section
                 _buildGenresSection(brightness),
 
-                // Media Section (Audio/Video for artists, Gallery for venues)
-                if (_isArtist) ...[
-                  _buildAudioSection(brightness),
-                  _buildVideoSection(brightness),
-                ],
-                _buildGallerySection(brightness),
+                // Media Section (Audio/Video/Photos with segmented navigation)
+                _buildMediaSection(brightness),
 
                 // Equipment Section (artists only)
                 if (_isArtist) _buildEquipmentSection(brightness),
@@ -523,7 +485,11 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.visibility, color: Colors.white, size: 18),
+                      const Icon(
+                        Icons.visibility,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -581,10 +547,12 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildProfileInfoCard(Brightness brightness) {
-    final avatarUrl =
-        _isArtist ? _artist?.profilePhoto : _venue?.profilePhotoUrl;
-    final isVerified =
-        _isArtist ? (_artist?.isVerified ?? false) : (_venue?.isVerified ?? false);
+    final avatarUrl = _isArtist
+        ? _artist?.profilePhoto
+        : _venue?.profilePhotoUrl;
+    final isVerified = _isArtist
+        ? (_artist?.isVerified ?? false)
+        : (_venue?.isVerified ?? false);
     final location = _isArtist
         ? _artist?.location?.city
         : _venue?.location?.city;
@@ -810,7 +778,8 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                   _buildStatItem(
                     brightness,
                     Icons.star_rounded,
-                    (_venue?.reviewStatsAverageRating ?? _venue?.rating ?? 0).toStringAsFixed(1),
+                    (_venue?.reviewStatsAverageRating ?? _venue?.rating ?? 0)
+                        .toStringAsFixed(1),
                     'Rating',
                     AppColors.warning,
                   ),
@@ -959,119 +928,144 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // AUDIO SECTION (Artists only)
+  // UNIFIED MEDIA SECTION (Audio/Video/Photos with Material 3 SegmentedButton)
   // ══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildAudioSection(Brightness brightness) {
-    final samples = _artist?.audioSamples ?? [];
-    if (samples.isEmpty) {
-      return const SizedBox.shrink();
+  Widget _buildMediaSection(Brightness brightness) {
+    final audioSamples = _isArtist
+        ? (_artist?.audioSamples ?? [])
+        : <AudioSample>[];
+    final videoSamples = _isArtist
+        ? (_artist?.videoSamples ?? [])
+        : <VideoSample>[];
+    final photos = _isArtist
+        ? (_artist?.galleryUrls ?? [])
+        : (_venue?.galleryUrls ?? []);
+
+    // Check what media is available
+    final hasAudio = audioSamples.isNotEmpty;
+    final hasVideo = videoSamples.isNotEmpty;
+    final hasPhotos = photos.isNotEmpty;
+
+    // If no media at all, show empty state
+    if (!hasAudio && !hasVideo && !hasPhotos) {
+      return _buildSection(
+        brightness,
+        title: 'Media',
+        icon: Icons.perm_media_rounded,
+        child: Card.outlined(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.perm_media_outlined,
+                  size: 48,
+                  color: AppColors.textSec(brightness),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No media available',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Build available segments
+    final availableTypes = <MediaType>[];
+    if (hasAudio) availableTypes.add(MediaType.audio);
+    if (hasVideo) availableTypes.add(MediaType.video);
+    if (hasPhotos) availableTypes.add(MediaType.photos);
+
+    // Ensure selected type is valid
+    if (!availableTypes.contains(_selectedMediaType)) {
+      _selectedMediaType = availableTypes.first;
     }
 
     return _buildSection(
       brightness,
-      title: 'Music Samples',
-      icon: Icons.audiotrack_rounded,
+      title: 'Media',
+      icon: Icons.perm_media_rounded,
+      trailing: _buildMediaCount(
+        brightness,
+        audioSamples.length,
+        videoSamples.length,
+        photos.length,
+      ),
       child: Column(
-        children: samples.asMap().entries.map((entry) {
-          return _buildAudioPlayer(brightness, entry.value, entry.key);
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildAudioPlayer(Brightness brightness, AudioSample sample, int index) {
-    final isPlaying = _playingAudioIndex == index;
-    final hasUrl = sample.url.isNotEmpty;
-    final progress = _audioDuration.inMilliseconds > 0
-        ? (_audioPosition.inMilliseconds / _audioDuration.inMilliseconds)
-        : 0.0;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(16),
-        border: isPlaying
-            ? Border.all(color: AppColors.crimson, width: 2)
-            : null,
-      ),
-      child: Row(
         children: [
-          // Play button
-          GestureDetector(
-            onTap: hasUrl ? () => _toggleAudioPlayback(sample, index) : null,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.crimson, AppColors.rose],
-                ),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                _audioLoading && isPlaying
-                    ? Icons.hourglass_top_rounded
-                    : isPlaying
-                        ? Icons.pause_rounded
-                        : Icons.play_arrow_rounded,
-                color: Colors.white,
-                size: 26,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-
-          // Track info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  sample.title ?? 'Untitled Track',
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 10),
-                if (_audioError != null && isPlaying)
-                  Text(
-                    _audioError!,
-                    style: TextStyle(
-                      color: AppColors.warning,
-                      fontSize: 12,
-                    ),
-                  )
-                else
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: isPlaying ? progress.clamp(0.0, 1.0) : 0.0,
-                      minHeight: 6,
-                      backgroundColor: AppColors.crimson.withValues(alpha: 0.15),
-                      valueColor: AlwaysStoppedAnimation(AppColors.crimson),
+          // Material 3 SegmentedButton for media type switching
+          if (availableTypes.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<MediaType>(
+                  segments: [
+                    if (hasAudio)
+                      ButtonSegment<MediaType>(
+                        value: MediaType.audio,
+                        label: const Text('Audio'),
+                        icon: const Icon(Icons.audiotrack_rounded, size: 18),
+                      ),
+                    if (hasVideo)
+                      ButtonSegment<MediaType>(
+                        value: MediaType.video,
+                        label: const Text('Video'),
+                        icon: const Icon(Icons.videocam_rounded, size: 18),
+                      ),
+                    if (hasPhotos)
+                      ButtonSegment<MediaType>(
+                        value: MediaType.photos,
+                        label: const Text('Photos'),
+                        icon: const Icon(Icons.photo_library_rounded, size: 18),
+                      ),
+                  ],
+                  selected: {_selectedMediaType},
+                  onSelectionChanged: (selected) {
+                    HapticFeedback.lightImpact();
+                    setState(() => _selectedMediaType = selected.first);
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return AppColors.crimson.withValues(alpha: 0.15);
+                      }
+                      return Colors.transparent;
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return AppColors.crimson;
+                      }
+                      return AppColors.textSec(brightness);
+                    }),
+                    side: WidgetStateProperty.all(
+                      BorderSide(
+                        color: AppColors.crimson.withValues(alpha: 0.3),
+                      ),
                     ),
                   ),
-              ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
 
-          // Duration
-          Text(
-            isPlaying
-                ? _formatDuration(_audioPosition.inSeconds)
-                : _formatDuration(sample.durationSeconds ?? 0),
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+          // Media content based on selected type
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            child: _buildMediaContent(
+              brightness,
+              audioSamples,
+              videoSamples,
+              photos,
             ),
           ),
         ],
@@ -1079,246 +1073,70 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     );
   }
 
-  Future<void> _toggleAudioPlayback(AudioSample sample, int index) async {
-    if (sample.url.isEmpty) return;
+  Widget _buildMediaCount(
+    Brightness brightness,
+    int audio,
+    int video,
+    int photos,
+  ) {
+    final counts = <String>[];
+    if (audio > 0) counts.add('$audio tracks');
+    if (video > 0) counts.add('$video videos');
+    if (photos > 0) counts.add('$photos photos');
 
-    HapticFeedback.lightImpact();
-
-    if (_playingAudioIndex == index) {
-      await _audioPlayer.pause();
-      setState(() => _playingAudioIndex = null);
-      return;
-    }
-
-    setState(() {
-      _audioLoading = true;
-      _audioError = null;
-    });
-
-    try {
-      await _audioPlayer.setUrl(sample.url);
-      await _audioPlayer.play();
-      if (mounted) {
-        setState(() {
-          _playingAudioIndex = index;
-          _audioLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _audioLoading = false;
-          _audioError = 'Unable to play audio';
-          _playingAudioIndex = null;
-        });
-      }
-    }
-  }
-
-  String _formatDuration(int seconds) {
-    if (seconds <= 0) return '0:00';
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '$minutes:${secs.toString().padLeft(2, '0')}';
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // VIDEO SECTION (Artists only)
-  // ══════════════════════════════════════════════════════════════════════════
-
-  Widget _buildVideoSection(Brightness brightness) {
-    final samples = _artist?.videoSamples ?? [];
-    if (samples.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return _buildSection(
-      brightness,
-      title: 'Video Samples',
-      icon: Icons.videocam_rounded,
-      child: SizedBox(
-        height: 160,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: samples.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 12),
-          itemBuilder: (context, index) {
-            final video = samples[index];
-            return _buildVideoThumbnail(brightness, video);
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVideoThumbnail(Brightness brightness, VideoSample video) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _openVideoPlayer(video, brightness);
-      },
-      child: Container(
-        width: 240,
-        decoration: BoxDecoration(
-          color: AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: counts.asMap().entries.map((entry) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (video.thumbnailUrl != null)
-              Image.network(
-                video.thumbnailUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  color: AppColors.surface(brightness),
-                  child: Icon(
-                    Icons.videocam_rounded,
-                    color: AppColors.textSec(brightness),
-                    size: 40,
-                  ),
-                ),
-              )
-            else
-              Container(
-                color: AppColors.surface(brightness),
-                child: Icon(
-                  Icons.videocam_rounded,
-                  color: AppColors.textSec(brightness),
-                  size: 40,
-                ),
-              ),
-
-            // Play button overlay
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-            ),
-
-            // Title
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.8),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
+            if (entry.key > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Text(
-                  video.title ?? 'Video',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                  '•',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 10,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+            Badge(
+              label: Text(entry.value),
+              backgroundColor: AppColors.crimson.withValues(alpha: 0.15),
+              textColor: AppColors.crimson,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             ),
           ],
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 
-  void _openVideoPlayer(VideoSample video, Brightness brightness) {
-    if (video.url.isEmpty) return;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => _VideoPlayerSheet(
-        videoUrl: video.url,
-        title: video.title ?? 'Video',
-        brightness: brightness,
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // GALLERY SECTION
-  // ══════════════════════════════════════════════════════════════════════════
-
-  Widget _buildGallerySection(Brightness brightness) {
-    final photos = _isArtist
-        ? (_artist?.galleryUrls ?? [])
-        : (_venue?.galleryUrls ?? []);
-
-    if (photos.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return _buildSection(
-      brightness,
-      title: 'Gallery',
-      icon: Icons.photo_library_rounded,
-      child: SizedBox(
-        height: 120,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: photos.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 10),
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () => _openGalleryViewer(photos, index, brightness),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: Image.network(
-                  photos[index],
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
-                    width: 120,
-                    height: 120,
-                    color: AppColors.surface(brightness),
-                    child: Icon(
-                      Icons.broken_image_rounded,
-                      color: AppColors.textSec(brightness),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _openGalleryViewer(
-    List<String> photos,
-    int initialIndex,
+  Widget _buildMediaContent(
     Brightness brightness,
+    List<AudioSample> audioSamples,
+    List<VideoSample> videoSamples,
+    List<String> photos,
   ) {
-    showDialog(
-      context: context,
-      builder: (context) => _GalleryViewerDialog(
-        photos: photos,
-        initialIndex: initialIndex,
-        brightness: brightness,
-      ),
-    );
+    switch (_selectedMediaType) {
+      case MediaType.audio:
+        return AdvancedAudioPlayer(
+          key: const ValueKey('audio'),
+          samples: audioSamples,
+        );
+      case MediaType.video:
+        return AdvancedVideoCarousel(
+          key: const ValueKey('video'),
+          videos: videoSamples,
+        );
+      case MediaType.photos:
+        return AdvancedPhotoGallery(
+          key: const ValueKey('photos'),
+          photos: photos,
+          layout: GalleryLayout.featured,
+        );
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1440,7 +1258,8 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
 
     // Check if we have any pricing data
     final hasArtistPricing = priceRange != null;
-    final hasVenuePricing = venuePrefs != null &&
+    final hasVenuePricing =
+        venuePrefs != null &&
         (venuePrefs.minBudget > 0 || venuePrefs.maxBudget > 0);
 
     if (!hasArtistPricing && !hasVenuePricing) {
@@ -1519,33 +1338,76 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     if (_isArtist && _artist?.socialLinks != null) {
       final links = _artist!.socialLinks!;
       if (links.website != null && links.website!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.language_rounded, 'Website', links.website!, null));
+        socialItems.add(
+          _SocialItem(Icons.language_rounded, 'Website', links.website!, null),
+        );
       }
       if (links.instagram != null && links.instagram!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.camera_alt_rounded, 'Instagram', links.instagram!, const Color(0xFFE1306C)));
+        socialItems.add(
+          _SocialItem(
+            Icons.camera_alt_rounded,
+            'Instagram',
+            links.instagram!,
+            const Color(0xFFE1306C),
+          ),
+        );
       }
       if (links.spotify != null && links.spotify!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.music_note_rounded, 'Spotify', links.spotify!, const Color(0xFF1DB954)));
+        socialItems.add(
+          _SocialItem(
+            Icons.music_note_rounded,
+            'Spotify',
+            links.spotify!,
+            const Color(0xFF1DB954),
+          ),
+        );
       }
       if (links.youtube != null && links.youtube!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.play_circle_rounded, 'YouTube', links.youtube!, const Color(0xFFFF0000)));
+        socialItems.add(
+          _SocialItem(
+            Icons.play_circle_rounded,
+            'YouTube',
+            links.youtube!,
+            const Color(0xFFFF0000),
+          ),
+        );
       }
       if (links.tiktok != null && links.tiktok!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.music_video_rounded, 'TikTok', links.tiktok!, null));
+        socialItems.add(
+          _SocialItem(Icons.music_video_rounded, 'TikTok', links.tiktok!, null),
+        );
       }
     } else if (!_isArtist && _venue?.socialLinks != null) {
       final links = _venue!.socialLinks!;
       if (links.website != null && links.website!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.language_rounded, 'Website', links.website!, null));
+        socialItems.add(
+          _SocialItem(Icons.language_rounded, 'Website', links.website!, null),
+        );
       }
       if (links.instagram != null && links.instagram!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.camera_alt_rounded, 'Instagram', links.instagram!, const Color(0xFFE1306C)));
+        socialItems.add(
+          _SocialItem(
+            Icons.camera_alt_rounded,
+            'Instagram',
+            links.instagram!,
+            const Color(0xFFE1306C),
+          ),
+        );
       }
       if (links.facebook != null && links.facebook!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.facebook_rounded, 'Facebook', links.facebook!, const Color(0xFF1877F2)));
+        socialItems.add(
+          _SocialItem(
+            Icons.facebook_rounded,
+            'Facebook',
+            links.facebook!,
+            const Color(0xFF1877F2),
+          ),
+        );
       }
       if (links.tiktok != null && links.tiktok!.isNotEmpty) {
-        socialItems.add(_SocialItem(Icons.music_video_rounded, 'TikTok', links.tiktok!, null));
+        socialItems.add(
+          _SocialItem(Icons.music_video_rounded, 'TikTok', links.tiktok!, null),
+        );
       }
     }
 
@@ -1566,7 +1428,9 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: (item.color ?? AppColors.crimson).withValues(alpha: 0.1),
+                  color: (item.color ?? AppColors.crimson).withValues(
+                    alpha: 0.1,
+                  ),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -1583,14 +1447,16 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   }
 
   Future<void> _openUrl(String url) async {
-    final uri = url.startsWith('http') ? Uri.parse(url) : Uri.parse('https://$url');
+    final uri = url.startsWith('http')
+        ? Uri.parse(url)
+        : Uri.parse('https://$url');
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open link')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Unable to open link')));
       }
     }
   }
@@ -1649,8 +1515,8 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                       index < rating.floor()
                           ? Icons.star_rounded
                           : (index < rating)
-                              ? Icons.star_half_rounded
-                              : Icons.star_outline_rounded,
+                          ? Icons.star_half_rounded
+                          : Icons.star_outline_rounded,
                       color: AppColors.warning,
                       size: 22,
                     );
@@ -1848,300 +1714,4 @@ class _AmenityItem {
   final String label;
 
   _AmenityItem(this.icon, this.label);
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// VIDEO PLAYER SHEET
-// ══════════════════════════════════════════════════════════════════════════════
-
-class _VideoPlayerSheet extends StatefulWidget {
-  final String videoUrl;
-  final String title;
-  final Brightness brightness;
-
-  const _VideoPlayerSheet({
-    required this.videoUrl,
-    required this.title,
-    required this.brightness,
-  });
-
-  @override
-  State<_VideoPlayerSheet> createState() => _VideoPlayerSheetState();
-}
-
-class _VideoPlayerSheetState extends State<_VideoPlayerSheet> {
-  late VideoPlayerController _controller;
-  bool _isInitialized = false;
-  bool _hasError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
-    try {
-      await _controller.initialize();
-      await _controller.play();
-      if (mounted) {
-        setState(() => _isInitialized = true);
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _hasError = true);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      decoration: BoxDecoration(
-        color: AppColors.surface(widget.brightness),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.textSec(widget.brightness).withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Header
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  widget.title,
-                  style: TextStyle(
-                    color: AppColors.text(widget.brightness),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(
-                  Icons.close_rounded,
-                  color: AppColors.textSec(widget.brightness),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Video
-          AspectRatio(
-            aspectRatio:
-                _isInitialized ? _controller.value.aspectRatio : 16 / 9,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: _hasError
-                  ? Container(
-                      color: AppColors.surface(widget.brightness),
-                      child: Center(
-                        child: Text(
-                          'Unable to play video',
-                          style: TextStyle(
-                            color: AppColors.textSec(widget.brightness),
-                          ),
-                        ),
-                      ),
-                    )
-                  : _isInitialized
-                      ? Stack(
-                          alignment: Alignment.bottomCenter,
-                          children: [
-                            VideoPlayer(_controller),
-                            VideoProgressIndicator(
-                              _controller,
-                              allowScrubbing: true,
-                              colors: VideoProgressColors(
-                                playedColor: AppColors.crimson,
-                                bufferedColor:
-                                    AppColors.crimson.withValues(alpha: 0.3),
-                                backgroundColor: AppColors.textSec(
-                                        widget.brightness)
-                                    .withValues(alpha: 0.2),
-                              ),
-                            ),
-                            Positioned(
-                              right: 12,
-                              bottom: 16,
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    if (_controller.value.isPlaying) {
-                                      _controller.pause();
-                                    } else {
-                                      _controller.play();
-                                    }
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.4),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    _controller.value.isPlaying
-                                        ? Icons.pause_rounded
-                                        : Icons.play_arrow_rounded,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Container(
-                          color: AppColors.surface(widget.brightness),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation(AppColors.crimson),
-                            ),
-                          ),
-                        ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// GALLERY VIEWER DIALOG
-// ══════════════════════════════════════════════════════════════════════════════
-
-class _GalleryViewerDialog extends StatefulWidget {
-  final List<String> photos;
-  final int initialIndex;
-  final Brightness brightness;
-
-  const _GalleryViewerDialog({
-    required this.photos,
-    required this.initialIndex,
-    required this.brightness,
-  });
-
-  @override
-  State<_GalleryViewerDialog> createState() => _GalleryViewerDialogState();
-}
-
-class _GalleryViewerDialogState extends State<_GalleryViewerDialog> {
-  late PageController _pageController;
-  late int _currentIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.initialIndex;
-    _pageController = PageController(initialPage: widget.initialIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog.fullscreen(
-      backgroundColor: Colors.black,
-      child: Stack(
-        children: [
-          // Photos
-          PageView.builder(
-            controller: _pageController,
-            itemCount: widget.photos.length,
-            onPageChanged: (i) => setState(() => _currentIndex = i),
-            itemBuilder: (context, index) {
-              return InteractiveViewer(
-                child: Center(
-                  child: Image.network(
-                    widget.photos[index],
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const Icon(
-                      Icons.broken_image,
-                      color: Colors.white54,
-                      size: 64,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // Close button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 16,
-            child: IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.close, color: Colors.white),
-              ),
-            ),
-          ),
-
-          // Page indicator
-          if (widget.photos.length > 1)
-            Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 20,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${_currentIndex + 1} / ${widget.photos.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
