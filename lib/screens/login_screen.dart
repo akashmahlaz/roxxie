@@ -947,10 +947,7 @@ class _LoginScreenState extends State<LoginScreen>
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: AppColors.border(brightness),
-            width: 1.5,
-          ),
+          border: Border.all(color: AppColors.border(brightness), width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

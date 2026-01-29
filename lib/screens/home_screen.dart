@@ -309,7 +309,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         title: 'Post Gig',
                         subtitle: 'Find artists',
                         gradient: [Colors.teal, Colors.cyan],
-                        onTap: () => Navigator.pushNamed(context, '/create-gig'),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/create-gig'),
                         brightness: brightness,
                       ),
               ),
