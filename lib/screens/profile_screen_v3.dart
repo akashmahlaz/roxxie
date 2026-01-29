@@ -28,7 +28,7 @@ class ProfileScreenV3 extends StatefulWidget {
 class _ProfileScreenV3State extends State<ProfileScreenV3>
     with TickerProviderStateMixin {
   late AnimationController _shimmerController;
-  late AnimationController _pulseController;
+  AnimationController? _pulseController;
   late AnimationController _entranceController;
   late ScrollController _scrollController;
   double _scrollOffset = 0;
@@ -105,7 +105,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
   @override
   void dispose() {
     _shimmerController.dispose();
-    _pulseController.dispose();
+    _pulseController?.dispose();
     _entranceController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -371,37 +371,47 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
   }
 
   Widget _buildProfileAvatar(ProfileProvider profile, Brightness brightness) {
+    final pulseController = _pulseController;
+
+    if (pulseController == null) {
+      return _buildStaticProfileAvatar(profile);
+    }
+
     return AnimatedBuilder(
-      animation: _pulseController,
+      animation: pulseController,
       builder: (context, child) {
-        final scale = 1.0 + _pulseController.value * 0.02;
+        final scale = 1.0 + pulseController.value * 0.02;
         return Transform.scale(scale: scale, child: child);
       },
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.crimson.withValues(alpha: 0.5),
-              blurRadius: 30,
-              spreadRadius: 5,
-            ),
-          ],
-        ),
-        child: CircleAvatar(
-          radius: 55,
-          backgroundColor: Colors.white,
-          child: CircleAvatar(
-            radius: 52,
-            backgroundImage:
-                profile.profilePhoto != null && profile.profilePhoto!.isNotEmpty
-                ? NetworkImage(profile.profilePhoto!)
-                : null,
-            backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
-            child: profile.profilePhoto == null || profile.profilePhoto!.isEmpty
-                ? Icon(Icons.person_rounded, size: 50, color: AppColors.crimson)
-                : null,
+      child: _buildStaticProfileAvatar(profile),
+    );
+  }
+
+  Widget _buildStaticProfileAvatar(ProfileProvider profile) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.crimson.withValues(alpha: 0.5),
+            blurRadius: 30,
+            spreadRadius: 5,
           ),
+        ],
+      ),
+      child: CircleAvatar(
+        radius: 55,
+        backgroundColor: Colors.white,
+        child: CircleAvatar(
+          radius: 52,
+          backgroundImage:
+              profile.profilePhoto != null && profile.profilePhoto!.isNotEmpty
+              ? NetworkImage(profile.profilePhoto!)
+              : null,
+          backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
+          child: profile.profilePhoto == null || profile.profilePhoto!.isEmpty
+              ? Icon(Icons.person_rounded, size: 50, color: AppColors.crimson)
+              : null,
         ),
       ),
     );
@@ -663,19 +673,6 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
-              Expanded(
-                child: _buildQuickActionTile(
-                  isArtist ? 'Find Gigs' : 'Find Artists',
-                  Icons.explore_rounded,
-                  AppColors.crimson,
-                  () => Navigator.of(
-                    context,
-                    rootNavigator: true,
-                  ).pushNamed('/explore'),
-                  brightness,
-                ),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: _buildQuickActionTile(
                   'Messages',

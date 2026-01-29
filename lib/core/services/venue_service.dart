@@ -680,6 +680,8 @@ class UpdateVenueRequest {
   final GigPreferences? gigPreferences;
   final bool? isActive;
   final bool? isVisible;
+  final String? profilePhotoUrl;
+  final List<String>? photoGallery;
 
   UpdateVenueRequest({
     this.venueName,
@@ -699,6 +701,8 @@ class UpdateVenueRequest {
     this.gigPreferences,
     this.isActive,
     this.isVisible,
+    this.profilePhotoUrl,
+    this.photoGallery,
   });
 
   Map<String, dynamic> toJson() {
@@ -754,6 +758,10 @@ class UpdateVenueRequest {
     // Status
     if (isActive != null) json['isActive'] = isActive;
     if (isVisible != null) json['isVisible'] = isVisible;
+
+    // Media
+    if (profilePhotoUrl != null) json['coverPhoto'] = profilePhotoUrl;
+    if (photoGallery != null) json['photoGallery'] = photoGallery;
 
     return json;
   }

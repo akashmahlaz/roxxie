@@ -796,4 +796,76 @@ class Endpoints {
 
   /// Moderation actions
   static const String adminModeration = '/admin/moderation';
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // POSTS (Instagram-style feed)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get posts feed
+  static const String postsFeed = '/posts/feed';
+
+  /// Create a post
+  static const String postsCreate = '/posts';
+
+  /// Get single post
+  static String postById(String id) => '/posts/$id';
+
+  /// Update post
+  static String postUpdate(String id) => '/posts/$id';
+
+  /// Delete post
+  static String postDelete(String id) => '/posts/$id';
+
+  /// Toggle like on post
+  static String postLike(String id) => '/posts/$id/like';
+
+  /// Toggle save on post
+  static String postSave(String id) => '/posts/$id/save';
+
+  /// Add comment to post
+  static String postComments(String id) => '/posts/$id/comments';
+
+  /// Delete comment from post
+  static String postCommentDelete(String postId, String commentId) =>
+      '/posts/$postId/comments/$commentId';
+
+  /// Get user's posts
+  static String userPosts(String userId) => '/posts/user/$userId';
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STORIES (24-hour ephemeral content)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get stories feed
+  static const String storiesFeed = '/stories/feed';
+
+  /// Create a story
+  static const String storiesCreate = '/stories';
+
+  /// Get single story
+  static String storyById(String id) => '/stories/$id';
+
+  /// Get user's story
+  static String userStory(String userId) => '/stories/user/$userId';
+
+  /// Add item to story
+  static String storyAddItem(String id) => '/stories/$id/items';
+
+  /// Mark story item as viewed
+  static String storyItemView(String storyId, String itemId) =>
+      '/stories/$storyId/items/$itemId/view';
+
+  /// React to story item
+  static String storyReact(String id) => '/stories/$id/react';
+
+  /// Delete story
+  static String storyDelete(String id) => '/stories/$id';
+
+  /// Delete story item
+  static String storyItemDelete(String storyId, String itemId) =>
+      '/stories/$storyId/items/$itemId';
+
+  /// Get story item viewers
+  static String storyItemViewers(String storyId, String itemId) =>
+      '/stories/$storyId/items/$itemId/viewers';
 }

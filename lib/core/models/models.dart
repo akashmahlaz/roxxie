@@ -10,3 +10,4 @@ export 'match_models.dart';
 export 'message_models.dart';
 export 'gig_models.dart';
 export 'booking_models.dart';
+export 'feed_models.dart';

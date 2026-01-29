@@ -667,6 +667,7 @@ class UpdateArtistRequest {
   final int? yearsOfExperience;
   final Location? location;
   final int? maxTravelDistance;
+  final String? profilePhoto;
   final List<String>? galleryUrls;
   final SocialLinks? socialLinks;
   final PriceRange? priceRange;
@@ -687,6 +688,7 @@ class UpdateArtistRequest {
     this.yearsOfExperience,
     this.location,
     this.maxTravelDistance,
+    this.profilePhoto,
     this.galleryUrls,
     this.socialLinks,
     this.priceRange,
@@ -715,6 +717,7 @@ class UpdateArtistRequest {
     if (maxTravelDistance != null) {
       json['maxTravelDistance'] = maxTravelDistance;
     }
+    if (profilePhoto != null) json['profilePhoto'] = profilePhoto;
     if (galleryUrls != null) json['galleryUrls'] = galleryUrls;
     if (socialLinks != null) json['socialLinks'] = socialLinks!.toJson();
     if (priceRange != null) json['priceRange'] = priceRange!.toJson();

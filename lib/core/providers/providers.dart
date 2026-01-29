@@ -9,3 +9,4 @@ export 'chat_provider.dart';
 export 'profile_provider.dart';
 export 'explore_provider.dart';
 export 'wallet_provider.dart';
+export 'feed_provider.dart';

@@ -35,7 +35,6 @@ import '../../screens/about_screen.dart';
 import '../../screens/support_screen.dart';
 import '../../screens/wallet_screen.dart';
 import '../../screens/reviews_screen.dart';
-import '../../screens/explore_screen.dart';
 import '../../screens/verification_screen.dart';
 import '../../screens/notifications_screen.dart';
 import '../../screens/analytics_screen.dart';
@@ -309,11 +308,6 @@ class AppRouter {
         path: '/reviews',
         name: 'reviews',
         builder: (context, state) => const ReviewsScreen(),
-      ),
-      GoRoute(
-        path: '/explore',
-        name: 'explore',
-        builder: (context, state) => const ExploreScreen(),
       ),
       GoRoute(
         path: '/verification',

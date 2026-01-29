@@ -84,7 +84,6 @@ class _VenueLocationStepState extends State<VenueLocationStep> {
 
   void _useCurrentLocation() {
     HapticFeedback.lightImpact();
-    // TODO: Implement geolocation
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Getting your location...'),

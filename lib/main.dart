@@ -18,7 +18,7 @@ import 'screens/discovery_screen.dart';
 import 'screens/matches_screen_v2.dart';
 import 'screens/chat_screen.dart';
 import 'screens/profile_screen_v3.dart';
-import 'screens/profile_screen.dart';
+import 'screens/messages_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/premium_screen.dart';
 import 'screens/about_screen.dart';
@@ -34,8 +34,6 @@ import 'screens/edit_profile/edit_profile_hub_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/reviews_screen.dart';
 import 'screens/gig_contract_screen.dart';
-import 'screens/messages_list_screen.dart';
-import 'screens/explore_screen.dart';
 import 'screens/verification_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/gig_details_screen.dart';
@@ -98,6 +96,9 @@ class GigMatchApp extends StatelessWidget {
 
         // Wallet Provider - earnings, transactions, payouts
         ChangeNotifierProvider(create: (_) => WalletProvider()),
+
+        // Feed Provider - posts and stories
+        ChangeNotifierProvider(create: (_) => FeedProvider()),
       ],
       child: MaterialApp(
         title: 'GigMatch',
@@ -128,7 +129,6 @@ class GigMatchApp extends StatelessWidget {
           '/discovery': (context) => const DiscoveryScreen(),
           '/matches': (context) => const MatchesScreenV2(),
           '/profile': (context) => const ProfileScreenV3(),
-          '/profile-old': (context) => const ProfileScreen(),
           '/edit-profile': (context) => const EditProfileHubScreen(),
           '/public-profile': (context) => const PublicProfileScreen(),
           '/profile-preview': (context) => const ProfilePreviewScreen(),
@@ -143,9 +143,7 @@ class GigMatchApp extends StatelessWidget {
           '/wallet': (context) => const WalletScreen(),
           '/reviews': (context) => const ReviewsScreen(),
           '/contracts': (context) => const GigContractScreen(),
-          '/messages': (context) => const MatchesScreenV2(),
-          '/messages-old': (context) => const MessagesListScreen(),
-          '/explore': (context) => const ExploreScreen(),
+          '/messages': (context) => const MessagesScreen(),
           '/verification': (context) => const VerificationScreen(),
           '/notifications': (context) => const NotificationsScreen(),
           '/analytics': (context) => const AnalyticsScreen(),

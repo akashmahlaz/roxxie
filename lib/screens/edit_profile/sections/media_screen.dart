@@ -223,9 +223,11 @@ class _MediaScreenState extends State<MediaScreen>
     setState(() => _isSaving = true);
 
     try {
-      // Upload new profile photo if changed (auto-updates profile on server)
+      // Upload new profile photo if changed and capture the URL
+      String? uploadedProfilePhotoUrl;
       if (_newProfilePhoto != null) {
-        await _uploadService.uploadProfilePhoto(_newProfilePhoto!.path);
+        final uploadResult = await _uploadService.uploadProfilePhoto(_newProfilePhoto!.path);
+        uploadedProfilePhotoUrl = uploadResult.url;
       }
 
       if (_isArtist) {
@@ -263,7 +265,9 @@ class _MediaScreenState extends State<MediaScreen>
             .toList();
 
         // Always send lists to ensure they're updated on server
+        // Include profile photo URL if a new one was uploaded
         final request = UpdateArtistRequest(
+          profilePhoto: uploadedProfilePhotoUrl,
           galleryUrls: galleryUrls, // Send even if empty
           audioSamples: audioList, // Send even if empty
           videoSamples: videoList, // Send even if empty
@@ -276,9 +280,19 @@ class _MediaScreenState extends State<MediaScreen>
           await context.read<ProfileProvider>().loadProfile(true);
         }
       } else {
-        // Venue: profile photo is auto-updated via upload endpoint
-        // Touch venue service to refresh profile cache
-        await _venueService.getMyProfile();
+        // Venue: Build gallery URLs from uploaded photos
+        final galleryUrls = _galleryPhotos
+            .where((p) => p.isUploaded && p.url != null)
+            .map((p) => p.url!)
+            .toList();
+
+        // Update venue profile with new media
+        final request = UpdateVenueRequest(
+          profilePhotoUrl: uploadedProfilePhotoUrl,
+          photoGallery: galleryUrls,
+        );
+
+        await _venueService.updateMyProfile(request);
 
         // Refresh profile provider to sync state
         if (mounted) {
