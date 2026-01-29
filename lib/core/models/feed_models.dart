@@ -211,7 +211,8 @@ class Post {
       artistId: json['artistId']?.toString(),
       venueId: json['venueId']?.toString(),
       caption: json['caption'],
-      media: (json['media'] as List?)
+      media:
+          (json['media'] as List?)
               ?.map((m) => PostMedia.fromJson(m))
               .toList() ??
           [],
@@ -232,7 +233,8 @@ class Post {
       author: json['author'] != null
           ? PostAuthor.fromJson(json['author'])
           : null,
-      comments: (json['comments'] as List?)
+      comments:
+          (json['comments'] as List?)
               ?.map((c) => PostComment.fromJson(c))
               .toList() ??
           [],
@@ -302,7 +304,10 @@ class StoryItem {
     required this.createdAt,
   });
 
-  factory StoryItem.fromJson(Map<String, dynamic> json, {bool isViewed = false}) {
+  factory StoryItem.fromJson(
+    Map<String, dynamic> json, {
+    bool isViewed = false,
+  }) {
     return StoryItem(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       type: json['type'] == 'video' ? MediaType.video : MediaType.image,
@@ -372,15 +377,14 @@ class Story {
       userId: json['userId']?.toString() ?? '',
       artistId: json['artistId']?.toString(),
       venueId: json['venueId']?.toString(),
-      items: (json['items'] as List?)
-              ?.map((i) {
-                final itemId = i['_id']?.toString() ?? i['id']?.toString() ?? '';
-                return StoryItem.fromJson(
-                  i,
-                  isViewed: viewedItemIds.contains(itemId),
-                );
-              })
-              .toList() ??
+      items:
+          (json['items'] as List?)?.map((i) {
+            final itemId = i['_id']?.toString() ?? i['id']?.toString() ?? '';
+            return StoryItem.fromJson(
+              i,
+              isViewed: viewedItemIds.contains(itemId),
+            );
+          }).toList() ??
           [],
       expiresAt: json['expiresAt'] != null
           ? DateTime.parse(json['expiresAt'])
@@ -416,8 +420,8 @@ class PostsFeedResponse {
 
   factory PostsFeedResponse.fromJson(Map<String, dynamic> json) {
     return PostsFeedResponse(
-      posts: (json['posts'] as List?)?.map((p) => Post.fromJson(p)).toList() ??
-          [],
+      posts:
+          (json['posts'] as List?)?.map((p) => Post.fromJson(p)).toList() ?? [],
       hasMore: json['hasMore'] ?? false,
       total: json['total'] ?? 0,
     );
@@ -428,16 +432,12 @@ class StoriesFeedResponse {
   final List<Story> stories;
   final bool hasMore;
 
-  const StoriesFeedResponse({
-    required this.stories,
-    required this.hasMore,
-  });
+  const StoriesFeedResponse({required this.stories, required this.hasMore});
 
   factory StoriesFeedResponse.fromJson(Map<String, dynamic> json) {
     return StoriesFeedResponse(
-      stories: (json['stories'] as List?)
-              ?.map((s) => Story.fromJson(s))
-              .toList() ??
+      stories:
+          (json['stories'] as List?)?.map((s) => Story.fromJson(s)).toList() ??
           [],
       hasMore: json['hasMore'] ?? false,
     );

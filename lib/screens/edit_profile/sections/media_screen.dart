@@ -226,7 +226,9 @@ class _MediaScreenState extends State<MediaScreen>
       // Upload new profile photo if changed and capture the URL
       String? uploadedProfilePhotoUrl;
       if (_newProfilePhoto != null) {
-        final uploadResult = await _uploadService.uploadProfilePhoto(_newProfilePhoto!.path);
+        final uploadResult = await _uploadService.uploadProfilePhoto(
+          _newProfilePhoto!.path,
+        );
         uploadedProfilePhotoUrl = uploadResult.url;
       }
 

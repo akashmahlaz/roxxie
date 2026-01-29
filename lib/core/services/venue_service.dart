@@ -715,10 +715,12 @@ class UpdateVenueRequest {
 
     // Location: send if has valid coordinates OR has city/country
     if (location != null) {
-      final hasValidCoords = location!.coordinates.length >= 2 &&
+      final hasValidCoords =
+          location!.coordinates.length >= 2 &&
           location!.longitude != 0.0 &&
           location!.latitude != 0.0;
-      final hasAddress = (location!.city != null && location!.city!.isNotEmpty) ||
+      final hasAddress =
+          (location!.city != null && location!.city!.isNotEmpty) ||
           (location!.country != null && location!.country!.isNotEmpty);
       if (hasValidCoords || hasAddress) {
         json['location'] = location!.toJson();

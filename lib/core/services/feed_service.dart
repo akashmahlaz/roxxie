@@ -123,9 +123,7 @@ class FeedService {
   /// Delete comment
   Future<void> deleteComment(String postId, String commentId) async {
     try {
-      await _client.dio.delete(
-        Endpoints.postCommentDelete(postId, commentId),
-      );
+      await _client.dio.delete(Endpoints.postCommentDelete(postId, commentId));
     } catch (e) {
       debugPrint('FeedService.deleteComment error: $e');
       rethrow;
@@ -190,10 +188,7 @@ class FeedService {
     try {
       final response = await _client.dio.post(
         Endpoints.storiesCreate,
-        data: {
-          'items': items,
-          'expiryHours': expiryHours,
-        },
+        data: {'items': items, 'expiryHours': expiryHours},
       );
 
       return Story.fromJson(response.data);

@@ -742,10 +742,12 @@ class Endpoints {
   static const String walletAddPayoutMethod = '/wallet/payout/methods/add';
 
   /// Set default payout method
-  static const String walletSetDefaultPayoutMethod = '/wallet/payout/methods/default';
+  static const String walletSetDefaultPayoutMethod =
+      '/wallet/payout/methods/default';
 
   /// Remove payout method
-  static String walletRemovePayoutMethod(String id) => '/wallet/payout/methods/$id';
+  static String walletRemovePayoutMethod(String id) =>
+      '/wallet/payout/methods/$id';
 
   /// Get Stripe Connect onboarding link
   static const String walletStripeOnboarding = '/wallet/stripe/onboarding';

@@ -237,14 +237,13 @@ class FeedProvider extends ChangeNotifier {
   }
 
   /// Create a new story
-  Future<Story> createStory({
-    required List<Map<String, dynamic>> items,
-  }) async {
+  Future<Story> createStory({required List<Map<String, dynamic>> items}) async {
     try {
       final story = await _feedService.createStory(items: items);
       // Add or update user's story at beginning
-      final existingIndex =
-          _stories.indexWhere((s) => s.userId == story.userId);
+      final existingIndex = _stories.indexWhere(
+        (s) => s.userId == story.userId,
+      );
       if (existingIndex != -1) {
         _stories[existingIndex] = story;
       } else {
