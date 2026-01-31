@@ -139,6 +139,14 @@ class VenueService {
         '🏢 [VenueService] Profile fetched in ${stopwatch.elapsedMilliseconds}ms',
       );
 
+      // Debug: Log key fields from response
+      debugPrint(
+        '🏢 [VenueService] Response hasCompletedSetup: ${response.data['hasCompletedSetup']}',
+      );
+      debugPrint(
+        '🏢 [VenueService] Response isOpenForBookings: ${response.data['isOpenForBookings']}',
+      );
+
       // Validate response
       if (response.data == null) {
         throw ValidationException('Empty profile response');
@@ -148,6 +156,12 @@ class VenueService {
 
       debugPrint(
         '🏢 [VenueService] Profile loaded: ${venue.venueName} (${venue.id})',
+      );
+      debugPrint(
+        '🏢 [VenueService] Parsed hasCompletedSetup: ${venue.hasCompletedSetup}',
+      );
+      debugPrint(
+        '🏢 [VenueService] Parsed isOpenForBookings: ${venue.isOpenForBookings}',
       );
       return venue;
     } on DioException catch (e) {
@@ -238,6 +252,9 @@ class VenueService {
       debugPrint(
         '🏢 [VenueService] Setup data keys: ${requestData.keys.toList()}',
       );
+      debugPrint(
+        '🏢 [VenueService] Location data: ${requestData['location']}',
+      );
 
       // Retry logic for setup completion (critical operation)
       Venue? result;
@@ -261,7 +278,21 @@ class VenueService {
             throw ValidationException('Empty setup response');
           }
 
+          // Debug: Log key fields from response
+          debugPrint(
+            '🏢 [VenueService] Response hasCompletedSetup: ${response.data['hasCompletedSetup']}',
+          );
+          debugPrint(
+            '🏢 [VenueService] Response isOpenForBookings: ${response.data['isOpenForBookings']}',
+          );
+
           result = Venue.fromJson(response.data);
+          debugPrint(
+            '🏢 [VenueService] Parsed venue hasCompletedSetup: ${result.hasCompletedSetup}',
+          );
+          debugPrint(
+            '🏢 [VenueService] Parsed venue isOpenForBookings: ${result.isOpenForBookings}',
+          );
           break; // Success, exit retry loop
         } on DioException catch (e) {
           lastError = e;

@@ -27,11 +27,10 @@ class ProfileScreenV3 extends StatefulWidget {
 
 class _ProfileScreenV3State extends State<ProfileScreenV3>
     with TickerProviderStateMixin {
-  late AnimationController _shimmerController;
-  AnimationController? _pulseController;
+  // Use ValueNotifier instead of setState for scroll offset - prevents full tree rebuild
+  final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
   late AnimationController _entranceController;
   late ScrollController _scrollController;
-  double _scrollOffset = 0;
 
   @override
   void initState() {
@@ -39,22 +38,16 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     _initAnimations();
     _scrollController = ScrollController()
       ..addListener(() {
-        setState(() => _scrollOffset = _scrollController.offset);
+        // Update ValueNotifier instead of calling setState
+        _scrollOffset.value = _scrollController.offset;
       });
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadProfile());
   }
 
   void _initAnimations() {
-    _shimmerController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
+    // Removed unused shimmer controller - was burning CPU for nothing
+    // Removed infinite pulse animation - barely visible, always consuming resources
 
     _entranceController = AnimationController(
       vsync: this,
@@ -104,8 +97,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
 
   @override
   void dispose() {
-    _shimmerController.dispose();
-    _pulseController?.dispose();
+    _scrollOffset.dispose();
     _entranceController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -279,112 +271,141 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     bool isDark,
     Size size,
   ) {
-    final opacity = (1 - _scrollOffset / 200).clamp(0.0, 1.0);
+    // Use ValueListenableBuilder to only rebuild the header, not the entire tree
+    return ValueListenableBuilder<double>(
+      valueListenable: _scrollOffset,
+      builder: (context, scrollOffset, child) {
+        final opacity = (1 - scrollOffset / 200).clamp(0.0, 1.0);
+        final isCollapsed = scrollOffset > 180;
 
-    return SliverAppBar(
-      expandedHeight: 320,
-      pinned: true,
-      stretch: true,
-      backgroundColor: AppColors.background(brightness),
-      surfaceTintColor: Colors.transparent,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Gradient Background
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.crimson,
-                    AppColors.crimson.withValues(alpha: 0.7),
-                    isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF8F9FA),
-                  ],
-                  stops: const [0, 0.5, 1],
+        return SliverAppBar(
+          expandedHeight: 260, // Reduced from 320 to push content less far down
+          pinned: true,
+          stretch: true,
+          backgroundColor: AppColors.background(brightness),
+          surfaceTintColor: Colors.transparent,
+          // Collapsed state: show avatar + name in pinned bar
+          title: AnimatedOpacity(
+            opacity: isCollapsed ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundImage: profile.profilePhoto != null &&
+                          profile.profilePhoto!.isNotEmpty
+                      ? NetworkImage(profile.profilePhoto!)
+                      : null,
+                  backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
+                  child: profile.profilePhoto == null ||
+                          profile.profilePhoto!.isEmpty
+                      ? const Icon(Icons.person, size: 16, color: Colors.white)
+                      : null,
                 ),
-              ),
+                const SizedBox(width: 12),
+                Text(
+                  profile.displayName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
-
-            // Profile Content
-            SafeArea(
-              child: Opacity(
-                opacity: opacity,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 20),
-                    // Profile Photo with Glow
-                    _buildProfileAvatar(profile, brightness),
-                    const SizedBox(height: 16),
-
-                    // Name & Role
-                    Text(
-                      profile.displayName,
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
+          ),
+          flexibleSpace: FlexibleSpaceBar(
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Gradient Background
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.crimson,
+                        AppColors.crimson.withValues(alpha: 0.7),
+                        isDark
+                            ? const Color(0xFF1A1A2E)
+                            : const Color(0xFFF8F9FA),
+                      ],
+                      stops: const [0, 0.5, 1],
                     ),
-                    const SizedBox(height: 4),
-
-                    // Role Badge
-                    _buildRoleBadge(isArtist, profile.subscriptionTier),
-
-                    const SizedBox(height: 12),
-
-                    // Verification & Premium Status
-                    _buildStatusRow(profile),
-                  ],
+                  ),
                 ),
-              ),
+
+                // Profile Content - use AnimatedOpacity instead of Opacity
+                SafeArea(
+                  child: AnimatedOpacity(
+                    opacity: opacity,
+                    duration: const Duration(milliseconds: 100),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 20),
+                        // Profile Photo with Glow (no pulse animation)
+                        _buildProfileAvatar(profile, brightness),
+                        const SizedBox(height: 16),
+
+                        // Name & Role
+                        Text(
+                          profile.displayName,
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+
+                        // Role Badge
+                        _buildRoleBadge(isArtist, profile.subscriptionTier),
+
+                        const SizedBox(height: 12),
+
+                        // Verification & Premium Status
+                        _buildStatusRow(profile),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
+          actions: [
+            IconButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                _shareProfile(profile);
+              },
+              icon: const Icon(Icons.share_outlined, color: Colors.white),
+            ),
+            IconButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context, rootNavigator: true).pushNamed('/settings');
+              },
+              icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            ),
+            const SizedBox(width: 8),
           ],
-        ),
-      ),
-      actions: [
-        IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            _shareProfile(profile);
-          },
-          icon: const Icon(Icons.share_outlined, color: Colors.white),
-        ),
-        IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.of(context, rootNavigator: true).pushNamed('/settings');
-          },
-          icon: const Icon(Icons.settings_outlined, color: Colors.white),
-        ),
-        const SizedBox(width: 8),
-      ],
+        );
+      },
     );
   }
 
   Widget _buildProfileAvatar(ProfileProvider profile, Brightness brightness) {
-    final pulseController = _pulseController;
-
-    if (pulseController == null) {
-      return _buildStaticProfileAvatar(profile);
-    }
-
-    return AnimatedBuilder(
-      animation: pulseController,
-      builder: (context, child) {
-        final scale = 1.0 + pulseController.value * 0.02;
-        return Transform.scale(scale: scale, child: child);
-      },
-      child: _buildStaticProfileAvatar(profile),
-    );
+    // Removed infinite pulse animation - was consuming resources for barely visible effect
+    return _buildStaticProfileAvatar(profile);
   }
 
   Widget _buildStaticProfileAvatar(ProfileProvider profile) {

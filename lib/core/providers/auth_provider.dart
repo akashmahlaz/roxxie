@@ -50,7 +50,14 @@ class AuthProvider extends ChangeNotifier {
   String? get signupCountry => _signupCountry;
   double? get signupLatitude => _signupLatitude;
   double? get signupLongitude => _signupLongitude;
-  Venue? get venueProfile => _venueProfile;
+  Venue? get venueProfile {
+    if (_venueProfile != null) {
+      debugPrint(
+        '🏢 [AuthProvider] venueProfile getter: ${_venueProfile?.venueName}, hasCompletedSetup: ${_venueProfile?.hasCompletedSetup}, isOpenForBookings: ${_venueProfile?.isOpenForBookings}',
+      );
+    }
+    return _venueProfile;
+  }
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
@@ -396,7 +403,17 @@ class AuthProvider extends ChangeNotifier {
       if (_user!.isArtist) {
         _artistProfile = await _artistService.getMyProfile();
       } else if (_user!.isVenue) {
+        debugPrint('🏢 [AuthProvider] _loadRoleProfile: Fetching venue profile...');
         _venueProfile = await _venueService.getMyProfile();
+        debugPrint(
+          '🏢 [AuthProvider] _loadRoleProfile loaded: ${_venueProfile?.venueName}',
+        );
+        debugPrint(
+          '🏢 [AuthProvider] _loadRoleProfile hasCompletedSetup: ${_venueProfile?.hasCompletedSetup}',
+        );
+        debugPrint(
+          '🏢 [AuthProvider] _loadRoleProfile isOpenForBookings: ${_venueProfile?.isOpenForBookings}',
+        );
       }
     } catch (e) {
       debugPrint('Load role profile error: $e');
@@ -546,7 +563,17 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
+      debugPrint('🏢 [AuthProvider] Starting venue setup completion...');
       _venueProfile = await _venueService.completeSetup(profileData);
+      debugPrint(
+        '🏢 [AuthProvider] Venue profile updated: ${_venueProfile?.venueName}',
+      );
+      debugPrint(
+        '🏢 [AuthProvider] hasCompletedSetup: ${_venueProfile?.hasCompletedSetup}',
+      );
+      debugPrint(
+        '🏢 [AuthProvider] isOpenForBookings: ${_venueProfile?.isOpenForBookings}',
+      );
 
       // Fetch fresh user data from backend to get updated hasCompletedSetup flag
       try {

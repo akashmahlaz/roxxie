@@ -406,6 +406,12 @@ class Story {
     final viewedItemIds =
         (json['viewedItemIds'] as List?)?.cast<String>() ?? [];
 
+    // DEBUG: Log the raw Story JSON to verify artistId/venueId
+    debugPrint('📖 Story.fromJson - id: ${json['_id'] ?? json['id']}');
+    debugPrint('📖 Story.fromJson - raw artistId: ${json['artistId']} (type: ${json['artistId']?.runtimeType})');
+    debugPrint('📖 Story.fromJson - raw venueId: ${json['venueId']} (type: ${json['venueId']?.runtimeType})');
+    debugPrint('📖 Story.fromJson - author present: ${json['author'] != null}');
+
     return Story(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       userId: json['userId']?.toString() ?? '',

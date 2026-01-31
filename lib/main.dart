@@ -26,8 +26,8 @@ import 'screens/about_screen.dart';
 import 'screens/support_screen.dart';
 import 'screens/artist/artist_profile_setup_screen.dart';
 import 'screens/venue/venue_profile_setup_screen.dart';
-import 'screens/artist_public_profile_screen.dart';
-import 'screens/public_profile_screen.dart';
+// Deprecated: PublicProfileScreen and ArtistPublicProfileScreen
+// All routes now use ProfilePreviewScreen for consistency
 import 'screens/profile_preview_screen.dart';
 import 'screens/edit_profile/edit_profile_hub_screen.dart';
 
@@ -137,7 +137,9 @@ class GigMatchApp extends StatelessWidget {
             '/matches': (context) => const MatchesScreenV2(),
             '/profile': (context) => const ProfileScreenV3(),
             '/edit-profile': (context) => const EditProfileHubScreen(),
-            '/public-profile': (context) => const PublicProfileScreen(),
+            // Consolidated: both routes now use ProfilePreviewScreen
+            // PublicProfileScreen is deprecated - kept for reference only
+            '/public-profile': (context) => const ProfilePreviewScreen(),
             '/profile-preview': (context) => const ProfilePreviewScreen(),
             '/settings': (context) => const SettingsScreen(),
             '/premium': (context) => const PremiumScreen(),
@@ -201,10 +203,14 @@ class GigMatchApp extends StatelessWidget {
             }
 
             // Public profile with user ID (for viewing other artists)
+            // Consolidated: now uses ProfilePreviewScreen instead of ArtistPublicProfileScreen
             if (settings.name?.startsWith('/profile/') ?? false) {
               final artistId = settings.name!.split('/').last;
               return _createFadeRoute(
-                ArtistPublicProfileScreen(artistId: artistId),
+                ProfilePreviewScreen(
+                  profileId: artistId,
+                  profileType: ProfileViewType.artist,
+                ),
                 settings,
               );
             }

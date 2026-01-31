@@ -53,10 +53,8 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   late ScrollController _scrollController;
   late AnimationController _fadeController;
 
-  // State
-  bool _isLoading = true;
-  String? _error;
-  double _scrollOffset = 0;
+  // Use ValueNotifier instead of setState for scroll offset - prevents full tree rebuild
+  final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
 
   // Profile data
   Artist? _artist;
@@ -78,6 +76,10 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   final _artistService = ArtistService();
   final _venueService = VenueService();
   final _reviewService = ReviewService();
+  
+  // Loading state
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -91,12 +93,15 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   }
 
   void _onScroll() {
-    setState(() {
-      _scrollOffset = _scrollController.offset;
-    });
+    // Update ValueNotifier instead of calling setState - prevents full tree rebuild
+    _scrollOffset.value = _scrollController.offset;
   }
 
   Future<void> _loadProfile() async {
+    debugPrint('👁️ [ProfilePreview] _loadProfile called');
+    debugPrint('👁️ [ProfilePreview] widget.profileId: ${widget.profileId}');
+    debugPrint('👁️ [ProfilePreview] widget.profileType: ${widget.profileType}');
+    
     setState(() {
       _isLoading = true;
       _error = null;
@@ -108,17 +113,23 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       if (widget.profileId != null) {
         // External profile view via deep link
         _isOwnProfile = false;
+        debugPrint('👁️ [ProfilePreview] Loading external profile...');
         if (widget.profileType == ProfileViewType.venue) {
           _isArtist = false;
+          debugPrint('👁️ [ProfilePreview] Fetching venue by ID: ${widget.profileId}');
           _venue = await _venueService.getVenueById(widget.profileId!);
+          debugPrint('👁️ [ProfilePreview] Venue loaded: ${_venue?.venueName}');
         } else {
           _isArtist = true;
+          debugPrint('👁️ [ProfilePreview] Fetching artist by ID: ${widget.profileId}');
           _artist = await _artistService.getArtistById(widget.profileId!);
+          debugPrint('👁️ [ProfilePreview] Artist loaded: ${_artist?.displayName}');
         }
       } else {
         // Own profile preview - always fetch fresh data to show latest updates
         _isOwnProfile = true;
         _isArtist = auth.isArtist;
+        debugPrint('👁️ [ProfilePreview] Loading own profile, isArtist: $_isArtist');
         if (_isArtist) {
           _artist = await _artistService.getMyProfile();
         } else {
@@ -133,7 +144,9 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
         _fadeController.forward();
         setState(() => _isLoading = false);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('❌ [ProfilePreview] Error loading profile: $e');
+      debugPrint('❌ [ProfilePreview] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -161,6 +174,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
 
   @override
   void dispose() {
+    _scrollOffset.dispose();
     _scrollController.dispose();
     _fadeController.dispose();
     super.dispose();
@@ -358,7 +372,6 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildSliverAppBar(Brightness brightness) {
-    final headerOpacity = (_scrollOffset / 200).clamp(0.0, 1.0);
     final photos = _isArtist
         ? [
             if (_artist?.profilePhoto != null) _artist!.profilePhoto!,
@@ -366,110 +379,150 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
           ]
         : (_venue?.galleryUrls ?? []);
 
-    return SliverAppBar(
-      expandedHeight: 320,
-      pinned: true,
-      stretch: true,
-      backgroundColor: headerOpacity > 0.5
-          ? AppColors.surface(brightness).withValues(alpha: headerOpacity)
-          : Colors.transparent,
-      elevation: 0,
-      leading: _buildAppBarButton(
-        Icons.arrow_back_rounded,
-        () => Navigator.pop(context),
-      ),
-      actions: [
-        if (_isOwnProfile)
-          _buildAppBarButton(
-            Icons.edit_rounded,
-            () => Navigator.pushNamed(context, '/edit-profile'),
-          ),
-        _buildAppBarButton(Icons.share_rounded, _shareProfile),
-      ],
-      title: AnimatedOpacity(
-        opacity: headerOpacity,
-        duration: const Duration(milliseconds: 200),
-        child: Text(
-          _profileName,
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [
-          StretchMode.zoomBackground,
-          StretchMode.blurBackground,
-        ],
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Photo Carousel
-            if (photos.isNotEmpty)
-              PageView.builder(
-                itemCount: photos.length,
-                onPageChanged: (i) => setState(() => _currentPhotoIndex = i),
-                itemBuilder: (context, index) {
-                  return Image.network(
-                    photos[index],
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        _buildPhotoPlaceholder(brightness),
-                  );
-                },
-              )
-            else
-              _buildPhotoPlaceholder(brightness),
+    // Use ValueListenableBuilder to only rebuild the app bar, not the entire tree
+    return ValueListenableBuilder<double>(
+      valueListenable: _scrollOffset,
+      builder: (context, scrollOffset, child) {
+        // Smooth linear interpolation for background - no jarring 0.5 threshold
+        final headerOpacity = (scrollOffset / 200).clamp(0.0, 1.0);
+        final isCollapsed = scrollOffset > 180;
 
-            // Gradient overlay
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.3),
-                      Colors.transparent,
-                      Colors.transparent,
-                      AppColors.background(brightness).withValues(alpha: 0.9),
-                      AppColors.background(brightness),
-                    ],
-                    stops: const [0.0, 0.2, 0.5, 0.85, 1.0],
+        // Get profile photo for collapsed avatar
+        final profilePhoto = _isArtist
+            ? _artist?.profilePhoto
+            : _venue?.profilePhotoUrl;
+
+        return SliverAppBar(
+          expandedHeight: 280, // Reduced from 320 for better UX
+          pinned: true,
+          stretch: true,
+          // Smooth background transition - always interpolate alpha
+          backgroundColor:
+              AppColors.surface(brightness).withValues(alpha: headerOpacity),
+          elevation: 0,
+          leading: _buildAppBarButton(
+            Icons.arrow_back_rounded,
+            () => Navigator.pop(context),
+          ),
+          actions: [
+            if (_isOwnProfile)
+              _buildAppBarButton(
+                Icons.edit_rounded,
+                () => Navigator.pushNamed(context, '/edit-profile'),
+              ),
+            _buildAppBarButton(Icons.share_rounded, _shareProfile),
+          ],
+          // Collapsed state: show avatar + name in pinned bar
+          title: AnimatedOpacity(
+            opacity: isCollapsed ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundImage: profilePhoto != null && profilePhoto.isNotEmpty
+                      ? NetworkImage(profilePhoto)
+                      : null,
+                  backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
+                  child: profilePhoto == null || profilePhoto.isEmpty
+                      ? Icon(
+                          _isArtist ? Icons.person : Icons.business,
+                          size: 16,
+                          color: AppColors.textSec(brightness),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    _profileName,
+                    style: TextStyle(
+                      color: AppColors.text(brightness),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
+              ],
             ),
+          ),
+          flexibleSpace: FlexibleSpaceBar(
+            stretchModes: const [
+              StretchMode.zoomBackground,
+              StretchMode.blurBackground,
+            ],
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Photo Carousel
+                if (photos.isNotEmpty)
+                  PageView.builder(
+                    itemCount: photos.length,
+                    onPageChanged: (i) => setState(() => _currentPhotoIndex = i),
+                    itemBuilder: (context, index) {
+                      return Image.network(
+                        photos[index],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            _buildPhotoPlaceholder(brightness),
+                      );
+                    },
+                  )
+                else
+                  _buildPhotoPlaceholder(brightness),
 
-            // Photo indicators
-            if (photos.length > 1)
-              Positioned(
-                bottom: 80,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(photos.length, (index) {
-                    final isActive = index == _currentPhotoIndex;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: isActive ? 24 : 8,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(2),
+                // Gradient overlay
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.3),
+                          Colors.transparent,
+                          Colors.transparent,
+                          AppColors.background(brightness).withValues(alpha: 0.9),
+                          AppColors.background(brightness),
+                        ],
+                        stops: const [0.0, 0.2, 0.5, 0.85, 1.0],
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                 ),
-              ),
-          ],
-        ),
-      ),
+
+                // Photo indicators
+                if (photos.length > 1)
+                  Positioned(
+                    bottom: 80,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(photos.length, (index) {
+                        final isActive = index == _currentPhotoIndex;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: isActive ? 24 : 8,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

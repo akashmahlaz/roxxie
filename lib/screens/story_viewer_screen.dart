@@ -342,88 +342,97 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     );
   }
 
+  void _navigateToProfile() {
+    final author = _story?.author;
+    
+    // DEBUG: Log all available IDs
+    debugPrint('🎬 [StoryViewer] _navigateToProfile called');
+    debugPrint('🎬 [StoryViewer] _story?.artistId: ${_story?.artistId}');
+    debugPrint('🎬 [StoryViewer] _story?.venueId: ${_story?.venueId}');
+    debugPrint('🎬 [StoryViewer] author?.artistId: ${author?.artistId}');
+    debugPrint('🎬 [StoryViewer] author?.venueId: ${author?.venueId}');
+    debugPrint('🎬 [StoryViewer] author?.role: ${author?.role}');
+    debugPrint('🎬 [StoryViewer] author?.id (userId): ${author?.id}');
+    
+    final isVenue = _story?.venueId != null || author?.role == 'venue';
+    String? profileId;
+    if (isVenue) {
+      profileId = _story?.venueId ?? author?.venueId;
+    } else {
+      profileId = _story?.artistId ?? author?.artistId;
+    }
+    
+    debugPrint('🎬 [StoryViewer] isVenue: $isVenue, selected profileId: $profileId');
+
+    if (profileId != null && profileId.isNotEmpty) {
+      final route = isVenue ? '/venue/$profileId' : '/artist/$profileId';
+      debugPrint('🎬 [StoryViewer] Navigating to: $route');
+      final nav = Navigator.of(context, rootNavigator: true);
+      nav.pushNamed(route);
+    } else {
+      debugPrint('❌ [StoryViewer] No valid profileId found - showing error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile not available'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   Widget _buildHeader() {
     final author = _story?.author;
 
     return Row(
       children: [
-        // Profile photo
-        GestureDetector(
-          onTap: () {
-            // DEBUG: Log all available IDs
-            debugPrint('🔍 Story _buildHeader onTap');
-            debugPrint('🔍 story.id: ${_story?.id}');
-            debugPrint('🔍 story.userId: ${_story?.userId}');
-            debugPrint('🔍 story.artistId: ${_story?.artistId}');
-            debugPrint('🔍 story.venueId: ${_story?.venueId}');
-            debugPrint('🔍 story.author?.id: ${author?.id}');
-            debugPrint('🔍 story.author?.artistId: ${author?.artistId}');
-            debugPrint('🔍 story.author?.venueId: ${author?.venueId}');
-            debugPrint('🔍 story.author?.role: ${author?.role}');
-            
-            // Priority: story's artistId/venueId > author's artistId/venueId
-            // Never use userId (user account ID) - it's not a valid profile ID
-            final isVenue = _story?.venueId != null || author?.role == 'venue';
-            String? profileId;
-            if (isVenue) {
-              profileId = _story?.venueId ?? author?.venueId;
-              debugPrint('🔍 isVenue=true, selected profileId: $profileId');
-            } else {
-              profileId = _story?.artistId ?? author?.artistId;
-              debugPrint('🔍 isVenue=false, selected profileId: $profileId');
-            }
-
-            if (profileId != null && profileId.isNotEmpty) {
-              final route = isVenue
-                  ? '/venue/$profileId'
-                  : '/artist/$profileId';
-              debugPrint('🔍 Navigating to route: $route');
-              Navigator.of(context, rootNavigator: true).pushNamed(route);
-            } else {
-              debugPrint('⚠️ Cannot navigate to profile: no valid profile ID');
-              debugPrint('⚠️ story.artistId=${_story?.artistId}, author.artistId=${author?.artistId}');
-            }
-          },
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(shape: BoxShape.circle),
-            child: ClipOval(
-              child: author?.profilePhoto != null
-                  ? CachedNetworkImage(
-                      imageUrl: author!.profilePhoto!,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      color: Colors.grey,
-                      child: const Icon(Icons.person, color: Colors.white),
-                    ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Name & time
+        // Profile photo + name - tappable to open profile
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                author?.name ?? 'User',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+          child: GestureDetector(
+            onTap: _navigateToProfile,
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
+                  child: ClipOval(
+                    child: author?.profilePhoto != null
+                        ? CachedNetworkImage(
+                            imageUrl: author!.profilePhoto!,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: Colors.grey,
+                            child: const Icon(Icons.person, color: Colors.white),
+                          ),
+                  ),
                 ),
-              ),
-              Text(
-                _formatTimeAgo(_story?.createdAt ?? DateTime.now()),
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 12,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        author?.name ?? 'User',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        _formatTimeAgo(_story?.createdAt ?? DateTime.now()),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         // Close button
