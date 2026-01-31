@@ -90,10 +90,10 @@ class _PricingScreenState extends State<PricingScreen>
       _rateType = artist.priceRange?.per ?? 'show';
     } else if (!auth.isArtist && profile.venue != null) {
       final venue = profile.venue!;
-      _minPriceController.text =
-          (venue.gigPreferences?.minBudget ?? 0).toStringAsFixed(0);
-      _maxPriceController.text =
-          (venue.gigPreferences?.maxBudget ?? 0).toStringAsFixed(0);
+      _minPriceController.text = (venue.gigPreferences?.minBudget ?? 0)
+          .toStringAsFixed(0);
+      _maxPriceController.text = (venue.gigPreferences?.maxBudget ?? 0)
+          .toStringAsFixed(0);
       _currency = venue.gigPreferences?.currency ?? 'USD';
       final cap = venue.capacity ?? 100;
       _capacity = cap.toDouble();
@@ -162,8 +162,11 @@ class _PricingScreenState extends State<PricingScreen>
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.warning_amber_rounded,
-                    color: Colors.white, size: 16),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 12),
               const Text('Min cannot exceed max price'),
@@ -304,7 +307,11 @@ class _PricingScreenState extends State<PricingScreen>
               const SizedBox(height: 28),
 
               // Settings Section
-              _buildSectionTitle(brightness, Icons.settings_rounded, 'Settings'),
+              _buildSectionTitle(
+                brightness,
+                Icons.settings_rounded,
+                'Settings',
+              ),
               const SizedBox(height: 16),
               _buildSettingsCard(brightness, isArtist),
 
@@ -322,7 +329,11 @@ class _PricingScreenState extends State<PricingScreen>
               // Quick Presets (Artist only)
               if (isArtist) ...[
                 const SizedBox(height: 28),
-                _buildSectionTitle(brightness, Icons.bolt_rounded, 'Quick Presets'),
+                _buildSectionTitle(
+                  brightness,
+                  Icons.bolt_rounded,
+                  'Quick Presets',
+                ),
                 const SizedBox(height: 16),
                 _buildPresets(brightness),
               ],
@@ -411,7 +422,11 @@ class _PricingScreenState extends State<PricingScreen>
     );
   }
 
-  Widget _buildSectionTitle(Brightness brightness, IconData icon, String title) {
+  Widget _buildSectionTitle(
+    Brightness brightness,
+    IconData icon,
+    String title,
+  ) {
     return Row(
       children: [
         Icon(icon, color: AppColors.crimson, size: 20),
@@ -446,9 +461,7 @@ class _PricingScreenState extends State<PricingScreen>
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppColors.crimson.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
@@ -477,7 +490,9 @@ class _PricingScreenState extends State<PricingScreen>
                   ],
                 ),
                 child: Icon(
-                  isArtist ? Icons.attach_money_rounded : Icons.account_balance_wallet_rounded,
+                  isArtist
+                      ? Icons.attach_money_rounded
+                      : Icons.account_balance_wallet_rounded,
                   color: Colors.white,
                   size: 28,
                 ),
@@ -573,10 +588,7 @@ class _PricingScreenState extends State<PricingScreen>
           if (isArtist) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Divider(
-                color: AppColors.border(brightness),
-                height: 1,
-              ),
+              child: Divider(color: AppColors.border(brightness), height: 1),
             ),
 
             // Rate Type Row
@@ -628,18 +640,21 @@ class _PricingScreenState extends State<PricingScreen>
   Widget _buildCurrencyPicker(Brightness brightness) {
     final current = _currencies.firstWhere((c) => c['code'] == _currency);
 
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        HapticFeedback.selectionClick();
-        setState(() => _currency = value);
-        _markChanged();
-      },
-      offset: const Offset(0, 40),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: AppColors.surface(brightness),
-      itemBuilder: (context) => _currencies.map((c) {
-        return PopupMenuItem<String>(
-          value: c['code'],
+    return MenuAnchor(
+      alignmentOffset: const Offset(0, 8),
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(AppColors.surface(brightness)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+      ),
+      menuChildren: _currencies.map((c) {
+        return MenuItemButton(
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            setState(() => _currency = c['code']!);
+            _markChanged();
+          },
           child: Row(
             children: [
               Text(c['flag']!, style: const TextStyle(fontSize: 18)),
@@ -655,35 +670,48 @@ class _PricingScreenState extends State<PricingScreen>
           ),
         );
       }).toList(),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColors.crimson.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.crimson.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(current['flag']!, style: const TextStyle(fontSize: 16)),
-            const SizedBox(width: 8),
-            Text(
-              current['code']!,
-              style: TextStyle(
-                color: AppColors.crimson,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+      builder: (context, controller, child) {
+        return GestureDetector(
+          onTap: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.crimson.withValues(alpha: 0.2),
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: AppColors.crimson,
-              size: 18,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(current['flag']!, style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Text(
+                  current['code']!,
+                  style: TextStyle(
+                    color: AppColors.crimson,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.crimson,
+                  size: 18,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -833,7 +861,9 @@ class _PricingScreenState extends State<PricingScreen>
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                     hintText: '0',
                     hintStyle: TextStyle(
-                      color: AppColors.textSec(brightness).withValues(alpha: 0.5),
+                      color: AppColors.textSec(
+                        brightness,
+                      ).withValues(alpha: 0.5),
                     ),
                     counterText: '',
                   ),
@@ -881,7 +911,9 @@ class _PricingScreenState extends State<PricingScreen>
               color: isActive ? null : AppColors.surface(brightness),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isActive ? AppColors.crimson : AppColors.border(brightness),
+                color: isActive
+                    ? AppColors.crimson
+                    : AppColors.border(brightness),
               ),
               boxShadow: isActive
                   ? [
@@ -926,7 +958,11 @@ class _PricingScreenState extends State<PricingScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle(brightness, Icons.people_alt_rounded, 'Venue Capacity'),
+        _buildSectionTitle(
+          brightness,
+          Icons.people_alt_rounded,
+          'Venue Capacity',
+        ),
         const SizedBox(height: 16),
 
         Container(

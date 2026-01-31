@@ -240,39 +240,49 @@ class _GigPreferencesStepState extends State<GigPreferencesStep> {
                 ),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.background(brightness),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border(brightness)),
+              DropdownMenu<String>(
+                initialSelection: widget.profileData.gigPreferences.currency,
+                inputDecorationTheme: InputDecorationTheme(
+                  filled: true,
+                  fillColor: AppColors.background(brightness),
+                  isDense: true,
+                  constraints: const BoxConstraints(maxHeight: 44),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppColors.border(brightness)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppColors.border(brightness)),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: widget.profileData.gigPreferences.currency,
-                    dropdownColor: AppColors.surface(brightness),
-                    icon: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textSec(brightness),
-                    ),
-                    items: _currencies.map((currency) {
-                      return DropdownMenuItem(
-                        value: currency,
-                        child: Text(
-                          currency,
-                          style: TextStyle(color: AppColors.text(brightness)),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        widget.profileData.gigPreferences.currency =
-                            value ?? 'USD';
-                      });
-                      widget.onDataChanged();
-                    },
+                menuStyle: MenuStyle(
+                  backgroundColor: WidgetStatePropertyAll(
+                    AppColors.surface(brightness),
                   ),
                 ),
+                textStyle: TextStyle(color: AppColors.text(brightness)),
+                trailingIcon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.textSec(brightness),
+                ),
+                selectedTrailingIcon: Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  color: AppColors.textSec(brightness),
+                ),
+                dropdownMenuEntries: _currencies.map((currency) {
+                  return DropdownMenuEntry<String>(
+                    value: currency,
+                    label: currency,
+                  );
+                }).toList(),
+                onSelected: (value) {
+                  setState(() {
+                    widget.profileData.gigPreferences.currency = value ?? 'USD';
+                  });
+                  widget.onDataChanged();
+                },
               ),
             ],
           ),

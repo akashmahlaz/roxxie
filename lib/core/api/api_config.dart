@@ -7,8 +7,8 @@ class ApiConfig {
   // Defaults to production. Override for local/dev with:
   // flutter run --dart-define=API_BASE_URL=http://<LAN-IP>:3000/api/v1 \
   //             --dart-define=WS_BASE_URL=ws://<LAN-IP>:3000
-  static const String _defaultBaseUrl = 'http://10.188.28.168:3000/api/v1';
-  static const String _defaultWsUrl = 'ws://10.188.28.168:3000';
+  static const String _defaultBaseUrl = 'http://10.201.252.168:3000/api/v1';
+  static const String _defaultWsUrl = 'ws://10.201.252.168:3000';
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',

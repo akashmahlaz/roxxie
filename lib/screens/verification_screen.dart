@@ -58,8 +58,8 @@ class _VerificationScreenState extends State<VerificationScreen>
   bool _selfieUploaded = false;
   bool _addressUploaded = false;
 
-  // Selected document type
-  final DocumentType _selectedDocumentType = DocumentType.passport;
+  // Selected document type - M3 ChoiceChip selection
+  DocumentType _selectedDocumentType = DocumentType.passport;
 
   @override
   void initState() {
@@ -729,13 +729,26 @@ class _VerificationScreenState extends State<VerificationScreen>
         ),
         const SizedBox(height: 12),
 
+        // M3 ChoiceChip for single-selection ID type
         Wrap(
           spacing: 10,
           runSpacing: 10,
           children: [
-            _buildIdTypeChip(brightness, 'Passport', true),
-            _buildIdTypeChip(brightness, 'Driver\'s License', false),
-            _buildIdTypeChip(brightness, 'National ID', false),
+            _buildIdTypeChoiceChip(
+              brightness,
+              'Passport',
+              DocumentType.passport,
+            ),
+            _buildIdTypeChoiceChip(
+              brightness,
+              'Driver\'s License',
+              DocumentType.driversLicense,
+            ),
+            _buildIdTypeChoiceChip(
+              brightness,
+              'National ID',
+              DocumentType.nationalId,
+            ),
           ],
         ),
 
@@ -775,27 +788,36 @@ class _VerificationScreenState extends State<VerificationScreen>
     );
   }
 
-  Widget _buildIdTypeChip(Brightness brightness, String label, bool selected) {
-    return AnimatedTapFeedback(
-      onTap: () => HapticFeedback.selectionClick(),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.crimson : AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? AppColors.crimson : AppColors.border(brightness),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : AppColors.text(brightness),
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+  /// M3 ChoiceChip for ID type selection (single-select)
+  Widget _buildIdTypeChoiceChip(
+    Brightness brightness,
+    String label,
+    DocumentType type,
+  ) {
+    final isSelected = _selectedDocumentType == type;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          HapticFeedback.selectionClick();
+          setState(() => _selectedDocumentType = type);
+        }
+      },
+      selectedColor: AppColors.crimson,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : AppColors.text(brightness),
+        fontWeight: FontWeight.w600,
+      ),
+      backgroundColor: AppColors.surface(brightness),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? AppColors.crimson : AppColors.border(brightness),
         ),
       ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     );
   }
 

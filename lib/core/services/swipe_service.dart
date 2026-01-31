@@ -29,14 +29,16 @@ class SwipeService {
 
       if (latitude != null) queryParams['latitude'] = latitude.toString();
       if (longitude != null) queryParams['longitude'] = longitude.toString();
+      // Backend expects radiusMiles, not maxDistance
       if (maxDistance != null) {
-        queryParams['maxDistance'] = maxDistance.toString();
+        queryParams['radiusMiles'] = maxDistance.toString();
       }
       if (genres != null && genres.isNotEmpty) {
         queryParams['genres'] = genres.join(',');
       }
-      if (minPrice != null) queryParams['minPrice'] = minPrice.toString();
-      if (maxPrice != null) queryParams['maxPrice'] = maxPrice.toString();
+      // Backend expects minBudget/maxBudget, not minPrice/maxPrice
+      if (minPrice != null) queryParams['minBudget'] = minPrice.toString();
+      if (maxPrice != null) queryParams['maxBudget'] = maxPrice.toString();
       if (minRating != null) queryParams['minRating'] = minRating.toString();
 
       final response = await _client.get(

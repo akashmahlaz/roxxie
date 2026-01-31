@@ -59,20 +59,23 @@ class SwipeResponse {
   final bool isMatch;
   final Match? match;
   final String? message;
+  final String? swipeId; // Track for undo functionality
 
   SwipeResponse({
     required this.success,
     this.isMatch = false,
     this.match,
     this.message,
+    this.swipeId,
   });
 
   factory SwipeResponse.fromJson(Map<String, dynamic> json) {
     return SwipeResponse(
       success: json['success'] ?? true,
-      isMatch: json['isMatch'] ?? false,
+      isMatch: json['isMatch'] ?? json['action'] == 'match',
       match: json['match'] != null ? Match.fromJson(json['match']) : null,
       message: json['message'],
+      swipeId: json['swipeId'],
     );
   }
 }

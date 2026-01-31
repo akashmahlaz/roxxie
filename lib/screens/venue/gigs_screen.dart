@@ -860,69 +860,62 @@ class _GigCard extends StatelessWidget {
   }
 
   Widget _buildMoreMenu() {
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert_rounded, color: AppColors.textSec(brightness)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: AppColors.surface(brightness),
-      onSelected: (value) {
-        switch (value) {
-          case 'edit':
-            onEdit();
-            break;
-          case 'duplicate':
-            onDuplicate();
-            break;
-          case 'delete':
-            onDelete();
-            break;
-        }
+    return MenuAnchor(
+      builder: (context, controller, child) {
+        return IconButton(
+          icon: Icon(
+            Icons.more_vert_rounded,
+            color: AppColors.textSec(brightness),
+          ),
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+        );
       },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'edit',
-          child: Row(
-            children: [
-              Icon(
-                Icons.edit_rounded,
-                size: 18,
-                color: AppColors.text(brightness),
-              ),
-              const SizedBox(width: 12),
-              Text('Edit', style: TextStyle(color: AppColors.text(brightness))),
-            ],
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(AppColors.surface(brightness)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      menuChildren: [
+        MenuItemButton(
+          onPressed: onEdit,
+          leadingIcon: Icon(
+            Icons.edit_rounded,
+            size: 18,
+            color: AppColors.text(brightness),
+          ),
+          child: Text(
+            'Edit',
+            style: TextStyle(color: AppColors.text(brightness)),
           ),
         ),
-        PopupMenuItem(
-          value: 'duplicate',
-          child: Row(
-            children: [
-              Icon(
-                Icons.copy_rounded,
-                size: 18,
-                color: AppColors.text(brightness),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Duplicate',
-                style: TextStyle(color: AppColors.text(brightness)),
-              ),
-            ],
+        MenuItemButton(
+          onPressed: onDuplicate,
+          leadingIcon: Icon(
+            Icons.copy_rounded,
+            size: 18,
+            color: AppColors.text(brightness),
+          ),
+          child: Text(
+            'Duplicate',
+            style: TextStyle(color: AppColors.text(brightness)),
           ),
         ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              const Icon(
-                Icons.delete_rounded,
-                size: 18,
-                color: AppColors.error,
-              ),
-              const SizedBox(width: 12),
-              const Text('Delete', style: TextStyle(color: AppColors.error)),
-            ],
+        const Divider(height: 8),
+        MenuItemButton(
+          onPressed: onDelete,
+          leadingIcon: const Icon(
+            Icons.delete_rounded,
+            size: 18,
+            color: AppColors.error,
           ),
+          child: const Text('Delete', style: TextStyle(color: AppColors.error)),
         ),
       ],
     );

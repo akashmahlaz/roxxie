@@ -899,58 +899,58 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
 
           // Skip / Skip All buttons
           if (_currentStep < _totalSteps - 1)
-            PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert_rounded,
-                color: AppColors.textSec(brightness),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              color: AppColors.surface(brightness),
-              onSelected: (value) {
-                if (value == 'skip') {
-                  _nextStep();
-                } else if (value == 'skip_all') {
-                  _showSkipAllConfirmation(brightness);
-                }
+            MenuAnchor(
+              builder: (context, controller, child) {
+                return IconButton(
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    color: AppColors.textSec(brightness),
+                  ),
+                  onPressed: () {
+                    if (controller.isOpen) {
+                      controller.close();
+                    } else {
+                      controller.open();
+                    }
+                  },
+                );
               },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'skip',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.skip_next_rounded,
-                        color: AppColors.textSec(brightness),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Skip this step',
-                        style: TextStyle(color: AppColors.text(brightness)),
-                      ),
-                    ],
+              style: MenuStyle(
+                backgroundColor: WidgetStatePropertyAll(
+                  AppColors.surface(brightness),
+                ),
+                shape: WidgetStatePropertyAll(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                PopupMenuItem(
-                  value: 'skip_all',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.fast_forward_rounded,
-                        color: AppColors.crimson,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Skip all steps',
-                        style: TextStyle(
-                          color: AppColors.crimson,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+              ),
+              menuChildren: [
+                MenuItemButton(
+                  onPressed: _nextStep,
+                  leadingIcon: Icon(
+                    Icons.skip_next_rounded,
+                    color: AppColors.textSec(brightness),
+                    size: 20,
+                  ),
+                  child: Text(
+                    'Skip this step',
+                    style: TextStyle(color: AppColors.text(brightness)),
+                  ),
+                ),
+                MenuItemButton(
+                  onPressed: () => _showSkipAllConfirmation(brightness),
+                  leadingIcon: Icon(
+                    Icons.fast_forward_rounded,
+                    color: AppColors.crimson,
+                    size: 20,
+                  ),
+                  child: Text(
+                    'Skip all steps',
+                    style: TextStyle(
+                      color: AppColors.crimson,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],

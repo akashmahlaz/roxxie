@@ -1249,44 +1249,54 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border(brightness)),
+        DropdownMenu<String>(
+          initialSelection: selectedDisplayName,
+          hintText: 'Select country',
+          expandedInsets: EdgeInsets.zero,
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: AppColors.surface(brightness),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.border(brightness)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.border(brightness)),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 14,
+            ),
+            hintStyle: TextStyle(color: AppColors.textSec(brightness)),
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: selectedDisplayName,
-              hint: Text(
-                'Select country',
-                style: TextStyle(color: AppColors.textSec(brightness)),
-              ),
-              isExpanded: true,
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColors.textSec(brightness),
-              ),
-              dropdownColor: AppColors.surface(brightness),
-              items: countries.map((country) {
-                return DropdownMenuItem(
-                  value: country,
-                  child: Text(
-                    country,
-                    style: TextStyle(color: AppColors.text(brightness)),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  // Store the full country name
-                  widget.profileData.country = value ?? '';
-                });
-                widget.onDataChanged();
-              },
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(
+              AppColors.surface(brightness),
+            ),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
+          textStyle: TextStyle(color: AppColors.text(brightness)),
+          trailingIcon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.textSec(brightness),
+          ),
+          selectedTrailingIcon: Icon(
+            Icons.keyboard_arrow_up_rounded,
+            color: AppColors.textSec(brightness),
+          ),
+          dropdownMenuEntries: countries.map((country) {
+            return DropdownMenuEntry<String>(value: country, label: country);
+          }).toList(),
+          onSelected: (value) {
+            setState(() {
+              // Store the full country name
+              widget.profileData.country = value ?? '';
+            });
+            widget.onDataChanged();
+          },
         ),
       ],
     );

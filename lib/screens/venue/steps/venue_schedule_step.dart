@@ -380,49 +380,63 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark
+            child: DropdownMenu<String>(
+              initialSelection: _bookingLeadTime,
+              expandedInsets: EdgeInsets.zero,
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: isDark
                     ? AppColors.graphite.withValues(alpha: 0.4)
                     : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _bookingLeadTime,
-                  isExpanded: true,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  icon: Icon(
-                    Icons.expand_more_rounded,
-                    color: isDark ? Colors.grey[400] : const Color(0xFF876464),
-                  ),
-                  dropdownColor: isDark ? AppColors.graphite : Colors.white,
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.text(brightness),
+                  borderSide: BorderSide(
+                    color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
                   ),
-                  items: _leadTimeOptions.map((option) {
-                    return DropdownMenuItem<String>(
-                      value: option,
-                      child: Text(option),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _bookingLeadTime = value);
-                      _saveData();
-                    }
-                  },
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: isDark ? AppColors.slate : const Color(0xFFE5DCDC),
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
                 ),
               ),
+              menuStyle: MenuStyle(
+                backgroundColor: WidgetStatePropertyAll(
+                  isDark ? AppColors.graphite : Colors.white,
+                ),
+                shape: WidgetStatePropertyAll(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              textStyle: TextStyle(
+                fontSize: 16,
+                color: AppColors.text(brightness),
+              ),
+              trailingIcon: Icon(
+                Icons.expand_more_rounded,
+                color: isDark ? Colors.grey[400] : const Color(0xFF876464),
+              ),
+              selectedTrailingIcon: Icon(
+                Icons.expand_less_rounded,
+                color: isDark ? Colors.grey[400] : const Color(0xFF876464),
+              ),
+              dropdownMenuEntries: _leadTimeOptions.map((option) {
+                return DropdownMenuEntry<String>(value: option, label: option);
+              }).toList(),
+              onSelected: (value) {
+                if (value != null) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _bookingLeadTime = value);
+                  _saveData();
+                }
+              },
             ),
           ),
 
@@ -811,7 +825,9 @@ class _VenueScheduleStepState extends State<VenueScheduleStep> {
                     'to',
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.grey[400] : const Color(0xFF876464),
+                      color: isDark
+                          ? Colors.grey[400]
+                          : const Color(0xFF876464),
                     ),
                   ),
                 ),

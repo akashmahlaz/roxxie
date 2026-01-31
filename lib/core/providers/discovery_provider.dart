@@ -32,6 +32,10 @@ class DiscoveryProvider extends ChangeNotifier {
   double? _maxPrice;
   double? _minRating;
 
+  // Track swipeIds for undo (last N swipes)
+  final List<String> _swipeHistory = [];
+  static const int _maxSwipeHistorySize = 10;
+
   // Getters
   DiscoveryStatus get status => _status;
   List<DiscoveryCard> get cards => _cards;
@@ -107,6 +111,14 @@ class DiscoveryProvider extends ChangeNotifier {
     try {
       final response = await _swipeService.like(card.id);
 
+      // Track swipeId for undo functionality
+      if (response.swipeId != null) {
+        _swipeHistory.insert(0, response.swipeId!);
+        if (_swipeHistory.length > _maxSwipeHistorySize) {
+          _swipeHistory.removeLast();
+        }
+      }
+
       if (response.isMatch) {
         _lastMatch = response.match;
         notifyListeners();
@@ -130,7 +142,16 @@ class DiscoveryProvider extends ChangeNotifier {
     _moveToNext();
 
     try {
-      await _swipeService.pass(card.id);
+      final response = await _swipeService.pass(card.id);
+
+      // Track swipeId for undo functionality
+      if (response.swipeId != null) {
+        _swipeHistory.insert(0, response.swipeId!);
+        if (_swipeHistory.length > _maxSwipeHistorySize) {
+          _swipeHistory.removeLast();
+        }
+      }
+
       _preloadMoreIfNeeded();
     } catch (e) {
       debugPrint('Pass error: $e');
@@ -146,6 +167,14 @@ class DiscoveryProvider extends ChangeNotifier {
 
     try {
       final response = await _swipeService.superLike(card.id);
+
+      // Track swipeId for undo functionality
+      if (response.swipeId != null) {
+        _swipeHistory.insert(0, response.swipeId!);
+        if (_swipeHistory.length > _maxSwipeHistorySize) {
+          _swipeHistory.removeLast();
+        }
+      }
 
       if (response.isMatch) {
         _lastMatch = response.match;
@@ -163,11 +192,14 @@ class DiscoveryProvider extends ChangeNotifier {
 
   /// ↩️ Undo last swipe
   Future<bool> undo() async {
-    if (_currentIndex == 0) return false;
+    if (_currentIndex == 0 || _swipeHistory.isEmpty) return false;
+
+    final lastSwipeId = _swipeHistory.first;
 
     try {
-      final success = await _swipeService.undoLastSwipe();
+      final success = await _swipeService.undoLastSwipe(lastSwipeId);
       if (success) {
+        _swipeHistory.removeAt(0);
         _currentIndex--;
         notifyListeners();
         return true;

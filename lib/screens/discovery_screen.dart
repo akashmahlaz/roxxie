@@ -56,9 +56,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   // Filter panel state
   bool _showFilters = false;
 
-  // Current card index
-  int _currentCardIndex = 0;
-
   // Scroll controller for card stack
   final ScrollController _scrollController = ScrollController();
 
@@ -212,7 +209,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     setState(() {
       _dragOffset = Offset.zero;
       _dragAngle = 0;
-      _currentCardIndex++;
+      // Note: provider.currentIndex is updated by like()/pass()
     });
 
     _cardController.reset();
@@ -328,6 +325,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                     isLoading,
                     error ?? '',
                     brightness,
+                    provider.currentIndex,
                   ),
                 ),
 
@@ -450,6 +448,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
+  /// M3 FilterChip for multi-select filtering
   Widget _buildStyledFilterChip({
     required String label,
     IconData? icon,
@@ -457,46 +456,32 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     required Brightness brightness,
     required ValueChanged<bool> onSelected,
   }) {
-    return GestureDetector(
-      onTap: () => onSelected(!isSelected),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: icon != null ? 12 : 16,
-          vertical: 8,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.crimson : AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.crimson
-                : AppColors.border(brightness),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 18,
-                color: isSelected ? Colors.white : AppColors.crimson,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.text(brightness),
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: onSelected,
+      avatar: icon != null
+          ? Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : AppColors.crimson,
+            )
+          : null,
+      selectedColor: AppColors.crimson,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : AppColors.text(brightness),
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+      ),
+      backgroundColor: AppColors.surface(brightness),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(
+          color: isSelected ? AppColors.crimson : AppColors.border(brightness),
+          width: 1.5,
         ),
       ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
     );
   }
 
@@ -505,6 +490,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     bool isLoading,
     String error,
     Brightness brightness,
+    int currentCardIndex,
   ) {
     if (isLoading && cards.isEmpty) {
       return _buildLoadingState(brightness);
@@ -518,15 +504,15 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     }
 
     // Check if we've swiped through all cards
-    if (_currentCardIndex >= cards.length) {
+    if (currentCardIndex >= cards.length) {
       return _buildAllDoneState(brightness);
     }
 
     // Build card stack
-    final endIndex = math.min(_currentCardIndex + 3, cards.length);
+    final endIndex = math.min(currentCardIndex + 3, cards.length);
     final displayCards = <DiscoveryCard>[];
-    if (endIndex > _currentCardIndex) {
-      for (int i = endIndex - 1; i >= _currentCardIndex; i--) {
+    if (endIndex > currentCardIndex) {
+      for (int i = endIndex - 1; i >= currentCardIndex; i--) {
         displayCards.add(cards[i]);
       }
     }
@@ -536,7 +522,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       children: [
         // Background cards (already swiped)
         ...cards
-            .take(_currentCardIndex)
+            .take(currentCardIndex)
             .map((item) => _buildCard(item, brightness, opacity: 0)),
 
         // Current and upcoming cards
@@ -559,7 +545,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         }),
 
         // Remaining cards indicator (subtle at top)
-        if (cards.length - _currentCardIndex <= 3)
+        if (cards.length - currentCardIndex <= 3)
           Positioned(
             top: 16,
             left: 0,
@@ -575,7 +561,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${cards.length - _currentCardIndex} left',
+                  '${cards.length - currentCardIndex} left',
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 12,
@@ -608,10 +594,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
       onVisibilityChanged: (info) {
         final lastIndex = discoveryProvider.cards.length - 1;
+        final currentIdx = discoveryProvider.currentIndex;
         final shouldLoadMore =
             info.visibleFraction < 0.3 &&
             lastIndex >= 0 &&
-            _currentCardIndex >= lastIndex;
+            currentIdx >= lastIndex;
         if (shouldLoadMore) {
           _loadMoreCards();
         }
@@ -636,13 +623,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                 ),
               ),
             )
-          : _buildCardBody(
-              item,
-              brightness,
-              opacity,
-              cardWidth,
-              cardHeight,
-            ),
+          : _buildCardBody(item, brightness, opacity, cardWidth, cardHeight),
     );
   }
 
@@ -656,10 +637,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     return Opacity(
       opacity: opacity,
       child: Container(
-        margin: const EdgeInsets.symmetric(
-          horizontal: 24,
-          vertical: 16,
-        ),
+        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         width: cardWidth,
         height: cardHeight,
         decoration: BoxDecoration(
@@ -1225,39 +1203,45 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Rewind button
-          _buildActionButton(
+          // Rewind button - M3 FilledTonal style
+          _buildM3ActionButton(
             icon: Icons.replay_rounded,
             color: Colors.blue.shade400,
             size: 44,
             label: 'Rewind',
+            brightness: brightness,
+            isTonal: true,
             onTap: _undoLastSwipe,
           ),
 
-          // Nope button
-          _buildActionButton(
+          // Nope button - M3 Filled style
+          _buildM3ActionButton(
             icon: Icons.close_rounded,
             color: AppColors.crimson,
             size: 58,
             label: 'Pass',
+            brightness: brightness,
             onTap: () => _animateSwipe(false),
           ),
 
-          // Super like button
-          _buildActionButton(
+          // Super like button - M3 FilledTonal style
+          _buildM3ActionButton(
             icon: Icons.star_rounded,
             color: Colors.blue.shade600,
             size: 52,
             label: 'Super',
+            brightness: brightness,
+            isTonal: true,
             onTap: () => _superLike(),
           ),
 
-          // Like button
-          _buildActionButton(
+          // Like button - M3 Filled style
+          _buildM3ActionButton(
             icon: Icons.favorite_rounded,
             color: Colors.green.shade500,
             size: 58,
             label: 'Like',
+            brightness: brightness,
             onTap: () => _animateSwipe(true),
           ),
         ],
@@ -1265,47 +1249,55 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  Widget _buildActionButton({
+  /// M3 Action Button with FilledButton or FilledTonalButton styling
+  Widget _buildM3ActionButton({
     required IconData icon,
     required Color color,
     required double size,
     required VoidCallback onTap,
+    required Brightness brightness,
     String? label,
+    bool isTonal = false,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: AppColors.surface(Theme.of(context).brightness),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+    final buttonStyle = isTonal
+        ? IconButton.styleFrom(
+            backgroundColor: color.withValues(alpha: 0.15),
+            foregroundColor: color,
+            disabledBackgroundColor: color.withValues(alpha: 0.08),
+          )
+        : IconButton.styleFrom(
+            backgroundColor: AppColors.surface(brightness),
+            foregroundColor: color,
+          );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: size,
+          height: size,
+          child: IconButton(
+            onPressed: onTap,
+            icon: Icon(icon, size: size * 0.55),
+            style: buttonStyle.copyWith(
+              elevation: WidgetStatePropertyAll(isTonal ? 0 : 2),
+              shadowColor: WidgetStatePropertyAll(color.withValues(alpha: 0.3)),
+              shape: const WidgetStatePropertyAll(CircleBorder()),
             ),
-            child: Icon(icon, color: color, size: size * 0.6),
           ),
-          if (label != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: AppColors.textSec(Theme.of(context).brightness),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
+        ),
+        if (label != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 
@@ -1782,9 +1774,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Future<void> _undoLastSwipe() async {
     final provider = context.read<DiscoveryProvider>();
     try {
-      await provider.undo();
-      if (_currentCardIndex > 0) {
-        setState(() => _currentCardIndex--);
+      final success = await provider.undo();
+      if (success) {
+        // Provider handles index decrement, trigger rebuild
+        setState(() {});
       }
     } catch (e) {
       _showErrorSnackBar(e.toString());

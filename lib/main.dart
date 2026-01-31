@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'core/theme/theme.dart';
 import 'core/providers/providers.dart';
 import 'core/services/error_handling_service.dart';
+import 'widgets/global_error_handler.dart';
 
 // Screens - Ultra-Premium 2026 Design
 import 'screens/splash_screen.dart';
@@ -100,134 +101,136 @@ class GigMatchApp extends StatelessWidget {
         // Feed Provider - posts and stories
         ChangeNotifierProvider(create: (_) => FeedProvider()),
       ],
-      child: MaterialApp(
-        title: 'GigMatch',
-        debugShowCheckedModeBanner: false,
+      child: GlobalErrorHandler(
+        child: MaterialApp(
+          title: 'GigMatch',
+          debugShowCheckedModeBanner: false,
 
-        // Apply both light and dark themes with Material 3
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+          // Apply both light and dark themes with Material 3
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.system,
 
-        // Custom page transition to prevent white flashes
-        builder: (context, child) {
-          return child ?? const SizedBox.shrink();
-        },
+          // Custom page transition to prevent white flashes
+          builder: (context, child) {
+            return child ?? const SizedBox.shrink();
+          },
 
-        // Named routes for navigation
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const SplashScreen(),
-          '/onboarding': (context) => const OnboardingScreen(),
-          '/role-selection': (context) => const RoleSelectionScreenV3(),
-          '/artist-signup': (context) => const ArtistSignupScreenV2(),
-          '/venue-signup': (context) => const VenueSignupScreenV2(),
-          '/login': (context) => const LoginScreen(),
-          '/login-old': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const AppShell(),
-          '/discovery': (context) => const DiscoveryScreen(),
-          '/matches': (context) => const MatchesScreenV2(),
-          '/profile': (context) => const ProfileScreenV3(),
-          '/edit-profile': (context) => const EditProfileHubScreen(),
-          '/public-profile': (context) => const PublicProfileScreen(),
-          '/profile-preview': (context) => const ProfilePreviewScreen(),
-          '/settings': (context) => const SettingsScreen(),
-          '/premium': (context) => const PremiumScreen(),
-          '/about': (context) => const AboutScreen(),
-          '/support': (context) => const SupportScreen(),
-          '/artist-setup': (context) => const ArtistProfileSetupScreen(),
-          '/venue-setup': (context) => const VenueProfileSetupScreen(),
+          // Named routes for navigation
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const SplashScreen(),
+            '/onboarding': (context) => const OnboardingScreen(),
+            '/role-selection': (context) => const RoleSelectionScreenV3(),
+            '/artist-signup': (context) => const ArtistSignupScreenV2(),
+            '/venue-signup': (context) => const VenueSignupScreenV2(),
+            '/login': (context) => const LoginScreen(),
+            '/login-old': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
+            '/home': (context) => const AppShell(),
+            '/discovery': (context) => const DiscoveryScreen(),
+            '/matches': (context) => const MatchesScreenV2(),
+            '/profile': (context) => const ProfileScreenV3(),
+            '/edit-profile': (context) => const EditProfileHubScreen(),
+            '/public-profile': (context) => const PublicProfileScreen(),
+            '/profile-preview': (context) => const ProfilePreviewScreen(),
+            '/settings': (context) => const SettingsScreen(),
+            '/premium': (context) => const PremiumScreen(),
+            '/about': (context) => const AboutScreen(),
+            '/support': (context) => const SupportScreen(),
+            '/artist-setup': (context) => const ArtistProfileSetupScreen(),
+            '/venue-setup': (context) => const VenueProfileSetupScreen(),
 
-          // Enterprise Screens
-          '/wallet': (context) => const WalletScreen(),
-          '/reviews': (context) => const ReviewsScreen(),
-          '/contracts': (context) => const GigContractScreen(),
-          '/messages': (context) => const MessagesScreen(),
-          '/verification': (context) => const VerificationScreen(),
-          '/notifications': (context) => const NotificationsScreen(),
-          '/analytics': (context) => const AnalyticsScreen(),
-          '/calendar': (context) => const ArtistCalendarScreen(),
-          '/create-gig': (context) => const CreateGigScreen(),
-          '/my-gigs': (context) => const GigsScreen(),
-          '/booking-requests': (context) => const BookingRequestsScreen(),
-        },
+            // Enterprise Screens
+            '/wallet': (context) => const WalletScreen(),
+            '/reviews': (context) => const ReviewsScreen(),
+            '/contracts': (context) => const GigContractScreen(),
+            '/messages': (context) => const MessagesScreen(),
+            '/verification': (context) => const VerificationScreen(),
+            '/notifications': (context) => const NotificationsScreen(),
+            '/analytics': (context) => const AnalyticsScreen(),
+            '/calendar': (context) => const ArtistCalendarScreen(),
+            '/create-gig': (context) => const CreateGigScreen(),
+            '/my-gigs': (context) => const GigsScreen(),
+            '/booking-requests': (context) => const BookingRequestsScreen(),
+          },
 
-        // Handle dynamic routes with smooth transitions
-        onGenerateRoute: (settings) {
-          // Chat screen with match ID
-          if (settings.name?.startsWith('/chat/') ?? false) {
-            final matchId = settings.name!.split('/').last;
-            return _createFadeRoute(ChatScreen(matchId: matchId), settings);
-          }
+          // Handle dynamic routes with smooth transitions
+          onGenerateRoute: (settings) {
+            // Chat screen with match ID
+            if (settings.name?.startsWith('/chat/') ?? false) {
+              final matchId = settings.name!.split('/').last;
+              return _createFadeRoute(ChatScreen(matchId: matchId), settings);
+            }
 
-          // Gig details screen with gig ID
-          if (settings.name?.startsWith('/gig/') ?? false) {
-            final gigId = settings.name!.split('/').last;
-            return _createFadeRoute(GigDetailsScreen(gigId: gigId), settings);
-          }
+            // Gig details screen with gig ID
+            if (settings.name?.startsWith('/gig/') ?? false) {
+              final gigId = settings.name!.split('/').last;
+              return _createFadeRoute(GigDetailsScreen(gigId: gigId), settings);
+            }
 
-          // Contract screen with contract ID
-          if (settings.name?.startsWith('/contract/') ?? false) {
-            final contractId = settings.name!.split('/').last;
-            return _createFadeRoute(
-              GigContractScreen(contractId: contractId),
-              settings,
-            );
-          }
+            // Contract screen with contract ID
+            if (settings.name?.startsWith('/contract/') ?? false) {
+              final contractId = settings.name!.split('/').last;
+              return _createFadeRoute(
+                GigContractScreen(contractId: contractId),
+                settings,
+              );
+            }
 
-          // Public profile with user ID (for viewing other artists)
-          if (settings.name?.startsWith('/profile/') ?? false) {
-            final artistId = settings.name!.split('/').last;
-            return _createFadeRoute(
-              ArtistPublicProfileScreen(artistId: artistId),
-              settings,
-            );
-          }
+            // Public profile with user ID (for viewing other artists)
+            if (settings.name?.startsWith('/profile/') ?? false) {
+              final artistId = settings.name!.split('/').last;
+              return _createFadeRoute(
+                ArtistPublicProfileScreen(artistId: artistId),
+                settings,
+              );
+            }
 
-          // Artist profile route
-          if (settings.name?.startsWith('/artist/') ?? false) {
-            final artistId = settings.name!.split('/').last;
-            return _createFadeRoute(
-              ProfilePreviewScreen(
-                profileId: artistId,
-                profileType: ProfileViewType.artist,
-              ),
-              settings,
-            );
-          }
+            // Artist profile route
+            if (settings.name?.startsWith('/artist/') ?? false) {
+              final artistId = settings.name!.split('/').last;
+              return _createFadeRoute(
+                ProfilePreviewScreen(
+                  profileId: artistId,
+                  profileType: ProfileViewType.artist,
+                ),
+                settings,
+              );
+            }
 
-          // Venue profile route
-          if (settings.name?.startsWith('/venue/') ?? false) {
-            final venueId = settings.name!.split('/').last;
-            return _createFadeRoute(
-              ProfilePreviewScreen(
-                profileId: venueId,
-                profileType: ProfileViewType.venue,
-              ),
-              settings,
-            );
-          }
+            // Venue profile route
+            if (settings.name?.startsWith('/venue/') ?? false) {
+              final venueId = settings.name!.split('/').last;
+              return _createFadeRoute(
+                ProfilePreviewScreen(
+                  profileId: venueId,
+                  profileType: ProfileViewType.venue,
+                ),
+                settings,
+              );
+            }
 
-          // Profile setup based on role
-          if (settings.name == '/profile-setup') {
-            return _createFadeRoute(
-              Builder(
-                builder: (context) {
-                  final authProvider = context.read<AuthProvider>();
-                  if (authProvider.isArtist) {
-                    return const ArtistProfileSetupScreen();
-                  } else {
-                    return const VenueProfileSetupScreen();
-                  }
-                },
-              ),
-              settings,
-            );
-          }
+            // Profile setup based on role
+            if (settings.name == '/profile-setup') {
+              return _createFadeRoute(
+                Builder(
+                  builder: (context) {
+                    final authProvider = context.read<AuthProvider>();
+                    if (authProvider.isArtist) {
+                      return const ArtistProfileSetupScreen();
+                    } else {
+                      return const VenueProfileSetupScreen();
+                    }
+                  },
+                ),
+                settings,
+              );
+            }
 
-          return null;
-        },
+            return null;
+          },
+        ),
       ),
     );
   }

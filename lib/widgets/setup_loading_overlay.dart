@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../core/theme/theme.dart';
 
@@ -98,21 +100,8 @@ class SetupLoadingOverlay extends StatelessWidget {
             ),
             const SizedBox(height: 28),
 
-            // Progress indicator
-            SizedBox(
-              width: 140,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: null,
-                  backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    AppColors.crimson,
-                  ),
-                  minHeight: 4,
-                ),
-              ),
-            ),
+            // M3 Expressive wavy progress indicator
+            _WavyProgressIndicator(isDark: isDark),
           ],
         ),
       ),
@@ -140,14 +129,18 @@ class _AnimatedIconState extends State<_AnimatedIcon>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.08,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    // M3 Expressive: Spring-like motion curve for more natural feel
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.elasticOut,
+        reverseCurve: Curves.easeInOutCubic,
+      ),
+    );
   }
 
   @override
@@ -253,5 +246,190 @@ class MinimalLoadingOverlay extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// 🌊 M3 Expressive Wavy Progress Indicator
+///
+/// Material 3 Expressive style progress indicator with:
+/// - Wavy animation on the active track
+/// - Thick track (8dp as per M3 spec)
+/// - Rounded end caps
+/// - Spring-based motion for natural feel
+class _WavyProgressIndicator extends StatefulWidget {
+  final bool isDark;
+
+  const _WavyProgressIndicator({required this.isDark});
+
+  @override
+  State<_WavyProgressIndicator> createState() => _WavyProgressIndicatorState();
+}
+
+class _WavyProgressIndicatorState extends State<_WavyProgressIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1800),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 160,
+      height: 8, // M3 Expressive thick track
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return CustomPaint(
+            painter: _WavyProgressPainter(
+              progress: _controller.value,
+              trackColor: widget.isDark ? Colors.grey[800]! : Colors.grey[200]!,
+              activeColor: AppColors.crimson,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Custom painter for wavy progress effect
+class _WavyProgressPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color activeColor;
+
+  _WavyProgressPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.activeColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.fill;
+
+    final activePaint = Paint()
+      ..color = activeColor
+      ..style = PaintingStyle.fill;
+
+    final radius = size.height / 2;
+
+    // Draw track (full width with rounded ends)
+    final trackRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(radius),
+    );
+    canvas.drawRRect(trackRect, trackPaint);
+
+    // Draw active indicator with wave effect
+    // The active section travels across the track
+    final activeWidth = size.width * 0.4; // 40% width indicator
+    final startX = (size.width + activeWidth) * progress - activeWidth;
+
+    // Create wavy path for active indicator
+    final path = Path();
+    final waveHeight = size.height * 0.15; // Subtle wave
+    final waveCount = 3;
+
+    // Clamp to visible area
+    final clampedStartX = startX.clamp(0.0, size.width);
+    final clampedEndX = (startX + activeWidth).clamp(0.0, size.width);
+
+    if (clampedEndX > clampedStartX) {
+      // Start with rounded left cap if at beginning
+      if (startX <= 0) {
+        path.moveTo(0, size.height / 2);
+        path.arcToPoint(
+          Offset(radius, 0),
+          radius: Radius.circular(radius),
+          clockwise: true,
+        );
+      } else {
+        path.moveTo(clampedStartX + radius, 0);
+        path.arcToPoint(
+          Offset(clampedStartX, size.height / 2),
+          radius: Radius.circular(radius),
+          clockwise: false,
+        );
+        path.arcToPoint(
+          Offset(clampedStartX + radius, size.height),
+          radius: Radius.circular(radius),
+          clockwise: false,
+        );
+      }
+
+      // Create wavy top edge
+      final activeLength = clampedEndX - clampedStartX;
+      for (int i = 0; i < waveCount; i++) {
+        final segmentWidth = activeLength / waveCount;
+        final x1 = clampedStartX + radius + (i * segmentWidth);
+        final x2 = x1 + segmentWidth;
+
+        if (x2 <= size.width - radius) {
+          // Wave on top
+          final wavePhase = progress * 2 * math.pi + i;
+          final waveOffset = math.sin(wavePhase) * waveHeight;
+
+          path.lineTo(x1, 0);
+          path.quadraticBezierTo((x1 + x2) / 2, -waveOffset, x2, 0);
+        }
+      }
+
+      // Rounded right cap if not at end
+      if (startX + activeWidth < size.width) {
+        final endX = (clampedEndX - radius).clamp(0.0, size.width);
+        path.lineTo(endX, 0);
+        path.arcToPoint(
+          Offset(clampedEndX.clamp(0.0, size.width), size.height / 2),
+          radius: Radius.circular(radius),
+          clockwise: true,
+        );
+        path.arcToPoint(
+          Offset(endX, size.height),
+          radius: Radius.circular(radius),
+          clockwise: true,
+        );
+      } else {
+        path.lineTo(size.width - radius, 0);
+        path.arcToPoint(
+          Offset(size.width, size.height / 2),
+          radius: Radius.circular(radius),
+          clockwise: true,
+        );
+        path.arcToPoint(
+          Offset(size.width - radius, size.height),
+          radius: Radius.circular(radius),
+          clockwise: true,
+        );
+      }
+
+      path.close();
+
+      // Clip to track bounds and draw
+      canvas.save();
+      canvas.clipRRect(trackRect);
+      canvas.drawPath(path, activePaint);
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WavyProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }

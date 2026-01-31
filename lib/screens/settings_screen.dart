@@ -202,7 +202,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: 24),
 
-            _buildSection('Legal', [
+            // Legal section using M3 ExpansionTile
+            _buildExpandableSection('Legal & Policies', Icons.gavel_rounded, [
               _buildNavigationTile(
                 'Terms of Service',
                 Icons.description_rounded,
@@ -278,6 +279,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// M3 ExpansionTile-based section for collapsible settings groups
+  Widget _buildExpandableSection(
+    String title,
+    IconData icon,
+    List<Widget> children, {
+    bool initiallyExpanded = false,
+  }) {
+    final brightness = Theme.of(context).brightness;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(brightness)),
+      ),
+      child: ExpansionTile(
+        leading: Icon(icon, color: AppColors.crimson),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: AppColors.text(brightness),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        initiallyExpanded: initiallyExpanded,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        iconColor: AppColors.crimson,
+        collapsedIconColor: AppColors.textSec(brightness),
+        children: children,
+      ),
+    );
+  }
+
   Widget _buildSwitchTile(
     String title,
     String subtitle,
@@ -286,8 +324,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ValueChanged<bool> onChanged,
     Brightness brightness,
   ) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.crimson),
+    return SwitchListTile(
+      secondary: Icon(icon, color: AppColors.crimson),
       title: Text(
         title,
         style: TextStyle(
@@ -300,11 +338,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         subtitle,
         style: TextStyle(color: AppColors.textSec(brightness), fontSize: 13),
       ),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-        activeThumbColor: AppColors.crimson,
-      ),
+      value: value,
+      onChanged: onChanged,
+      thumbColor: WidgetStatePropertyAll(value ? AppColors.crimson : null),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.crimson.withValues(alpha: 0.5);
+        }
+        return null;
+      }),
     );
   }
 

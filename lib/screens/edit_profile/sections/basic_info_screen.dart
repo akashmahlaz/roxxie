@@ -143,7 +143,9 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
           ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -155,7 +157,9 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
           content: Text('Failed to update: ${e.toString()}'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -469,46 +473,56 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-            border: Border.all(
-              color: AppColors.border(brightness),
-              width: 1,
-            ),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _venueType,
-              isExpanded: true,
-              dropdownColor: AppColors.surface(brightness),
+        DropdownMenu<String>(
+          initialSelection: _venueType,
+          expandedInsets: EdgeInsets.zero,
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: AppColors.surface(brightness),
+            border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColors.textSec(brightness),
-              ),
-              items: venueTypes.map((type) {
-                return DropdownMenuItem(
-                  value: type.value,
-                  child: Text(
-                    type.displayName,
-                    style: TextStyle(
-                      color: AppColors.text(brightness),
-                      fontSize: 15,
-                    ),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _venueType = value);
-                  _markChanged();
-                }
-              },
+              borderSide: BorderSide(color: AppColors.border(brightness)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+              borderSide: BorderSide(color: AppColors.border(brightness)),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 14,
             ),
           ),
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(
+              AppColors.surface(brightness),
+            ),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
+              ),
+            ),
+          ),
+          textStyle: TextStyle(color: AppColors.text(brightness), fontSize: 15),
+          trailingIcon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.textSec(brightness),
+          ),
+          selectedTrailingIcon: Icon(
+            Icons.keyboard_arrow_up_rounded,
+            color: AppColors.textSec(brightness),
+          ),
+          dropdownMenuEntries: venueTypes.map((type) {
+            return DropdownMenuEntry<String>(
+              value: type.value,
+              label: type.displayName,
+            );
+          }).toList(),
+          onSelected: (value) {
+            if (value != null) {
+              setState(() => _venueType = value);
+              _markChanged();
+            }
+          },
         ),
       ],
     );
@@ -604,8 +618,8 @@ class _BasicInfoScreenState extends State<BasicInfoScreen> {
                     color: isSelected
                         ? Colors.white
                         : canSelect
-                            ? AppColors.text(brightness)
-                            : AppColors.textSec(brightness),
+                        ? AppColors.text(brightness)
+                        : AppColors.textSec(brightness),
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     fontSize: 13,
                   ),

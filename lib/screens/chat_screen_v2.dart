@@ -361,57 +361,56 @@ class _ChatScreenV2State extends State<ChatScreenV2>
           icon: Icon(Icons.call_rounded, color: AppColors.text(brightness)),
         ),
         // More options
-        PopupMenuButton<String>(
-          icon: Icon(
-            Icons.more_vert_rounded,
-            color: AppColors.text(brightness),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          onSelected: (value) {
-            HapticFeedback.selectionClick();
-            switch (value) {
-              case 'profile':
-                // View profile
-                break;
-              case 'mute':
-                // Mute notifications
-                break;
-              case 'block':
-                // Block user
-                break;
-            }
+        MenuAnchor(
+          builder: (context, controller, child) {
+            return IconButton(
+              icon: Icon(
+                Icons.more_vert_rounded,
+                color: AppColors.text(brightness),
+              ),
+              onPressed: () {
+                if (controller.isOpen) {
+                  controller.close();
+                } else {
+                  controller.open();
+                }
+              },
+            );
           },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'profile',
-              child: Row(
-                children: [
-                  Icon(Icons.person_outline_rounded),
-                  SizedBox(width: 12),
-                  Text('View Profile'),
-                ],
-              ),
+          style: MenuStyle(
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            const PopupMenuItem(
-              value: 'mute',
-              child: Row(
-                children: [
-                  Icon(Icons.notifications_off_outlined),
-                  SizedBox(width: 12),
-                  Text('Mute'),
-                ],
-              ),
+          ),
+          menuChildren: [
+            MenuItemButton(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                // View profile
+              },
+              leadingIcon: const Icon(Icons.person_outline_rounded),
+              child: const Text('View Profile'),
             ),
-            const PopupMenuItem(
-              value: 'block',
-              child: Row(
-                children: [
-                  Icon(Icons.block_rounded, color: Colors.red),
-                  SizedBox(width: 12),
-                  Text('Block', style: TextStyle(color: Colors.red)),
-                ],
+            MenuItemButton(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                // Mute notifications
+              },
+              leadingIcon: const Icon(Icons.notifications_off_outlined),
+              child: const Text('Mute'),
+            ),
+            MenuItemButton(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                // Block user
+              },
+              leadingIcon: const Icon(
+                Icons.block_rounded,
+                color: AppColors.error,
+              ),
+              child: const Text(
+                'Block',
+                style: TextStyle(color: AppColors.error),
               ),
             ),
           ],
