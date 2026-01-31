@@ -1121,19 +1121,14 @@ class _EmptyFeedState extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
+          FilledButton.icon(
             onPressed: () => Navigator.pushNamed(context, '/create-post'),
-            style: ElevatedButton.styleFrom(
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Create Post'),
+            style: FilledButton.styleFrom(
               backgroundColor: AppColors.crimson,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-            ),
-            child: const Text(
-              'Create Post',
-              style: TextStyle(fontWeight: FontWeight.w600),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],

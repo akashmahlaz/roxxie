@@ -95,8 +95,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     }
 
     // Duration based on item type (images 5s, videos by duration)
-    final duration =
-        item.type == MediaType.video ? Duration(seconds: item.duration ?? 15) : const Duration(seconds: 5);
+    final duration = item.type == MediaType.video
+        ? Duration(seconds: item.duration ?? 15)
+        : const Duration(seconds: 5);
 
     _progressController.duration = duration;
     _progressController.reset();
@@ -183,67 +184,70 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               child: CircularProgressIndicator(color: AppColors.crimson),
             )
           : _story == null
-              ? const Center(
-                  child: Text('Story not found',
-                      style: TextStyle(color: Colors.white)))
-              : GestureDetector(
-                  onTapDown: (_) => _pause(),
-                  onTapUp: (details) {
-                    final width = MediaQuery.of(context).size.width;
-                    if (details.globalPosition.dx < width / 3) {
-                      _goToPrevious();
-                    } else if (details.globalPosition.dx > width * 2 / 3) {
-                      _goToNext();
-                    } else {
-                      _resume();
-                    }
-                  },
-                  onLongPressStart: (_) => _pause(),
-                  onLongPressEnd: (_) => _resume(),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Story content
-                      _buildContent(),
+          ? const Center(
+              child: Text(
+                'Story not found',
+                style: TextStyle(color: Colors.white),
+              ),
+            )
+          : GestureDetector(
+              onTapDown: (_) => _pause(),
+              onTapUp: (details) {
+                final width = MediaQuery.of(context).size.width;
+                if (details.globalPosition.dx < width / 3) {
+                  _goToPrevious();
+                } else if (details.globalPosition.dx > width * 2 / 3) {
+                  _goToNext();
+                } else {
+                  _resume();
+                }
+              },
+              onLongPressStart: (_) => _pause(),
+              onLongPressEnd: (_) => _resume(),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Story content
+                  _buildContent(),
 
-                      // Overlay gradient
-                      _buildOverlayGradient(),
+                  // Overlay gradient
+                  _buildOverlayGradient(),
 
-                      // Progress bars
-                      Positioned(
-                        top: MediaQuery.of(context).padding.top + 8,
-                        left: 12,
-                        right: 12,
-                        child: _buildProgressBars(),
-                      ),
-
-                      // Header
-                      Positioned(
-                        top: MediaQuery.of(context).padding.top + 24,
-                        left: 12,
-                        right: 12,
-                        child: _buildHeader(),
-                      ),
-
-                      // Caption
-                      if (_currentItem?.caption != null)
-                        Positioned(
-                          bottom: 120,
-                          left: 16,
-                          right: 16,
-                          child: _buildCaption(),
-                        ),
-
-                      // Bottom reactions
-                      Positioned(
-                        bottom: MediaQuery.of(context).padding.bottom + 16,
-                        left: 16,
-                        right: 16,
-                        child: _buildReactions(),
-                      ),
-                    ],
+                  // Progress bars
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 8,
+                    left: 12,
+                    right: 12,
+                    child: _buildProgressBars(),
                   ),
-                ),
+
+                  // Header
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 24,
+                    left: 12,
+                    right: 12,
+                    child: _buildHeader(),
+                  ),
+
+                  // Caption
+                  if (_currentItem?.caption != null)
+                    Positioned(
+                      bottom: 120,
+                      left: 16,
+                      right: 16,
+                      child: _buildCaption(),
+                    ),
+
+                  // Bottom reactions
+                  Positioned(
+                    bottom: MediaQuery.of(context).padding.bottom + 16,
+                    left: 16,
+                    right: 16,
+                    child: _buildReactions(),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -348,13 +352,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                     },
                   )
                 : index < _currentIndex
-                    ? Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(2),
-                          color: Colors.white,
-                        ),
-                      )
-                    : null,
+                ? Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      color: Colors.white,
+                    ),
+                  )
+                : null,
           ),
         );
       }),
@@ -434,10 +438,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       ),
       child: Text(
         _currentItem?.caption ?? '',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 16),
         textAlign: TextAlign.center,
       ),
     );
@@ -460,7 +461,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Send message...',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
                 border: InputBorder.none,
               ),
               onTap: _pause,
@@ -494,9 +497,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           shape: BoxShape.circle,
           color: Colors.white.withValues(alpha: 0.1),
         ),
-        child: Center(
-          child: Text(emoji, style: const TextStyle(fontSize: 24)),
-        ),
+        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
       ),
     );
   }

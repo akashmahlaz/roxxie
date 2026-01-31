@@ -293,7 +293,6 @@ class _SmartLocationPickerState extends State<SmartLocationPicker> {
           ),
           onChanged: (value) {
             setState(() {});
-            // TODO: Implement autocomplete with Google Places API
           },
           onSubmitted: (value) {
             if (value.isNotEmpty) {

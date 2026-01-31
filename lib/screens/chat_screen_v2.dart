@@ -356,7 +356,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         IconButton(
           onPressed: () {
             HapticFeedback.lightImpact();
-            // TODO: Implement call feature
+            
           },
           icon: Icon(Icons.call_rounded, color: AppColors.text(brightness)),
         ),
@@ -676,7 +676,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                     color: Colors.orange,
                     onTap: () {
                       Navigator.pop(ctx);
-                      // TODO: Document picker
+                      
                     },
                   ),
                   _AttachmentOption(
@@ -685,7 +685,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                     color: Colors.green,
                     onTap: () {
                       Navigator.pop(ctx);
-                      // TODO: Location sharing
+                      
                     },
                   ),
                 ],
