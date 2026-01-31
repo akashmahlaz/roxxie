@@ -44,6 +44,11 @@ import 'screens/venue/create_gig_screen.dart';
 import 'screens/venue/gigs_screen.dart';
 import 'screens/booking_requests_screen.dart';
 
+// Feed & Social Screens
+import 'screens/create_post_screen.dart';
+import 'screens/create_story_screen.dart';
+import 'screens/story_viewer_screen.dart';
+
 // App Shell (5-tab navigation)
 import 'screens/app_shell.dart';
 
@@ -153,10 +158,27 @@ class GigMatchApp extends StatelessWidget {
             '/create-gig': (context) => const CreateGigScreen(),
             '/my-gigs': (context) => const GigsScreen(),
             '/booking-requests': (context) => const BookingRequestsScreen(),
+
+            // Feed & Social
+            '/create-post': (context) => const CreatePostScreen(),
+            '/create-story': (context) => const CreateStoryScreen(),
           },
 
           // Handle dynamic routes with smooth transitions
           onGenerateRoute: (settings) {
+            // Story viewer with arguments
+            if (settings.name == '/story-viewer') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              return _createFadeRoute(
+                StoryViewerScreen(
+                  storyId: args?['storyId'] ?? '',
+                  userId: args?['userId'] ?? '',
+                  initialItemIndex: args?['initialItemIndex'] ?? 0,
+                ),
+                settings,
+              );
+            }
+
             // Chat screen with match ID
             if (settings.name?.startsWith('/chat/') ?? false) {
               final matchId = settings.name!.split('/').last;

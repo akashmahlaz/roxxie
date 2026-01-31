@@ -180,12 +180,16 @@ class FeedProvider extends ChangeNotifier {
     String? caption,
     required List<Map<String, dynamic>> media,
     List<String>? hashtags,
+    bool commentsDisabled = false,
+    bool likesHidden = false,
   }) async {
     try {
       final post = await _feedService.createPost(
         caption: caption,
         media: media,
         hashtags: hashtags,
+        commentsDisabled: commentsDisabled,
+        likesHidden: likesHidden,
       );
       // Add to beginning of feed
       _posts.insert(0, post);
@@ -266,6 +270,16 @@ class FeedProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('FeedProvider.deleteStory error: $e');
       rethrow;
+    }
+  }
+
+  /// React to a story item
+  Future<void> reactToStory(String storyId, String itemId, String emoji) async {
+    try {
+      await _feedService.reactToStory(storyId, itemId, emoji);
+    } catch (e) {
+      debugPrint('FeedProvider.reactToStory error: $e');
+      // Don't rethrow - reactions are non-critical
     }
   }
 
