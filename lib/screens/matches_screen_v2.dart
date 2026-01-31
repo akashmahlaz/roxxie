@@ -36,7 +36,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
 
   final List<_MatchParticle> _particles = [];
   final math.Random _random = math.Random();
-  
+
   // Search controller
   final TextEditingController _searchController = TextEditingController();
   bool _showSearch = false;
@@ -72,10 +72,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
       provider.loadMatches(refresh: true);
       provider.loadWhoLikedMe();
     });
-    
+
     _searchController.addListener(_onSearchChanged);
   }
-  
+
   void _onSearchChanged() {
     context.read<MatchProvider>().setSearchQuery(_searchController.text);
   }
@@ -168,12 +168,12 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
                       ),
                     );
                   }
-                  
+
                   // Error state with retry
                   if (provider.status == MatchListStatus.error) {
                     return _buildErrorState(provider, brightness);
                   }
-                  
+
                   // Empty state with CTA
                   if (provider.matches.isEmpty) {
                     return _buildEmptyState(brightness);
@@ -277,7 +277,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
           // Search bar (conditional)
           if (_showSearch)
             SliverToBoxAdapter(child: _buildSearchBar(brightness)),
-          
+
           // Who Liked Me Section (Premium Teaser)
           if (whoLikedMeCount > 0 || provider.whoLikedMeLoading)
             SliverToBoxAdapter(
@@ -289,7 +289,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
                 brightness,
               ),
             ),
-          
+
           // New Matches Header
           SliverToBoxAdapter(
             child: Padding(
@@ -306,7 +306,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.crimson.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -324,7 +327,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
               ),
             ),
           ),
-          
+
           // Matches Grid or Empty State
           if (matches.isEmpty)
             SliverFillRemaining(
@@ -345,17 +348,14 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
                   mainAxisSpacing: 16,
                   childAspectRatio: 0.7,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return _PremiumMatchCard(
-                      match: matches[index],
-                      onTap: () => _openChat(matches[index]),
-                      brightness: brightness,
-                      index: index,
-                    );
-                  },
-                  childCount: matches.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return _PremiumMatchCard(
+                    match: matches[index],
+                    onTap: () => _openChat(matches[index]),
+                    brightness: brightness,
+                    index: index,
+                  );
+                }, childCount: matches.length),
               ),
             ),
         ],
@@ -378,7 +378,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
           // Search bar (conditional)
           if (_showSearch)
             SliverToBoxAdapter(child: _buildSearchBar(brightness)),
-          
+
           // Messages Header
           SliverToBoxAdapter(
             child: Padding(
@@ -396,7 +396,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
                   const SizedBox(width: 8),
                   if (provider.unreadCount > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.crimson,
                         borderRadius: BorderRadius.circular(12),
@@ -414,7 +417,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
               ),
             ),
           ),
-          
+
           // Messages List or Empty State
           if (matches.isEmpty)
             SliverFillRemaining(
@@ -427,17 +430,14 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return _PremiumMessageTile(
-                    match: matches[index],
-                    brightness: brightness,
-                    onTap: () => _openChat(matches[index]),
-                    index: index,
-                  );
-                },
-                childCount: matches.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return _PremiumMessageTile(
+                  match: matches[index],
+                  brightness: brightness,
+                  onTap: () => _openChat(matches[index]),
+                  index: index,
+                );
+              }, childCount: matches.length),
             ),
         ],
       ),
@@ -499,7 +499,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
               },
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.crimson,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -519,7 +522,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
       ),
     );
   }
-  
+
   Widget _buildErrorState(MatchProvider provider, Brightness brightness) {
     return Center(
       child: Padding(
@@ -559,7 +562,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
               onPressed: () => provider.loadMatches(refresh: true),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.crimson),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               icon: const Icon(Icons.refresh, color: AppColors.crimson),
               label: const Text(
@@ -572,7 +578,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
       ),
     );
   }
-  
+
   Widget _buildSearchBar(Brightness brightness) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -589,12 +595,15 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
       ),
     );
   }
-  
+
   Widget _buildWhoLikedMeSection(
     List<DiscoveryCard> profiles,
     int count,
@@ -615,9 +624,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.gold.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,7 +665,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
               ),
               if (isPremium)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [AppColors.gold, AppColors.crimson],
@@ -714,7 +724,10 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
                                 : null,
                             backgroundColor: AppColors.surface(brightness),
                             child: profile.primaryPhotoUrl.isEmpty
-                                ? Icon(Icons.person, color: AppColors.textTert(brightness))
+                                ? Icon(
+                                    Icons.person,
+                                    color: AppColors.textTert(brightness),
+                                  )
                                 : null,
                           ),
                           const SizedBox(height: 4),
@@ -737,7 +750,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
       ),
     );
   }
-  
+
   Widget _buildBlurredPreview(int count, Brightness brightness) {
     return Stack(
       children: [
@@ -765,11 +778,17 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
               onPressed: () {
                 // Navigate to premium upgrade
                 HapticFeedback.lightImpact();
-                Navigator.pushNamed(context, '/subscription');
+                Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).pushNamed('/subscription');
               },
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.gold,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
               ),
               child: const Text(
                 'Unlock with Pro',
@@ -784,11 +803,11 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
       ],
     );
   }
-  
+
   void _showFilterSheet(Brightness brightness) {
     HapticFeedback.lightImpact();
     final provider = context.read<MatchProvider>();
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -892,7 +911,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
     HapticFeedback.lightImpact();
     // Assuming Route is setup or direct push
     // Using simple push for now as verified in matches_screen
-    Navigator.pushNamed(context, '/chat/${match.id}');
+    Navigator.of(context, rootNavigator: true).pushNamed('/chat/${match.id}');
   }
 }
 

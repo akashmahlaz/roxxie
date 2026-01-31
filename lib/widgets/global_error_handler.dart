@@ -41,46 +41,64 @@ class _GlobalErrorHandlerState extends State<GlobalErrorHandler> {
 
   void _handleError(AppException error) {
     // Ensure we have a valid context
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
-    // Get user-friendly message
-    final message = error.userMessage;
+    // Delay showing error to ensure MaterialApp is ready
+    // This prevents errors during app initialization
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
 
-    // Show appropriate UI based on severity
-    switch (error.severity) {
-      case ErrorSeverity.info:
-        AppSnackBar.info(context, message: message);
-        break;
+      // Check if ScaffoldMessenger is available
+      final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+      if (scaffoldMessenger == null) {
+        // MaterialApp not ready yet, just log the error
+        debugPrint('Error (no ScaffoldMessenger): ${error.userMessage}');
+        return;
+      }
 
-      case ErrorSeverity.warning:
-        AppSnackBar.warning(context, message: message);
-        break;
+      // Get user-friendly message
+      final message = error.userMessage;
 
-      case ErrorSeverity.error:
-        // Check if it's a retryable error
-        if (error.code == 'network' || error.code == 'timeout') {
-          AppSnackBar.showRetry(
+      // Show appropriate UI based on severity
+      switch (error.severity) {
+        case ErrorSeverity.info:
+          AppSnackBar.info(context, message: message);
+          break;
+
+        case ErrorSeverity.warning:
+          AppSnackBar.warning(context, message: message);
+          break;
+
+        case ErrorSeverity.error:
+          // Check if it's a retryable error
+          if (error.code == 'network' || error.code == 'timeout') {
+            AppSnackBar.showRetry(
+              context,
+              message: message,
+              onRetry: () {
+                // Dismiss snackbar - user can retry their action
+                AppSnackBar.hide(context);
+              },
+            );
+          } else {
+            AppSnackBar.error(context, message: message);
+          }
+          break;
+
+        case ErrorSeverity.fatal:
+          // For fatal errors, show a persistent error
+          AppSnackBar.error(
             context,
             message: message,
-            onRetry: () {
-              // Dismiss snackbar - user can retry their action
-              AppSnackBar.hide(context);
-            },
+            duration: const Duration(seconds: 10),
           );
-        } else {
-          AppSnackBar.error(context, message: message);
-        }
-        break;
-
-      case ErrorSeverity.fatal:
-        // For fatal errors, show a persistent error
-        AppSnackBar.error(
-          context,
-          message: message,
-          duration: const Duration(seconds: 10),
-        );
-        break;
-    }
+          break;
+      }
+    });
   }
 
   @override

@@ -12,6 +12,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../core/providers/providers.dart';
@@ -43,6 +44,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   static const int _maxMedia = 10;
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   void dispose() {
     _captionController.dispose();
     super.dispose();
@@ -54,7 +60,24 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return;
     }
 
+    final messenger = ScaffoldMessenger.of(context);
     try {
+      final hasPermission = await _ensureGalleryPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: const Text('Allow photo access to continue.'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final remaining = _maxMedia - _selectedMedia.length;
       final images = await _imagePicker.pickMultiImage(
         limit: remaining,
@@ -78,7 +101,24 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return;
     }
 
+    final messenger = ScaffoldMessenger.of(context);
     try {
+      final hasPermission = await _ensureGalleryPermission(forVideo: true);
+      if (!hasPermission) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: const Text('Allow video access to continue.'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final video = await _imagePicker.pickVideo(
         source: ImageSource.gallery,
         maxDuration: const Duration(minutes: 1),
@@ -101,7 +141,24 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return;
     }
 
+    final messenger = ScaffoldMessenger.of(context);
     try {
+      final hasPermission = await _ensureCameraPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: const Text('Allow camera access to take a photo.'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final photo = await _imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 85,
@@ -221,6 +278,24 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  Future<bool> _ensureGalleryPermission({bool forVideo = false}) async {
+    final permissions = <Permission>[Permission.photos, Permission.storage];
+    if (forVideo) {
+      permissions.add(Permission.videos);
+    }
+    final statuses = await permissions.request();
+    final granted = statuses.values.any(
+      (status) => status.isGranted || status.isLimited,
+    );
+    return granted;
+  }
+
+  Future<bool> _ensureCameraPermission() async {
+    final statuses = await [Permission.camera].request();
+    final granted = statuses.values.every((status) => status.isGranted);
+    return granted;
   }
 
   @override

@@ -11,6 +11,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../core/providers/providers.dart';
@@ -44,7 +45,28 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   }
 
   Future<void> _pickFromGallery() async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
+      final hasPermission = await _ensureGalleryPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: const Text('Allow photo/video access to continue.'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
       // Show bottom sheet to choose image or video
       final type = await showModalBottomSheet<String>(
         context: context,
@@ -86,7 +108,24 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   }
 
   Future<void> _takePhoto() async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
+      final hasPermission = await _ensureCameraPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: const Text('Allow camera access to take a photo.'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final photo = await _imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 90,
@@ -105,7 +144,26 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   }
 
   Future<void> _recordVideo() async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
+      final hasPermission = await _ensureCameraPermission(
+        needsMicrophone: true,
+      );
+      if (!hasPermission) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: const Text('Allow camera/microphone access to record.'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final video = await _imagePicker.pickVideo(
         source: ImageSource.camera,
         maxDuration: const Duration(seconds: 30),
@@ -196,6 +254,29 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  Future<bool> _ensureGalleryPermission() async {
+    final statuses = await [
+      Permission.photos,
+      Permission.videos,
+      Permission.storage,
+    ].request();
+
+    final granted = statuses.values.any(
+      (status) => status.isGranted || status.isLimited,
+    );
+    return granted;
+  }
+
+  Future<bool> _ensureCameraPermission({bool needsMicrophone = false}) async {
+    final permissions = <Permission>[Permission.camera];
+    if (needsMicrophone) {
+      permissions.add(Permission.microphone);
+    }
+    final statuses = await permissions.request();
+    final granted = statuses.values.every((status) => status.isGranted);
+    return granted;
   }
 
   Widget _buildMediaTypeSheet() {

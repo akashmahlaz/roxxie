@@ -231,6 +231,9 @@ class _CreateGigScreenState extends State<CreateGigScreen>
 
         await gigsService.updateGig(widget.gig!.id, request);
       } else {
+        final canPublish =
+            venueProfile.hasCompletedSetup && venueProfile.isOpenForBookings;
+
         // Create new gig
         final request = CreateGigRequest(
           venueId: venueProfile.id,
@@ -255,11 +258,27 @@ class _CreateGigScreenState extends State<CreateGigScreen>
                 venueLocation?.streetAddress ?? venueLocation?.formattedAddress,
             geoCoordinates: geoCoords,
           ),
-          status: GigStatus.open,
+          status: canPublish ? GigStatus.open : GigStatus.draft,
           perks: perks,
         );
 
         await gigsService.createGig(request);
+
+        if (!canPublish && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Gig saved as draft. Complete venue setup to publish.',
+              ),
+              backgroundColor: AppColors.crimson,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
       }
 
       setState(() {
@@ -274,9 +293,11 @@ class _CreateGigScreenState extends State<CreateGigScreen>
               children: [
                 const AnimatedSuccessCheck(size: 20, color: Colors.white),
                 const SizedBox(width: 12),
-                Text(widget.gig != null
-                    ? 'Gig updated successfully!'
-                    : 'Gig created successfully!'),
+                Text(
+                  widget.gig != null
+                      ? 'Gig updated successfully!'
+                      : 'Gig created successfully!',
+                ),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -1009,8 +1030,8 @@ class _CreateGigScreenState extends State<CreateGigScreen>
                             _isSuccess
                                 ? 'Saved!'
                                 : (widget.gig != null
-                                    ? 'Save Changes'
-                                    : 'Publish Gig'),
+                                      ? 'Save Changes'
+                                      : 'Publish Gig'),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,

@@ -106,10 +106,14 @@ class DiscoveryProvider extends ChangeNotifier {
     if (!hasCards) return false;
 
     final card = currentCard!;
+    final targetType = card.isArtist ? 'artist' : 'venue';
     _moveToNext();
 
     try {
-      final response = await _swipeService.like(card.id);
+      final response = await _swipeService.like(
+        card.id,
+        targetType: targetType,
+      );
 
       // Track swipeId for undo functionality
       if (response.swipeId != null) {
@@ -139,10 +143,14 @@ class DiscoveryProvider extends ChangeNotifier {
     if (!hasCards) return;
 
     final card = currentCard!;
+    final targetType = card.isArtist ? 'artist' : 'venue';
     _moveToNext();
 
     try {
-      final response = await _swipeService.pass(card.id);
+      final response = await _swipeService.pass(
+        card.id,
+        targetType: targetType,
+      );
 
       // Track swipeId for undo functionality
       if (response.swipeId != null) {
@@ -163,10 +171,14 @@ class DiscoveryProvider extends ChangeNotifier {
     if (!hasCards) return false;
 
     final card = currentCard!;
+    final targetType = card.isArtist ? 'artist' : 'venue';
     _moveToNext();
 
     try {
-      final response = await _swipeService.superLike(card.id);
+      final response = await _swipeService.superLike(
+        card.id,
+        targetType: targetType,
+      );
 
       // Track swipeId for undo functionality
       if (response.swipeId != null) {

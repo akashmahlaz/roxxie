@@ -551,7 +551,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {
-              Navigator.of(context).pushNamed('/discovery');
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed('/discovery');
             },
             icon: const Icon(Icons.explore_rounded),
             label: const Text('Discover'),
@@ -642,7 +645,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   void _showOptionsMenu(Brightness brightness) {
     final matchProvider = context.read<MatchProvider>();
-    final navigator = Navigator.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
     final scaffold = ScaffoldMessenger.of(context);
 
     showModalBottomSheet(

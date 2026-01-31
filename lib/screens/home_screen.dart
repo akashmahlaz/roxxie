@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         children: [
           // Logo / Brand Name
           Text(
-            'Roxxie',
+            'GigMatch',
             style: TextStyle(
               fontFamily: 'SpaceGrotesk',
               fontSize: 26,
@@ -210,12 +210,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _onCreatePost() {
     HapticFeedback.lightImpact();
-    Navigator.pushNamed(context, '/create-post');
+    // Use rootNavigator to escape nested tab navigator
+    Navigator.of(context, rootNavigator: true).pushNamed('/create-post');
   }
 
   void _onNotifications() {
     HapticFeedback.lightImpact();
-    Navigator.pushNamed(context, '/notifications');
+    Navigator.of(context, rootNavigator: true).pushNamed('/notifications');
   }
 }
 
@@ -239,10 +240,10 @@ class _StoriesSection extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 110,
+      height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: stories.length + 1, // +1 for "Your Story"
         itemBuilder: (context, index) {
           if (index == 0) {
@@ -264,10 +265,10 @@ class _StoriesSection extends StatelessWidget {
 
   Widget _buildLoadingShimmer(Brightness brightness) {
     return SizedBox(
-      height: 110,
+      height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: 6,
         itemBuilder: (context, index) {
           return Container(
@@ -312,19 +313,20 @@ class _YourStoryAvatar extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        Navigator.pushNamed(context, '/create-story');
+        Navigator.of(context, rootNavigator: true).pushNamed('/create-story');
       },
       child: Container(
         width: 72,
         margin: const EdgeInsets.only(right: 12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Stack(
               children: [
                 // Profile photo
                 Container(
-                  width: 68,
-                  height: 68,
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.surface(brightness),
@@ -349,7 +351,7 @@ class _YourStoryAvatar extends StatelessWidget {
                         : Icon(
                             Icons.person_rounded,
                             color: AppColors.textSec(brightness),
-                            size: 32,
+                            size: 28,
                           ),
                   ),
                 ),
@@ -358,8 +360,8 @@ class _YourStoryAvatar extends StatelessWidget {
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    width: 24,
-                    height: 24,
+                    width: 20,
+                    height: 20,
                     decoration: BoxDecoration(
                       color: AppColors.crimson,
                       shape: BoxShape.circle,
@@ -371,13 +373,13 @@ class _YourStoryAvatar extends StatelessWidget {
                     child: const Icon(
                       Icons.add_rounded,
                       color: Colors.white,
-                      size: 16,
+                      size: 14,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               'Your Story',
               style: TextStyle(
@@ -416,10 +418,11 @@ class _StoryAvatar extends StatelessWidget {
         width: 72,
         margin: const EdgeInsets.only(right: 12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Story ring
             Container(
-              padding: const EdgeInsets.all(3),
+              padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: hasUnviewed
@@ -438,8 +441,8 @@ class _StoryAvatar extends StatelessWidget {
                     : Border.all(color: AppColors.border(brightness), width: 2),
               ),
               child: Container(
-                width: 62,
-                height: 62,
+                width: 54,
+                height: 54,
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -472,7 +475,7 @@ class _StoryAvatar extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               name,
               style: TextStyle(
@@ -490,8 +493,7 @@ class _StoryAvatar extends StatelessWidget {
   }
 
   void _openStoryViewer(BuildContext context) {
-    Navigator.pushNamed(
-      context,
+    Navigator.of(context, rootNavigator: true).pushNamed(
       '/story-viewer',
       arguments: {'storyId': story.id, 'userId': story.userId},
     );
@@ -919,7 +921,7 @@ class _PostCardState extends State<_PostCard>
     final route = post.author?.role == 'venue'
         ? '/venue/${post.venueId ?? post.userId}'
         : '/artist/${post.artistId ?? post.userId}';
-    Navigator.pushNamed(context, route);
+    Navigator.of(context, rootNavigator: true).pushNamed(route);
   }
 
   void _openComments(BuildContext context, Post post) {
@@ -1122,7 +1124,12 @@ class _EmptyFeedState extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/create-post'),
+            onPressed: () {
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed('/create-post');
+            },
             icon: const Icon(Icons.add_rounded),
             label: const Text('Create Post'),
             style: FilledButton.styleFrom(

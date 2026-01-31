@@ -43,12 +43,18 @@ enum MatchStatus {
 /// Swipe Request
 class SwipeRequest {
   final String targetId; // Artist or Venue ID being swiped
+  final String targetType; // 'artist' or 'venue'
   final SwipeAction action;
 
-  SwipeRequest({required this.targetId, required this.action});
+  SwipeRequest({
+    required this.targetId,
+    required this.targetType,
+    required this.action,
+  });
 
   Map<String, dynamic> toJson() => {
     'targetId': targetId,
+    'targetType': targetType,
     'action': action.value,
   };
 }

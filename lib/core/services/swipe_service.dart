@@ -54,26 +54,51 @@ class SwipeService {
   }
 
   /// 👍 Swipe right (like)
-  Future<SwipeResponse> like(String targetId) async {
-    return _swipe(SwipeRequest(targetId: targetId, action: SwipeAction.like));
+  Future<SwipeResponse> like(
+    String targetId, {
+    required String targetType,
+  }) async {
+    return _swipe(
+      SwipeRequest(
+        targetId: targetId,
+        targetType: targetType,
+        action: SwipeAction.like,
+      ),
+    );
   }
 
   /// 👎 Swipe left (pass)
-  Future<SwipeResponse> pass(String targetId) async {
-    return _swipe(SwipeRequest(targetId: targetId, action: SwipeAction.pass));
+  Future<SwipeResponse> pass(
+    String targetId, {
+    required String targetType,
+  }) async {
+    return _swipe(
+      SwipeRequest(
+        targetId: targetId,
+        targetType: targetType,
+        action: SwipeAction.pass,
+      ),
+    );
   }
 
   /// ⭐ Super like
-  Future<SwipeResponse> superLike(String targetId) async {
+  Future<SwipeResponse> superLike(
+    String targetId, {
+    required String targetType,
+  }) async {
     return _swipe(
-      SwipeRequest(targetId: targetId, action: SwipeAction.superLike),
+      SwipeRequest(
+        targetId: targetId,
+        targetType: targetType,
+        action: SwipeAction.superLike,
+      ),
     );
   }
 
   /// 🔄 Swipe action
   Future<SwipeResponse> _swipe(SwipeRequest request) async {
     try {
-      // Backend expects POST /swipes/:targetId with body {direction: 'right'|'left'}
+      // Backend expects POST /swipes/:targetId with body {targetId, targetType, direction}
       final direction =
           request.action == SwipeAction.like ||
               request.action == SwipeAction.superLike
@@ -83,8 +108,9 @@ class SwipeService {
       final response = await _client.post(
         '${Endpoints.swipe}/${request.targetId}',
         data: {
+          'targetId': request.targetId,
+          'targetType': request.targetType,
           'direction': direction,
-          'isSuperLike': request.action == SwipeAction.superLike,
         },
       );
       return SwipeResponse.fromJson(response.data);
