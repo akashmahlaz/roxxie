@@ -2,6 +2,8 @@
 /// Models for Instagram-style posts and stories
 library;
 
+import 'package:flutter/foundation.dart';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // POST MEDIA
 // ═══════════════════════════════════════════════════════════════════════════
@@ -75,6 +77,14 @@ class PostAuthor {
   final String? displayName;
   final bool isVerified;
 
+  /// The artist profile ID (NOT the user account ID).
+  /// Use this for navigating to /artist/:id routes.
+  final String? artistId;
+
+  /// The venue profile ID (NOT the user account ID).
+  /// Use this for navigating to /venue/:id routes.
+  final String? venueId;
+
   const PostAuthor({
     required this.id,
     required this.fullName,
@@ -82,34 +92,58 @@ class PostAuthor {
     this.profilePhoto,
     this.displayName,
     this.isVerified = false,
+    this.artistId,
+    this.venueId,
   });
 
   factory PostAuthor.fromJson(Map<String, dynamic> json) {
     final artistProfile = json['artistProfile'] as Map<String, dynamic>?;
     final venueProfile = json['venueProfile'] as Map<String, dynamic>?;
 
+    // DEBUG: Log the raw JSON to see what we're receiving
+    debugPrint('🔍 PostAuthor.fromJson - raw json keys: ${json.keys}');
+    debugPrint('🔍 PostAuthor.fromJson - artistProfile: $artistProfile');
+    debugPrint('🔍 PostAuthor.fromJson - venueProfile: $venueProfile');
+
     String? profilePhoto;
     String? displayName;
     bool isVerified = false;
+    String? artistId;
+    String? venueId;
 
     if (artistProfile != null) {
       profilePhoto = artistProfile['profilePhoto'];
       displayName = artistProfile['stageName'] ?? artistProfile['displayName'];
       isVerified = artistProfile['isVerified'] ?? false;
-    } else if (venueProfile != null) {
-      profilePhoto = venueProfile['profilePhotoUrl'];
-      displayName = venueProfile['name'];
-      isVerified = venueProfile['isVerified'] ?? false;
+      // Extract the artist profile ID for navigation
+      artistId =
+          artistProfile['_id']?.toString() ?? artistProfile['id']?.toString();
+      debugPrint('🔍 PostAuthor - extracted artistId from profile: $artistId');
+    }
+    if (venueProfile != null) {
+      profilePhoto ??= venueProfile['profilePhotoUrl'];
+      displayName ??= venueProfile['name'];
+      isVerified = isVerified || (venueProfile['isVerified'] ?? false);
+      // Extract the venue profile ID for navigation
+      venueId =
+          venueProfile['_id']?.toString() ?? venueProfile['id']?.toString();
+      debugPrint('🔍 PostAuthor - extracted venueId from profile: $venueId');
     }
 
-    return PostAuthor(
+    final result = PostAuthor(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       fullName: json['fullName'] ?? '',
       role: json['role'] ?? 'artist',
       profilePhoto: profilePhoto,
       displayName: displayName,
       isVerified: isVerified,
+      artistId: artistId,
+      venueId: venueId,
     );
+    
+    debugPrint('🔍 PostAuthor created - userId: ${result.id}, artistId: ${result.artistId}, venueId: ${result.venueId}, role: ${result.role}');
+    
+    return result;
   }
 
   String get name => displayName ?? fullName;

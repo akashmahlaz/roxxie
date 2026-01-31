@@ -3,13 +3,11 @@
 /// Full-screen story viewing experience with:
 /// - Tap/swipe navigation between stories
 /// - Progress bars for multi-item stories
-/// - Reactions and replies
 /// - Auto-advance with pause on hold
 library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
@@ -42,9 +40,6 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   bool _isLoading = true;
   Timer? _autoAdvanceTimer;
 
-  // Reaction sheet
-  final _replyController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -61,7 +56,6 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   void dispose() {
     _progressController.dispose();
     _autoAdvanceTimer?.cancel();
-    _replyController.dispose();
     super.dispose();
   }
 
@@ -166,15 +160,6 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     return _story!.items[_currentIndex];
   }
 
-  void _sendReaction(String emoji) {
-    HapticFeedback.mediumImpact();
-    final item = _currentItem;
-    if (item != null && _story != null) {
-      context.read<FeedProvider>().reactToStory(_story!.id, item.id, emoji);
-    }
-    _resume();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -232,19 +217,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                   // Caption
                   if (_currentItem?.caption != null)
                     Positioned(
-                      bottom: 120,
+                      bottom: 40,
                       left: 16,
                       right: 16,
                       child: _buildCaption(),
                     ),
-
-                  // Bottom reactions
-                  Positioned(
-                    bottom: MediaQuery.of(context).padding.bottom + 16,
-                    left: 16,
-                    right: 16,
-                    child: _buildReactions(),
-                  ),
                 ],
               ),
             ),
@@ -373,10 +350,39 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         // Profile photo
         GestureDetector(
           onTap: () {
-            final route = _story?.author?.role == 'venue'
-                ? '/venue/${_story?.userId}'
-                : '/artist/${_story?.userId}';
-            Navigator.pushNamed(context, route);
+            // DEBUG: Log all available IDs
+            debugPrint('🔍 Story _buildHeader onTap');
+            debugPrint('🔍 story.id: ${_story?.id}');
+            debugPrint('🔍 story.userId: ${_story?.userId}');
+            debugPrint('🔍 story.artistId: ${_story?.artistId}');
+            debugPrint('🔍 story.venueId: ${_story?.venueId}');
+            debugPrint('🔍 story.author?.id: ${author?.id}');
+            debugPrint('🔍 story.author?.artistId: ${author?.artistId}');
+            debugPrint('🔍 story.author?.venueId: ${author?.venueId}');
+            debugPrint('🔍 story.author?.role: ${author?.role}');
+            
+            // Priority: story's artistId/venueId > author's artistId/venueId
+            // Never use userId (user account ID) - it's not a valid profile ID
+            final isVenue = _story?.venueId != null || author?.role == 'venue';
+            String? profileId;
+            if (isVenue) {
+              profileId = _story?.venueId ?? author?.venueId;
+              debugPrint('🔍 isVenue=true, selected profileId: $profileId');
+            } else {
+              profileId = _story?.artistId ?? author?.artistId;
+              debugPrint('🔍 isVenue=false, selected profileId: $profileId');
+            }
+
+            if (profileId != null && profileId.isNotEmpty) {
+              final route = isVenue
+                  ? '/venue/$profileId'
+                  : '/artist/$profileId';
+              debugPrint('🔍 Navigating to route: $route');
+              Navigator.of(context, rootNavigator: true).pushNamed(route);
+            } else {
+              debugPrint('⚠️ Cannot navigate to profile: no valid profile ID');
+              debugPrint('⚠️ story.artistId=${_story?.artistId}, author.artistId=${author?.artistId}');
+            }
           },
           child: Container(
             width: 40,
@@ -440,64 +446,6 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         _currentItem?.caption ?? '',
         style: const TextStyle(color: Colors.white, fontSize: 16),
         textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _buildReactions() {
-    return Row(
-      children: [
-        // Reply input
-        Expanded(
-          child: Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-            ),
-            child: TextField(
-              controller: _replyController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Send message...',
-                hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                ),
-                border: InputBorder.none,
-              ),
-              onTap: _pause,
-              onSubmitted: (text) {
-                if (text.isNotEmpty) {
-                  // Send reply logic
-                  _replyController.clear();
-                }
-                _resume();
-              },
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Quick reactions
-        _buildReactionButton('❤️'),
-        _buildReactionButton('🔥'),
-        _buildReactionButton('👏'),
-        _buildReactionButton('😂'),
-      ],
-    );
-  }
-
-  Widget _buildReactionButton(String emoji) {
-    return GestureDetector(
-      onTap: () => _sendReaction(emoji),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.1),
-        ),
-        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
       ),
     );
   }

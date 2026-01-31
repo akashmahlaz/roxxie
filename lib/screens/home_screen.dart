@@ -86,15 +86,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
 
-            // Divider
-            SliverToBoxAdapter(
-              child: Container(
-                height: 1,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                color: AppColors.border(brightness),
-              ),
-            ),
-
             // Posts Feed
             if (feedProvider.postsStatus == FeedStatus.loading &&
                 feedProvider.posts.isEmpty)
@@ -240,10 +231,10 @@ class _StoriesSection extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 100,
+      height: 96,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         itemCount: stories.length + 1, // +1 for "Your Story"
         itemBuilder: (context, index) {
           if (index == 0) {
@@ -265,10 +256,10 @@ class _StoriesSection extends StatelessWidget {
 
   Widget _buildLoadingShimmer(Brightness brightness) {
     return SizedBox(
-      height: 100,
+      height: 96,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         itemCount: 6,
         itemBuilder: (context, index) {
           return Container(
@@ -564,30 +555,38 @@ class _PostCardState extends State<_PostCard>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
-        _buildHeader(post, brightness),
-
-        // Media
+        // Media with username overlay on top-left
         GestureDetector(
           onDoubleTap: _onDoubleTap,
           child: Stack(
-            alignment: Alignment.center,
             children: [
               _buildMedia(post, brightness),
+              // Username overlay at top-left
+              Positioned(
+                top: 12,
+                left: 12,
+                child: _buildUsernameOverlay(post, brightness),
+              ),
               // Like animation
               if (_showLikeAnimation)
-                ScaleTransition(
-                  scale: Tween<double>(begin: 0.0, end: 1.2).animate(
-                    CurvedAnimation(
-                      parent: _likeController,
-                      curve: Curves.elasticOut,
+                Positioned.fill(
+                  child: Center(
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.0, end: 1.2).animate(
+                        CurvedAnimation(
+                          parent: _likeController,
+                          curve: Curves.elasticOut,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.favorite_rounded,
+                        color: Colors.white,
+                        size: 100,
+                        shadows: [
+                          Shadow(blurRadius: 20, color: Colors.black38),
+                        ],
+                      ),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    color: Colors.white,
-                    size: 100,
-                    shadows: [Shadow(blurRadius: 20, color: Colors.black38)],
                   ),
                 ),
             ],
@@ -636,7 +635,7 @@ class _PostCardState extends State<_PostCard>
 
         // Timestamp
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
           child: Text(
             _formatTimeAgo(post.createdAt),
             style: TextStyle(
@@ -649,93 +648,63 @@ class _PostCardState extends State<_PostCard>
     );
   }
 
-  Widget _buildHeader(Post post, Brightness brightness) {
+  Widget _buildUsernameOverlay(Post post, Brightness brightness) {
     final author = post.author;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-      child: Row(
-        children: [
-          // Avatar
-          GestureDetector(
-            onTap: () => _openProfile(context, post),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surface(brightness),
-              ),
+    // Username overlay on top of media - Instagram Reels style
+    return GestureDetector(
+      onTap: () => _openProfile(context, post),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Small avatar
+            Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
               child: ClipOval(
                 child: author?.profilePhoto != null
                     ? CachedNetworkImage(
                         imageUrl: author!.profilePhoto!,
                         fit: BoxFit.cover,
                         placeholder: (context, url) =>
-                            Container(color: AppColors.surface(brightness)),
-                        errorWidget: (context, url, error) => Icon(
+                            Container(color: Colors.grey),
+                        errorWidget: (context, url, error) => const Icon(
                           Icons.person_rounded,
-                          color: AppColors.textSec(brightness),
-                          size: 20,
-                        ),
-                      )
-                    : Icon(
-                        Icons.person_rounded,
-                        color: AppColors.textSec(brightness),
-                        size: 20,
-                      ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Name & Location
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _openProfile(context, post),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        author?.name ?? 'User',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.text(brightness),
-                        ),
-                      ),
-                      if (author?.isVerified ?? false) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.verified_rounded,
-                          color: AppColors.crimson,
+                          color: Colors.white54,
                           size: 16,
                         ),
-                      ],
-                    ],
-                  ),
-                  if (post.locationName != null)
-                    Text(
-                      post.locationName!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSec(brightness),
+                      )
+                    : const Icon(
+                        Icons.person_rounded,
+                        color: Colors.white54,
+                        size: 16,
                       ),
-                    ),
-                ],
               ),
             ),
-          ),
-          // More options
-          IconButton(
-            onPressed: () => _showPostOptions(context, post),
-            icon: Icon(
-              Icons.more_horiz_rounded,
-              color: AppColors.textSec(brightness),
+            const SizedBox(width: 8),
+            // Username
+            Text(
+              author?.name ?? 'User',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                shadows: [Shadow(blurRadius: 4, color: Colors.black38)],
+              ),
             ),
-          ),
-        ],
+            if (author?.isVerified ?? false) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.verified_rounded, color: Colors.white, size: 14),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -874,11 +843,6 @@ class _PostCardState extends State<_PostCard>
             icon: Icons.chat_bubble_outline_rounded,
             onTap: () => _openComments(context, post),
           ),
-          // Share
-          _ActionButton(
-            icon: Icons.send_outlined,
-            onTap: () => _sharePost(context, post),
-          ),
           const Spacer(),
           // Save
           _ActionButton(
@@ -918,9 +882,41 @@ class _PostCardState extends State<_PostCard>
   }
 
   void _openProfile(BuildContext context, Post post) {
-    final route = post.author?.role == 'venue'
-        ? '/venue/${post.venueId ?? post.userId}'
-        : '/artist/${post.artistId ?? post.userId}';
+    // DEBUG: Log all available IDs
+    debugPrint('🔍 _openProfile called');
+    debugPrint('🔍 post.id: ${post.id}');
+    debugPrint('🔍 post.userId: ${post.userId}');
+    debugPrint('🔍 post.artistId: ${post.artistId}');
+    debugPrint('🔍 post.venueId: ${post.venueId}');
+    debugPrint('🔍 post.author: ${post.author}');
+    debugPrint('🔍 post.author?.id: ${post.author?.id}');
+    debugPrint('🔍 post.author?.artistId: ${post.author?.artistId}');
+    debugPrint('🔍 post.author?.venueId: ${post.author?.venueId}');
+    debugPrint('🔍 post.author?.role: ${post.author?.role}');
+    
+    // Priority: author's artistId/venueId > post's artistId/venueId
+    // Never use userId (user account ID) - it's not a valid profile ID
+    final author = post.author;
+    final isVenue = author?.role == 'venue';
+
+    String? profileId;
+    if (isVenue) {
+      profileId = author?.venueId ?? post.venueId;
+      debugPrint('🔍 isVenue=true, selected profileId: $profileId');
+    } else {
+      profileId = author?.artistId ?? post.artistId;
+      debugPrint('🔍 isVenue=false, selected profileId: $profileId');
+    }
+
+    if (profileId == null || profileId.isEmpty) {
+      // No valid profile ID available - show error or do nothing
+      debugPrint('⚠️ Cannot navigate to profile: no valid profile ID');
+      debugPrint('⚠️ All attempts failed - author.artistId=${author?.artistId}, post.artistId=${post.artistId}');
+      return;
+    }
+
+    final route = isVenue ? '/venue/$profileId' : '/artist/$profileId';
+    debugPrint('🔍 Navigating to route: $route');
     Navigator.of(context, rootNavigator: true).pushNamed(route);
   }
 
@@ -930,20 +926,6 @@ class _PostCardState extends State<_PostCard>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _CommentsSheet(post: post),
-    );
-  }
-
-  void _sharePost(BuildContext context, Post post) {
-    HapticFeedback.lightImpact();
-    // Implement share functionality
-  }
-
-  void _showPostOptions(BuildContext context, Post post) {
-    HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _PostOptionsSheet(post: post),
     );
   }
 
@@ -1383,147 +1365,5 @@ class _CommentTile extends StatelessWidget {
     } else {
       return 'Now';
     }
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// POST OPTIONS SHEET
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _PostOptionsSheet extends StatelessWidget {
-  final Post post;
-
-  const _PostOptionsSheet({required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final auth = context.read<AuthProvider>();
-    final isOwner = post.userId == auth.user?.id;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.border(brightness),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            if (isOwner) ...[
-              _OptionTile(
-                icon: Icons.edit_outlined,
-                title: 'Edit Post',
-                onTap: () {
-                  Navigator.pop(context);
-                  // Navigate to edit
-                },
-              ),
-              _OptionTile(
-                icon: Icons.delete_outline,
-                title: 'Delete Post',
-                isDestructive: true,
-                onTap: () {
-                  Navigator.pop(context);
-                  _confirmDelete(context);
-                },
-              ),
-            ],
-            _OptionTile(
-              icon: Icons.share_outlined,
-              title: 'Share',
-              onTap: () {
-                Navigator.pop(context);
-                // Share
-              },
-            ),
-            _OptionTile(
-              icon: Icons.link_outlined,
-              title: 'Copy Link',
-              onTap: () {
-                Navigator.pop(context);
-                // Copy link
-              },
-            ),
-            if (!isOwner)
-              _OptionTile(
-                icon: Icons.flag_outlined,
-                title: 'Report',
-                isDestructive: true,
-                onTap: () {
-                  Navigator.pop(context);
-                  // Report
-                },
-              ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Post?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<FeedProvider>().deletePost(post.id);
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.crimson),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OptionTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final bool isDestructive;
-  final VoidCallback onTap;
-
-  const _OptionTile({
-    required this.icon,
-    required this.title,
-    this.isDestructive = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final color = isDestructive
-        ? AppColors.crimson
-        : AppColors.text(brightness);
-
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        title,
-        style: TextStyle(color: color, fontWeight: FontWeight.w500),
-      ),
-      onTap: onTap,
-    );
   }
 }

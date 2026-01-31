@@ -10,6 +10,7 @@ library;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -35,8 +36,12 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   bool _isUploading = false;
   bool _isPosting = false;
   bool _showCaptionInput = false;
+  bool _showEmojiPicker = false;
   double _uploadProgress = 0.0;
   String? _errorMessage;
+
+  // Emoji stickers overlay
+  final List<_EmojiSticker> _emojiStickers = [];
 
   @override
   void dispose() {
@@ -188,6 +193,27 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       _isVideo = false;
       _captionController.clear();
       _showCaptionInput = false;
+      _showEmojiPicker = false;
+      _emojiStickers.clear();
+    });
+  }
+
+  void _showEmojiPickerSheet() {
+    setState(() => _showEmojiPicker = true);
+  }
+
+  void _onEmojiSelected(Category? category, Emoji emoji) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _emojiStickers.add(
+        _EmojiSticker(
+          emoji: emoji.emoji,
+          // Start in center of screen
+          position: const Offset(0.5, 0.4),
+          scale: 1.0,
+        ),
+      );
+      _showEmojiPicker = false;
     });
   }
 
@@ -546,15 +572,13 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Stickers button (placeholder)
+                  // Stickers button (emoji picker)
                   IconButton(
                     icon: const Icon(
                       Icons.emoji_emotions_rounded,
                       color: Colors.white,
                     ),
-                    onPressed: () {
-                      _showSnackBar('Stickers coming soon!');
-                    },
+                    onPressed: _showEmojiPickerSheet,
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.black.withValues(alpha: 0.3),
                     ),
@@ -565,35 +589,164 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
           ),
         ),
 
-        // Caption overlay
+        // Caption overlay - Instagram-style clean text
         if (_showCaptionInput || _captionController.text.isNotEmpty)
           Positioned(
             left: 24,
             right: 24,
             bottom: 120,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
+            child: TextField(
+              controller: _captionController,
+              autofocus: _showCaptionInput,
+              maxLines: 3,
+              maxLength: 250,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                shadows: [
+                  Shadow(
+                    blurRadius: 8,
+                    color: Colors.black54,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
-              child: TextField(
-                controller: _captionController,
-                autofocus: _showCaptionInput,
-                maxLines: 3,
-                maxLength: 250,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Add a caption...',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                  border: InputBorder.none,
-                  counterStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
+              decoration: InputDecoration(
+                hintText: 'Add text...',
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  shadows: const [
+                    Shadow(
+                      blurRadius: 8,
+                      color: Colors.black54,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
-                onSubmitted: (_) => setState(() => _showCaptionInput = false),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                counterText: '',
+                contentPadding: EdgeInsets.zero,
+              ),
+              cursorColor: Colors.white,
+              onSubmitted: (_) => setState(() => _showCaptionInput = false),
+              onTapOutside: (_) => setState(() => _showCaptionInput = false),
+            ),
+          ),
+
+        // Emoji stickers overlay
+        ..._emojiStickers.asMap().entries.map((entry) {
+          final index = entry.key;
+          final sticker = entry.value;
+          return Positioned(
+            left: sticker.position.dx * MediaQuery.of(context).size.width - 30,
+            top: sticker.position.dy * MediaQuery.of(context).size.height - 30,
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                setState(() {
+                  _emojiStickers[index] = sticker.copyWith(
+                    position: Offset(
+                      (sticker.position.dx * MediaQuery.of(context).size.width +
+                              details.delta.dx) /
+                          MediaQuery.of(context).size.width,
+                      (sticker.position.dy *
+                                  MediaQuery.of(context).size.height +
+                              details.delta.dy) /
+                          MediaQuery.of(context).size.height,
+                    ),
+                  );
+                });
+              },
+              onDoubleTap: () {
+                // Remove sticker on double tap
+                HapticFeedback.lightImpact();
+                setState(() => _emojiStickers.removeAt(index));
+              },
+              child: Text(
+                sticker.emoji,
+                style: TextStyle(fontSize: 60 * sticker.scale),
+              ),
+            ),
+          );
+        }),
+
+        // Emoji picker
+        if (_showEmojiPicker)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 300,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.95),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Handle bar and close
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Stickers',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () =>
+                              setState(() => _showEmojiPicker = false),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Emoji picker
+                  Expanded(
+                    child: EmojiPicker(
+                      onEmojiSelected: _onEmojiSelected,
+                      config: Config(
+                        height: 256,
+                        checkPlatformCompatibility: true,
+                        emojiViewConfig: EmojiViewConfig(
+                          columns: 8,
+                          emojiSizeMax: 32,
+                          backgroundColor: Colors.transparent,
+                        ),
+                        categoryViewConfig: CategoryViewConfig(
+                          backgroundColor: Colors.transparent,
+                          iconColorSelected: AppColors.crimson,
+                          indicatorColor: AppColors.crimson,
+                          iconColor: Colors.white54,
+                        ),
+                        bottomActionBarConfig: const BottomActionBarConfig(
+                          enabled: false,
+                        ),
+                        searchViewConfig: SearchViewConfig(
+                          backgroundColor: Colors.black54,
+                          buttonIconColor: Colors.white,
+                          hintText: 'Search emoji...',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -663,6 +816,30 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EMOJI STICKER DATA CLASS
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _EmojiSticker {
+  final String emoji;
+  final Offset position;
+  final double scale;
+
+  const _EmojiSticker({
+    required this.emoji,
+    required this.position,
+    this.scale = 1.0,
+  });
+
+  _EmojiSticker copyWith({String? emoji, Offset? position, double? scale}) {
+    return _EmojiSticker(
+      emoji: emoji ?? this.emoji,
+      position: position ?? this.position,
+      scale: scale ?? this.scale,
     );
   }
 }
