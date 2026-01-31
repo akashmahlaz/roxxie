@@ -170,50 +170,50 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header
-                  _buildHeader(brightness),
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                _buildHeader(brightness),
 
-                  const SizedBox(height: 40),
+                const SizedBox(height: 40),
 
-                  // Title section
-                  _buildTitleSection(brightness),
+                // Title section
+                _buildTitleSection(brightness),
 
-                  const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-                  // Form fields
-                  _buildFormFields(brightness),
+                // Form fields
+                _buildFormFields(brightness),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                  // Terms checkbox
-                  _buildTermsCheckbox(brightness),
+                // Terms checkbox
+                _buildTermsCheckbox(brightness),
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                  // Submit button
-                  _buildSubmitButton(),
+                // Submit button
+                _buildSubmitButton(),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                  // Or divider
-                  _buildOrDivider(brightness),
+                // Or divider
+                _buildOrDivider(brightness),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                  // Google sign-up button
-                  _buildGoogleButton(brightness),
+                // Google sign-up button
+                _buildGoogleButton(brightness),
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                  // Login link
-                  _buildLoginLink(brightness),
-                ],
-              ),
+                // Login link
+                _buildLoginLink(brightness),
+              ],
             ),
+          ),
         ),
       ),
     );
@@ -760,38 +760,18 @@ class _ArtistSignupScreenV2State extends State<ArtistSignupScreenV2>
         height: 56,
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.border(brightness),
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border(brightness), width: 1.5),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/google_logo.png',
-              width: 24,
-              height: 24,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.g_mobiledata_rounded,
-                  color: AppColors.text(brightness),
-                  size: 28,
-                );
-              },
+        child: Center(
+          child: Text(
+            'Continue with Google',
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(width: 12),
-            Text(
-              'Continue with Google',
-              style: TextStyle(
-                color: AppColors.text(brightness),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
