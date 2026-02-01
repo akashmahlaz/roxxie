@@ -16,6 +16,7 @@
 library;
 
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -368,10 +369,12 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // SLIVER APP BAR
+  // SLIVER APP BAR - Modern 2026 Design
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildSliverAppBar(Brightness brightness) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final photos = _isArtist
         ? [
             if (_artist?.profilePhoto != null) _artist!.profilePhoto!,
@@ -383,8 +386,8 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     return ValueListenableBuilder<double>(
       valueListenable: _scrollOffset,
       builder: (context, scrollOffset, child) {
-        // Smooth linear interpolation for background - no jarring 0.5 threshold
-        final headerOpacity = (scrollOffset / 200).clamp(0.0, 1.0);
+        // Smooth linear interpolation for background
+        final headerOpacity = (scrollOffset / 220).clamp(0.0, 1.0);
         final isCollapsed = scrollOffset > 180;
 
         // Get profile photo for collapsed avatar
@@ -392,25 +395,39 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
             ? _artist?.profilePhoto
             : _venue?.profilePhotoUrl;
 
+        // Adaptive colors for collapsed state
+        final collapsedBackground = colorScheme.surface.withValues(alpha: headerOpacity);
+        // final collapsedTextColor = Color.lerp(Colors.transparent, colorScheme.onSurface, headerOpacity);
+
         return SliverAppBar(
-          expandedHeight: 280, // Reduced from 320 for better UX
+          expandedHeight: 300,
           pinned: true,
           stretch: true,
-          // Smooth background transition - always interpolate alpha
-          backgroundColor:
-              AppColors.surface(brightness).withValues(alpha: headerOpacity),
-          elevation: 0,
+          // Modern Material 3 surface with tint
+          backgroundColor: collapsedBackground,
+          surfaceTintColor: colorScheme.surfaceTint.withValues(alpha: headerOpacity * 0.5),
+          elevation: isCollapsed ? 2 : 0,
+          shadowColor: theme.shadowColor.withValues(alpha: headerOpacity),
           leading: _buildAppBarButton(
-            Icons.arrow_back_rounded,
-            () => Navigator.pop(context),
+            icon: Icons.arrow_back_rounded,
+            onPressed: () => Navigator.pop(context),
+            isCollapsed: isCollapsed,
+            brightness: brightness,
           ),
           actions: [
             if (_isOwnProfile)
               _buildAppBarButton(
-                Icons.edit_rounded,
-                () => Navigator.pushNamed(context, '/edit-profile'),
+                icon: Icons.edit_rounded,
+                onPressed: () => Navigator.pushNamed(context, '/edit-profile'),
+                isCollapsed: isCollapsed,
+                brightness: brightness,
               ),
-            _buildAppBarButton(Icons.share_rounded, _shareProfile),
+            _buildAppBarButton(
+              icon: Icons.share_rounded,
+              onPressed: _shareProfile,
+              isCollapsed: isCollapsed,
+              brightness: brightness,
+            ),
           ],
           // Collapsed state: show avatar + name in pinned bar
           title: AnimatedOpacity(
@@ -419,26 +436,14 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: profilePhoto != null && profilePhoto.isNotEmpty
-                      ? NetworkImage(profilePhoto)
-                      : null,
-                  backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
-                  child: profilePhoto == null || profilePhoto.isEmpty
-                      ? Icon(
-                          _isArtist ? Icons.person : Icons.business,
-                          size: 16,
-                          color: AppColors.textSec(brightness),
-                        )
-                      : null,
-                ),
+                // Modern avatar with status ring
+                _buildCollapsedAvatar(profilePhoto, brightness),
                 const SizedBox(width: 12),
                 Flexible(
                   child: Text(
                     _profileName,
                     style: TextStyle(
-                      color: AppColors.text(brightness),
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
                     ),
@@ -456,7 +461,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Photo Carousel
+                // Photo Carousel with smooth transitions
                 if (photos.isNotEmpty)
                   PageView.builder(
                     itemCount: photos.length,
@@ -473,50 +478,43 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                 else
                   _buildPhotoPlaceholder(brightness),
 
-                // Gradient overlay
+                // Modern mesh gradient overlay
                 Positioned.fill(
-                  child: DecoratedBox(
+                  child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.3),
+                          Colors.black.withValues(alpha: 0.4),
+                          Colors.black.withValues(alpha: 0.1),
                           Colors.transparent,
                           Colors.transparent,
-                          AppColors.background(brightness).withValues(alpha: 0.9),
+                          AppColors.background(brightness).withValues(alpha: 0.85),
                           AppColors.background(brightness),
                         ],
-                        stops: const [0.0, 0.2, 0.5, 0.85, 1.0],
+                        stops: const [0.0, 0.15, 0.4, 0.7, 0.9, 1.0],
                       ),
                     ),
                   ),
                 ),
 
-                // Photo indicators
+                // Glassmorphism overlay for expanded state
+                if (!isCollapsed)
+                  Positioned.fill(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                      child: Container(color: Colors.transparent),
+                    ),
+                  ),
+
+                // Modern elegant photo indicators
                 if (photos.length > 1)
                   Positioned(
-                    bottom: 80,
+                    bottom: 90,
                     left: 0,
                     right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(photos.length, (index) {
-                        final isActive = index == _currentPhotoIndex;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          width: isActive ? 24 : 8,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        );
-                      }),
-                    ),
+                    child: _buildModernPhotoIndicators(photos.length, brightness),
                   ),
               ],
             ),
@@ -526,18 +524,125 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     );
   }
 
-  Widget _buildAppBarButton(IconData icon, VoidCallback onPressed) {
+  Widget _buildCollapsedAvatar(String? profilePhoto, Brightness brightness) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Check if verified
+    final isVerified = _isArtist
+        ? (_artist?.isVerified ?? false)
+        : (_venue?.isVerified ?? false);
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Main avatar
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 22,
+            backgroundColor: colorScheme.surface,
+            child: CircleAvatar(
+              radius: 18,
+              backgroundImage: profilePhoto != null && profilePhoto.isNotEmpty
+                  ? NetworkImage(profilePhoto)
+                  : null,
+              backgroundColor: AppColors.crimson.withValues(alpha: 0.15),
+              child: profilePhoto == null || profilePhoto.isEmpty
+                  ? Icon(
+                      _isArtist ? Icons.person : Icons.business,
+                      size: 18,
+                      color: AppColors.textSec(brightness),
+                    )
+                  : null,
+            ),
+          ),
+        ),
+        // Verified badge ring
+        if (isVerified)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colorScheme.surface,
+                  width: 2,
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.success,
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildModernPhotoIndicators(int photoCount, Brightness brightness) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(photoCount, (index) {
+        final isActive = index == _currentPhotoIndex;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isActive ? 28 : 8,
+          height: 6,
+          decoration: BoxDecoration(
+            color: isActive
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildAppBarButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required bool isCollapsed,
+    required Brightness brightness,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Adaptive colors based on collapsed state
+    final backgroundColor = isCollapsed
+        ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.7)
+        : Colors.black.withValues(alpha: 0.3);
+    final iconColor = isCollapsed
+        ? colorScheme.onSurfaceVariant
+        : Colors.white;
+
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(4),
       child: Material(
-        color: Colors.black.withValues(alpha: 0.3),
+        color: backgroundColor,
         shape: const CircleBorder(),
         child: InkWell(
           onTap: onPressed,
           customBorder: const CircleBorder(),
           child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Icon(icon, color: Colors.white, size: 22),
+            padding: const EdgeInsets.all(10),
+            child: Icon(icon, color: iconColor, size: 22),
           ),
         ),
       ),

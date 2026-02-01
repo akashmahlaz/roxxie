@@ -114,6 +114,8 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
       body: Consumer2<AuthProvider, ProfileProvider>(
         builder: (context, auth, profile, _) {
           final isArtist = auth.isArtist;
+          // Get photo with Google/social photo fallback
+          final profilePhoto = profile.profilePhoto ?? auth.user?.profilePhotoUrl;
 
           return RefreshIndicator(
             onRefresh: _refreshProfile,
@@ -129,6 +131,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                 _buildAnimatedHeader(
                   context,
                   profile,
+                  profilePhoto,
                   isArtist,
                   brightness,
                   isDark,
@@ -253,8 +256,12 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                 // Logout Button
                 SliverToBoxAdapter(child: _buildLogoutButton(brightness)),
 
-                // Bottom padding
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                // Bottom padding - account for safe area and bottom navigation
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 100 + MediaQuery.of(context).padding.bottom,
+                  ),
+                ),
               ],
             ),
           );
@@ -279,11 +286,12 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
         final isCollapsed = scrollOffset > 180;
 
         return SliverAppBar(
-          expandedHeight: 260, // Reduced from 320 to push content less far down
+          expandedHeight: size.height * 0.28, // Reduced from 32% to 28%
           pinned: true,
           stretch: true,
           backgroundColor: AppColors.background(brightness),
           surfaceTintColor: Colors.transparent,
+          elevation: 0,
           // Collapsed state: show avatar + name in pinned bar
           title: AnimatedOpacity(
             opacity: isCollapsed ? 1.0 : 0.0,
@@ -292,7 +300,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircleAvatar(
-                  radius: 16,
+                  radius: 18,
                   backgroundImage: profile.profilePhoto != null &&
                           profile.profilePhoto!.isNotEmpty
                       ? NetworkImage(profile.profilePhoto!)
@@ -300,101 +308,116 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                   backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
                   child: profile.profilePhoto == null ||
                           profile.profilePhoto!.isEmpty
-                      ? const Icon(Icons.person, size: 16, color: Colors.white)
+                      ? Icon(
+                          Icons.person,
+                          size: 18,
+                          color: AppColors.textSec(brightness),
+                        )
                       : null,
                 ),
                 const SizedBox(width: 12),
                 Text(
                   profile.displayName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.text(brightness),
                   ),
                 ),
               ],
             ),
           ),
           flexibleSpace: FlexibleSpaceBar(
-            background: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Gradient Background
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.crimson,
-                        AppColors.crimson.withValues(alpha: 0.7),
-                        isDark
-                            ? const Color(0xFF1A1A2E)
-                            : const Color(0xFFF8F9FA),
-                      ],
-                      stops: const [0, 0.5, 1],
-                    ),
-                  ),
+            background: Container(
+              decoration: BoxDecoration(
+                // Clean gradient - no longer crimson heavy
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDark
+                      ? [
+                          const Color(0xFF1A1A2E),
+                          const Color(0xFF16213E),
+                        ]
+                      : [
+                          const Color(0xFFF8F9FA),
+                          const Color(0xFFFAFAFA),
+                        ],
+                  stops: const [0, 1],
                 ),
-
-                // Profile Content - use AnimatedOpacity instead of Opacity
-                SafeArea(
-                  child: AnimatedOpacity(
-                    opacity: opacity,
-                    duration: const Duration(milliseconds: 100),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 20),
-                        // Profile Photo with Glow (no pulse animation)
-                        _buildProfileAvatar(profile, brightness),
-                        const SizedBox(height: 16),
-
-                        // Name & Role
-                        Text(
-                          profile.displayName,
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
+              ),
+              child: SafeArea(
+                child: AnimatedOpacity(
+                  opacity: opacity,
+                  duration: const Duration(milliseconds: 100),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(height: size.height * 0.03),
+                      // Profile Photo with edit functionality
+                      GestureDetector(
+                        onTap: () => _showEditPhotoBottomSheet(context),
+                        child: Semantics(
+                          label: 'Profile photo of ${profile.displayName}',
+                          button: true,
+                          child: _buildProfileAvatar(profile, brightness),
                         ),
-                        const SizedBox(height: 4),
+                      ),
+                      SizedBox(height: size.height * 0.015),
 
-                        // Role Badge
-                        _buildRoleBadge(isArtist, profile.subscriptionTier),
+                      // Name - Clean typography
+                      Text(
+                        profile.displayName,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.text(brightness),
+                          height: 1.2,
+                        ),
+                      ),
+                      SizedBox(height: size.height * 0.004),
 
-                        const SizedBox(height: 12),
+                      // Role & Status in a clean row
+                      _buildRoleBadge(isArtist, profile.subscriptionTier, brightness),
 
-                        // Verification & Premium Status
-                        _buildStatusRow(profile),
-                      ],
-                    ),
+                      const SizedBox(height: 8),
+
+                      // Stats row
+                      _buildCompactStatsRow(profile, brightness),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
           actions: [
-            IconButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                _shareProfile(profile);
-              },
-              icon: const Icon(Icons.share_outlined, color: Colors.white),
+            Semantics(
+              label: 'Share profile',
+              button: true,
+              child: IconButton(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _shareProfile(profile);
+                },
+                icon: Icon(
+                  Icons.share_outlined,
+                  color: AppColors.text(brightness),
+                ),
+              ),
             ),
-            IconButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context, rootNavigator: true).pushNamed('/settings');
-              },
-              icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            Semantics(
+              label: 'Settings',
+              button: true,
+              child: IconButton(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.of(context, rootNavigator: true).pushNamed('/settings');
+                },
+                icon: Icon(
+                  Icons.settings_outlined,
+                  color: AppColors.text(brightness),
+                ),
+              ),
             ),
             const SizedBox(width: 8),
           ],
@@ -404,135 +427,119 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
   }
 
   Widget _buildProfileAvatar(ProfileProvider profile, Brightness brightness) {
-    // Removed infinite pulse animation - was consuming resources for barely visible effect
-    return _buildStaticProfileAvatar(profile);
-  }
-
-  Widget _buildStaticProfileAvatar(ProfileProvider profile) {
+    // Clean avatar with subtle elevation (2026 style)
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppColors.crimson.withValues(alpha: 0.5),
-            blurRadius: 30,
-            spreadRadius: 5,
+            color: AppColors.crimson.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: CircleAvatar(
-        radius: 55,
-        backgroundColor: Colors.white,
-        child: CircleAvatar(
-          radius: 52,
-          backgroundImage:
-              profile.profilePhoto != null && profile.profilePhoto!.isNotEmpty
-              ? NetworkImage(profile.profilePhoto!)
-              : null,
-          backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
+        radius: 44, // Reduced from 56 to 44
+        backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
+        backgroundImage:
+            profile.profilePhoto != null && profile.profilePhoto!.isNotEmpty
+                ? NetworkImage(profile.profilePhoto!)
+                : null,
+        child: Semantics(
+          label: profile.profilePhoto != null && profile.profilePhoto!.isNotEmpty
+              ? 'Profile photo'
+              : 'Default profile photo',
           child: profile.profilePhoto == null || profile.profilePhoto!.isEmpty
-              ? Icon(Icons.person_rounded, size: 50, color: AppColors.crimson)
+              ? Icon(
+                  Icons.person_rounded,
+                  size: 40,
+                  color: AppColors.crimson.withValues(alpha: 0.6),
+                )
               : null,
         ),
       ),
     );
   }
 
-  Widget _buildRoleBadge(bool isArtist, String subscriptionTier) {
+  Widget _buildRoleBadge(bool isArtist, String subscriptionTier, Brightness brightness) {
     final isPremium = subscriptionTier != 'free';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isArtist ? Icons.music_note_rounded : Icons.business_rounded,
-            size: 16,
-            color: Colors.white,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Role indicator
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.crimson.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(width: 6),
-          Text(
-            isArtist ? 'Artist' : 'Venue',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-          if (isPremium) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFDAA520), Color(0xFFB8860B)],
-                ),
-                borderRadius: BorderRadius.circular(10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isArtist ? Icons.music_note_rounded : Icons.business_rounded,
+                size: 14,
+                color: AppColors.crimson.withValues(alpha: 0.8),
               ),
-              child: Text(
-                subscriptionTier.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(width: 6),
+              Text(
+                isArtist ? 'Artist' : 'Venue',
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
+            ],
+          ),
+        ),
+        // Premium badge
+        if (isPremium) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFDAA520), Color(0xFFB8860B)],
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ],
+            child: Text(
+              subscriptionTier.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ],
-      ),
+      ],
     );
   }
 
-  Widget _buildStatusRow(ProfileProvider profile) {
+  Widget _buildCompactStatsRow(ProfileProvider profile, Brightness brightness) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (profile.isVerified)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.verified, size: 14, color: Colors.greenAccent),
-                SizedBox(width: 4),
-                Text(
-                  'Verified',
-                  style: TextStyle(
-                    color: Colors.greenAccent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        const SizedBox(width: 8),
+        // Rating
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: AppColors.surface(brightness),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.star, size: 14, color: Colors.amber),
+              Icon(Icons.star, size: 14, color: Colors.amber),
               const SizedBox(width: 4),
               Text(
                 profile.rating.toStringAsFixed(1),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.text(brightness),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -540,6 +547,31 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
             ],
           ),
         ),
+        const SizedBox(width: 12),
+        // Verification
+        if (profile.isVerified)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.verified, size: 14, color: Colors.green),
+                const SizedBox(width: 4),
+                Text(
+                  'Verified',
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -974,6 +1006,131 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
         ],
       ),
     );
+  }
+
+  void _showEditPhotoBottomSheet(BuildContext context) {
+    HapticFeedback.lightImpact();
+    final brightness = Theme.of(context).brightness;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface(brightness),
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Edit Profile Photo',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.text(brightness),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    label: 'Take photo with camera',
+                    button: true,
+                    child: _buildBottomSheetAction(
+                      context,
+                      Icons.camera_alt_rounded,
+                      'Camera',
+                      Colors.blue,
+                      () => _navigateToEditProfile(context, 'camera'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Semantics(
+                    label: 'Choose from gallery',
+                    button: true,
+                    child: _buildBottomSheetAction(
+                      context,
+                      Icons.photo_library_rounded,
+                      'Gallery',
+                      Colors.purple,
+                      () => _navigateToEditProfile(context, 'gallery'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Semantics(
+                    label: 'View profile photo',
+                    button: true,
+                    child: _buildBottomSheetAction(
+                      context,
+                      Icons.visibility_rounded,
+                      'View',
+                      Colors.green,
+                      () => _navigateToEditProfile(context, 'view'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSheetAction(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    final brightness = Theme.of(context).brightness;
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToEditProfile(BuildContext context, String action) {
+    switch (action) {
+      case 'camera':
+      case 'gallery':
+      case 'view':
+        Navigator.of(context, rootNavigator: true).pushNamed('/edit-profile');
+        break;
+    }
   }
 }
 

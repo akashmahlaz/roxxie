@@ -23,7 +23,7 @@
         },
         {
             "name": "ANTHROPIC_SMALL_FAST_MODEL",
-            "value": "MiniMax-M2.1"
+            "value": "MiniMax-M2.1-lightning"
         },
         {
             "name": "ANTHROPIC_DEFAULT_SONNET_MODEL",
@@ -31,15 +31,11 @@
         },
         {
             "name": "ANTHROPIC_DEFAULT_OPUS_MODEL",
-            "value": "MiniMax-M2.1"
+            "value": "MiniMax-M2"
         },
         {
             "name": "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-            "value": "MiniMax-M2.1"
+            "value": "MiniMax-M2.1-lightning"
         }
-    ],
-    "openai.baseUrl": "https://api.minimax.io/v1",
-    "openai.apiKey": "sk-cp-npWpiwxLN3TyA0Rc72nrZE5QW_fj44Snr18MakpoLBcxO_mGk0Wan4Bc_lRGalDKzNE-We9pHgWaARXuirqY2l6jMTIj3UYC7uURs3hFrJfDMN8MsNPhovU",
-    "chatgpt.baseUrl": "https://api.minimax.io/v1",
-    "chatgpt.apiKey": "sk-cp-npWpiwxLN3TyA0Rc72nrZE5QW_fj44Snr18MakpoLBcxO_mGk0Wan4Bc_lRGalDKzNE-We9pHgWaARXuirqY2l6jMTIj3UYC7uURs3hFrJfDMN8MsNPhovU"
+    ]
 }
