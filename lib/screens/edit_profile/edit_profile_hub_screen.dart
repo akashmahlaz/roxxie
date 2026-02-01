@@ -260,105 +260,114 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
     bool isArtist,
     Brightness brightness,
   ) {
-    final photoUrl = profile.profilePhoto;
+    final auth = context.read<AuthProvider>();
+    // Get photo with Google/social photo fallback
+    final photoUrl = profile.profilePhoto ?? auth.user?.profilePhotoUrl;
     final displayName = profile.displayName;
     final role = isArtist ? 'Artist' : 'Venue';
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-        border: Border.all(
-          color: AppColors.border(brightness),
-          width: 1,
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/edit-profile/media'),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+          border: Border.all(
+            color: AppColors.border(brightness),
+            width: 1,
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Profile Photo
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.crimson.withValues(alpha: 0.1),
-              border: Border.all(
-                color: AppColors.crimson.withValues(alpha: 0.3),
-                width: 3,
+        child: Row(
+          children: [
+            // Profile Photo - Clean design, tap to edit
+            Semantics(
+              label: 'Profile photo, tap to edit',
+              button: true,
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.crimson.withValues(alpha: 0.08),
+                  border: Border.all(
+                    color: AppColors.crimson.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
+                ),
+                child: ClipOval(
+                  child: photoUrl != null && photoUrl.isNotEmpty
+                      ? Image.network(
+                          photoUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stack) =>
+                              _buildDefaultAvatar(isArtist, brightness),
+                        )
+                      : _buildDefaultAvatar(isArtist, brightness),
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.crimson.withValues(alpha: 0.15),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                ),
-              ],
-              image: photoUrl != null && photoUrl.isNotEmpty
-                  ? DecorationImage(
-                      image: NetworkImage(photoUrl),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
             ),
-            child: photoUrl == null || photoUrl.isEmpty
-                ? Icon(
-                    isArtist ? Icons.mic : Icons.business,
-                    color: AppColors.crimson,
-                    size: 36,
-                  )
-                : null,
-          ),
 
-          const SizedBox(width: 18),
+            const SizedBox(width: 16),
 
-          // Name and Role
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName,
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isArtist
-                        ? AppColors.crimson.withValues(alpha: 0.1)
-                        : AppColors.cyan.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
-                  ),
-                  child: Text(
-                    role,
+            // Name and Role
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName,
                     style: TextStyle(
-                      color: isArtist ? AppColors.crimson : AppColors.cyan,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      color: AppColors.text(brightness),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isArtist
+                          ? AppColors.crimson.withValues(alpha: 0.1)
+                          : AppColors.cyan.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+                    ),
+                    child: Text(
+                      role,
+                      style: TextStyle(
+                        color: isArtist ? AppColors.crimson : AppColors.cyan,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // Edit indicator
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textSec(brightness),
+              size: 24,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultAvatar(bool isArtist, Brightness brightness) {
+    return Center(
+      child: Icon(
+        isArtist ? Icons.mic_rounded : Icons.business_rounded,
+        color: AppColors.crimson.withValues(alpha: 0.5),
+        size: 32,
       ),
     );
   }

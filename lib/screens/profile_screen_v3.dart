@@ -273,6 +273,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
   Widget _buildAnimatedHeader(
     BuildContext context,
     ProfileProvider profile,
+    String? profilePhoto,
     bool isArtist,
     Brightness brightness,
     bool isDark,
@@ -301,13 +302,13 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundImage: profile.profilePhoto != null &&
-                          profile.profilePhoto!.isNotEmpty
-                      ? NetworkImage(profile.profilePhoto!)
+                  backgroundImage: profilePhoto != null &&
+                          profilePhoto.isNotEmpty
+                      ? NetworkImage(profilePhoto)
                       : null,
                   backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
-                  child: profile.profilePhoto == null ||
-                          profile.profilePhoto!.isEmpty
+                  child: profilePhoto == null ||
+                          profilePhoto.isEmpty
                       ? Icon(
                           Icons.person,
                           size: 18,
@@ -360,7 +361,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                         child: Semantics(
                           label: 'Profile photo of ${profile.displayName}',
                           button: true,
-                          child: _buildProfileAvatar(profile, brightness),
+                          child: _buildProfileAvatar(profilePhoto, brightness),
                         ),
                       ),
                       SizedBox(height: size.height * 0.015),
@@ -426,7 +427,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     );
   }
 
-  Widget _buildProfileAvatar(ProfileProvider profile, Brightness brightness) {
+  Widget _buildProfileAvatar(String? profilePhoto, Brightness brightness) {
     // Clean avatar with subtle elevation (2026 style)
     return Container(
       decoration: BoxDecoration(
@@ -443,14 +444,14 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
         radius: 44, // Reduced from 56 to 44
         backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
         backgroundImage:
-            profile.profilePhoto != null && profile.profilePhoto!.isNotEmpty
-                ? NetworkImage(profile.profilePhoto!)
+            profilePhoto != null && profilePhoto.isNotEmpty
+                ? NetworkImage(profilePhoto)
                 : null,
         child: Semantics(
-          label: profile.profilePhoto != null && profile.profilePhoto!.isNotEmpty
+          label: profilePhoto != null && profilePhoto.isNotEmpty
               ? 'Profile photo'
               : 'Default profile photo',
-          child: profile.profilePhoto == null || profile.profilePhoto!.isEmpty
+          child: profilePhoto == null || profilePhoto.isEmpty
               ? Icon(
                   Icons.person_rounded,
                   size: 40,
