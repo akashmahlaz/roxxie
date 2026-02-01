@@ -22,10 +22,9 @@ import '../../screens/venue_signup_screen_v2.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/register_screen.dart';
 import '../../screens/app_shell.dart';
-import '../../screens/chat_screen.dart';
+import '../../screens/chat_screen_v2.dart';
 import '../../screens/gig_details_screen.dart';
 import '../../screens/gig_contract_screen.dart';
-import '../../screens/artist_public_profile_screen.dart';
 import '../../screens/profile_preview_screen.dart';
 import '../../screens/profile_screen_v3.dart';
 import '../../screens/edit_profile/edit_profile_hub_screen.dart';
@@ -197,7 +196,7 @@ class AppRouter {
         name: 'chat',
         builder: (context, state) {
           final matchId = state.pathParameters['matchId']!;
-          return ChatScreen(matchId: matchId);
+          return ChatScreenV2(matchId: matchId);
         },
       ),
 
@@ -268,7 +267,10 @@ class AppRouter {
         name: 'public-profile',
         builder: (context, state) {
           final userId = state.pathParameters['userId']!;
-          return ArtistPublicProfileScreen(artistId: userId);
+          return ProfilePreviewScreen(
+            profileId: userId,
+            profileType: ProfileViewType.artist,
+          );
         },
       ),
       GoRoute(

@@ -23,7 +23,7 @@ import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/theme/theme.dart';
 
-import 'chat_screen.dart';
+import 'chat_screen_v2.dart';
 
 /// 🎯 Discovery Screen - Main Widget
 class DiscoveryScreen extends StatefulWidget {
@@ -1668,7 +1668,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    ChatScreen(matchId: _pendingMatch!.id),
+                                    ChatScreenV2(matchId: _pendingMatch!.id),
                               ),
                             );
                           }

@@ -5,8 +5,12 @@
 /// - Real-time typing indicators
 /// - Message status (sent, delivered, read)
 /// - Animated message bubbles
-/// - Voice message support
+/// - Voice message support with upload
 /// - Image attachments
+/// - Document attachments
+/// - Location sharing
+/// - Call functionality
+/// - Reply to message
 ///
 /// Clean, modern chat experience
 library;
@@ -17,10 +21,15 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file_selector/file_selector.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
+import '../core/services/services.dart';
 import '../widgets/widgets.dart';
 
 class ChatScreenV2 extends StatefulWidget {
@@ -28,6 +37,9 @@ class ChatScreenV2 extends StatefulWidget {
   final String? participantId;
   final String? participantName;
   final String? participantPhoto;
+  final bool isParticipantArtist;
+  final String? replyToMessageId;
+  final String? replyToMessageContent;
 
   const ChatScreenV2({
     super.key,
@@ -35,6 +47,9 @@ class ChatScreenV2 extends StatefulWidget {
     this.participantId,
     this.participantName,
     this.participantPhoto,
+    this.isParticipantArtist = true,
+    this.replyToMessageId,
+    this.replyToMessageContent,
   });
 
   static const String route = '/chat';
@@ -59,6 +74,11 @@ class _ChatScreenV2State extends State<ChatScreenV2>
   String? _conversationId;
   String? _participantName;
   String? _participantPhoto;
+  bool _isParticipantOnline = false;
+
+  // Reply feature
+  String? _replyToMessageId;
+  String? _replyToMessageContent;
 
   // Animation
   late AnimationController _sendButtonController;
@@ -80,6 +100,10 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     );
 
     _messageController.addListener(_onTextChanged);
+
+    // Set reply if provided
+    _replyToMessageId = widget.replyToMessageId;
+    _replyToMessageContent = widget.replyToMessageContent;
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _initializeChat());
   }
@@ -131,11 +155,28 @@ class _ChatScreenV2State extends State<ChatScreenV2>
           _conversationId = matchId;
           _participantName = widget.participantName ?? 'Chat';
           _participantPhoto = widget.participantPhoto;
+          _isParticipantOnline = chatProvider.isConnected;
         });
       }
     } catch (e) {
       _showError('Failed to load chat');
     }
+  }
+
+  void _navigateToParticipantProfile() {
+    final participantId = widget.participantId ?? widget.matchId;
+    if (participantId == null || participantId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile not available')),
+      );
+      return;
+    }
+
+    final route = widget.isParticipantArtist
+        ? '/artist/$participantId'
+        : '/venue/$participantId';
+
+    Navigator.of(context, rootNavigator: true).pushNamed(route);
   }
 
   void _scrollToBottom() {
@@ -164,17 +205,25 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     HapticFeedback.lightImpact();
 
     setState(() => _isSending = true);
+    final replyId = _replyToMessageId;
     _messageController.clear();
+    _replyToMessageId = null;
+    _replyToMessageContent = null;
     _isTyping = false;
     chatProvider.stopTyping();
 
     try {
-      final success = await chatProvider.sendMessage(content);
+      final success = await chatProvider.sendMessage(
+        content,
+        replyToMessageId: replyId,
+      );
       if (success) {
         _scrollToBottom();
       } else {
         _showError('Failed to send message');
         _messageController.text = content;
+        _replyToMessageId = replyId;
+        _replyToMessageContent = widget.replyToMessageContent;
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -196,13 +245,119 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       if (image != null && mounted) {
         HapticFeedback.lightImpact();
         final chatProvider = context.read<ChatProvider>();
-        await chatProvider.sendMessage(image.path, type: MessageType.image);
+        await chatProvider.sendMessage(
+          image.path,
+          type: MessageType.image,
+          replyToMessageId: _replyToMessageId,
+        );
+        _clearReply();
         _scrollToBottom();
       }
     } on PlatformException catch (e) {
       debugPrint('Image picker error: $e');
+      _showError('Failed to pick image');
     } catch (e) {
       _showError('Failed to send image');
+    }
+  }
+
+  Future<void> _sendDocument() async {
+    if (_conversationId == null) return;
+
+    try {
+      // Request file selection
+      const XTypeGroup typeGroup = XTypeGroup(
+        label: 'Documents',
+        extensions: ['pdf', 'doc', 'docx', 'txt'],
+      );
+      final file = await openFile(
+        acceptedTypeGroups: const [typeGroup],
+      );
+
+      if (file != null && mounted) {
+        HapticFeedback.lightImpact();
+        _showLoading('Uploading document...');
+
+        // Upload file to server
+        final chatService = ChatService();
+        final uploadedUrl = await chatService.uploadMedia(file.path, 'document');
+
+        if (mounted) {
+          Navigator.of(context).pop(); // Remove loading dialog
+
+          final chatProvider = context.read<ChatProvider>();
+          await chatProvider.sendMessage(
+            uploadedUrl,
+            type: MessageType.text,
+            metadata: {
+              'documentName': file.name,
+              'documentSize': file.length,
+            },
+            replyToMessageId: _replyToMessageId,
+          );
+          _clearReply();
+          _scrollToBottom();
+        }
+      }
+    } catch (e) {
+      debugPrint('Document picker error: $e');
+      _showError('Failed to send document');
+    }
+  }
+
+  Future<void> _sendLocation() async {
+    if (_conversationId == null) return;
+
+    try {
+      // Check location permission
+      final permission = await Permission.location.status;
+      if (permission.isDenied) {
+        final result = await Permission.location.request();
+        if (!result.isGranted) {
+          _showError('Location permission is required');
+          return;
+        }
+      }
+
+      _showLoading('Getting location...');
+
+      // Get current location
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      // Get address from coordinates
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Remove loading dialog
+
+        final placemark = placemarks.first;
+        final address = '${placemark.street}, ${placemark.locality}, ${placemark.country}';
+
+        final chatProvider = context.read<ChatProvider>();
+        await chatProvider.sendMessage(
+          address,
+          type: MessageType.text,
+          metadata: {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+            'address': address,
+          },
+          replyToMessageId: _replyToMessageId,
+        );
+        _clearReply();
+        _scrollToBottom();
+      }
+    } catch (e) {
+      debugPrint('Location error: $e');
+      if (mounted) Navigator.of(context).pop();
+      _showError('Failed to get location');
     }
   }
 
@@ -213,17 +368,48 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     HapticFeedback.lightImpact();
 
     try {
-      final chatProvider = context.read<ChatProvider>();
-      await chatProvider.sendMessage(
-        '$audioPath|$durationSeconds',
-        type: MessageType.audio,
-      );
-      _scrollToBottom();
+      _showLoading('Uploading voice message...');
+
+      // Upload audio to server
+      final chatService = ChatService();
+      final audioUrl = await chatService.uploadMedia(audioPath, 'audio');
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Remove loading dialog
+
+        final chatProvider = context.read<ChatProvider>();
+        await chatProvider.sendMessage(
+          audioUrl,
+          type: MessageType.audio,
+          metadata: {'duration': durationSeconds},
+          replyToMessageId: _replyToMessageId,
+        );
+        _clearReply();
+        _scrollToBottom();
+      }
     } catch (e) {
-      _showError('Failed to send audio');
+      debugPrint('Audio upload error: $e');
+      if (mounted) Navigator.of(context).pop();
+      _showError('Failed to send voice message');
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
+  }
+
+  void _showLoading(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(color: AppColors.crimson),
+            const SizedBox(width: 16),
+            Text(message),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showError(String message) {
@@ -236,6 +422,61 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  void _startCall() async {
+    HapticFeedback.lightImpact();
+
+    // TODO: Implement WebRTC video/audio call
+    // For now, show a dialog with call options
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Call'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.call_rounded, color: Colors.green),
+              title: const Text('Voice Call'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showError('Voice calls coming soon!');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam_rounded, color: Colors.blue),
+              title: const Text('Video Call'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showError('Video calls coming soon!');
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _setReply(String? messageId, String? messageContent) {
+    setState(() {
+      _replyToMessageId = messageId;
+      _replyToMessageContent = messageContent;
+    });
+    _inputFocusNode.requestFocus();
+  }
+
+  void _clearReply() {
+    setState(() {
+      _replyToMessageId = null;
+      _replyToMessageContent = null;
+    });
   }
 
   @override
@@ -286,8 +527,64 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             ),
           ),
 
+          // Reply banner
+          if (_replyToMessageId != null)
+            _buildReplyBanner(brightness),
+
           // Input area
           _buildInputArea(brightness),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReplyBanner(Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: AppColors.crimson.withValues(alpha: 0.1),
+        border: Border(
+          top: BorderSide(color: AppColors.crimson.withValues(alpha: 0.3)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.crimson,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Replying to',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.crimson,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  _replyToMessageContent ?? 'Message',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.text(brightness),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.close_rounded, color: AppColors.textSec(brightness)),
+            onPressed: _clearReply,
+          ),
         ],
       ),
     );
@@ -339,9 +636,10 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                       );
                     }
                     return Text(
-                      'Online',
+                      _isParticipantOnline ? 'Online' : 'Offline',
                       style: AppTypography.bodySmall.copyWith(
-                        color: Colors.green,
+                        color: _isParticipantOnline ? Colors.green : AppColors.textTert(brightness),
+                        fontWeight: FontWeight.w500,
                       ),
                     );
                   },
@@ -354,10 +652,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       actions: [
         // Call button
         IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            
-          },
+          onPressed: _startCall,
           icon: Icon(Icons.call_rounded, color: AppColors.text(brightness)),
         ),
         // More options
@@ -386,7 +681,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             MenuItemButton(
               onPressed: () {
                 HapticFeedback.selectionClick();
-                // View profile
+                _navigateToParticipantProfile();
               },
               leadingIcon: const Icon(Icons.person_outline_rounded),
               child: const Text('View Profile'),
@@ -394,7 +689,8 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             MenuItemButton(
               onPressed: () {
                 HapticFeedback.selectionClick();
-                // Mute notifications
+                // TODO: Implement mute
+                _showError('Mute notifications coming soon!');
               },
               leadingIcon: const Icon(Icons.notifications_off_outlined),
               child: const Text('Mute'),
@@ -402,7 +698,8 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             MenuItemButton(
               onPressed: () {
                 HapticFeedback.selectionClick();
-                // Block user
+                // TODO: Implement block
+                _showError('Block user coming soon!');
               },
               leadingIcon: const Icon(
                 Icons.block_rounded,
@@ -444,7 +741,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             width: 12,
             height: 12,
             decoration: BoxDecoration(
-              color: Colors.green,
+              color: _isParticipantOnline ? Colors.green : Colors.grey,
               shape: BoxShape.circle,
               border: Border.all(
                 color: AppColors.surface(brightness),
@@ -492,6 +789,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                 brightness: brightness,
                 onRetry: () =>
                     context.read<ChatProvider>().retryMessage(message.id),
+                onReply: () => _setReply(message.id, message.content),
               ),
             ],
           );
@@ -676,7 +974,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                     color: Colors.orange,
                     onTap: () {
                       Navigator.pop(ctx);
-                      
+                      _sendDocument();
                     },
                   ),
                   _AttachmentOption(
@@ -685,7 +983,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                     color: Colors.green,
                     onTap: () {
                       Navigator.pop(ctx);
-                      
+                      _sendLocation();
                     },
                   ),
                 ],
@@ -902,12 +1200,14 @@ class _MessageBubble extends StatelessWidget {
   final bool isOwn;
   final Brightness brightness;
   final VoidCallback? onRetry;
+  final VoidCallback? onReply;
 
   const _MessageBubble({
     required this.message,
     required this.isOwn,
     required this.brightness,
     this.onRetry,
+    this.onReply,
   });
 
   @override
@@ -1046,10 +1346,15 @@ class _MessageBubble extends StatelessWidget {
   }
 
   Widget _buildAudioContent(BuildContext context) {
+    // Use mediaUrl for audio if available (uploaded URL)
     String audioUrl = message.mediaUrl ?? message.content;
     int? durationSeconds;
 
-    if (message.content.contains('|')) {
+    // Try to get duration from metadata first
+    durationSeconds = message.metadata?['duration'] as int?;
+
+    // Fallback: parse from content if it contains duration (old format)
+    if (durationSeconds == null && message.content.contains('|')) {
       final parts = message.content.split('|');
       audioUrl = parts[0];
       durationSeconds = int.tryParse(parts[1]);
@@ -1130,7 +1435,16 @@ class _MessageBubble extends StatelessWidget {
                   );
                 },
               ),
-            if (isOwn)
+            // Reply option
+            ListTile(
+              leading: const Icon(Icons.reply_rounded),
+              title: const Text('Reply'),
+              onTap: () {
+                Navigator.pop(ctx);
+                onReply?.call();
+              },
+            ),
+            if (isOwn) ...[
               ListTile(
                 leading: const Icon(
                   Icons.delete_outline_rounded,
@@ -1145,6 +1459,7 @@ class _MessageBubble extends StatelessWidget {
                   context.read<ChatProvider>().deleteMessage(message.id);
                 },
               ),
+            ],
             const SizedBox(height: 8),
           ],
         ),
@@ -1178,6 +1493,8 @@ class _AttachmentOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -1199,7 +1516,7 @@ class _AttachmentOption extends StatelessWidget {
           Text(
             label,
             style: AppTypography.labelSmall.copyWith(
-              color: AppColors.text(Theme.of(context).brightness),
+              color: AppColors.text(brightness),
             ),
           ),
         ],

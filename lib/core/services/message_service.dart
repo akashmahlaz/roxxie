@@ -170,7 +170,23 @@ class ChatSocketService {
       }
     });
 
+    // Also listen for user_typing event from backend
+    _socket?.on('user_typing', (data) {
+      final matchId = data['matchId'] as String?;
+      if (matchId != null) {
+        onTypingStatus?.call(matchId, true);
+      }
+    });
+
     _socket?.on(SocketEvents.stopTyping, (data) {
+      final matchId = data['matchId'] as String?;
+      if (matchId != null) {
+        onTypingStatus?.call(matchId, false);
+      }
+    });
+
+    // Also listen for stop_user_typing event from backend
+    _socket?.on('stop_user_typing', (data) {
       final matchId = data['matchId'] as String?;
       if (matchId != null) {
         onTypingStatus?.call(matchId, false);

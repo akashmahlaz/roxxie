@@ -5,7 +5,10 @@
       "Bash(findstr:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(flutter analyze:*)",
+      "Read(//c/Users/akash/work/**)"
     ]
   }
 }

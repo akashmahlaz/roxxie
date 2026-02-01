@@ -1316,6 +1316,53 @@ class ChatService {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // MEDIA UPLOAD
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Upload media file to server
+  Future<String> uploadMedia(String filePath, String type) async {
+    final stopwatch = Stopwatch()..start();
+
+    try {
+      debugPrint('💬 [ChatService] Uploading media: $type');
+
+      await _checkAuthentication();
+
+      final file = MultipartFile.fromFileSync(
+        filePath,
+        filename: 'media_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      final formData = FormData.fromMap({
+        'file': file,
+        'type': type,
+      });
+
+      final response = await _client.post(
+        '/messages/upload',
+        data: formData,
+      );
+
+      if (response.data == null || response.data['url'] == null) {
+        throw ChatServiceError('Failed to upload media');
+      }
+
+      final url = response.data['url'] as String;
+
+      debugPrint(
+        '💬 [ChatService] Media uploaded in ${stopwatch.elapsedMilliseconds}ms: $url',
+      );
+
+      return url;
+    } catch (e) {
+      debugPrint('❌ [ChatService] Failed to upload media: $e');
+      throw ChatServiceError('Failed to upload media: $e');
+    } finally {
+      stopwatch.stop();
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // OFFLINE SUPPORT
   // ═══════════════════════════════════════════════════════════════════════
 

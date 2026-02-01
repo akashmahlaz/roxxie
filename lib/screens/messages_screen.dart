@@ -582,6 +582,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final participantPhoto = isArtist
         ? match.venue?.profilePhotoUrl
         : match.artist?.profilePhoto;
+    // If current user is artist, participant is venue (and vice versa)
+    final isParticipantArtist = !isArtist;
 
     HapticFeedback.lightImpact();
 
@@ -591,6 +593,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           matchId: match.id,
           participantName: participantName,
           participantPhoto: participantPhoto,
+          isParticipantArtist: isParticipantArtist,
         ),
       ),
     );

@@ -17,7 +17,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/discovery_screen.dart';
 import 'screens/matches_screen_v2.dart';
-import 'screens/chat_screen.dart';
+import 'screens/chat_screen_v2.dart';
 import 'screens/profile_screen_v3.dart';
 import 'screens/messages_screen.dart';
 import 'screens/settings_screen.dart';
@@ -184,7 +184,7 @@ class GigMatchApp extends StatelessWidget {
             // Chat screen with match ID
             if (settings.name?.startsWith('/chat/') ?? false) {
               final matchId = settings.name!.split('/').last;
-              return _createFadeRoute(ChatScreen(matchId: matchId), settings);
+              return _createFadeRoute(ChatScreenV2(matchId: matchId), settings);
             }
 
             // Gig details screen with gig ID

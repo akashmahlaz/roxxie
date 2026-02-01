@@ -58,6 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 message: n.body,
                 timestamp: n.createdAt,
                 isRead: n.isRead,
+                data: n.data,
               ),
             )
             .toList();
@@ -99,6 +100,55 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _refresh() async {
     HapticFeedback.mediumImpact();
     await _loadNotifications();
+  }
+
+  void _navigateFromNotification(NotificationItem notification) {
+    final data = notification.data;
+    final nav = Navigator.of(context, rootNavigator: true);
+
+    switch (notification.type) {
+      case NotificationType.message:
+        // Navigate to chat
+        final matchId = data?['matchId'] ?? data?['conversationId'];
+        if (matchId != null && matchId.isNotEmpty) {
+          nav.pushNamed('/chat/$matchId');
+        }
+        break;
+
+      case NotificationType.match:
+        // Navigate to matches or chat
+        final matchId = data?['matchId'];
+        if (matchId != null && matchId.isNotEmpty) {
+          nav.pushNamed('/chat/$matchId');
+        } else {
+          nav.pushNamed('/matches');
+        }
+        break;
+
+      case NotificationType.gig:
+        // Navigate to gig details
+        final gigId = data?['gigId'] ?? data?['gig'];
+        if (gigId != null && gigId.isNotEmpty) {
+          nav.pushNamed('/gig/$gigId');
+        }
+        break;
+
+      case NotificationType.profile:
+        // Navigate to profile
+        final profileId = data?['profileId'] ?? data?['userId'];
+        final isArtist = data?['isArtist'] == true;
+        if (profileId != null && profileId.isNotEmpty) {
+          final route = isArtist ? '/artist/$profileId' : '/venue/$profileId';
+          nav.pushNamed(route);
+        }
+        break;
+
+      case NotificationType.boost:
+      case NotificationType.payment:
+        // Navigate to wallet
+        nav.pushNamed('/wallet');
+        break;
+    }
   }
 
   Future<void> _markAllAsRead() async {
@@ -279,7 +329,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           onTap: () {
                             HapticFeedback.selectionClick();
                             setState(() => notification.isRead = true);
-                            // Navigate based on notification type
+                            _navigateFromNotification(notification);
                           },
                         ),
                       ),
@@ -552,6 +602,7 @@ class NotificationItem {
   final String message;
   final DateTime timestamp;
   bool isRead;
+  final Map<String, dynamic>? data;
 
   NotificationItem({
     required this.id,
@@ -560,5 +611,6 @@ class NotificationItem {
     required this.message,
     required this.timestamp,
     required this.isRead,
+    this.data,
   });
 }

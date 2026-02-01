@@ -132,6 +132,8 @@ class ChatProvider extends ChangeNotifier {
     String content, {
     MessageType type = MessageType.text,
     String? mediaUrl,
+    String? replyToMessageId,
+    Map<String, dynamic>? metadata,
   }) async {
     if (_currentMatchId == null || content.trim().isEmpty) return false;
 
@@ -148,6 +150,7 @@ class ChatProvider extends ChangeNotifier {
       status: MessageStatus.sending,
       createdAt: DateTime.now(),
       mediaUrl: mediaUrl,
+      metadata: metadata,
     );
 
     // Add to list optimistically
@@ -162,6 +165,8 @@ class ChatProvider extends ChangeNotifier {
           content: content,
           type: type,
           mediaUrl: mediaUrl,
+          replyToMessageId: replyToMessageId,
+          metadata: metadata,
         ),
       );
 

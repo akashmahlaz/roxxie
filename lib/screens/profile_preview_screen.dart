@@ -26,7 +26,7 @@ import '../core/providers/providers.dart';
 import '../core/services/services.dart';
 import '../core/models/models.dart';
 import '../widgets/media/media.dart';
-import 'chat_screen.dart';
+import 'chat_screen_v2.dart';
 
 /// Media type for segmented button
 enum MediaType { audio, video, photos }
@@ -1679,7 +1679,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ChatScreen(participantId: id),
+                      builder: (context) => ChatScreenV2(participantId: id),
                     ),
                   );
                 }

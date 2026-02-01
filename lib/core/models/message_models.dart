@@ -142,12 +142,16 @@ class SendMessageRequest {
   final String content;
   final MessageType type;
   final String? mediaUrl;
+  final String? replyToMessageId;
+  final Map<String, dynamic>? metadata;
 
   SendMessageRequest({
     required this.matchId,
     required this.content,
     this.type = MessageType.text,
     this.mediaUrl,
+    this.replyToMessageId,
+    this.metadata,
   });
 
   Map<String, dynamic> toJson() => {
@@ -155,6 +159,8 @@ class SendMessageRequest {
     'content': content,
     'type': type.value,
     if (mediaUrl != null) 'mediaUrl': mediaUrl,
+    if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+    if (metadata != null) 'metadata': metadata,
   };
 }
 

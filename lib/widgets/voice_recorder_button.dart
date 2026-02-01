@@ -74,6 +74,7 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
       // Check permission
       if (!await _recorder.hasPermission()) {
         debugPrint('❌ [VoiceRecorder] No microphone permission');
+        _showPermissionDeniedMessage();
         return;
       }
 
@@ -172,6 +173,34 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
     return '$minutes:${secs.toString().padLeft(2, '0')}';
+  }
+
+  void _showPermissionDeniedMessage() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.mic_off_rounded, color: Colors.white),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text('Microphone permission is required for voice messages'),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.orange.shade800,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'Settings',
+          textColor: Colors.white,
+          onPressed: () {
+            // Open app settings
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
   }
 
   @override
