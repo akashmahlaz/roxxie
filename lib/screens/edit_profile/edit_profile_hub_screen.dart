@@ -263,7 +263,13 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
     final auth = context.read<AuthProvider>();
     // Get photo with Google/social photo fallback
     final photoUrl = profile.profilePhoto ?? auth.user?.profilePhotoUrl;
-    final displayName = profile.displayName;
+    // Get name with Google/social name fallback
+    final userName = auth.user?.name;
+    final displayName = profile.displayName.isNotEmpty
+        ? profile.displayName
+        : (userName != null && userName.isNotEmpty ? userName : 'User');
+    // Get email from user
+    final email = auth.user?.email ?? '';
     final role = isArtist ? 'Artist' : 'Venue';
 
     return GestureDetector(
@@ -310,7 +316,7 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
 
             const SizedBox(width: 16),
 
-            // Name and Role
+            // Name, Email and Role
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,6 +331,18 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (email.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      email,
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness),
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(

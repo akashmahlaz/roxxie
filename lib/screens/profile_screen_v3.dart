@@ -116,6 +116,11 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
           final isArtist = auth.isArtist;
           // Get photo with Google/social photo fallback
           final profilePhoto = profile.profilePhoto ?? auth.user?.profilePhotoUrl;
+          // Get name with Google/social name fallback
+          final userName = auth.user?.name;
+          final displayName = profile.displayName.isNotEmpty
+              ? profile.displayName
+              : (userName != null && userName.isNotEmpty ? userName : 'User');
 
           return RefreshIndicator(
             onRefresh: _refreshProfile,
@@ -132,6 +137,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                   context,
                   profile,
                   profilePhoto,
+                  displayName,
                   isArtist,
                   brightness,
                   isDark,
@@ -274,6 +280,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     BuildContext context,
     ProfileProvider profile,
     String? profilePhoto,
+    String displayName,
     bool isArtist,
     Brightness brightness,
     bool isDark,
@@ -318,7 +325,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  profile.displayName,
+                  displayName,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -331,18 +338,18 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
           flexibleSpace: FlexibleSpaceBar(
             background: Container(
               decoration: BoxDecoration(
-                // Clean gradient - no longer crimson heavy
+                // Clean gradient - blends seamlessly with content below
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: isDark
                       ? [
-                          const Color(0xFF1A1A2E),
-                          const Color(0xFF16213E),
+                          const Color(0xFF0A0A0C),
+                          const Color(0xFF121215),
                         ]
                       : [
-                          const Color(0xFFF8F9FA),
-                          const Color(0xFFFAFAFA),
+                          const Color(0xFFFCFCFC),
+                          const Color(0xFFF7F7F8),
                         ],
                   stops: const [0, 1],
                 ),
@@ -359,7 +366,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                       GestureDetector(
                         onTap: () => _showEditPhotoBottomSheet(context),
                         child: Semantics(
-                          label: 'Profile photo of ${profile.displayName}',
+                          label: 'Profile photo of $displayName',
                           button: true,
                           child: _buildProfileAvatar(profilePhoto, brightness),
                         ),
@@ -368,7 +375,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
 
                       // Name - Clean typography
                       Text(
-                        profile.displayName,
+                        displayName,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
