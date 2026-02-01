@@ -61,6 +61,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   Venue? _venue;
   bool _isArtist = true;
   bool _isOwnProfile = true;
+  String _userName = ''; // Cached user name for fallback
 
   // Media state
   MediaType _selectedMediaType = MediaType.audio;
@@ -101,13 +102,18 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     debugPrint('👁️ [ProfilePreview] widget.profileId: ${widget.profileId}');
     debugPrint('👁️ [ProfilePreview] widget.profileType: ${widget.profileType}');
     
+    // Cache context-dependent values before any async operations
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final auth = context.read<AuthProvider>();
+      // Cache user name for fallback (auth already cached above)
+      _userName = auth.user?.name ?? '';
 
       if (widget.profileId != null) {
         // External profile view via deep link
@@ -188,9 +194,11 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
 
   String get _profileName {
     if (_isArtist) {
-      return _artist?.stageName ?? _artist?.displayName ?? 'Artist';
+      return _artist?.stageName ??
+          _artist?.displayName ??
+          (_userName.isNotEmpty ? _userName : 'Artist');
     }
-    return _venue?.name ?? 'Venue';
+    return _venue?.name ?? (_userName.isNotEmpty ? _userName : 'Venue');
   }
 
   String get _deepLinkUrl {
@@ -373,12 +381,17 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   Widget _buildSliverAppBar(Brightness brightness) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = brightness == Brightness.dark;
+
+    // Safely get photos list
     final photos = _isArtist
         ? [
-            if (_artist?.profilePhoto != null) _artist!.profilePhoto!,
+            if (_artist?.profilePhoto != null &&
+                _artist!.profilePhoto!.isNotEmpty)
+              _artist!.profilePhoto!,
             ...(_artist?.galleryUrls ?? []),
           ]
-        : (_venue?.galleryUrls ?? []);
+        : [...(_venue?.galleryUrls ?? [])];
 
     // Get profile photo for collapsed avatar (with Google fallback)
     final auth = context.read<AuthProvider>();
@@ -391,21 +404,21 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       valueListenable: _scrollOffset,
       builder: (context, scrollOffset, child) {
         // Smooth linear interpolation for background
-        final headerOpacity = (scrollOffset / 220).clamp(0.0, 1.0);
-        final isCollapsed = scrollOffset > 180;
+        final headerOpacity = (scrollOffset / 200).clamp(0.0, 1.0);
+        final isCollapsed = scrollOffset > 150;
 
-        // Adaptive colors for collapsed state
-        final collapsedBackground = colorScheme.surface.withValues(alpha: headerOpacity);
+        // Adaptive background that blends with content
+        final backgroundColor = isDark
+            ? Color.lerp(const Color(0xFF0A0A0C), colorScheme.surface, headerOpacity)
+            : Color.lerp(const Color(0xFFFCFCFC), colorScheme.surface, headerOpacity);
 
         return SliverAppBar(
-          expandedHeight: 220, // Reduced from 300 to 220
+          expandedHeight: 200, // Reduced from 220 to 200 for cleaner look
           pinned: true,
           stretch: true,
-          // Modern Material 3 surface with tint
-          backgroundColor: collapsedBackground,
+          backgroundColor: backgroundColor,
           surfaceTintColor: Colors.transparent,
-          elevation: isCollapsed ? 2 : 0,
-          shadowColor: theme.shadowColor.withValues(alpha: headerOpacity),
+          elevation: isCollapsed ? 0 : 0,
           leading: _buildAppBarButton(
             icon: Icons.arrow_back_rounded,
             onPressed: () => Navigator.pop(context),
@@ -430,18 +443,40 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
           // Collapsed state: show avatar + name in pinned bar
           title: AnimatedOpacity(
             opacity: isCollapsed ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 150),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Modern avatar with status ring
-                _buildCollapsedAvatar(profilePhoto, brightness),
-                const SizedBox(width: 12),
+                // Clean avatar without heavy ring
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.surface,
+                      width: 2,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
+                    backgroundImage: profilePhoto != null && profilePhoto.isNotEmpty
+                        ? NetworkImage(profilePhoto)
+                        : null,
+                    child: profilePhoto == null || profilePhoto.isEmpty
+                        ? Icon(
+                            _isArtist ? Icons.person : Icons.business,
+                            size: 18,
+                            color: AppColors.crimson.withValues(alpha: 0.6),
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Flexible(
                   child: Text(
                     _profileName,
                     style: TextStyle(
-                      color: colorScheme.onSurface,
+                      color: AppColors.text(brightness),
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
                     ),
@@ -456,18 +491,18 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Single hero image (cleaner than carousel)
+                // Hero image with proper fit
                 if (photos.isNotEmpty)
                   Image.network(
                     photos.first,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
+                    errorBuilder: (context, error, stack) =>
                         _buildPhotoPlaceholder(brightness),
                   )
                 else
                   _buildPhotoPlaceholder(brightness),
 
-                // Simple gradient overlay (cleaner, no mesh effect)
+                // Clean gradient overlay - subtle, not overpowering
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
@@ -475,15 +510,55 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.3),
+                          // Top: subtle dark for text visibility
+                          isDark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : Colors.black.withValues(alpha: 0.15),
+                          // Middle: fade to transparent
                           Colors.transparent,
-                          AppColors.background(brightness).withValues(alpha: 0.9),
+                          // Bottom: blend with content
+                          isDark
+                              ? const Color(0xFF0A0A0C).withValues(alpha: 0.95)
+                              : const Color(0xFFFCFCFC).withValues(alpha: 0.95),
                         ],
-                        stops: const [0.0, 0.5, 1.0],
+                        stops: const [0.0, 0.3, 1.0],
                       ),
                     ),
                   ),
                 ),
+
+                // Name overlay on expanded state
+                if (!isCollapsed)
+                  Positioned(
+                    bottom: 16,
+                    left: 16,
+                    right: 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Name
+                        Text(
+                          _profileName,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Stats row
+                        _buildHeaderStatsRow(brightness),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -492,60 +567,66 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     );
   }
 
-  Widget _buildCollapsedAvatar(String? profilePhoto, Brightness brightness) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  // Stats row shown on expanded header
+  Widget _buildHeaderStatsRow(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final rating = _isArtist ? _artist?.rating ?? 0 : _venue?.reviewStatsAverageRating ?? 0;
+    final totalReviews = _isArtist ? _artist?.totalReviews ?? 0 : _venue?.reviewCount ?? 0;
 
-    // Check if verified
-    final isVerified = _isArtist
-        ? (_artist?.isVerified ?? false)
-        : (_venue?.isVerified ?? false);
-
-    return Stack(
-      clipBehavior: Clip.none,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        // Main avatar - clean, no heavy shadows
+        // Rating
         Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: colorScheme.surface,
-              width: 2,
-            ),
+            color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
-            backgroundImage: profilePhoto != null && profilePhoto.isNotEmpty
-                ? NetworkImage(profilePhoto)
-                : null,
-            child: profilePhoto == null || profilePhoto.isEmpty
-                ? Icon(
-                    _isArtist ? Icons.person : Icons.business,
-                    size: 20,
-                    color: AppColors.crimson.withValues(alpha: 0.6),
-                  )
-                : null,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.star, size: 14, color: Colors.amber),
+              const SizedBox(width: 4),
+              Text(
+                rating.toStringAsFixed(1),
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
-        // Verified badge
-        if (isVerified)
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.verified,
-                color: AppColors.success,
-                size: 14,
-              ),
-            ),
+        const SizedBox(width: 12),
+        // Reviews count
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.rate_review_rounded,
+                size: 14,
+                color: isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF5C5C66),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$totalReviews',
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -618,19 +699,20 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       if (venue == null) return null;
 
       // Venue has displayLocation field
-      if (venue.displayLocation != null &&
-          venue.displayLocation!.isNotEmpty &&
-          !venue.displayLocation!.contains('+')) {
-        return venue.displayLocation;
+      final displayLocation = venue.displayLocation;
+      if (displayLocation != null &&
+          displayLocation.isNotEmpty &&
+          !displayLocation.contains('+')) {
+        return displayLocation;
       }
 
       // Fallback to location city
       final loc = venue.location;
-      if (loc != null &&
-          loc.city != null &&
-          loc.city!.isNotEmpty &&
-          !loc.city!.contains('+')) {
-        return loc.city;
+      if (loc != null) {
+        final city = loc.city;
+        if (city != null && city.isNotEmpty && !city.contains('+')) {
+          return city;
+        }
       }
       return null;
     }
@@ -1080,10 +1162,10 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     if (hasVideo) availableTypes.add(MediaType.video);
     if (hasPhotos) availableTypes.add(MediaType.photos);
 
-    // Ensure selected type is valid
-    if (!availableTypes.contains(_selectedMediaType)) {
-      _selectedMediaType = availableTypes.first;
-    }
+    // Determine effective selected type without modifying state during build
+    final effectiveSelectedType = availableTypes.contains(_selectedMediaType)
+        ? _selectedMediaType
+        : availableTypes.first;
 
     return _buildSection(
       brightness,
@@ -1124,10 +1206,12 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                         icon: const Icon(Icons.photo_library_rounded, size: 18),
                       ),
                   ],
-                  selected: {_selectedMediaType},
+                  selected: {effectiveSelectedType},
                   onSelectionChanged: (selected) {
                     HapticFeedback.lightImpact();
-                    setState(() => _selectedMediaType = selected.first);
+                    if (mounted) {
+                      setState(() => _selectedMediaType = selected.first);
+                    }
                   },
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith((states) {
@@ -1162,6 +1246,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
               audioSamples,
               videoSamples,
               photos,
+              effectiveSelectedType,
             ),
           ),
         ],
@@ -1214,8 +1299,9 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     List<AudioSample> audioSamples,
     List<VideoSample> videoSamples,
     List<String> photos,
+    MediaType selectedType,
   ) {
-    switch (_selectedMediaType) {
+    switch (selectedType) {
       case MediaType.audio:
         return AdvancedAudioPlayer(
           key: const ValueKey('audio'),
@@ -1715,11 +1801,11 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
             child: IconButton(
               onPressed: () {
                 final id = _isArtist ? _artist?.id : _venue?.id;
-                if (id != null) {
+                if (id != null && mounted) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ChatScreenV2(participantId: id),
+                      builder: (_) => ChatScreenV2(participantId: id),
                     ),
                   );
                 }
@@ -1774,6 +1860,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     SharePlus.instance.share(ShareParams(text: message));
     Clipboard.setData(ClipboardData(text: _deepLinkUrl));
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
