@@ -379,46 +379,25 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildSliverAppBar(Brightness brightness) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = brightness == Brightness.dark;
-
-    // Safely get photos list
-    final photos = _isArtist
-        ? [
-            if (_artist?.profilePhoto != null &&
-                _artist!.profilePhoto!.isNotEmpty)
-              _artist!.profilePhoto!,
-            ...(_artist?.galleryUrls ?? []),
-          ]
-        : [...(_venue?.galleryUrls ?? [])];
-
-    // Get profile photo for collapsed avatar (with Google fallback)
-    final auth = context.read<AuthProvider>();
-    final profilePhoto = _isArtist
-        ? (_artist?.profilePhoto ?? auth.user?.profilePhotoUrl)
-        : (_venue?.profilePhotoUrl ?? auth.user?.profilePhotoUrl);
 
     // Use ValueListenableBuilder to only rebuild the app bar, not the entire tree
     return ValueListenableBuilder<double>(
       valueListenable: _scrollOffset,
-      builder: (context, scrollOffset, child) {
-        // Smooth linear interpolation for background
-        final headerOpacity = (scrollOffset / 200).clamp(0.0, 1.0);
-        final isCollapsed = scrollOffset > 150;
+      builder: (context, scrollOffset, _) {
+        final isCollapsed = scrollOffset > 80;
 
-        // Adaptive background that blends with content
+        // Simple solid background
         final backgroundColor = isDark
-            ? Color.lerp(const Color(0xFF0A0A0C), colorScheme.surface, headerOpacity)
-            : Color.lerp(const Color(0xFFFCFCFC), colorScheme.surface, headerOpacity);
+            ? const Color(0xFF0A0A0C)
+            : const Color(0xFFFCFCFC);
 
         return SliverAppBar(
-          expandedHeight: 200, // Reduced from 220 to 200 for cleaner look
+          expandedHeight: 56, // Minimal - just enough for status bar + nav
           pinned: true,
-          stretch: true,
           backgroundColor: backgroundColor,
           surfaceTintColor: Colors.transparent,
-          elevation: isCollapsed ? 0 : 0,
+          elevation: 0,
           leading: _buildAppBarButton(
             icon: Icons.arrow_back_rounded,
             onPressed: () => Navigator.pop(context),
@@ -428,206 +407,34 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
           actions: [
             if (_isOwnProfile)
               _buildAppBarButton(
-                icon: Icons.edit_rounded,
+                icon: Icons.edit_outlined,
                 onPressed: () => Navigator.pushNamed(context, '/edit-profile'),
                 isCollapsed: isCollapsed,
                 brightness: brightness,
               ),
             _buildAppBarButton(
-              icon: Icons.share_rounded,
+              icon: Icons.ios_share_rounded,
               onPressed: _shareProfile,
               isCollapsed: isCollapsed,
               brightness: brightness,
             ),
           ],
-          // Collapsed state: show avatar + name in pinned bar
+          // Collapsed state: show name
           title: AnimatedOpacity(
             opacity: isCollapsed ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 150),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Clean avatar without heavy ring
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colorScheme.surface,
-                      width: 2,
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
-                    backgroundImage: profilePhoto != null && profilePhoto.isNotEmpty
-                        ? NetworkImage(profilePhoto)
-                        : null,
-                    child: profilePhoto == null || profilePhoto.isEmpty
-                        ? Icon(
-                            _isArtist ? Icons.person : Icons.business,
-                            size: 18,
-                            color: AppColors.crimson.withValues(alpha: 0.6),
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    _profileName,
-                    style: TextStyle(
-                      color: AppColors.text(brightness),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          flexibleSpace: FlexibleSpaceBar(
-            stretchModes: const [StretchMode.zoomBackground],
-            background: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Hero image with proper fit
-                if (photos.isNotEmpty)
-                  Image.network(
-                    photos.first,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stack) =>
-                        _buildPhotoPlaceholder(brightness),
-                  )
-                else
-                  _buildPhotoPlaceholder(brightness),
-
-                // Clean gradient overlay - subtle, not overpowering
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          // Top: subtle dark for text visibility
-                          isDark
-                              ? Colors.black.withValues(alpha: 0.2)
-                              : Colors.black.withValues(alpha: 0.15),
-                          // Middle: fade to transparent
-                          Colors.transparent,
-                          // Bottom: blend with content
-                          isDark
-                              ? const Color(0xFF0A0A0C).withValues(alpha: 0.95)
-                              : const Color(0xFFFCFCFC).withValues(alpha: 0.95),
-                        ],
-                        stops: const [0.0, 0.3, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Name overlay on expanded state
-                if (!isCollapsed)
-                  Positioned(
-                    bottom: 16,
-                    left: 16,
-                    right: 16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Name
-                        Text(
-                          _profileName,
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Stats row
-                        _buildHeaderStatsRow(brightness),
-                      ],
-                    ),
-                  ),
-              ],
+            child: Text(
+              _profileName,
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontWeight: FontWeight.w600,
+                fontSize: 17,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         );
       },
-    );
-  }
-
-  // Stats row shown on expanded header
-  Widget _buildHeaderStatsRow(Brightness brightness) {
-    final isDark = brightness == Brightness.dark;
-    final rating = _isArtist ? _artist?.rating ?? 0 : _venue?.reviewStatsAverageRating ?? 0;
-    final totalReviews = _isArtist ? _artist?.totalReviews ?? 0 : _venue?.reviewCount ?? 0;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        // Rating
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.star, size: 14, color: Colors.amber),
-              const SizedBox(width: 4),
-              Text(
-                rating.toStringAsFixed(1),
-                style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Reviews count
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.rate_review_rounded,
-                size: 14,
-                color: isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF5C5C66),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '$totalReviews',
-                style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -637,43 +444,12 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     required bool isCollapsed,
     required Brightness brightness,
   }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    // Adaptive colors based on collapsed state
-    final backgroundColor = isCollapsed
-        ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.7)
-        : Colors.black.withValues(alpha: 0.3);
-    final iconColor = isCollapsed
-        ? colorScheme.onSurfaceVariant
-        : Colors.white;
-
-    return Padding(
-      padding: const EdgeInsets.all(4),
-      child: Material(
-        color: backgroundColor,
-        shape: const CircleBorder(),
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: const CircleBorder(),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Icon(icon, color: iconColor, size: 22),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhotoPlaceholder(Brightness brightness) {
-    return Container(
-      color: AppColors.surface(brightness),
-      child: Center(
-        child: Icon(
-          _isArtist ? Icons.person_rounded : Icons.business_rounded,
-          size: 80,
-          color: AppColors.textSec(brightness),
-        ),
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(
+        icon,
+        color: AppColors.text(brightness),
+        size: 24,
       ),
     );
   }
@@ -727,40 +503,35 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     } else {
       avatarUrl = _venue?.profilePhotoUrl;
     }
-    // Fallback to Google/social profile photo from user account
     avatarUrl ??= auth.user?.profilePhotoUrl;
 
     final isVerified = _isArtist
         ? (_artist?.isVerified ?? false)
         : (_venue?.isVerified ?? false);
     final location = _getDisplayLocation();
-    final artistType = _artist?.artistType.name.toUpperCase();
+    final artistType = _isArtist ? _artist?.artistType.name : null;
+    final isDark = brightness == Brightness.dark;
 
-    return Transform.translate(
-      offset: const Offset(0, -40),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // Avatar
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.background(brightness),
-                  width: 4,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      child: Column(
+        children: [
+          // Large centered avatar with subtle ring
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.06),
+                width: 1,
               ),
+            ),
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
               child: ClipOval(
                 child: avatarUrl != null
                     ? Image.network(
@@ -772,127 +543,114 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                     : _buildAvatarFallback(brightness),
               ),
             ),
-            const SizedBox(width: 16),
+          ),
+          const SizedBox(height: 20),
 
-            // Name and details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Name row
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          _profileName,
-                          style: TextStyle(
-                            color: AppColors.text(brightness),
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isVerified) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.info,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.verified_rounded,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                        ),
-                      ],
-                    ],
+          // Name with verification badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  _profileName,
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 26,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.5,
                   ),
-                  const SizedBox(height: 6),
-
-                  // Location and type
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 6,
-                    children: [
-                      if (location != null && location.isNotEmpty)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.location_on_rounded,
-                              color: AppColors.textSec(brightness),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              location,
-                              style: TextStyle(
-                                color: AppColors.textSec(brightness),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      if (_isArtist && artistType != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.rose.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            artistType,
-                            style: TextStyle(
-                              color: AppColors.rose,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      if (!_isArtist && _venue?.venueType != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.cyan.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            _venue!.venueType!.toUpperCase(),
-                            style: TextStyle(
-                              color: AppColors.cyan,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-          ],
-        ),
+              if (isVerified) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.verified,
+                  color: const Color(0xFF3B82F6), // Soft blue
+                  size: 22,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Type badge and location - muted colors
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (artistType != null || (!_isArtist && _venue?.venueType != null)) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _isArtist
+                        ? artistType!.toUpperCase()
+                        : _venue!.venueType!.toUpperCase(),
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ],
+              if (location != null && location.isNotEmpty) ...[
+                if (artistType != null || (!_isArtist && _venue?.venueType != null))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '•',
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness).withValues(alpha: 0.5),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                Icon(
+                  Icons.location_on_outlined,
+                  color: AppColors.textSec(brightness),
+                  size: 14,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  location,
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildAvatarFallback(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     return Container(
-      color: AppColors.surface(brightness),
-      child: Icon(
-        _isArtist ? Icons.person_rounded : Icons.business_rounded,
-        size: 40,
-        color: AppColors.textSec(brightness),
+      color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
+      child: Center(
+        child: Icon(
+          _isArtist ? Icons.person_rounded : Icons.business_rounded,
+          size: 48,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.3)
+              : Colors.black.withValues(alpha: 0.2),
+        ),
       ),
     );
   }
@@ -902,88 +660,70 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildStatsRow(Brightness brightness) {
-    return Transform.translate(
-      offset: const Offset(0, -20),
+    final isDark = brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
         decoration: BoxDecoration(
-          color: AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.black.withValues(alpha: 0.02),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: _isArtist
               ? [
                   _buildStatItem(
                     brightness,
-                    Icons.star_rounded,
                     (_artist?.averageRating ?? 0).toStringAsFixed(1),
                     'Rating',
-                    AppColors.warning,
+                    showStar: true,
                   ),
                   _buildStatDivider(brightness),
                   _buildStatItem(
                     brightness,
-                    Icons.event_rounded,
                     (_artist?.completedGigs ?? 0).toString(),
                     'Gigs',
-                    AppColors.rose,
                   ),
                   _buildStatDivider(brightness),
                   _buildStatItem(
                     brightness,
-                    Icons.reviews_rounded,
                     (_artist?.totalReviews ?? 0).toString(),
                     'Reviews',
-                    AppColors.crimson,
                   ),
                   _buildStatDivider(brightness),
                   _buildStatItem(
                     brightness,
-                    Icons.verified_user_rounded,
                     '${_artist?.reliabilityScore ?? 100}%',
                     'Reliable',
-                    AppColors.success,
                   ),
                 ]
               : [
                   _buildStatItem(
                     brightness,
-                    Icons.star_rounded,
                     (_venue?.reviewStatsAverageRating ?? _venue?.rating ?? 0)
                         .toStringAsFixed(1),
                     'Rating',
-                    AppColors.warning,
+                    showStar: true,
                   ),
                   _buildStatDivider(brightness),
                   _buildStatItem(
                     brightness,
-                    Icons.event_rounded,
                     (_venue?.totalGigsHosted ?? 0).toString(),
-                    'Gigs Hosted',
-                    AppColors.rose,
+                    'Hosted',
                   ),
                   _buildStatDivider(brightness),
                   _buildStatItem(
                     brightness,
-                    Icons.people_rounded,
                     (_venue?.capacity ?? 0).toString(),
                     'Capacity',
-                    AppColors.cyan,
                   ),
                   _buildStatDivider(brightness),
                   _buildStatItem(
                     brightness,
-                    Icons.reviews_rounded,
                     (_venue?.reviewCount ?? 0).toString(),
                     'Reviews',
-                    AppColors.crimson,
                   ),
                 ],
         ),
@@ -993,29 +733,42 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
 
   Widget _buildStatItem(
     Brightness brightness,
-    IconData icon,
     String value,
-    String label,
-    Color color,
-  ) {
+    String label, {
+    bool showStar = false,
+  }) {
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: AppColors.text(brightness),
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showStar) ...[
+                Icon(
+                  Icons.star_rounded,
+                  color: const Color(0xFFFFB800),
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                value,
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               color: AppColors.textSec(brightness),
-              fontSize: 11,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],
@@ -1026,8 +779,8 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   Widget _buildStatDivider(Brightness brightness) {
     return Container(
       width: 1,
-      height: 44,
-      color: AppColors.divider(brightness),
+      height: 32,
+      color: AppColors.divider(brightness).withValues(alpha: 0.3),
     );
   }
 
