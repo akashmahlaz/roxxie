@@ -35,6 +35,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     with TickerProviderStateMixin {
   TimePeriod _selectedPeriod = TimePeriod.month;
   bool _isLoading = true;
+  bool _hasError = false;
+  String _errorMessage = '';
   late AnimationController _chartController;
   late AnimationController _countController;
 
@@ -168,17 +170,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       });
     } catch (e) {
       debugPrint('Analytics load error: $e');
-      // Fall back to mock data on error
+      // Show error state instead of mock data
       setState(() {
-        _analytics = widget.isArtist
-            ? _getArtistAnalytics()
-            : _getVenueAnalytics();
+        _hasError = true;
+        _errorMessage = e.toString();
         _isLoading = false;
-      });
-
-      _countController.forward();
-      Future.delayed(const Duration(milliseconds: 200), () {
-        _chartController.forward();
       });
     }
   }
@@ -309,31 +305,33 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       appBar: _buildAppBar(brightness),
       body: _isLoading
           ? _buildSkeleton(brightness)
-          : RefreshIndicator(
-              onRefresh: _loadAnalytics,
-              color: AppColors.crimson,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildPeriodSelector(brightness),
-                    const SizedBox(height: 24),
-                    _buildMainStats(brightness),
-                    const SizedBox(height: 24),
-                    _buildChart(brightness),
-                    const SizedBox(height: 24),
-                    _buildSecondaryStats(brightness),
-                    const SizedBox(height: 24),
-                    _buildGenreBreakdown(brightness),
-                    const SizedBox(height: 24),
-                    _buildInsights(brightness),
-                    const SizedBox(height: 40),
-                  ],
+          : _hasError
+              ? _buildErrorState(brightness)
+              : RefreshIndicator(
+                  onRefresh: _loadAnalytics,
+                  color: AppColors.crimson,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildPeriodSelector(brightness),
+                        const SizedBox(height: 24),
+                        _buildMainStats(brightness),
+                        const SizedBox(height: 24),
+                        _buildChart(brightness),
+                        const SizedBox(height: 24),
+                        _buildSecondaryStats(brightness),
+                        const SizedBox(height: 24),
+                        _buildGenreBreakdown(brightness),
+                        const SizedBox(height: 24),
+                        _buildInsights(brightness),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
     );
   }
 
@@ -404,6 +402,71 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
               decoration: BoxDecoration(
                 color: AppColors.surface(brightness),
                 borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(Brightness brightness) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: AppColors.error,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Unable to Load Analytics',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage.isEmpty
+                  ? 'Something went wrong. Please try again.'
+                  : _errorMessage,
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 14,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() => _hasError = false);
+                _loadAnalytics();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              label: const Text(
+                'Retry',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
               ),
             ),
           ],

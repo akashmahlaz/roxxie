@@ -296,6 +296,19 @@ class Invoice {
   }
 }
 
+/// Payment Intent data for mobile Payment Sheet
+class PaymentIntentData {
+  final String clientSecret;
+  final String? customerId;
+  final String? ephemeralKey;
+
+  const PaymentIntentData({
+    required this.clientSecret,
+    this.customerId,
+    this.ephemeralKey,
+  });
+}
+
 /// Feature access based on subscription
 class FeatureAccess {
   final bool canBoostProfile;
@@ -591,11 +604,14 @@ class SubscriptionService {
         },
       );
 
-      if (response.data == null || response.data['sessionId'] == null) {
+      // Handle response - backend wraps in {success: true, data: {...}}
+      final data = response.data['data'] ?? response.data;
+
+      if (data == null || data['sessionId'] == null) {
         throw SubscriptionException('Failed to create checkout session');
       }
 
-      final sessionId = response.data['sessionId'] as String;
+      final sessionId = data['sessionId'] as String;
 
       debugPrint(
         '💰 [SubscriptionService] Checkout session created in ${stopwatch.elapsedMilliseconds}ms',
@@ -606,6 +622,48 @@ class SubscriptionService {
       throw SubscriptionException('Failed to create checkout session: $e');
     } finally {
       stopwatch.stop();
+    }
+  }
+
+  /// Create payment intent for mobile Payment Sheet
+  Future<PaymentIntentData> createPaymentIntent({
+    required SubscriptionPlan plan,
+    required bool isYearly,
+  }) async {
+    try {
+      debugPrint(
+        '💰 [SubscriptionService] Creating payment intent for ${plan.name}',
+      );
+
+      final response = await _client.post(
+        Endpoints.subscriptionCreatePaymentIntent,
+        data: {
+          'priceId': plan.getStripePriceId(isYearly),
+          'amount': isYearly ? (plan.monthlyPrice * 10 * 100).toInt() : (plan.monthlyPrice * 100).toInt(),
+          'currency': 'usd',
+        },
+      );
+
+      // Handle response - backend wraps in {success: true, data: {...}}
+      final data = response.data['data'] ?? response.data;
+
+      if (data == null) {
+        throw SubscriptionException('Failed to create payment intent');
+      }
+
+      final clientSecret = data['clientSecret'] as String?;
+      if (clientSecret == null) {
+        throw SubscriptionException('Payment intent client secret is missing');
+      }
+
+      return PaymentIntentData(
+        clientSecret: clientSecret,
+        customerId: data['customerId'] as String?,
+        ephemeralKey: data['ephemeralKey'] as String?,
+      );
+    } catch (e) {
+      debugPrint('❌ [SubscriptionService] Payment intent creation failed: $e');
+      throw SubscriptionException('Failed to create payment intent: $e');
     }
   }
 
@@ -1082,11 +1140,14 @@ class SubscriptionService {
         data: {'returnUrl': returnUrl},
       );
 
-      if (response.data == null || response.data['url'] == null) {
+      // Handle response - backend wraps in {success: true, data: {...}}
+      final data = response.data['data'] ?? response.data;
+
+      if (data == null || data['url'] == null) {
         throw SubscriptionException('Failed to create billing portal session');
       }
 
-      return response.data['url'] as String;
+      return data['url'] as String;
     } catch (e) {
       debugPrint('❌ [SubscriptionService] Billing portal failed: $e');
       throw SubscriptionException('Failed to open billing portal: $e');

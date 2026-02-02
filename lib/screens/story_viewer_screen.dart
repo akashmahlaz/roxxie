@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 
 import '../core/providers/providers.dart';
 import '../core/models/feed_models.dart';
+import '../core/services/services.dart';
 import '../core/theme/theme.dart';
 
 class StoryViewerScreen extends StatefulWidget {
@@ -39,6 +40,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   bool _isPaused = false;
   bool _isLoading = true;
   Timer? _autoAdvanceTimer;
+  bool _isOwnStory = false;
+  final FeedService _feedService = FeedService();
 
   @override
   void initState() {
@@ -67,9 +70,18 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       final found = stories.where((s) => s.id == widget.storyId).toList();
 
       if (found.isNotEmpty) {
+        // Check if this is the user's own story
+        final authProvider = context.read<AuthProvider>();
+        final currentUserId = authProvider.user?.id;
+        final storyUserId = found.first.author?.id ?? found.first.artistId ?? found.first.venueId;
+        
         setState(() {
           _story = found.first;
           _isLoading = false;
+          _isOwnStory = currentUserId != null && 
+            (currentUserId == storyUserId ||
+             currentUserId == found.first.artistId ||
+             currentUserId == found.first.venueId);
         });
         _markAsViewed();
         _startProgress();
@@ -147,6 +159,71 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     final item = _currentItem;
     if (item != null && _story != null) {
       context.read<FeedProvider>().markStoryViewed(_story!.id, item.id);
+    }
+  }
+
+  Future<void> _deleteStory() async {
+    final story = _story;
+    if (story == null) return;
+    
+    _pause();
+    
+    // Cache context-dependent values before async gap
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final feedProvider = context.read<FeedProvider>();
+    
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text('Delete Story?', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'This action cannot be undone.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Delete', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed != true) {
+      _resume();
+      return;
+    }
+    
+    try {
+      await _feedService.deleteStory(story.id);
+      
+      // Remove from provider
+      feedProvider.removeStoryLocally(story.id);
+      
+      nav.pop();
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Story deleted'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Delete story error: $e');
+      _resume();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -435,6 +512,12 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             ),
           ),
         ),
+        // Delete button (only for own stories)
+        if (_isOwnStory)
+          IconButton(
+            onPressed: _deleteStory,
+            icon: Icon(Icons.delete_rounded, color: AppColors.error),
+          ),
         // Close button
         IconButton(
           onPressed: () => Navigator.pop(context),

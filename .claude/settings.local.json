@@ -9,7 +9,10 @@
       "Bash(pnpm exec tsc:*)",
       "Bash(flutter analyze:*)",
       "Read(//c/Users/akash/work/**)",
-      "Bash(codex --profile m21)"
+      "Bash(codex --profile m21)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(flutter pub get)",
+      "Bash(grep -r \"class.*StatefulWidget\" lib/screens/*.dart)"
     ]
   }
 }

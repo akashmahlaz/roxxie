@@ -273,6 +273,12 @@ class FeedProvider extends ChangeNotifier {
     }
   }
 
+  /// Remove story from local state only (after API delete)
+  void removeStoryLocally(String storyId) {
+    _stories.removeWhere((s) => s.id == storyId);
+    notifyListeners();
+  }
+
   /// React to a story item
   Future<void> reactToStory(String storyId, String itemId, String emoji) async {
     try {

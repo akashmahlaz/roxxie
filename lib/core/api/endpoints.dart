@@ -470,13 +470,16 @@ class Endpoints {
   // ═══════════════════════════════════════════════════════════════════════
 
   /// Get current subscription
-  static const String subscriptionCurrent = '/subscription';
+  static const String subscriptionCurrent = '/subscription/current';
 
   /// Get available subscription plans
   static const String subscriptionPlans = '/subscription/plans';
 
   /// Create checkout session
   static const String subscriptionCreateCheckout = '/subscription/checkout';
+
+  /// Create payment intent for mobile Payment Sheet
+  static const String subscriptionCreatePaymentIntent = '/subscription/payment-intent';
 
   /// Verify checkout completion
   static const String subscriptionVerifyCheckout = '/subscription/verify';
@@ -488,10 +491,13 @@ class Endpoints {
   static const String subscriptionResume = '/subscription/resume';
 
   /// Update subscription (upgrade/downgrade)
-  static const String subscriptionUpdate = '/subscription/update';
+  static const String subscriptionUpdate = '/subscription/upgrade';
 
   /// Start free trial
   static const String subscriptionStartTrial = '/subscription/trial';
+
+  /// Restore purchases (iOS/Android)
+  static const String subscriptionRestore = '/subscription/restore';
 
   /// Use profile boost
   static const String subscriptionUseBoost = '/subscription/boost';
@@ -518,9 +524,6 @@ class Endpoints {
 
   /// Create billing portal session
   static const String billingPortalSession = '/subscription/portal';
-
-  /// Restore purchases
-  static const String subscriptionRestore = '/subscription/restore';
 
   // ═══════════════════════════════════════════════════════════════════════
   // ANALYTICS

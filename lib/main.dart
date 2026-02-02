@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 import 'core/theme/theme.dart';
 import 'core/providers/providers.dart';
@@ -57,6 +58,10 @@ void main() async {
 
   // Initialize error handling service
   await ErrorHandlingService().initialize();
+
+  // Initialize Stripe with publishable key
+  // TODO: Move to environment config for production
+  Stripe.publishableKey = 'pk_test_51SmC3CFPTeSKTr2qb1nt2PAyUvI85xpBGjuEXnjD8s91QDROaCMaPNDmmUKTZ3KvXMPMDR0V13PzHZA8C2PqZcOO00SFROGUN9';
 
   // Set system UI overlay style for premium immersive experience
   SystemChrome.setSystemUIOverlayStyle(AppTheme.systemOverlayStyle);

@@ -5,13 +5,15 @@
 /// - Micro-interactions on plan selection
 /// - Animated success states
 /// - Optimistic button for subscription
+/// - REAL API integration with SubscriptionService
 ///
 /// Upgrade to premium features
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../core/theme/theme.dart';
+import 'package:flutter/services.dart';import 'package:flutter_stripe/flutter_stripe.dart';import '../core/theme/theme.dart';
+import '../core/api/api.dart';
+import '../core/services/services.dart';
 import '../widgets/widgets.dart';
 
 class PremiumScreen extends StatefulWidget {
@@ -22,34 +24,14 @@ class PremiumScreen extends StatefulWidget {
 }
 
 class _PremiumScreenState extends State<PremiumScreen> {
-  int _selectedPlanIndex = 1; // Default to monthly
+  int _selectedPlanIndex = 1; // Default to monthly (yearly = 0, monthly = 1)
+  bool _isYearly = false; // Billing toggle
+  bool _isLoading = true;
+  bool _isProcessing = false;
 
-  final List<PremiumPlan> _plans = [
-    PremiumPlan(
-      name: 'Weekly',
-      duration: '1 week',
-      price: '\$4.99',
-      pricePerMonth: '\$19.96/mo',
-      savings: null,
-    ),
-    PremiumPlan(
-      name: 'Monthly',
-      duration: '1 month',
-      price: '\$14.99',
-      pricePerMonth: '\$14.99/mo',
-      savings: null,
-      isPopular: true,
-    ),
-    PremiumPlan(
-      name: 'Yearly',
-      duration: '12 months',
-      price: '\$99.99',
-      pricePerMonth: '\$8.33/mo',
-      savings: 'Save 44%',
-      isBestValue: true,
-    ),
-  ];
+  late final SubscriptionService _subscriptionService;
 
+  List<SubscriptionPlan> _plans = [];
   final List<PremiumFeature> _features = [
     PremiumFeature(
       icon: Icons.visibility_rounded,
@@ -99,193 +81,345 @@ class _PremiumScreenState extends State<PremiumScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _subscriptionService = SubscriptionService(apiClient: ApiClient());
+    _loadPlans();
+  }
+
+  Future<void> _loadPlans() async {
+    setState(() => _isLoading = true);
+    try {
+      _plans = await _subscriptionService.loadAvailablePlans();
+      // Filter out free plan and sort by price
+      _plans = _plans.where((p) => p.tier != SubscriptionTier.free).toList()
+        ..sort((a, b) => a.monthlyPrice.compareTo(b.monthlyPrice));
+
+      // Set default to middle plan (Pro)
+      if (_plans.length > 1) {
+        _selectedPlanIndex = 1;
+      }
+    } catch (e) {
+      debugPrint('Failed to load plans: $e');
+      _plans = _getDefaultPlans();
+    }
+    setState(() => _isLoading = false);
+  }
+
+  List<SubscriptionPlan> _getDefaultPlans() {
+    return [
+      const SubscriptionPlan(
+        id: 'pro',
+        name: 'Pro',
+        description: 'For serious musicians and venues',
+        tier: SubscriptionTier.pro,
+        monthlyPrice: 9.99,
+        yearlyPrice: 99.99,
+        stripePriceIdMonthly: 'price_pro_monthly',
+        stripePriceIdYearly: 'price_pro_yearly',
+        features: [
+          'Profile boosting (5/month)',
+          'See who viewed your profile',
+          'See who liked you',
+          'Advanced filters',
+          'Message first',
+          'Read receipts',
+          '20 gig applications/month',
+          'Analytics dashboard',
+        ],
+        isPopular: true,
+        isAvailable: true,
+      ),
+      const SubscriptionPlan(
+        id: 'premium',
+        name: 'Premium',
+        description: 'For professional artists and venues',
+        tier: SubscriptionTier.premium,
+        monthlyPrice: 19.99,
+        yearlyPrice: 199.99,
+        stripePriceIdMonthly: 'price_premium_monthly',
+        stripePriceIdYearly: 'price_premium_yearly',
+        features: [
+          'Everything in Pro',
+          'Unlimited profile boosting',
+          'Unlimited gig applications',
+          'Priority placement in search',
+          'Featured profile badge',
+          'Exclusive gig opportunities',
+          'VIP support',
+        ],
+        isPopular: false,
+        isAvailable: true,
+      ),
+    ];
+  }
+
+  @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
-      body: CustomScrollView(
-        slivers: [
-          // App Bar
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            backgroundColor: AppColors.surface(brightness),
-            leading: const GlassBackButton(),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.crimson,
-                      AppColors.crimson.withValues(alpha: 0.7),
-                      Colors.purple.shade600,
+      body: _isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: AppColors.crimson),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading plans...',
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : CustomScrollView(
+              slivers: [
+                // App Bar
+                SliverAppBar(
+                  expandedHeight: 200,
+                  pinned: true,
+                  backgroundColor: AppColors.surface(brightness),
+                  leading: const GlassBackButton(),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.crimson,
+                            AppColors.crimson.withValues(alpha: 0.7),
+                            Colors.purple.shade600,
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.star_rounded,
+                              size: 64,
+                              color: Colors.amber.shade300,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'GigMatch Premium',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Supercharge your gig matching',
+                              style:
+                                  TextStyle(color: Colors.white70, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Content
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 24),
+
+                      // Billing Toggle
+                      _buildBillingToggle(brightness),
+                      const SizedBox(height: 16),
+
+                      // Plans
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Choose Your Plan',
+                              style: TextStyle(
+                                color: AppColors.text(brightness),
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _isYearly
+                                  ? 'Save up to 50% with yearly billing'
+                                  : 'Cancel anytime. All plans include a 3-day trial.',
+                              style: TextStyle(
+                                color: AppColors.textSec(brightness),
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Plan cards
+                            ..._plans.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final plan = entry.value;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _buildPlanCard(plan, index, brightness),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Features
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Premium Features',
+                              style: TextStyle(
+                                color: AppColors.text(brightness),
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            ..._features.map((feature) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child:
+                                    _buildFeatureItem(feature, brightness),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Subscribe button
+                      _buildSubscribeButton(brightness),
+
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
-                child: Center(
+              ],
+            ),
+    );
+  }
+
+  Widget _buildBillingToggle(Brightness brightness) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border(brightness)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: AnimatedTapFeedback(
+                onTap: () {
+                  if (_isYearly) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _isYearly = false);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: !_isYearly ? AppColors.crimson : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'Monthly',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: !_isYearly
+                          ? Colors.white
+                          : AppColors.textSec(brightness),
+                      fontWeight: !_isYearly ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: AnimatedTapFeedback(
+                onTap: () {
+                  if (!_isYearly) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _isYearly = true);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: _isYearly ? AppColors.success : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.star_rounded,
-                        size: 64,
-                        color: Colors.amber.shade300,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'GigMatch Premium',
+                      Text(
+                        'Yearly',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
+                          color: _isYearly
+                              ? Colors.white
+                              : AppColors.textSec(brightness),
+                          fontWeight:
+                              _isYearly ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 14,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Supercharge your gig matching',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
+                      if (!_isYearly)
+                        Text(
+                          'Save 50%',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
-
-          // Content
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
-
-                // Plans
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Choose Your Plan',
-                        style: TextStyle(
-                          color: AppColors.text(brightness),
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Cancel anytime. All plans include a 3-day trial.',
-                        style: TextStyle(
-                          color: AppColors.textSec(brightness),
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Plan cards
-                      ..._plans.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final plan = entry.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildPlanCard(plan, index, brightness),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Features
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Premium Features',
-                        style: TextStyle(
-                          color: AppColors.text(brightness),
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      ..._features.map((feature) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildFeatureItem(feature, brightness),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Subscribe button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _subscribe,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.crimson,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: Text(
-                            'Start 3-Day Free Trial',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Then ${_plans[_selectedPlanIndex].price} per ${_plans[_selectedPlanIndex].duration}',
-                        style: TextStyle(
-                          color: AppColors.textSec(brightness),
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'By continuing, you agree to our Terms of Service',
-                        style: TextStyle(
-                          color: AppColors.textTert(brightness),
-                          fontSize: 11,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildPlanCard(PremiumPlan plan, int index, Brightness brightness) {
+  Widget _buildPlanCard(SubscriptionPlan plan, int index, Brightness brightness) {
     final isSelected = _selectedPlanIndex == index;
+    final price = _isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+    final pricePerMonth = _isYearly
+        ? (plan.yearlyPrice / 12)
+        : plan.monthlyPrice;
+    final savings = _isYearly
+        ? ((1 - (plan.yearlyPrice / (plan.monthlyPrice * 12))) * 100)
+            .round()
+        : 0;
 
     return AnimatedTapFeedback(
       onTap: () {
@@ -390,7 +524,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          plan.pricePerMonth,
+                          '\$${pricePerMonth.toStringAsFixed(2)}/mo',
                           style: TextStyle(
                             color: AppColors.textSec(brightness),
                             fontSize: 14,
@@ -405,16 +539,23 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        plan.price,
+                        '\$${price.toStringAsFixed(2)}',
                         style: TextStyle(
                           color: AppColors.text(brightness),
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (plan.savings != null)
+                      Text(
+                        _isYearly ? '/year' : '/month',
+                        style: TextStyle(
+                          color: AppColors.textSec(brightness),
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (savings > 0)
                         Text(
-                          plan.savings!,
+                          'Save $savings%',
                           style: const TextStyle(
                             color: AppColors.success,
                             fontSize: 12,
@@ -426,34 +567,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 ],
               ),
             ),
-
-            // Best value badge
-            if (plan.isBestValue)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: AppColors.success,
-                    borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'BEST VALUE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -499,37 +612,183 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  void _subscribe() {
-    // TODO: Implement actual subscription logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Subscription feature coming soon!'),
-        backgroundColor: AppColors.crimson,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  Widget _buildSubscribeButton(Brightness brightness) {
+    if (_plans.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final selectedPlan = _plans[_selectedPlanIndex];
+    final price = _isYearly ? selectedPlan.yearlyPrice : selectedPlan.monthlyPrice;
+    final period = _isYearly ? 'year' : 'month';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isProcessing ? null : () => _subscribe(selectedPlan),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                disabledBackgroundColor: AppColors.crimson.withValues(alpha: 0.5),
+              ),
+              child: _isProcessing
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Start Free Trial',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Then \$${price.toStringAsFixed(2)} per $period',
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'By continuing, you agree to our Terms of Service',
+            style: TextStyle(
+              color: AppColors.textTert(brightness),
+              fontSize: 11,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
-}
 
-class PremiumPlan {
-  final String name;
-  final String duration;
-  final String price;
-  final String pricePerMonth;
-  final String? savings;
-  final bool isPopular;
-  final bool isBestValue;
+  Future<void> _subscribe(SubscriptionPlan plan) async {
+    if (_isProcessing) return;
 
-  PremiumPlan({
-    required this.name,
-    required this.duration,
-    required this.price,
-    required this.pricePerMonth,
-    this.savings,
-    this.isPopular = false,
-    this.isBestValue = false,
-  });
+    setState(() => _isProcessing = true);
+    HapticFeedback.mediumImpact();
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final brightness = Theme.of(context).brightness;
+
+    try {
+      // Create payment intent for mobile Payment Sheet
+      final paymentData = await _subscriptionService.createPaymentIntent(
+        plan: plan,
+        isYearly: _isYearly,
+      );
+
+      debugPrint('💳 Payment intent created: ${paymentData.clientSecret.substring(0, 20)}...');
+
+      // Initialize the Payment Sheet
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: paymentData.clientSecret,
+          merchantDisplayName: 'GigMatch',
+          customerId: paymentData.customerId,
+          customerEphemeralKeySecret: paymentData.ephemeralKey,
+          style: brightness == Brightness.dark
+              ? ThemeMode.dark
+              : ThemeMode.light,
+          appearance: PaymentSheetAppearance(
+            colors: PaymentSheetAppearanceColors(
+              primary: AppColors.crimson,
+            ),
+            shapes: const PaymentSheetShape(
+              borderRadius: 16,
+            ),
+          ),
+        ),
+      );
+
+      // Present the Payment Sheet
+      await Stripe.instance.presentPaymentSheet();
+
+      // Payment successful!
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Text('Welcome to ${plan.name}! 🎉'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+
+      // Refresh subscription status and go back
+      await _subscriptionService.refreshSubscription();
+      if (mounted) {
+        navigator.pop(true); // Return success
+      }
+    } on StripeException catch (e) {
+      // User cancelled or payment failed
+      if (e.error.code == FailureCode.Canceled) {
+        debugPrint('💳 Payment cancelled by user');
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Payment cancelled'),
+            backgroundColor: AppColors.textSec(brightness),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      } else {
+        debugPrint('💳 Stripe error: ${e.error.message}');
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Payment failed: ${e.error.message ?? 'Unknown error'}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Subscription error: $e');
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Subscription failed: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
 }
 
 class PremiumFeature {

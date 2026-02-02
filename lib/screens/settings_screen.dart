@@ -423,16 +423,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _saveSettings() {
-    // TODO: Save settings to backend
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Settings saved successfully'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+  void _saveSettings() async {
+    setState(() => _isSaving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    
+    try {
+      final auth = context.read<AuthProvider>();
+      
+      // Save all settings to backend
+      await auth.updateProfile({
+        'pushNotificationsEnabled': _pushNotifications,
+        'emailNotificationsEnabled': _emailNotifications,
+        'matchNotificationsEnabled': _matchNotifications,
+        'messageNotificationsEnabled': _messageNotifications,
+        'gigRemindersEnabled': _gigReminders,
+        'showOnlineStatus': _showOnlineStatus,
+        'showDistance': _showDistance,
+        'maxDistance': _maxDistance,
+      });
+      
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              const Text('Settings saved successfully'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to save settings: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to save settings: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   void _showChangePasswordDialog() {

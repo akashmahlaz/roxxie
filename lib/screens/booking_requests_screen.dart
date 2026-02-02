@@ -15,6 +15,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/theme/theme.dart';
+import '../core/services/booking_service.dart';
+import '../core/models/booking_models.dart';
 import '../widgets/widgets.dart';
 
 enum RequestStatus { pending, accepted, declined, cancelled, completed }
@@ -90,7 +92,9 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
+  String? _error;
   List<BookingRequest> _requests = [];
+  final BookingService _bookingService = BookingService();
 
   @override
   void initState() {
@@ -106,118 +110,101 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
   }
 
   Future<void> _loadRequests() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-
     setState(() {
-      _requests = [
-        // Incoming pending
-        BookingRequest(
-          id: '1',
-          gigTitle: 'Friday Night Jazz Session',
-          gigDate: DateTime.now().add(const Duration(days: 5)),
-          startTime: const TimeOfDay(hour: 20, minute: 0),
-          endTime: const TimeOfDay(hour: 23, minute: 30),
-          payment: 450,
-          senderName: 'Blue Note NYC',
-          senderImage: 'https://i.pravatar.cc/150?img=65',
-          senderId: 'venue1',
-          venueName: 'Blue Note NYC',
-          venueLocation: 'Greenwich Village, NYC',
-          status: RequestStatus.pending,
-          sentAt: DateTime.now().subtract(const Duration(hours: 2)),
-          message:
-              'We loved your demo reel! Would you be available for our Friday jazz night?',
-          isIncoming: true,
-        ),
-        BookingRequest(
-          id: '2',
-          gigTitle: 'Saturday Rock Night',
-          gigDate: DateTime.now().add(const Duration(days: 8)),
-          startTime: const TimeOfDay(hour: 21, minute: 0),
-          endTime: const TimeOfDay(hour: 1, minute: 0),
-          payment: 600,
-          senderName: 'The Bowery Ballroom',
-          senderImage: 'https://i.pravatar.cc/150?img=52',
-          senderId: 'venue2',
-          venueName: 'The Bowery Ballroom',
-          venueLocation: 'Lower East Side, NYC',
-          status: RequestStatus.pending,
-          sentAt: DateTime.now().subtract(const Duration(days: 1)),
-          message: 'Your band would be perfect for our Saturday special!',
-          isIncoming: true,
-        ),
-        // Outgoing pending
-        BookingRequest(
-          id: '3',
-          gigTitle: 'Sunday Brunch Session',
-          gigDate: DateTime.now().add(const Duration(days: 3)),
-          startTime: const TimeOfDay(hour: 11, minute: 0),
-          endTime: const TimeOfDay(hour: 14, minute: 0),
-          payment: 250,
-          senderName: 'The Garden Café',
-          senderImage: 'https://i.pravatar.cc/150?img=43',
-          senderId: 'venue3',
-          venueName: 'The Garden Café',
-          venueLocation: 'Upper West Side, NYC',
-          status: RequestStatus.pending,
-          sentAt: DateTime.now().subtract(const Duration(days: 2)),
-          message: 'I\'d love to perform at your Sunday brunch!',
-          isIncoming: false,
-        ),
-        // Accepted
-        BookingRequest(
-          id: '4',
-          gigTitle: 'Corporate Holiday Party',
-          gigDate: DateTime.now().add(const Duration(days: 12)),
-          startTime: const TimeOfDay(hour: 19, minute: 0),
-          endTime: const TimeOfDay(hour: 22, minute: 0),
-          payment: 800,
-          senderName: 'Grand Hyatt NYC',
-          senderImage: 'https://i.pravatar.cc/150?img=67',
-          senderId: 'venue4',
-          venueName: 'Grand Hyatt NYC',
-          venueLocation: 'Midtown, NYC',
-          status: RequestStatus.accepted,
-          sentAt: DateTime.now().subtract(const Duration(days: 5)),
-          isIncoming: true,
-        ),
-        // Completed
-        BookingRequest(
-          id: '5',
-          gigTitle: 'Last Saturday Jazz Night',
-          gigDate: DateTime.now().subtract(const Duration(days: 7)),
-          startTime: const TimeOfDay(hour: 20, minute: 0),
-          endTime: const TimeOfDay(hour: 23, minute: 0),
-          payment: 400,
-          senderName: 'Village Vanguard',
-          senderImage: 'https://i.pravatar.cc/150?img=59',
-          senderId: 'venue5',
-          venueName: 'Village Vanguard',
-          venueLocation: 'Greenwich Village, NYC',
-          status: RequestStatus.completed,
-          sentAt: DateTime.now().subtract(const Duration(days: 14)),
-          isIncoming: true,
-        ),
-        // Declined
-        BookingRequest(
-          id: '6',
-          gigTitle: 'Open Mic Night',
-          gigDate: DateTime.now().add(const Duration(days: 2)),
-          startTime: const TimeOfDay(hour: 19, minute: 0),
-          payment: 150,
-          senderName: 'Coffee House',
-          senderImage: 'https://i.pravatar.cc/150?img=38',
-          senderId: 'venue6',
-          venueName: 'Coffee House',
-          venueLocation: 'Brooklyn, NYC',
-          status: RequestStatus.declined,
-          sentAt: DateTime.now().subtract(const Duration(days: 3)),
-          isIncoming: false,
-        ),
-      ];
-      _isLoading = false;
+      _isLoading = true;
+      _error = null;
     });
+
+    try {
+      final bookings = await _bookingService.getMyBookings();
+      
+      setState(() {
+        _requests = bookings.map((booking) => _convertToBookingRequest(booking)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  BookingRequest _convertToBookingRequest(Booking booking) {
+    // Determine if this is incoming or outgoing based on user role
+    final isIncoming = widget.isArtist
+        ? (booking.venueConfirmed && !booking.artistConfirmed)
+        : (booking.artistConfirmed && !booking.venueConfirmed);
+    
+    // Get counterparty info
+    final counterparty = widget.isArtist ? booking.venue : booking.artist;
+    
+    // Convert booking status to request status
+    RequestStatus status;
+    switch (booking.status) {
+      case BookingStatus.pending:
+        status = RequestStatus.pending;
+      case BookingStatus.confirmed:
+      case BookingStatus.depositPaid:
+      case BookingStatus.inProgress:
+        status = RequestStatus.accepted;
+      case BookingStatus.completed:
+        status = RequestStatus.completed;
+      case BookingStatus.cancelled:
+      case BookingStatus.disputed:
+        status = RequestStatus.cancelled;
+    }
+
+    // Parse start time from string (e.g., "8:00 PM" or "20:00")
+    TimeOfDay startTime = const TimeOfDay(hour: 20, minute: 0);
+    TimeOfDay? endTime;
+    if (booking.startTime.isNotEmpty) {
+      final parts = booking.startTime.split(':');
+      if (parts.length >= 2) {
+        int hour = int.tryParse(parts[0]) ?? 20;
+        int minute = int.tryParse(parts[1].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+        // Handle PM notation
+        if (booking.startTime.toLowerCase().contains('pm') && hour != 12) {
+          hour += 12;
+        }
+        if (booking.startTime.toLowerCase().contains('am') && hour == 12) {
+          hour = 0;
+        }
+        startTime = TimeOfDay(hour: hour, minute: minute);
+      }
+    }
+    if (booking.endTime != null && booking.endTime!.isNotEmpty) {
+      final parts = booking.endTime!.split(':');
+      if (parts.length >= 2) {
+        int hour = int.tryParse(parts[0]) ?? 23;
+        int minute = int.tryParse(parts[1].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+        if (booking.endTime!.toLowerCase().contains('pm') && hour != 12) {
+          hour += 12;
+        }
+        if (booking.endTime!.toLowerCase().contains('am') && hour == 12) {
+          hour = 0;
+        }
+        endTime = TimeOfDay(hour: hour, minute: minute);
+      }
+    }
+
+    return BookingRequest(
+      id: booking.id,
+      gigTitle: booking.title,
+      gigDate: booking.date,
+      startTime: startTime,
+      endTime: endTime,
+      payment: booking.agreedAmount,
+      senderName: counterparty?.name ?? 'Unknown',
+      senderImage: counterparty?.photo ?? 'https://via.placeholder.com/150',
+      senderId: widget.isArtist ? booking.venueId : booking.artistId,
+      venueName: booking.venue?.name ?? 'Unknown Venue',
+      venueLocation: '', // API doesn't expose location directly
+      status: status,
+      sentAt: booking.createdAt,
+      message: booking.description,
+      isIncoming: isIncoming,
+    );
   }
 
   List<BookingRequest> get _incomingRequests => _requests
@@ -232,8 +219,10 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
       _requests.where((r) => r.status != RequestStatus.pending).toList()
         ..sort((a, b) => b.sentAt.compareTo(a.sentAt));
 
-  void _acceptRequest(BookingRequest request) {
+  Future<void> _acceptRequest(BookingRequest request) async {
     HapticFeedback.mediumImpact();
+    
+    // Optimistic update
     setState(() {
       final index = _requests.indexWhere((r) => r.id == request.id);
       if (index != -1) {
@@ -241,25 +230,47 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
       }
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const AnimatedSuccessCheck(size: 20, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Booking accepted! ${request.senderName} has been notified.',
+    try {
+      await _bookingService.confirmBooking(request.id);
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const AnimatedSuccessCheck(size: 20, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Booking accepted! ${request.senderName} has been notified.',
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
         ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+      );
+    } catch (e) {
+      // Rollback on error
+      setState(() {
+        final index = _requests.indexWhere((r) => r.id == request.id);
+        if (index != -1) {
+          _requests[index] = request.copyWith(status: RequestStatus.pending);
+        }
+      });
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to accept booking: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _declineRequest(BookingRequest request) {
@@ -318,8 +329,10 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
     );
   }
 
-  void _performDecline(BookingRequest request, String? message) {
+  Future<void> _performDecline(BookingRequest request, String? message) async {
     Navigator.pop(context);
+    
+    // Optimistic update
     setState(() {
       final index = _requests.indexWhere((r) => r.id == request.id);
       if (index != -1) {
@@ -327,16 +340,38 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
       }
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Request declined${message != null ? ' with message' : ''}',
+    try {
+      await _bookingService.cancelBooking(request.id, message ?? 'Declined by user');
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Request declined${message != null ? ' with message' : ''}',
+          ),
+          backgroundColor: AppColors.textSec(Theme.of(context).brightness),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        backgroundColor: AppColors.textSec(Theme.of(context).brightness),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+      );
+    } catch (e) {
+      // Rollback on error
+      setState(() {
+        final index = _requests.indexWhere((r) => r.id == request.id);
+        if (index != -1) {
+          _requests[index] = request.copyWith(status: RequestStatus.pending);
+        }
+      });
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to decline booking: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -348,26 +383,66 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
       appBar: _buildAppBar(brightness),
       body: _isLoading
           ? _buildSkeleton(brightness)
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRequestList(
-                  _incomingRequests,
-                  RequestTab.incoming,
-                  brightness,
+          : _error != null
+              ? _buildErrorState(brightness)
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildRequestList(
+                      _incomingRequests,
+                      RequestTab.incoming,
+                      brightness,
+                    ),
+                    _buildRequestList(
+                      _outgoingRequests,
+                      RequestTab.outgoing,
+                      brightness,
+                    ),
+                    _buildRequestList(
+                      _historyRequests,
+                      RequestTab.history,
+                      brightness,
+                    ),
+                  ],
                 ),
-                _buildRequestList(
-                  _outgoingRequests,
-                  RequestTab.outgoing,
-                  brightness,
-                ),
-                _buildRequestList(
-                  _historyRequests,
-                  RequestTab.history,
-                  brightness,
-                ),
-              ],
+    );
+  }
+
+  Widget _buildErrorState(Brightness brightness) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline_rounded, size: 64, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load bookings',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              _error ?? 'Unknown error',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            GradientButton(
+              text: 'Retry',
+              onPressed: _loadRequests,
+              icon: Icons.refresh_rounded,
+            ),
+          ],
+        ),
+      ),
     );
   }
 

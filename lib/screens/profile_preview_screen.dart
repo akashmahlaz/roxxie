@@ -26,6 +26,7 @@ import '../core/providers/providers.dart';
 import '../core/services/services.dart';
 import '../core/models/models.dart';
 import '../widgets/media/media.dart';
+import '../widgets/widgets.dart';
 import 'chat_screen_v2.dart';
 
 /// Media type for segmented button
@@ -76,6 +77,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   final _artistService = ArtistService();
   final _venueService = VenueService();
   final _reviewService = ReviewService();
+  final _bookingService = BookingService();
   
   // Loading state
   bool _isLoading = true;
@@ -1574,10 +1576,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
           // Book/Inquire button
           Expanded(
             child: FilledButton.icon(
-              onPressed: () {
-                // TODO: Navigate to booking flow
-                HapticFeedback.mediumImpact();
-              },
+              onPressed: _showBookingProposalDialog,
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.crimson,
                 foregroundColor: Colors.white,
@@ -1629,6 +1628,337 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
         margin: const EdgeInsets.all(16),
       ),
     );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BOOKING PROPOSAL DIALOG
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void _showBookingProposalDialog() {
+    HapticFeedback.mediumImpact();
+    final brightness = Theme.of(context).brightness;
+    
+    // State for the dialog
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 7));
+    TimeOfDay selectedTime = const TimeOfDay(hour: 20, minute: 0);
+    final amountController = TextEditingController(text: '500');
+    final messageController = TextEditingController();
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surface(brightness),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border(brightness),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundImage: NetworkImage(
+                                _isArtist
+                                    ? (_artist?.profilePhoto ?? 'https://via.placeholder.com/150')
+                                    : (_venue?.profilePhotoUrl ?? 'https://via.placeholder.com/150'),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _isArtist ? 'Book Artist' : 'Request Venue',
+                                    style: TextStyle(
+                                      color: AppColors.text(brightness),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    _profileName,
+                                    style: TextStyle(
+                                      color: AppColors.textSec(brightness),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Date picker
+                        Text(
+                          'Event Date',
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (date != null) {
+                              setDialogState(() => selectedDate = date);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.background(brightness),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border(brightness)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today_rounded, color: AppColors.crimson),
+                                const SizedBox(width: 12),
+                                Text(
+                                  '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                                  style: TextStyle(
+                                    color: AppColors.text(brightness),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Time picker
+                        Text(
+                          'Start Time',
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () async {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: selectedTime,
+                            );
+                            if (time != null) {
+                              setDialogState(() => selectedTime = time);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.background(brightness),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border(brightness)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.access_time_rounded, color: AppColors.crimson),
+                                const SizedBox(width: 12),
+                                Text(
+                                  selectedTime.format(context),
+                                  style: TextStyle(
+                                    color: AppColors.text(brightness),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Amount
+                        Text(
+                          'Proposed Amount (\$)',
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: amountController,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(color: AppColors.text(brightness)),
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.attach_money, color: AppColors.success),
+                            filled: true,
+                            fillColor: AppColors.background(brightness),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppColors.border(brightness)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppColors.border(brightness)),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Message
+                        Text(
+                          'Message (Optional)',
+                          style: TextStyle(
+                            color: AppColors.text(brightness),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: messageController,
+                          maxLines: 3,
+                          style: TextStyle(color: AppColors.text(brightness)),
+                          decoration: InputDecoration(
+                            hintText: 'Add details about the gig...',
+                            hintStyle: TextStyle(color: AppColors.textSec(brightness)),
+                            filled: true,
+                            fillColor: AppColors.background(brightness),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppColors.border(brightness)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppColors.border(brightness)),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Submit button
+                        SizedBox(
+                          width: double.infinity,
+                          child: GradientButton(
+                            text: isSubmitting ? 'Sending...' : 'Send Booking Request',
+                            onPressed: isSubmitting
+                                ? () {}
+                                : () async {
+                                    setDialogState(() => isSubmitting = true);
+                                    await _submitBookingProposal(
+                                      selectedDate,
+                                      selectedTime,
+                                      double.tryParse(amountController.text) ?? 500,
+                                      messageController.text,
+                                    );
+                                    if (ctx.mounted) {
+                                      Navigator.pop(ctx);
+                                    }
+                                  },
+                            icon: Icons.send_rounded,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _submitBookingProposal(
+    DateTime date,
+    TimeOfDay time,
+    double amount,
+    String message,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    
+    try {
+      final profileId = widget.profileId ?? '';
+      final title = _isArtist
+          ? 'Booking for ${_artist?.displayName ?? 'Artist'}'
+          : 'Venue booking at ${_venue?.venueName ?? 'Venue'}';
+
+      final request = CreateBookingRequest(
+        artistId: _isArtist ? profileId : '',
+        venueId: _isArtist ? '' : profileId,
+        title: title,
+        date: date,
+        startTime: '${time.hour}:${time.minute.toString().padLeft(2, '0')}',
+        agreedAmount: amount,
+        description: message.isNotEmpty ? message : null,
+      );
+      
+      await _bookingService.createBooking(request);
+
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const AnimatedSuccessCheck(size: 20, color: Colors.white),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('Booking request sent!')),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Booking proposal failed: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to send booking: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
 

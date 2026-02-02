@@ -13,11 +13,13 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 import '../../core/theme/theme.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/booking_models.dart';
 import '../../core/services/booking_service.dart';
+import '../../widgets/widgets.dart';
 
 class BookingDetailsScreen extends StatefulWidget {
   final String bookingId;
@@ -100,34 +102,284 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
   Future<void> _payDeposit() async {
     if (_booking == null) return;
 
-    final messenger = ScaffoldMessenger.of(context);
+    final booking = _booking!;
+    final depositAmount = booking.payment?.depositAmount ?? (booking.agreedAmount * 0.3);
+
+    // Show payment confirmation dialog
     HapticFeedback.mediumImpact();
+    final confirmed = await _showPaymentDialog(depositAmount);
+
+    if (!confirmed) return;
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final brightness = Theme.of(context).brightness;
 
     try {
-      // This would integrate with Stripe Payment Sheet
+      // Create deposit payment intent
       final paymentIntent = await _bookingService.createDepositPayment(widget.bookingId);
-      debugPrint('💳 Payment Intent: ${paymentIntent.clientSecret}');
+      debugPrint('💳 Payment Intent: ${paymentIntent.clientSecret.substring(0, 20)}...');
 
-      // TODO: Show Stripe Payment Sheet
-      // For now, just refresh
-      await _loadBooking();
-
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('Payment initiated'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
+      // Initialize the Payment Sheet
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: paymentIntent.clientSecret,
+          merchantDisplayName: 'GigMatch',
+          style: brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
+          appearance: PaymentSheetAppearance(
+            colors: PaymentSheetAppearanceColors(
+              primary: AppColors.crimson,
+            ),
+            shapes: const PaymentSheetShape(
+              borderRadius: 16,
+            ),
+          ),
         ),
       );
+
+      // Present the Payment Sheet
+      await Stripe.instance.presentPaymentSheet();
+
+      // Payment successful - refresh booking data
+      await _loadBooking();
+
+      if (mounted) {
+        _showPaymentSuccessDialog(depositAmount);
+      }
+    } on StripeException catch (e) {
+      if (e.error.code == FailureCode.Canceled) {
+        debugPrint('💳 Deposit payment cancelled by user');
+        // User cancelled - no error message needed
+      } else {
+        debugPrint('💳 Stripe error: ${e.error.message}');
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Payment failed: ${e.error.message ?? 'Unknown error'}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
     } catch (e) {
+      debugPrint('❌ Payment error: $e');
       messenger.showSnackBar(
         SnackBar(
           content: Text('Payment failed: ${e.toString()}'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
+  }
+
+  Future<bool> _showPaymentDialog(double amount) async {
+    final brightness = Theme.of(context).brightness;
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.surface(brightness),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              'Pay Deposit',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: AppColors.success,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '\$${amount.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'This deposit is required to confirm your booking. The remaining balance will be paid on the day of the gig.',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Pay Now',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  void _showPaymentProcessingDialog() {
+    final brightness = Theme.of(context).brightness;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                color: AppColors.crimson,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Processing Payment...',
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please wait while we process your payment.',
+                style: TextStyle(
+                  color: AppColors.textSec(brightness),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPaymentSuccessDialog(double amount) {
+    final brightness = Theme.of(context).brightness;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const AnimatedSuccessCheck(size: 48),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Payment Successful!',
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your deposit of \$${amount.toStringAsFixed(2)} has been received. Your booking is now confirmed!',
+                style: TextStyle(
+                  color: AppColors.textSec(brightness),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.crimson,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Done',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _markComplete() async {

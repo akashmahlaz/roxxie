@@ -151,10 +151,35 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       final matchId = widget.matchId ?? widget.participantId;
       if (matchId != null) {
         await chatProvider.enterChat(matchId);
+        
+        // Use provided name/photo or fetch from backend
+        String? participantName = widget.participantName;
+        String? participantPhoto = widget.participantPhoto;
+        
+        // If participant info is missing, fetch it from the backend
+        if ((participantName == null || participantName.isEmpty) && 
+            widget.participantId != null) {
+          try {
+            if (widget.isParticipantArtist) {
+              final artistService = ArtistService();
+              final artist = await artistService.getArtistById(widget.participantId!);
+              participantName = artist.displayName;
+              participantPhoto = artist.profilePhoto;
+            } else {
+              final venueService = VenueService();
+              final venue = await venueService.getVenueById(widget.participantId!);
+              participantName = venue.venueName;
+              participantPhoto = venue.profilePhotoUrl;
+            }
+          } catch (e) {
+            debugPrint('Failed to fetch participant info: $e');
+          }
+        }
+        
         setState(() {
           _conversationId = matchId;
-          _participantName = widget.participantName ?? 'Chat';
-          _participantPhoto = widget.participantPhoto;
+          _participantName = participantName ?? 'Chat';
+          _participantPhoto = participantPhoto;
           _isParticipantOnline = chatProvider.isConnected;
         });
       }

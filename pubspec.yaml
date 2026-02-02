@@ -132,6 +132,9 @@ dependencies:
   record: ^6.1.2
   path_provider: ^2.1.5
 
+  # 💳 PAYMENTS
+  flutter_stripe: ^11.4.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

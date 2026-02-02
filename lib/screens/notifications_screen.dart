@@ -326,9 +326,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         child: _NotificationCard(
                           notification: notification,
                           brightness: brightness,
-                          onTap: () {
+                          onTap: () async {
                             HapticFeedback.selectionClick();
                             setState(() => notification.isRead = true);
+                            
+                            // Mark as read in backend
+                            try {
+                              await _notificationService.markAsRead(notification.id);
+                            } catch (e) {
+                              debugPrint('Failed to mark notification as read: $e');
+                            }
+                            
                             _navigateFromNotification(notification);
                           },
                         ),

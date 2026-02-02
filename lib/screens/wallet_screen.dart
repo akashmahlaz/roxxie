@@ -7,6 +7,7 @@
 /// - Pull-to-refresh with haptic feedback
 /// - Premium payout tracking
 /// - Glass morphism transaction cards
+/// - REAL API integration for invoices
 ///
 /// Complete financial management for artists & venues
 library;
@@ -16,8 +17,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/api/api.dart';
 import '../core/providers/wallet_provider.dart';
 import '../core/services/wallet_service.dart';
+import '../core/services/subscription_service.dart';
 import '../widgets/widgets.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -728,7 +731,12 @@ class _WalletScreenState extends State<WalletScreen>
 
   void _showInvoices(Brightness brightness) {
     HapticFeedback.selectionClick();
-    AppSnackBar.info(context, message: 'Invoices coming soon!');
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _InvoicesSheet(brightness: brightness),
+    );
   }
 }
 
@@ -2482,5 +2490,326 @@ class _TransactionDetailSheetReal extends StatelessWidget {
         : (date.hour == 0 ? 12 : date.hour);
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return '${months[date.month - 1]} ${date.day}, ${date.year} at $hour:${date.minute.toString().padLeft(2, '0')} $period';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 📄 INVOICES SHEET
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _InvoicesSheet extends StatefulWidget {
+  final Brightness brightness;
+
+  const _InvoicesSheet({required this.brightness});
+
+  @override
+  State<_InvoicesSheet> createState() => _InvoicesSheetState();
+}
+
+class _InvoicesSheetState extends State<_InvoicesSheet> {
+  final SubscriptionService _subscriptionService =
+      SubscriptionService(apiClient: ApiClient());
+
+  bool _isLoading = true;
+  List<Invoice> _invoices = [];
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInvoices();
+  }
+
+  Future<void> _loadInvoices() async {
+    setState(() => _isLoading = true);
+
+    try {
+      _invoices = await _subscriptionService.loadInvoices();
+    } catch (e) {
+      debugPrint('Failed to load invoices: $e');
+      _error = e.toString();
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: BoxDecoration(
+        color: AppColors.surface(widget.brightness),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.border(widget.brightness),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Text(
+                  'Invoices',
+                  style: TextStyle(
+                    color: AppColors.text(widget.brightness),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                AnimatedTapFeedback(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.background(widget.brightness),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.text(widget.brightness),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Content
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.crimson,
+                    ),
+                  )
+                : _error != null
+                    ? _buildErrorState()
+                    : _invoices.isEmpty
+                        ? _buildEmptyState()
+                        : _buildInvoicesList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: AppColors.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load invoices',
+              style: TextStyle(
+                color: AppColors.text(widget.brightness),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error ?? 'Please try again',
+              style: TextStyle(
+                color: AppColors.textSec(widget.brightness),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _loadInvoices,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.crimson.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.receipt_long_rounded,
+              size: 48,
+              color: AppColors.crimson,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No Invoices Yet',
+            style: TextStyle(
+              color: AppColors.text(widget.brightness),
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your invoices will appear here\nonce you have subscriptions.',
+            style: TextStyle(
+              color: AppColors.textSec(widget.brightness),
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvoicesList() {
+    return ListView.separated(
+      padding: const EdgeInsets.all(20),
+      itemCount: _invoices.length,
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final invoice = _invoices[index];
+        return _InvoiceItem(
+          invoice: invoice,
+          brightness: widget.brightness,
+        );
+      },
+    );
+  }
+}
+
+class _InvoiceItem extends StatelessWidget {
+  final Invoice invoice;
+  final Brightness brightness;
+
+  const _InvoiceItem({required this.invoice, required this.brightness});
+
+  @override
+  Widget build(BuildContext context) {
+    final isPaid = invoice.status == 'paid';
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.background(brightness),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isPaid
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.border(brightness),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: (isPaid ? AppColors.success : AppColors.warning)
+                  .withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isPaid
+                  ? Icons.check_circle_rounded
+                  : Icons.pending_rounded,
+              color: isPaid ? AppColors.success : AppColors.warning,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  invoice.description ?? 'Subscription',
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  invoice.formattedAmount,
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  _formatDate(invoice.createdAt),
+                  style: TextStyle(
+                    color: AppColors.textTert(brightness),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (invoice.pdfUrl != null)
+            AnimatedTapFeedback(
+              onTap: () {
+                // TODO: Open PDF URL
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Opening invoice...'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.crimson.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.download_rounded,
+                  color: AppColors.crimson,
+                  size: 18,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }

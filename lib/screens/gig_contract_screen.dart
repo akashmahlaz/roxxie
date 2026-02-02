@@ -6,13 +6,17 @@
 /// - Animated terms checkboxes
 /// - Progress tracking
 /// - PDF preview integration
+/// - REAL API integration with BookingService
 ///
 /// Professional contract management for gigs
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../core/theme/theme.dart';
+import '../core/services/services.dart';
+import '../core/models/booking_models.dart';
 import '../widgets/widgets.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -34,9 +38,15 @@ class _GigContractScreenState extends State<GigContractScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  final BookingService _bookingService = BookingService();
+
   int _currentStep = 0;
-  bool _isLoading = false;
+  bool _isLoading = true;
+  bool _isProcessing = false;
   bool _hasSignature = false;
+  String? _error;
+
+  Booking? _booking;
 
   // Agreement checkboxes
   final Map<String, bool> _agreements = {
@@ -46,36 +56,6 @@ class _GigContractScreenState extends State<GigContractScreen>
     'liability': false,
     'conduct': false,
   };
-
-  // Mock contract data
-  final _contract = ContractData(
-    id: 'CTR-20240125-001',
-    gigTitle: 'Saturday Night Jazz Performance',
-    venueName: 'The Velvet Lounge',
-    artistName: 'Marcus Cole',
-    date: DateTime.now().add(const Duration(days: 14)),
-    startTime: '8:00 PM',
-    endTime: '11:00 PM',
-    compensation: 350.00,
-    depositAmount: 100.00,
-    depositDue: DateTime.now().add(const Duration(days: 7)),
-    cancellationPolicy: '48 hours notice required for full refund',
-    requirements: [
-      '2 x 45-minute sets with 15-minute break',
-      'Professional attire required',
-      'Arrive by 6:00 PM for sound check',
-      'Bring own instruments (piano provided)',
-    ],
-    venueProvides: [
-      'Professional PA system',
-      'Grand piano',
-      'Lighting setup',
-      'Green room access',
-      'One meal and beverages',
-      'Free parking',
-    ],
-    status: ContractStatus.pending,
-  );
 
   @override
   void initState() {
@@ -88,13 +68,38 @@ class _GigContractScreenState extends State<GigContractScreen>
       parent: _animationController,
       curve: Curves.easeOut,
     );
-    _animationController.forward();
+    _loadContract();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadContract() async {
+    setState(() => _isLoading = true);
+    _animationController.forward();
+
+    try {
+      if (widget.contractId != null) {
+        _booking = await _bookingService.getBookingById(widget.contractId!);
+      } else if (widget.gigId != null) {
+        // For gig-based contracts, fetch by gig ID
+        final bookings = await _bookingService.getMyBookings();
+        _booking = bookings.firstWhere(
+          (b) => b.gigId == widget.gigId,
+          orElse: () => throw Exception('Contract not found'),
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to load contract: $e');
+      _error = e.toString();
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   bool get _allTermsAccepted => _agreements.values.every((v) => v);
@@ -114,14 +119,36 @@ class _GigContractScreenState extends State<GigContractScreen>
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (_booking == null) return;
+
+    setState(() => _isProcessing = true);
     HapticFeedback.heavyImpact();
 
-    await Future.delayed(const Duration(seconds: 2));
+    final messenger = ScaffoldMessenger.of(context);
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-      _showSuccessDialog();
+    try {
+      await _bookingService.signContract(_booking!.id);
+      await _loadContract();
+
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        _showSuccessDialog();
+      }
+    } catch (e) {
+      debugPrint('Contract signing failed: $e');
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Failed to sign contract: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -206,28 +233,175 @@ class _GigContractScreenState extends State<GigContractScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: CustomScrollView(
-          slivers: [
-            // App Bar
-            _buildAppBar(brightness),
+      body: _isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: AppColors.crimson),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading contract...',
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : _error != null
+              ? _buildErrorState(brightness)
+              : _booking == null
+                  ? _buildNotFoundState(brightness)
+                  : FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: CustomScrollView(
+                        slivers: [
+                          // App Bar
+                          _buildAppBar(brightness),
 
-            // Contract Header
-            SliverToBoxAdapter(child: _buildContractHeader(brightness)),
+                          // Contract Header
+                          SliverToBoxAdapter(
+                              child: _buildContractHeader(brightness)),
 
-            // Progress Steps
-            SliverToBoxAdapter(child: _buildProgressSteps(brightness)),
+                          // Progress Steps
+                          SliverToBoxAdapter(
+                              child: _buildProgressSteps(brightness)),
 
-            // Content based on step
-            SliverToBoxAdapter(child: _buildCurrentStepContent(brightness)),
+                          // Content based on step
+                          SliverToBoxAdapter(
+                              child: _buildCurrentStepContent(brightness)),
 
-            // Bottom padding
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                          // Bottom padding
+                          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                        ],
+                      ),
+                    ),
+      bottomNavigationBar: _booking != null && _error == null && !_isLoading
+          ? _buildBottomBar(brightness)
+          : null,
+    );
+  }
+
+  Widget _buildErrorState(Brightness brightness) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: AppColors.error,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Unable to Load Contract',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _error ?? 'Something went wrong',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _loadContract,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              label: const Text(
+                'Retry',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ),
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomBar(brightness),
+    );
+  }
+
+  Widget _buildNotFoundState(Brightness brightness) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.description_outlined,
+                size: 48,
+                color: AppColors.warning,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Contract Not Found',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'This contract may have been removed or is no longer available.',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => context.pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              label: const Text(
+                'Go Back',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -294,6 +468,7 @@ class _GigContractScreenState extends State<GigContractScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildContractHeader(Brightness brightness) {
+    final booking = _booking!;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       padding: const EdgeInsets.all(20),
@@ -325,7 +500,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _contract.gigTitle,
+                      booking.title,
                       style: TextStyle(
                         color: AppColors.text(brightness),
                         fontSize: 18,
@@ -334,7 +509,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _contract.venueName,
+                      booking.venue?.name ?? 'Unknown Venue',
                       style: TextStyle(
                         color: AppColors.textSec(brightness),
                         fontSize: 14,
@@ -357,7 +532,7 @@ class _GigContractScreenState extends State<GigContractScreen>
               children: [
                 _buildInfoItem(
                   Icons.calendar_today_rounded,
-                  _formatDate(_contract.date),
+                  _formatDate(booking.date),
                   brightness,
                 ),
                 Container(
@@ -368,7 +543,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                 ),
                 _buildInfoItem(
                   Icons.schedule_rounded,
-                  '${_contract.startTime} - ${_contract.endTime}',
+                  '${booking.startTime}${booking.endTime != null ? ' - ${booking.endTime}' : ''}',
                   brightness,
                 ),
                 Container(
@@ -379,7 +554,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                 ),
                 _buildInfoItem(
                   Icons.payments_rounded,
-                  '\$${_contract.compensation.toStringAsFixed(0)}',
+                  '\$${booking.agreedAmount.toStringAsFixed(0)}',
                   brightness,
                 ),
               ],
@@ -391,10 +566,13 @@ class _GigContractScreenState extends State<GigContractScreen>
   }
 
   Widget _buildStatusBadge(Brightness brightness) {
+    final isSigned = _booking?.contractSigned ?? false;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.1),
+        color: isSigned
+            ? AppColors.success.withValues(alpha: 0.1)
+            : Colors.amber.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -403,16 +581,16 @@ class _GigContractScreenState extends State<GigContractScreen>
           Container(
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(
-              color: Colors.amber,
+            decoration: BoxDecoration(
+              color: isSigned ? AppColors.success : Colors.amber,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 6),
-          const Text(
-            'Pending Signature',
+          Text(
+            isSigned ? 'Signed' : 'Pending Signature',
             style: TextStyle(
-              color: Colors.amber,
+              color: isSigned ? AppColors.success : Colors.amber,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -557,6 +735,9 @@ class _GigContractScreenState extends State<GigContractScreen>
 
   // Step 1: Review
   Widget _buildReviewStep(Brightness brightness) {
+    final booking = _booking!;
+    final depositAmount = booking.payment?.depositAmount ?? (booking.agreedAmount * 0.3);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -573,21 +754,30 @@ class _GigContractScreenState extends State<GigContractScreen>
           ),
           const SizedBox(height: 16),
 
-          // Artist Requirements
+          // Artist Requirements (from specialRequests or default)
           _ContractSection(
             title: 'Artist Requirements',
             icon: Icons.person_rounded,
-            items: _contract.requirements,
+            items: booking.specialRequests?.split('\n') ?? [
+              '${booking.numberOfSets} set${booking.numberOfSets > 1 ? 's' : ''} of ${booking.durationMinutes} minutes',
+              'Arrive 30 minutes before start time',
+              'Professional attire recommended',
+            ],
             brightness: brightness,
           ),
 
           const SizedBox(height: 16),
 
-          // Venue Provides
+          // Venue Provides (default items since not in model)
           _ContractSection(
             title: 'Venue Provides',
             icon: Icons.business_rounded,
-            items: _contract.venueProvides,
+            items: [
+              'Performance space',
+              'Basic sound system',
+              'Loading access',
+              'Restroom facilities',
+            ],
             brightness: brightness,
           ),
 
@@ -625,19 +815,19 @@ class _GigContractScreenState extends State<GigContractScreen>
                 const SizedBox(height: 16),
                 _PaymentRow(
                   label: 'Total Compensation',
-                  value: '\$${_contract.compensation.toStringAsFixed(2)}',
+                  value: '\$${booking.agreedAmount.toStringAsFixed(2)} ${booking.currency}',
                   brightness: brightness,
                 ),
                 _PaymentRow(
                   label: 'Deposit Due',
-                  value:
-                      '\$${_contract.depositAmount.toStringAsFixed(2)} by ${_formatDate(_contract.depositDue)}',
+                  value: depositAmount > 0
+                      ? '\$${depositAmount.toStringAsFixed(2)} (due now)'
+                      : 'No deposit required',
                   brightness: brightness,
                 ),
                 _PaymentRow(
                   label: 'Remaining Balance',
-                  value:
-                      '\$${(_contract.compensation - _contract.depositAmount).toStringAsFixed(2)} on gig day',
+                  value: '\$${(booking.agreedAmount - depositAmount).toStringAsFixed(2)} on gig day',
                   brightness: brightness,
                 ),
                 const Divider(height: 24),
@@ -651,7 +841,8 @@ class _GigContractScreenState extends State<GigContractScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _contract.cancellationPolicy,
+                        booking.cancellationReason ??
+                            '48 hours notice required for full refund',
                         style: TextStyle(
                           color: AppColors.textSec(brightness),
                           fontSize: 13,
@@ -670,6 +861,7 @@ class _GigContractScreenState extends State<GigContractScreen>
 
   // Step 2: Terms
   Widget _buildTermsStep(Brightness brightness) {
+    final booking = _booking!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -706,7 +898,7 @@ class _GigContractScreenState extends State<GigContractScreen>
           _AgreementCheckbox(
             title: 'Cancellation Policy',
             description:
-                'I understand and accept the cancellation policy: ${_contract.cancellationPolicy}',
+                'I understand and accept the cancellation policy: ${booking.cancellationReason ?? "48 hours notice required for full refund"}',
             isChecked: _agreements['cancellation']!,
             onChanged: (v) => setState(() => _agreements['cancellation'] = v),
             brightness: brightness,
@@ -778,6 +970,7 @@ class _GigContractScreenState extends State<GigContractScreen>
 
   // Step 3: Sign
   Widget _buildSignStep(Brightness brightness) {
+    final booking = _booking!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -907,7 +1100,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                       ),
                     ),
                     Text(
-                      _contract.artistName,
+                      booking.artist?.name ?? 'Artist',
                       style: TextStyle(
                         color: AppColors.text(brightness),
                         fontSize: 16,
@@ -1056,7 +1249,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                     ),
                   )
                 : ElevatedButton(
-                    onPressed: _isLoading ? null : _signContract,
+                    onPressed: _isProcessing ? null : _signContract,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.crimson,
                       foregroundColor: Colors.white,
@@ -1065,7 +1258,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: _isLoading
+                    child: _isProcessing
                         ? const SizedBox(
                             width: 20,
                             height: 20,
@@ -1456,44 +1649,4 @@ class _SignaturePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SignaturePainter oldDelegate) => true;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 📦 DATA MODELS
-// ═══════════════════════════════════════════════════════════════════════════
-
-enum ContractStatus { pending, signed, countersigned, completed, cancelled }
-
-class ContractData {
-  final String id;
-  final String gigTitle;
-  final String venueName;
-  final String artistName;
-  final DateTime date;
-  final String startTime;
-  final String endTime;
-  final double compensation;
-  final double depositAmount;
-  final DateTime depositDue;
-  final String cancellationPolicy;
-  final List<String> requirements;
-  final List<String> venueProvides;
-  final ContractStatus status;
-
-  const ContractData({
-    required this.id,
-    required this.gigTitle,
-    required this.venueName,
-    required this.artistName,
-    required this.date,
-    required this.startTime,
-    required this.endTime,
-    required this.compensation,
-    required this.depositAmount,
-    required this.depositDue,
-    required this.cancellationPolicy,
-    required this.requirements,
-    required this.venueProvides,
-    required this.status,
-  });
 }
