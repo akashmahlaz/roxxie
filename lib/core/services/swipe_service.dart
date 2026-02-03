@@ -15,7 +15,7 @@ class SwipeService {
     int limit = 20,
     double? latitude,
     double? longitude,
-    int? maxDistance,
+    int? radiusMiles,
     List<String>? genres,
     double? minPrice,
     double? maxPrice,
@@ -29,9 +29,8 @@ class SwipeService {
 
       if (latitude != null) queryParams['latitude'] = latitude.toString();
       if (longitude != null) queryParams['longitude'] = longitude.toString();
-      // Backend expects radiusMiles, not maxDistance
-      if (maxDistance != null) {
-        queryParams['radiusMiles'] = maxDistance.toString();
+      if (radiusMiles != null) {
+        queryParams['radiusMiles'] = radiusMiles.toString();
       }
       if (genres != null && genres.isNotEmpty) {
         queryParams['genres'] = genres.join(',');

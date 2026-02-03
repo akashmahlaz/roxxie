@@ -809,9 +809,41 @@ GigApplicationStatus _parseApplicationStatus(dynamic status) {
       return GigApplicationStatus.accepted;
     case 'rejected':
       return GigApplicationStatus.rejected;
+    case 'declined':
+      return GigApplicationStatus.rejected;
     case 'withdrawn':
       return GigApplicationStatus.withdrawn;
     default:
       return GigApplicationStatus.pending;
+  }
+}
+
+/// Paginated response for artist's applications
+class PaginatedApplicationsResponse {
+  final List<ArtistGigApplication> applications;
+  final int total;
+  final int page;
+  final int pages;
+  final bool hasMore;
+
+  PaginatedApplicationsResponse({
+    required this.applications,
+    required this.total,
+    required this.page,
+    required this.pages,
+  }) : hasMore = page < pages;
+
+  factory PaginatedApplicationsResponse.fromJson(Map<String, dynamic> json) {
+    final apps = (json['applications'] as List?)
+            ?.map((a) => ArtistGigApplication.fromJson(a))
+            .toList() ??
+        [];
+
+    return PaginatedApplicationsResponse(
+      applications: apps,
+      total: json['total'] ?? 0,
+      page: json['page'] ?? 1,
+      pages: json['pages'] ?? 1,
+    );
   }
 }

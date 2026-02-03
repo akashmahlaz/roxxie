@@ -32,6 +32,8 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen>
   bool _isLoading = true;
   List<ArtistGigApplication> _applications = [];
   String? _error;
+  int _currentPage = 1;
+  bool _hasMore = true;
 
   @override
   void initState() {
@@ -46,17 +48,26 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen>
     super.dispose();
   }
 
-  Future<void> _loadApplications() async {
+  Future<void> _loadApplications({bool refresh = false}) async {
+    if (refresh) {
+      _currentPage = 1;
+      _hasMore = true;
+      _applications = [];
+    }
+
+    if (!_hasMore && !refresh) return;
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final apps = await _gigsService.getMyApplications();
+      final response = await _gigsService.getMyApplications(page: _currentPage);
       if (mounted) {
         setState(() {
-          _applications = apps;
+          _applications = response.applications;
+          _hasMore = response.hasMore;
           _isLoading = false;
         });
       }

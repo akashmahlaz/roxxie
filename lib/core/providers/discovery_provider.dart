@@ -26,7 +26,7 @@ class DiscoveryProvider extends ChangeNotifier {
   // Filters
   double? _latitude;
   double? _longitude;
-  int? _maxDistance;
+  int? _radiusMiles;
   List<String>? _genres;
   double? _minPrice;
   double? _maxPrice;
@@ -60,6 +60,7 @@ class DiscoveryProvider extends ChangeNotifier {
       _hasMore = true;
       _cards = [];
       _currentIndex = 0;
+      _swipeHistory.clear();
     }
 
     if (!_hasMore && !refresh) return;
@@ -74,7 +75,7 @@ class DiscoveryProvider extends ChangeNotifier {
         limit: _limit,
         latitude: _latitude,
         longitude: _longitude,
-        maxDistance: _maxDistance,
+        radiusMiles: _radiusMiles,
         genres: _genres,
         minPrice: _minPrice,
         maxPrice: _maxPrice,
@@ -115,25 +116,21 @@ class DiscoveryProvider extends ChangeNotifier {
         targetType: targetType,
       );
 
-      // Track swipeId for undo functionality
+      // Track swipeId for undo functionality (with synchronization)
       if (response.swipeId != null) {
-        _swipeHistory.insert(0, response.swipeId!);
-        if (_swipeHistory.length > _maxSwipeHistorySize) {
-          _swipeHistory.removeLast();
-        }
+        _addSwipeToHistory(response.swipeId!);
       }
 
       if (response.isMatch) {
         _lastMatch = response.match;
         notifyListeners();
-        return true; // Indicates a match!
+        return true;
       }
 
       _preloadMoreIfNeeded();
       return false;
     } catch (e) {
       debugPrint('Like error: $e');
-      // Put card back on error (optional)
       return false;
     }
   }
@@ -152,12 +149,9 @@ class DiscoveryProvider extends ChangeNotifier {
         targetType: targetType,
       );
 
-      // Track swipeId for undo functionality
+      // Track swipeId for undo functionality (with synchronization)
       if (response.swipeId != null) {
-        _swipeHistory.insert(0, response.swipeId!);
-        if (_swipeHistory.length > _maxSwipeHistorySize) {
-          _swipeHistory.removeLast();
-        }
+        _addSwipeToHistory(response.swipeId!);
       }
 
       _preloadMoreIfNeeded();
@@ -180,12 +174,9 @@ class DiscoveryProvider extends ChangeNotifier {
         targetType: targetType,
       );
 
-      // Track swipeId for undo functionality
+      // Track swipeId for undo functionality (with synchronization)
       if (response.swipeId != null) {
-        _swipeHistory.insert(0, response.swipeId!);
-        if (_swipeHistory.length > _maxSwipeHistorySize) {
-          _swipeHistory.removeLast();
-        }
+        _addSwipeToHistory(response.swipeId!);
       }
 
       if (response.isMatch) {
@@ -204,15 +195,15 @@ class DiscoveryProvider extends ChangeNotifier {
 
   /// ↩️ Undo last swipe
   Future<bool> undo() async {
-    if (_currentIndex == 0 || _swipeHistory.isEmpty) return false;
+    if (_currentIndex <= 0 || _swipeHistory.isEmpty) return false;
 
     final lastSwipeId = _swipeHistory.first;
 
     try {
       final success = await _swipeService.undoLastSwipe(lastSwipeId);
       if (success) {
-        _swipeHistory.removeAt(0);
-        _currentIndex--;
+        _removeSwipeFromHistory();
+        _currentIndex = (_currentIndex - 1).clamp(0, _cards.length - 1);
         notifyListeners();
         return true;
       }
@@ -227,11 +218,11 @@ class DiscoveryProvider extends ChangeNotifier {
   void setLocationFilter({
     required double latitude,
     required double longitude,
-    int? maxDistance,
+    int? radiusMiles,
   }) {
     _latitude = latitude;
     _longitude = longitude;
-    _maxDistance = maxDistance;
+    _radiusMiles = radiusMiles;
     loadCards(refresh: true);
   }
 
@@ -270,7 +261,7 @@ class DiscoveryProvider extends ChangeNotifier {
   void clearLocationFilter() {
     _latitude = null;
     _longitude = null;
-    _maxDistance = null;
+    _radiusMiles = null;
     loadCards(refresh: true);
   }
 
@@ -278,7 +269,7 @@ class DiscoveryProvider extends ChangeNotifier {
   void clearFilters() {
     _latitude = null;
     _longitude = null;
-    _maxDistance = null;
+    _radiusMiles = null;
     _genres = null;
     _minPrice = null;
     _maxPrice = null;
@@ -292,7 +283,21 @@ class DiscoveryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Internal methods
+  // Internal methods - thread-safe swipe history management
+  void _addSwipeToHistory(String swipeId) {
+    _swipeHistory.insert(0, swipeId);
+    // Trim to max size
+    while (_swipeHistory.length > _maxSwipeHistorySize) {
+      _swipeHistory.removeLast();
+    }
+  }
+
+  void _removeSwipeFromHistory() {
+    if (_swipeHistory.isNotEmpty) {
+      _swipeHistory.removeAt(0);
+    }
+  }
+
   void _moveToNext() {
     _currentIndex++;
     notifyListeners();

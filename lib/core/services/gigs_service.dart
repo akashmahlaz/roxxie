@@ -286,22 +286,27 @@ class GigsService {
     }
   }
 
-  /// ✅ Get my applications (artist only)
-  Future<List<ArtistGigApplication>> getMyApplications({String? status}) async {
+  /// ✅ Get my applications (artist only) - with pagination
+  Future<PaginatedApplicationsResponse> getMyApplications({
+    String? status,
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
-      final queryParams = <String, dynamic>{};
+      final queryParams = <String, dynamic>{
+        'page': page.toString(),
+        'limit': limit.toString(),
+      };
       if (status != null) {
         queryParams['status'] = status;
       }
 
       final response = await _client.get(
         '/gigs/my-applications',
-        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+        queryParameters: queryParams,
       );
-      final List<dynamic> data = response.data is List
-          ? response.data
-          : response.data['applications'] ?? [];
-      return data.map((json) => ArtistGigApplication.fromJson(json)).toList();
+
+      return PaginatedApplicationsResponse.fromJson(response.data);
     } catch (e) {
       debugPrint('Get my applications error: $e');
       rethrow;
