@@ -150,14 +150,30 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     try {
       final matchId = widget.matchId ?? widget.participantId;
       if (matchId != null) {
-        await chatProvider.enterChat(matchId);
-        
+        String? conversationId;
+
+        // If we have a participantId but no matchId, we need to get or create a conversation
+        if (widget.matchId == null && widget.participantId != null) {
+          debugPrint('💬 [ChatScreenV2] No existing match, creating conversation...');
+          final chatService = ChatService();
+          final conversation = await chatService.getOrCreateConversation(
+            participantId: widget.participantId!,
+            participantType: widget.isParticipantArtist ? 'artist' : 'venue',
+          );
+          conversationId = conversation.id;
+          debugPrint('💬 [ChatScreenV2] Got conversation: $conversationId');
+        } else {
+          conversationId = matchId;
+        }
+
+        await chatProvider.enterChat(conversationId);
+
         // Use provided name/photo or fetch from backend
         String? participantName = widget.participantName;
         String? participantPhoto = widget.participantPhoto;
-        
+
         // If participant info is missing, fetch it from the backend
-        if ((participantName == null || participantName.isEmpty) && 
+        if ((participantName == null || participantName.isEmpty) &&
             widget.participantId != null) {
           try {
             if (widget.isParticipantArtist) {
@@ -175,15 +191,16 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             debugPrint('Failed to fetch participant info: $e');
           }
         }
-        
+
         setState(() {
-          _conversationId = matchId;
+          _conversationId = conversationId;
           _participantName = participantName ?? 'Chat';
           _participantPhoto = participantPhoto;
           _isParticipantOnline = chatProvider.isConnected;
         });
       }
     } catch (e) {
+      debugPrint('❌ [ChatScreenV2] Failed to initialize chat: $e');
       _showError('Failed to load chat');
     }
   }
@@ -449,46 +466,6 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     );
   }
 
-  void _startCall() async {
-    HapticFeedback.lightImpact();
-
-    // TODO: Implement WebRTC video/audio call
-    // For now, show a dialog with call options
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Call'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.call_rounded, color: Colors.green),
-              title: const Text('Voice Call'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showError('Voice calls coming soon!');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.videocam_rounded, color: Colors.blue),
-              title: const Text('Video Call'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showError('Video calls coming soon!');
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _setReply(String? messageId, String? messageContent) {
     setState(() {
       _replyToMessageId = messageId;
@@ -675,11 +652,6 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         ],
       ),
       actions: [
-        // Call button
-        IconButton(
-          onPressed: _startCall,
-          icon: Icon(Icons.call_rounded, color: AppColors.text(brightness)),
-        ),
         // More options
         MenuAnchor(
           builder: (context, controller, child) {

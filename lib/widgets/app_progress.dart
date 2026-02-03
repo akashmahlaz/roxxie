@@ -71,7 +71,7 @@ class AppProgress {
               color: color ?? AppColors.crimson,
               strokeCap: StrokeCap.round,
             ),
-          if (child != null) child,
+          if (child case final c?) c,
         ],
       ),
     );

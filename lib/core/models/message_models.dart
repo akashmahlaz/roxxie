@@ -157,7 +157,7 @@ class SendMessageRequest {
   Map<String, dynamic> toJson() => {
     'matchId': matchId,
     'content': content,
-    'type': type.value,
+    if (type != MessageType.text) 'messageType': type.value,
     if (mediaUrl != null) 'mediaUrl': mediaUrl,
     if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
     if (metadata != null) 'metadata': metadata,

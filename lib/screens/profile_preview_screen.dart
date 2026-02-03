@@ -1512,7 +1512,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                   ),
                 ),
               ),
-              if (trailing != null) trailing,
+              if (trailing case final t?) t,
             ],
           ),
           const SizedBox(height: 14),
@@ -1914,23 +1914,78 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
     String message,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
-    
+    final auth = context.read<AuthProvider>();
+
     try {
       final profileId = widget.profileId ?? '';
+      final isCurrentUserArtist = auth.isArtist;
+      final isCurrentUserVenue = auth.isVenue;
+
+      // Get the current user's profile IDs (these are different from userId!)
+      final currentUserArtistProfileId = auth.artistProfile?.id ?? '';
+      final currentUserVenueProfileId = auth.venueProfile?.id ?? '';
+
+      // Validate: Can only book if you're a venue booking an artist
+      // OR you're an artist inquiring about a venue
+      if (profileId.isEmpty) {
+        throw Exception('Invalid profile');
+      }
+
+      String artistId;
+      String venueId;
       final title = _isArtist
           ? 'Booking for ${_artist?.displayName ?? 'Artist'}'
           : 'Venue booking at ${_venue?.venueName ?? 'Venue'}';
 
+      if (_isArtist) {
+        // Viewing an artist profile - current user must be a venue to book
+        artistId = profileId;
+        // Use the venue profile ID, not the user ID!
+        venueId = isCurrentUserVenue ? currentUserVenueProfileId : '';
+      } else {
+        // Viewing a venue profile - current user must be an artist to inquire
+        // Use the artist profile ID, not the user ID!
+        artistId = isCurrentUserArtist ? currentUserArtistProfileId : '';
+        venueId = profileId;
+      }
+
+      // Validate we have both IDs
+      if (artistId.isEmpty || venueId.isEmpty) {
+        String errorMsg;
+        if (_isArtist) {
+          if (!isCurrentUserVenue) {
+            errorMsg = 'Only venues can book artists';
+          } else if (currentUserVenueProfileId.isEmpty) {
+            errorMsg = 'Please complete your venue profile first';
+          } else {
+            errorMsg = 'Unable to create booking';
+          }
+        } else {
+          if (!isCurrentUserArtist) {
+            errorMsg = 'Only artists can inquire about venues';
+          } else if (currentUserArtistProfileId.isEmpty) {
+            errorMsg = 'Please complete your artist profile first';
+          } else {
+            errorMsg = 'Unable to create booking';
+          }
+        }
+        throw Exception(errorMsg);
+      }
+
+      debugPrint(
+        '📅 [BookingProposal] Creating booking: artistId=$artistId, venueId=$venueId',
+      );
+
       final request = CreateBookingRequest(
-        artistId: _isArtist ? profileId : '',
-        venueId: _isArtist ? '' : profileId,
+        artistId: artistId,
+        venueId: venueId,
         title: title,
         date: date,
         startTime: '${time.hour}:${time.minute.toString().padLeft(2, '0')}',
         agreedAmount: amount,
         description: message.isNotEmpty ? message : null,
       );
-      
+
       await _bookingService.createBooking(request);
 
       if (!mounted) return;

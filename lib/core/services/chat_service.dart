@@ -30,6 +30,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../api/api.dart';
 import '../models/models.dart';
 import '../exceptions.dart';
+import 'upload_service.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// FILTER OPTIONS
@@ -910,16 +911,13 @@ class ChatService {
             data: {
               'type': 'text',
               'content': content.trim(),
-              if (replyToMessageId != null)
-                'replyToMessageId': replyToMessageId,
-              if (metadata != null) 'metadata': metadata,
+              if (replyToMessageId case final id?) 'replyToMessageId': id,
+              if (metadata case final m?) 'metadata': m,
             },
           );
 
-          if (response.data != null) {
-            sentMessage = ChatMessage.fromJson(
-              response.data as Map<String, dynamic>,
-            );
+          if (response.data case final data?) {
+            sentMessage = ChatMessage.fromJson(data as Map<String, dynamic>);
             break;
           }
         } catch (e) {
@@ -985,27 +983,25 @@ class ChatService {
           'attachments': [imageUrl],
           'metadata': {
             'imageUrl': imageUrl,
-            if (width != null) 'width': width,
-            if (height != null) 'height': height,
+            if (width case final w?) 'width': w,
+            if (height case final h?) 'height': h,
           },
         },
       );
 
-      if (response.data == null) {
-        throw ChatServiceError('Failed to send image');
+      if (response.data case final data?) {
+        final message = ChatMessage.fromJson(data as Map<String, dynamic>);
+
+        // Add to cache
+        _addToLocalCache(conversationId, message);
+
+        // Emit to stream
+        _messageStream.add(message);
+
+        return message;
       }
 
-      final message = ChatMessage.fromJson(
-        response.data as Map<String, dynamic>,
-      );
-
-      // Add to cache
-      _addToLocalCache(conversationId, message);
-
-      // Emit to stream
-      _messageStream.add(message);
-
-      return message;
+      throw ChatServiceError('No data returned from server');
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to send image: $e');
       throw ChatServiceError('Failed to send image: $e');
@@ -1025,7 +1021,7 @@ class ChatService {
       await _client.patch(
         '${Endpoints.messages}/$conversationId/read',
         data: {
-          if (lastReadMessageId != null) 'lastReadMessageId': lastReadMessageId,
+          if (lastReadMessageId case final id?) 'lastReadMessageId': id,
         },
       );
 
@@ -1118,7 +1114,7 @@ class ChatService {
         '${Endpoints.messages}/search',
         queryParameters: {
           'q': query,
-          if (conversationId != null) 'conversationId': conversationId,
+          if (conversationId case final id?) 'conversationId': id,
           'page': page.toString(),
           'limit': limit.toString(),
         },
@@ -1319,41 +1315,36 @@ class ChatService {
   // MEDIA UPLOAD
   // ═══════════════════════════════════════════════════════════════════════
 
-  /// Upload media file to server
+  /// Upload media file to Cloudinary
   Future<String> uploadMedia(String filePath, String type) async {
     final stopwatch = Stopwatch()..start();
 
     try {
-      debugPrint('💬 [ChatService] Uploading media: $type');
+      debugPrint('💬 [ChatService] Uploading media to Cloudinary: $type');
 
-      await _checkAuthentication();
+      // Use UploadService for real Cloudinary upload
+      final uploadService = UploadService();
 
-      final file = MultipartFile.fromFileSync(
-        filePath,
-        filename: 'media_${DateTime.now().millisecondsSinceEpoch}',
-      );
-
-      final formData = FormData.fromMap({
-        'file': file,
-        'type': type,
-      });
-
-      final response = await _client.post(
-        '/messages/upload',
-        data: formData,
-      );
-
-      if (response.data == null || response.data['url'] == null) {
-        throw ChatServiceError('Failed to upload media');
+      UploadResponse response;
+      switch (type) {
+        case 'image':
+          response = await uploadService.uploadGalleryImage(filePath);
+          break;
+        case 'audio':
+          response = await uploadService.uploadAudio(filePath);
+          break;
+        case 'video':
+          response = await uploadService.uploadVideo(filePath);
+          break;
+        default:
+          throw ChatServiceError('Unsupported media type: $type');
       }
 
-      final url = response.data['url'] as String;
-
       debugPrint(
-        '💬 [ChatService] Media uploaded in ${stopwatch.elapsedMilliseconds}ms: $url',
+        '💬 [ChatService] Media uploaded in ${stopwatch.elapsedMilliseconds}ms: ${response.url}',
       );
 
-      return url;
+      return response.url;
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to upload media: $e');
       throw ChatServiceError('Failed to upload media: $e');

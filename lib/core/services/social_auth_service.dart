@@ -248,12 +248,12 @@ class SocialAuthService {
 
       final data = <String, dynamic>{
         'idToken': idToken,
-        if (authorizationCode != null) 'authorizationCode': authorizationCode,
-        if (role != null) 'role': role.name,
-        if (email != null) 'email': email,
-        if (name != null) 'name': name,
-        if (photoUrl != null) 'photoUrl': photoUrl,
-        if (rawNonce != null) 'nonce': rawNonce,
+        if (authorizationCode case final ac?) 'authorizationCode': ac,
+        if (role case final r?) 'role': r.name,
+        if (email case final e?) 'email': e,
+        if (name case final n?) 'name': n,
+        if (photoUrl case final p?) 'photoUrl': p,
+        if (rawNonce case final n?) 'nonce': n,
       };
 
       final response = await _client.post(endpoint, data: data);

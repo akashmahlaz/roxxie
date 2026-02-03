@@ -133,7 +133,7 @@ dependencies:
   path_provider: ^2.1.5
 
   # 💳 PAYMENTS
-  flutter_stripe: ^11.4.0
+  flutter_stripe: ^12.2.0
 
 dev_dependencies:
   flutter_test:

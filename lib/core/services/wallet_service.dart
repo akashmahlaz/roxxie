@@ -345,7 +345,7 @@ class WalletService {
       Endpoints.walletRequestPayout,
       data: {
         'amount': amount,
-        if (payoutMethodId != null) 'payoutMethodId': payoutMethodId,
+        if (payoutMethodId case final pmi?) 'payoutMethodId': pmi,
         'instant': instant,
       },
     );
