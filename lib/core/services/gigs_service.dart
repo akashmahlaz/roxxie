@@ -324,8 +324,8 @@ class GigsService {
           'artistId': artistId,
           'agreedAmount': agreedAmount,
           'startTime': startTime,
-          ?'endTime': endTime,
-          ?'specialRequests': specialRequests,
+          if (endTime != null) 'endTime': endTime,
+          if (specialRequests != null) 'specialRequests': specialRequests,
         },
       );
       return AcceptApplicationResult.fromJson(response.data);
@@ -346,7 +346,7 @@ class GigsService {
         '/gigs/$gigId/decline-application',
         data: {
           'artistId': artistId,
-          ?'reason': reason,
+          if (reason != null) 'reason': reason,
         },
       );
       return Gig.fromJson(response.data as Map<String, dynamic>);

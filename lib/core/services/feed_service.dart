@@ -26,7 +26,7 @@ class FeedService {
         'page': page,
         'limit': limit,
         'sort': sort,
-        ?'hashtag': hashtag,
+        if (hashtag != null) 'hashtag': hashtag,
       };
 
       final response = await _client.dio.get(
@@ -54,10 +54,10 @@ class FeedService {
       final response = await _client.dio.post(
         Endpoints.postsCreate,
         data: {
-          ?'caption': caption,
+          if (caption != null) 'caption': caption,
           'media': media,
-          ?'hashtags': hashtags,
-          ?'location': location,
+          if (hashtags != null) 'hashtags': hashtags,
+          if (location != null) 'location': location,
           'commentsDisabled': commentsDisabled,
           'likesHidden': likesHidden,
         },

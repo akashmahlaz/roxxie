@@ -951,8 +951,8 @@ class ChatService {
             data: {
               'type': 'text',
               'content': content.trim(),
-              ?'replyToMessageId': replyToMessageId,
-              ?'metadata': metadata,
+              if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+              if (metadata != null) 'metadata': metadata,
             },
           );
 
@@ -1023,8 +1023,8 @@ class ChatService {
           'attachments': [imageUrl],
           'metadata': {
             'imageUrl': imageUrl,
-            ?'width': width,
-            ?'height': height,
+            if (width != null) 'width': width,
+            if (height != null) 'height': height,
           },
         },
       );
@@ -1061,7 +1061,7 @@ class ChatService {
       await _client.patch(
         '${Endpoints.messages}/$conversationId/read',
         data: {
-          ?'lastReadMessageId': lastReadMessageId,
+          if (lastReadMessageId != null) 'lastReadMessageId': lastReadMessageId,
         },
       );
 
@@ -1154,7 +1154,7 @@ class ChatService {
         '${Endpoints.messages}/search',
         queryParameters: {
           'q': query,
-          ?'conversationId': conversationId,
+          if (conversationId != null) 'conversationId': conversationId,
           'page': page.toString(),
           'limit': limit.toString(),
         },

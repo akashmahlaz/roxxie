@@ -232,7 +232,7 @@ class ChatSocketService {
       'matchId': matchId,
       'content': content,
       'type': type.value,
-      ?'mediaUrl': mediaUrl,
+      if (mediaUrl != null) 'mediaUrl': mediaUrl,
     });
   }
 
