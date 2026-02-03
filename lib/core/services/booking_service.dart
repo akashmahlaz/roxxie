@@ -394,4 +394,120 @@ class BookingService {
       rethrow;
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CONTRACT & PAYMENT STATUS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get contract signing status
+  Future<ContractStatus> getContractStatus(String bookingId) async {
+    debugPrint('📝 [BookingService] Getting contract status: $bookingId');
+
+    try {
+      final response = await _api.get('/bookings/$bookingId/contract-status');
+      return ContractStatus.fromJson(response.data);
+    } catch (e) {
+      debugPrint('❌ [BookingService] Get contract status error: $e');
+      rethrow;
+    }
+  }
+
+  /// Get payment status
+  Future<PaymentStatusDetails> getPaymentStatus(String bookingId) async {
+    debugPrint('💳 [BookingService] Getting payment status: $bookingId');
+
+    try {
+      final response = await _api.get('/bookings/$bookingId/payment-status');
+      return PaymentStatusDetails.fromJson(response.data);
+    } catch (e) {
+      debugPrint('❌ [BookingService] Get payment status error: $e');
+      rethrow;
+    }
+  }
+
+  /// Initiate payment (deposit or final)
+  Future<PaymentIntentResponse> initiatePayment(
+    String bookingId, {
+    required PaymentType paymentType,
+  }) async {
+    debugPrint('💳 [BookingService] Initiating ${paymentType.value} payment: $bookingId');
+
+    try {
+      final response = await _api.post(
+        '/bookings/$bookingId/initiate-payment',
+        data: {'paymentType': paymentType.value},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('✅ [BookingService] Payment intent created');
+        return PaymentIntentResponse.fromJson(response.data);
+      }
+
+      throw ApiException(
+        response.data['message'] ?? 'Failed to initiate payment',
+        response.statusCode ?? 500,
+      );
+    } catch (e) {
+      debugPrint('❌ [BookingService] Initiate payment error: $e');
+      rethrow;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CALENDAR & UPCOMING
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get upcoming bookings for the next N days
+  Future<List<Booking>> getUpcomingBookingsForCalendar({int days = 30}) async {
+    debugPrint('📅 [BookingService] Getting upcoming bookings ($days days)');
+
+    try {
+      final response = await _api.get(
+        '/bookings/upcoming',
+        queryParameters: {'days': days},
+      );
+
+      final List<dynamic> data = response.data is List
+          ? response.data
+          : response.data['bookings'] ?? [];
+      return data.map((json) => Booking.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('❌ [BookingService] Get upcoming bookings error: $e');
+      rethrow;
+    }
+  }
+
+  /// Get bookings grouped by date for calendar view
+  Future<Map<String, List<Booking>>> getCalendarBookings({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    debugPrint('📅 [BookingService] Getting calendar bookings');
+
+    try {
+      final response = await _api.get(
+        '/bookings/calendar',
+        queryParameters: {
+          'startDate': startDate.toIso8601String().split('T')[0],
+          'endDate': endDate.toIso8601String().split('T')[0],
+        },
+      );
+
+      final Map<String, List<Booking>> result = {};
+      final Map<String, dynamic> data = response.data;
+
+      for (final entry in data.entries) {
+        final dateKey = entry.key;
+        final List<dynamic> bookingsData = entry.value;
+        result[dateKey] = bookingsData
+            .map((json) => Booking.fromJson(json))
+            .toList();
+      }
+
+      return result;
+    } catch (e) {
+      debugPrint('❌ [BookingService] Get calendar bookings error: $e');
+      rethrow;
+    }
+  }
 }

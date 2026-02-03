@@ -443,3 +443,103 @@ class BookingProposal {
     );
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTRACT & PAYMENT STATUS MODELS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Contract signing status with per-party tracking
+class ContractStatus {
+  final bool contractSigned;
+  final bool artistSigned;
+  final bool venueSigned;
+  final bool bothSigned;
+  final String? contractUrl;
+  final DateTime? signedAt;
+
+  ContractStatus({
+    required this.contractSigned,
+    required this.artistSigned,
+    required this.venueSigned,
+    required this.bothSigned,
+    this.contractUrl,
+    this.signedAt,
+  });
+
+  factory ContractStatus.fromJson(Map<String, dynamic> json) {
+    return ContractStatus(
+      contractSigned: json['contractSigned'] ?? false,
+      artistSigned: json['artistSigned'] ?? false,
+      venueSigned: json['venueSigned'] ?? false,
+      bothSigned: json['bothSigned'] ?? false,
+      contractUrl: json['contractUrl'],
+      signedAt: json['signedAt'] != null
+          ? DateTime.tryParse(json['signedAt'].toString())
+          : null,
+    );
+  }
+}
+
+/// Detailed payment status for a booking
+class PaymentStatusDetails {
+  final bool depositPaid;
+  final double depositAmount;
+  final DateTime? depositPaidAt;
+  final bool finalPaid;
+  final double finalAmount;
+  final DateTime? finalPaidAt;
+  final String? stripeDepositId;
+  final String? stripeFinalId;
+
+  PaymentStatusDetails({
+    required this.depositPaid,
+    required this.depositAmount,
+    this.depositPaidAt,
+    required this.finalPaid,
+    required this.finalAmount,
+    this.finalPaidAt,
+    this.stripeDepositId,
+    this.stripeFinalId,
+  });
+
+  factory PaymentStatusDetails.fromJson(Map<String, dynamic> json) {
+    return PaymentStatusDetails(
+      depositPaid: json['depositPaid'] ?? false,
+      depositAmount: (json['depositAmount'] as num?)?.toDouble() ?? 0,
+      depositPaidAt: json['depositPaidAt'] != null
+          ? DateTime.tryParse(json['depositPaidAt'].toString())
+          : null,
+      finalPaid: json['finalPaid'] ?? false,
+      finalAmount: (json['finalAmount'] as num?)?.toDouble() ?? 0,
+      finalPaidAt: json['finalPaidAt'] != null
+          ? DateTime.tryParse(json['finalPaidAt'].toString())
+          : null,
+      stripeDepositId: json['stripeDepositId'],
+      stripeFinalId: json['stripeFinalId'],
+    );
+  }
+
+  double get totalPaid {
+    double total = 0;
+    if (depositPaid) {
+      total += depositAmount;
+    }
+    if (finalPaid) {
+      total += finalAmount;
+    }
+    return total;
+  }
+
+  double get totalDue => depositAmount + finalAmount;
+
+  double get remainingBalance => totalDue - totalPaid;
+}
+
+/// Payment type for initiating payments
+enum PaymentType {
+  deposit('deposit'),
+  finalPayment('final');
+
+  final String value;
+  const PaymentType(this.value);
+}

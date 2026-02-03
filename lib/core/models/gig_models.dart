@@ -590,3 +590,224 @@ String? _gigStatusToWire(GigStatus? status) {
       return 'cancelled';
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// APPLICATION MANAGEMENT MODELS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Application info from Venue's perspective (with artist details)
+class VenueGigApplication {
+  final String id;
+  final String artistId;
+  final String artistName;
+  final String? artistPhoto;
+  final List<String> artistGenres;
+  final double? artistRating;
+  final String? message;
+  final double? proposedRate;
+  final DateTime appliedAt;
+  final GigApplicationStatus status;
+
+  VenueGigApplication({
+    required this.id,
+    required this.artistId,
+    required this.artistName,
+    this.artistPhoto,
+    this.artistGenres = const [],
+    this.artistRating,
+    this.message,
+    this.proposedRate,
+    required this.appliedAt,
+    required this.status,
+  });
+
+  factory VenueGigApplication.fromJson(Map<String, dynamic> json) {
+    final artist = json['artist'];
+    String artistId = '';
+    String artistName = 'Unknown Artist';
+    String? artistPhoto;
+    List<String> artistGenres = [];
+    double? artistRating;
+
+    if (artist is Map<String, dynamic>) {
+      artistId = artist['_id']?.toString() ?? artist['id']?.toString() ?? '';
+      artistName = artist['stageName'] ?? artist['name'] ?? 'Unknown Artist';
+      artistPhoto = artist['profilePhoto'] ?? artist['photo'];
+      artistGenres = List<String>.from(artist['genres'] ?? []);
+      artistRating = (artist['averageRating'] as num?)?.toDouble();
+    } else if (artist is String) {
+      artistId = artist;
+    }
+
+    return VenueGigApplication(
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      artistId: artistId,
+      artistName: artistName,
+      artistPhoto: artistPhoto,
+      artistGenres: artistGenres,
+      artistRating: artistRating,
+      message: json['message'],
+      proposedRate: (json['proposedRate'] as num?)?.toDouble(),
+      appliedAt: DateTime.tryParse(json['appliedAt']?.toString() ?? '') ?? DateTime.now(),
+      status: _parseApplicationStatus(json['status']),
+    );
+  }
+}
+
+/// Application info from Artist's perspective (with gig/venue details)
+class ArtistGigApplication {
+  final String gigId;
+  final String gigTitle;
+  final DateTime gigDate;
+  final String gigStatus;
+  final ApplicationDetails application;
+  final VenueInfo? venue;
+  final String? bookingId;
+  final String? rejectionReason;
+
+  ArtistGigApplication({
+    required this.gigId,
+    required this.gigTitle,
+    required this.gigDate,
+    required this.gigStatus,
+    required this.application,
+    this.venue,
+    this.bookingId,
+    this.rejectionReason,
+  });
+
+  factory ArtistGigApplication.fromJson(Map<String, dynamic> json) {
+    return ArtistGigApplication(
+      gigId: json['gigId']?.toString() ?? '',
+      gigTitle: json['gigTitle']?.toString() ?? '',
+      gigDate: DateTime.tryParse(json['gigDate']?.toString() ?? '') ?? DateTime.now(),
+      gigStatus: json['gigStatus']?.toString() ?? '',
+      application: ApplicationDetails.fromJson(json['application'] ?? {}),
+      venue: json['venue'] != null ? VenueInfo.fromJson(json['venue']) : null,
+      bookingId: json['bookingId']?.toString(),
+      rejectionReason: json['rejectionReason']?.toString(),
+    );
+  }
+
+  // Convenience getters to access nested application properties
+  GigApplicationStatus get status => application.status;
+  DateTime get appliedAt => application.appliedAt;
+  String? get message => application.message;
+  double? get proposedRate => application.proposedRate;
+  
+  // Convenience getter for venue info (wrapped in helper class)
+  ArtistApplicationVenueInfo get venueInfo => ArtistApplicationVenueInfo(venue);
+}
+
+/// Helper class for accessing venue info with fallbacks
+class ArtistApplicationVenueInfo {
+  final VenueInfo? _venue;
+
+  const ArtistApplicationVenueInfo(this._venue);
+
+  String get name => _venue?.venueName ?? 'Unknown Venue';
+  String? get photo => _venue?.coverPhoto;
+  String? get location => _venue?.locationDisplay;
+  String get id => _venue?.id ?? '';
+}
+
+/// Application details subset
+class ApplicationDetails {
+  final String id;
+  final DateTime appliedAt;
+  final String? message;
+  final double? proposedRate;
+  final GigApplicationStatus status;
+
+  ApplicationDetails({
+    required this.id,
+    required this.appliedAt,
+    this.message,
+    this.proposedRate,
+    required this.status,
+  });
+
+  factory ApplicationDetails.fromJson(Map<String, dynamic> json) {
+    return ApplicationDetails(
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      appliedAt: DateTime.tryParse(json['appliedAt']?.toString() ?? '') ?? DateTime.now(),
+      message: json['message'],
+      proposedRate: (json['proposedRate'] as num?)?.toDouble(),
+      status: _parseApplicationStatus(json['status']),
+    );
+  }
+}
+
+/// Venue info for artist's application view
+class VenueInfo {
+  final String id;
+  final String venueName;
+  final String? venueType;
+  final String? coverPhoto;
+  final String? city;
+  final String? country;
+
+  VenueInfo({
+    required this.id,
+    required this.venueName,
+    this.venueType,
+    this.coverPhoto,
+    this.city,
+    this.country,
+  });
+
+  factory VenueInfo.fromJson(Map<String, dynamic> json) {
+    final location = json['location'] as Map<String, dynamic>?;
+    return VenueInfo(
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      venueName: json['venueName']?.toString() ?? 'Unknown Venue',
+      venueType: json['venueType'],
+      coverPhoto: json['coverPhoto'],
+      city: location?['city'],
+      country: location?['country'],
+    );
+  }
+
+  String get locationDisplay {
+    if (city != null && country != null) {
+      return '$city, $country';
+    }
+    return city ?? country ?? '';
+  }
+}
+
+/// Result from accepting an application
+class AcceptApplicationResult {
+  final String message;
+  final Gig gig;
+  final dynamic booking;
+
+  AcceptApplicationResult({
+    required this.message,
+    required this.gig,
+    this.booking,
+  });
+
+  factory AcceptApplicationResult.fromJson(Map<String, dynamic> json) {
+    return AcceptApplicationResult(
+      message: json['message']?.toString() ?? 'Application accepted',
+      gig: Gig.fromJson(json['gig'] ?? {}),
+      booking: json['booking'],
+    );
+  }
+}
+
+GigApplicationStatus _parseApplicationStatus(dynamic status) {
+  if (status == null) return GigApplicationStatus.pending;
+  final str = status.toString().toLowerCase();
+  switch (str) {
+    case 'accepted':
+      return GigApplicationStatus.accepted;
+    case 'rejected':
+      return GigApplicationStatus.rejected;
+    case 'withdrawn':
+      return GigApplicationStatus.withdrawn;
+    default:
+      return GigApplicationStatus.pending;
+  }
+}

@@ -1512,7 +1512,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                   ),
                 ),
               ),
-              if (trailing case final t?) t,
+              ?trailing,
             ],
           ),
           const SizedBox(height: 14),

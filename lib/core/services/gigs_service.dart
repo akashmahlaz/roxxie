@@ -256,4 +256,103 @@ class GigsService {
       rethrow;
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // APPLICATION MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// ✅ Get applications for a gig (venue only)
+  Future<List<VenueGigApplication>> getGigApplications(String gigId) async {
+    try {
+      final response = await _client.get('/gigs/$gigId/applications');
+      final List<dynamic> data = response.data is List
+          ? response.data
+          : response.data['applications'] ?? [];
+      return data.map((json) => VenueGigApplication.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Get gig applications error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Get pending application count
+  Future<int> getApplicationCount(String gigId) async {
+    try {
+      final response = await _client.get('/gigs/$gigId/application-count');
+      return response.data['pendingApplications'] ?? 0;
+    } catch (e) {
+      debugPrint('Get application count error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Get my applications (artist only)
+  Future<List<ArtistGigApplication>> getMyApplications({String? status}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (status != null) {
+        queryParams['status'] = status;
+      }
+
+      final response = await _client.get(
+        '/gigs/my-applications',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      final List<dynamic> data = response.data is List
+          ? response.data
+          : response.data['applications'] ?? [];
+      return data.map((json) => ArtistGigApplication.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Get my applications error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Accept application and create booking (venue only)
+  Future<AcceptApplicationResult> acceptApplicationAndCreateBooking({
+    required String gigId,
+    required String artistId,
+    required double agreedAmount,
+    required String startTime,
+    String? endTime,
+    String? specialRequests,
+  }) async {
+    try {
+      final response = await _client.post(
+        '/gigs/$gigId/create-booking-from-application',
+        data: {
+          'artistId': artistId,
+          'agreedAmount': agreedAmount,
+          'startTime': startTime,
+          ?'endTime': endTime,
+          ?'specialRequests': specialRequests,
+        },
+      );
+      return AcceptApplicationResult.fromJson(response.data);
+    } catch (e) {
+      debugPrint('Accept application error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Decline an application (venue only)
+  Future<Gig> declineApplication({
+    required String gigId,
+    required String artistId,
+    String? reason,
+  }) async {
+    try {
+      final response = await _client.post(
+        '/gigs/$gigId/decline-application',
+        data: {
+          'artistId': artistId,
+          ?'reason': reason,
+        },
+      );
+      return Gig.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Decline application error: $e');
+      rethrow;
+    }
+  }
 }
