@@ -75,6 +75,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
   String? _participantName;
   String? _participantPhoto;
   bool _isParticipantOnline = false;
+  bool _isMuted = false;
 
   // Reply feature
   String? _replyToMessageId;
@@ -151,6 +152,8 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       final matchId = widget.matchId ?? widget.participantId;
       if (matchId != null) {
         String? conversationId;
+        String? participantName = widget.participantName;
+        String? participantPhoto = widget.participantPhoto;
 
         // If we have a participantId but no matchId, we need to get or create a conversation
         if (widget.matchId == null && widget.participantId != null) {
@@ -161,18 +164,19 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             participantType: widget.isParticipantArtist ? 'artist' : 'venue',
           );
           conversationId = conversation.id;
-          debugPrint('💬 [ChatScreenV2] Got conversation: $conversationId');
+          
+          // Use participant info from conversation if available
+          participantName ??= conversation.participantName;
+          participantPhoto ??= conversation.participantPhoto;
+          
+          debugPrint('💬 [ChatScreenV2] Got conversation: $conversationId, participant: $participantName');
         } else {
           conversationId = matchId;
         }
 
         await chatProvider.enterChat(conversationId);
 
-        // Use provided name/photo or fetch from backend
-        String? participantName = widget.participantName;
-        String? participantPhoto = widget.participantPhoto;
-
-        // If participant info is missing, fetch it from the backend
+        // If participant info is still missing, fetch it from the backend
         if ((participantName == null || participantName.isEmpty) &&
             widget.participantId != null) {
           try {
@@ -180,12 +184,12 @@ class _ChatScreenV2State extends State<ChatScreenV2>
               final artistService = ArtistService();
               final artist = await artistService.getArtistById(widget.participantId!);
               participantName = artist.displayName;
-              participantPhoto = artist.profilePhoto;
+              participantPhoto ??= artist.profilePhoto;
             } else {
               final venueService = VenueService();
               final venue = await venueService.getVenueById(widget.participantId!);
               participantName = venue.venueName;
-              participantPhoto = venue.profilePhotoUrl;
+              participantPhoto ??= venue.profilePhotoUrl;
             }
           } catch (e) {
             debugPrint('Failed to fetch participant info: $e');
@@ -286,19 +290,36 @@ class _ChatScreenV2State extends State<ChatScreenV2>
 
       if (image != null && mounted) {
         HapticFeedback.lightImpact();
-        final chatProvider = context.read<ChatProvider>();
-        await chatProvider.sendMessage(
-          image.path,
-          type: MessageType.image,
-          replyToMessageId: _replyToMessageId,
-        );
-        _clearReply();
-        _scrollToBottom();
+        _showLoading('Uploading image...');
+
+        // Upload image to server first
+        final chatService = ChatService();
+        final imageUrl = await chatService.uploadMedia(image.path, 'image');
+
+        if (mounted) {
+          Navigator.of(context).pop(); // Remove loading dialog
+
+          final chatProvider = context.read<ChatProvider>();
+          await chatProvider.sendMessage(
+            imageUrl,
+            type: MessageType.image,
+            replyToMessageId: _replyToMessageId,
+          );
+          _clearReply();
+          _scrollToBottom();
+        }
       }
     } on PlatformException catch (e) {
       debugPrint('Image picker error: $e');
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
       _showError('Failed to pick image');
     } catch (e) {
+      debugPrint('Image send error: $e');
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
       _showError('Failed to send image');
     }
   }
@@ -310,7 +331,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       // Request file selection
       const XTypeGroup typeGroup = XTypeGroup(
         label: 'Documents',
-        extensions: ['pdf', 'doc', 'docx', 'txt'],
+        extensions: ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg'],
       );
       final file = await openFile(
         acceptedTypeGroups: const [typeGroup],
@@ -318,22 +339,25 @@ class _ChatScreenV2State extends State<ChatScreenV2>
 
       if (file != null && mounted) {
         HapticFeedback.lightImpact();
-        _showLoading('Uploading document...');
+        _showLoading('Uploading file...');
 
-        // Upload file to server
+        // Upload file to server - use image type for Cloudinary
         final chatService = ChatService();
-        final uploadedUrl = await chatService.uploadMedia(file.path, 'document');
+        final uploadedUrl = await chatService.uploadMedia(file.path, 'image');
 
         if (mounted) {
           Navigator.of(context).pop(); // Remove loading dialog
 
           final chatProvider = context.read<ChatProvider>();
+          final fileSize = await file.length();
           await chatProvider.sendMessage(
-            uploadedUrl,
+            '📎 ${file.name}\n$uploadedUrl',
             type: MessageType.text,
             metadata: {
               'documentName': file.name,
-              'documentSize': file.length,
+              'documentSize': fileSize,
+              'documentUrl': uploadedUrl,
+              'isDocument': true,
             },
             replyToMessageId: _replyToMessageId,
           );
@@ -343,7 +367,10 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       }
     } catch (e) {
       debugPrint('Document picker error: $e');
-      _showError('Failed to send document');
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      _showError('Failed to send file');
     }
   }
 
@@ -381,15 +408,18 @@ class _ChatScreenV2State extends State<ChatScreenV2>
 
         final placemark = placemarks.first;
         final address = '${placemark.street}, ${placemark.locality}, ${placemark.country}';
+        final mapsUrl = 'https://www.google.com/maps?q=${position.latitude},${position.longitude}';
 
         final chatProvider = context.read<ChatProvider>();
         await chatProvider.sendMessage(
-          address,
+          '📍 $address\n\nView on Maps: $mapsUrl',
           type: MessageType.text,
           metadata: {
             'latitude': position.latitude,
             'longitude': position.longitude,
             'address': address,
+            'mapsUrl': mapsUrl,
+            'isLocation': true,
           },
           replyToMessageId: _replyToMessageId,
         );
@@ -479,6 +509,104 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       _replyToMessageId = null;
       _replyToMessageContent = null;
     });
+  }
+
+  Future<void> _toggleMute() async {
+    if (_conversationId == null) return;
+
+    try {
+      final chatService = ChatService();
+      if (_isMuted) {
+        await chatService.unmuteConversation(_conversationId!);
+        setState(() => _isMuted = false);
+        _showSuccess('Notifications unmuted');
+      } else {
+        await chatService.muteConversation(_conversationId!);
+        setState(() => _isMuted = true);
+        _showSuccess('Notifications muted');
+      }
+    } catch (e) {
+      debugPrint('Mute toggle error: $e');
+      _showError('Failed to update mute settings');
+    }
+  }
+
+  void _showBlockConfirmation() {
+    final brightness = Theme.of(context).brightness;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.block_rounded, color: AppColors.error),
+            const SizedBox(width: 12),
+            const Text('Block User'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to block ${_participantName ?? 'this user'}?\n\n'
+          'They will not be able to message you and you won\'t see their profile in discovery.',
+          style: TextStyle(color: AppColors.textSec(brightness)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _blockUser();
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _blockUser() async {
+    if (_conversationId == null) return;
+
+    try {
+      _showLoading('Blocking user...');
+      final chatService = ChatService();
+      await chatService.blockConversation(_conversationId!);
+      
+      if (mounted) {
+        Navigator.of(context).pop(); // Remove loading
+        Navigator.of(context).pop(); // Go back to messages
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${_participantName ?? 'User'} has been blocked'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Block error: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Remove loading
+      }
+      _showError('Failed to block user');
+    }
+  }
+
+  void _showSuccess(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -686,17 +814,17 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             MenuItemButton(
               onPressed: () {
                 HapticFeedback.selectionClick();
-                // TODO: Implement mute
-                _showError('Mute notifications coming soon!');
+                _toggleMute();
               },
-              leadingIcon: const Icon(Icons.notifications_off_outlined),
-              child: const Text('Mute'),
+              leadingIcon: Icon(
+                _isMuted ? Icons.notifications_rounded : Icons.notifications_off_outlined,
+              ),
+              child: Text(_isMuted ? 'Unmute' : 'Mute'),
             ),
             MenuItemButton(
               onPressed: () {
                 HapticFeedback.selectionClick();
-                // TODO: Implement block
-                _showError('Block user coming soon!');
+                _showBlockConfirmation();
               },
               leadingIcon: const Icon(
                 Icons.block_rounded,
@@ -714,21 +842,88 @@ class _ChatScreenV2State extends State<ChatScreenV2>
   }
 
   Widget _buildAvatar(Brightness brightness) {
+    // Get initials from participant name for fallback
+    String initials = 'U';
+    if (_participantName != null && _participantName!.isNotEmpty) {
+      final parts = _participantName!.trim().split(' ');
+      if (parts.length >= 2) {
+        initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+        initials = parts[0][0].toUpperCase();
+      }
+    }
+
     return Stack(
       children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: AppColors.surface(brightness),
-          backgroundImage: _participantPhoto != null
-              ? CachedNetworkImageProvider(_participantPhoto!)
-              : null,
-          child: _participantPhoto == null
-              ? Icon(
-                  Icons.person_rounded,
-                  color: AppColors.textSec(brightness),
-                  size: 24,
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: _participantPhoto == null
+                ? LinearGradient(
+                    colors: [
+                      AppColors.crimson,
+                      AppColors.crimson.withValues(alpha: 0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+          ),
+          child: _participantPhoto != null && _participantPhoto!.isNotEmpty
+              ? ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: _participantPhoto!,
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: AppColors.crimson.withValues(alpha: 0.2),
+                      child: Center(
+                        child: Text(
+                          initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.crimson,
+                            AppColors.crimson.withValues(alpha: 0.7),
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 )
-              : null,
+              : Center(
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
         ),
         // Online indicator
         Positioned(
@@ -738,7 +933,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
             width: 12,
             height: 12,
             decoration: BoxDecoration(
-              color: _isParticipantOnline ? Colors.green : Colors.grey,
+              color: _isParticipantOnline ? Colors.green : Colors.grey.shade400,
               shape: BoxShape.circle,
               border: Border.all(
                 color: AppColors.surface(brightness),
@@ -818,12 +1013,9 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     final hasText = _messageController.text.trim().isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        border: Border(
-          top: BorderSide(color: AppColors.border(brightness), width: 0.5),
-        ),
       ),
       child: SafeArea(
         top: false,
@@ -840,14 +1032,15 @@ class _ChatScreenV2State extends State<ChatScreenV2>
               ),
             ),
 
-            // Text input
+            // Text input - clean round design without border
             Expanded(
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 120),
                 decoration: BoxDecoration(
-                  color: AppColors.background(brightness),
+                  color: brightness == Brightness.dark
+                      ? Colors.grey.shade800.withValues(alpha: 0.5)
+                      : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border(brightness)),
                 ),
                 child: TextField(
                   controller: _messageController,
@@ -855,15 +1048,21 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                   maxLines: null,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
-                    hintText: 'Message...',
-                    hintStyle: TextStyle(color: AppColors.textTert(brightness)),
+                    hintText: 'Type a message...',
+                    hintStyle: TextStyle(
+                      color: AppColors.textTert(brightness),
+                      fontSize: 15,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
+                      horizontal: 20,
+                      vertical: 12,
                     ),
                   ),
-                  style: TextStyle(color: AppColors.text(brightness)),
+                  style: TextStyle(
+                    color: AppColors.text(brightness),
+                    fontSize: 15,
+                  ),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),

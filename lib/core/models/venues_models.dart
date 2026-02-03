@@ -1247,6 +1247,7 @@ class Venue {
   final double? rating;
   final bool isVerified;
   final bool isOpenForBookings;
+  final bool isProfileVisible;
   final int profileCompleteness;
   final bool hasCompletedSetup;
   final DateTime? createdAt;
@@ -1286,6 +1287,7 @@ class Venue {
     this.rating,
     this.isVerified = false,
     this.isOpenForBookings = true,
+    this.isProfileVisible = true,
     this.profileCompleteness = 0,
     this.hasCompletedSetup = false,
     this.createdAt,
@@ -1352,6 +1354,7 @@ class Venue {
       rating: json['rating']?.toDouble(),
       isVerified: json['isVerified'] ?? false,
       isOpenForBookings: json['isOpenForBookings'] ?? true,
+      isProfileVisible: json['isProfileVisible'] ?? true,
       profileCompleteness: json['profileCompleteness'] ?? 0,
       hasCompletedSetup: json['hasCompletedSetup'] ?? false,
       createdAt: json['createdAt'] != null
@@ -1400,6 +1403,7 @@ class Venue {
     if (gigPreferences != null) 'gigPreferences': gigPreferences,
     'isVerified': isVerified,
     'isOpenForBookings': isOpenForBookings,
+    'isProfileVisible': isProfileVisible,
     'profileCompleteness': profileCompleteness,
     'hasCompletedSetup': hasCompletedSetup,
     if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),

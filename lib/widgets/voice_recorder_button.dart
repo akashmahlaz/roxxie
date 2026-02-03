@@ -223,12 +223,26 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: AppColors.crimson.withValues(alpha: 0.1),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.crimson,
+              AppColors.crimson.withValues(alpha: 0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.crimson.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Icon(
+        child: const Icon(
           Icons.mic_rounded,
-          color: AppColors.crimson,
+          color: Colors.white,
           size: 24,
         ),
       ),

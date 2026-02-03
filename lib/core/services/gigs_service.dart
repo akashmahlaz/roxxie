@@ -114,6 +114,96 @@ class GigsService {
     }
   }
 
+  /// ✅ Delete gig (Venue only)
+  ///
+  /// Permanently deletes a gig. Use [cancelGig] for soft deletion.
+  Future<void> deleteGig(String gigId) async {
+    try {
+      await _client.delete('/gigs/$gigId');
+    } catch (e) {
+      debugPrint('Delete gig error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Cancel gig (Venue only)
+  ///
+  /// Soft deletes a gig by setting status to 'cancelled'.
+  Future<Gig> cancelGig(String gigId, {String? reason}) async {
+    try {
+      final data = reason != null ? {'reason': reason} : null;
+      final response = await _client.post(
+        '/gigs/$gigId/cancel',
+        data: data,
+      );
+      return Gig.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Cancel gig error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Publish draft gig (Venue only)
+  ///
+  /// Updates a draft gig to 'open' status so artists can apply.
+  Future<Gig> publishDraft(String gigId) async {
+    try {
+      final response = await _client.patch(
+        '/gigs/$gigId',
+        data: {'status': 'open'},
+      );
+      return Gig.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Publish draft error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Duplicate a gig (Venue only)
+  ///
+  /// Creates a copy of an existing gig as a draft with today's date.
+  Future<Gig> duplicateGig(Gig originalGig) async {
+    try {
+      final request = CreateGigRequest(
+        venueId: originalGig.venue?.id ?? '',
+        title: '${originalGig.title} (Copy)',
+        description: originalGig.description,
+        // Use today's date for duplicate (user can edit if needed)
+        date: DateTime.now().toIso8601String(),
+        startTime: originalGig.startTime,
+        endTime: originalGig.endTime,
+        durationMinutes: originalGig.durationMinutes,
+        numberOfSets: originalGig.numberOfSets,
+        requiredGenres: originalGig.requiredGenres,
+        specificRequirements: originalGig.specificRequirements,
+        artistsNeeded: originalGig.artistsNeeded,
+        budget: originalGig.budget,
+        currency: originalGig.currency,
+        paymentType: originalGig.paymentType,
+        location: CreateGigLocationRequest(
+          city: originalGig.location.city,
+          country: originalGig.location.country,
+          venueAddress: originalGig.location.venueAddress,
+          geoCoordinates:
+              originalGig.location.geo?.coordinates ?? [0.0, 0.0],
+        ),
+        status: GigStatus.draft,
+        perks: originalGig.perks,
+        isPublic: originalGig.isPublic,
+        acceptingApplications: originalGig.isPublic,
+      );
+
+      final response = await _client.post(
+        Endpoints.gigsCreate,
+        data: request.toJson(),
+      );
+      return Gig.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Duplicate gig error: $e');
+      rethrow;
+    }
+  }
+
   /// ✅ Get my gigs (Venue)
   ///
   /// Use [status] to filter (draft/open/in_progress/filled/completed/cancelled)

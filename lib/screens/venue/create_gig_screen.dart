@@ -42,6 +42,7 @@ class _CreateGigScreenState extends State<CreateGigScreen>
   final _descriptionController = TextEditingController();
   final _paymentController = TextEditingController();
   final _requirementsController = TextEditingController();
+  final _additionalPerksController = TextEditingController();
 
   DateTime? _selectedDate;
   TimeOfDay? _startTime;
@@ -52,6 +53,7 @@ class _CreateGigScreenState extends State<CreateGigScreen>
   bool _equipmentProvided = true;
   bool _mealIncluded = true;
   bool _parkingAvailable = true;
+  bool _accommodationProvided = false;
   bool _isSaving = false;
   bool _isSuccess = false;
 
@@ -135,9 +137,19 @@ class _CreateGigScreenState extends State<CreateGigScreen>
     }
 
     _selectedGenres.addAll(gig.requiredGenres);
+    // Fixed: Load correct perk fields (backend provides equipment-related perks)
     _equipmentProvided = gig.perks?.providesFood ?? true;
     _mealIncluded = gig.perks?.providesDrinks ?? true;
     _parkingAvailable = gig.perks?.providesTransport ?? true;
+    _accommodationProvided = gig.perks?.providesAccommodation ?? false;
+    final perks = gig.perks;
+    if (perks case final p?) {
+      _additionalPerksController.text = p.additionalPerks.isNotEmpty
+          ? p.additionalPerks.join(', ')
+          : '';
+    } else {
+      _additionalPerksController.text = '';
+    }
 
     // Note: gigType is not currently stored in backend model
   }
@@ -150,6 +162,7 @@ class _CreateGigScreenState extends State<CreateGigScreen>
     _descriptionController.dispose();
     _paymentController.dispose();
     _requirementsController.dispose();
+    _additionalPerksController.dispose();
     super.dispose();
   }
 
@@ -206,9 +219,13 @@ class _CreateGigScreenState extends State<CreateGigScreen>
           : null;
 
       final perks = GigPerks(
-        providesFood: _mealIncluded,
+        providesFood: _equipmentProvided,
         providesDrinks: _mealIncluded,
         providesTransport: _parkingAvailable,
+        providesAccommodation: _accommodationProvided,
+        additionalPerks: _additionalPerksController.text.isNotEmpty
+            ? _additionalPerksController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+            : [],
       );
 
       if (widget.gig != null) {
@@ -231,8 +248,10 @@ class _CreateGigScreenState extends State<CreateGigScreen>
 
         await gigsService.updateGig(widget.gig!.id, request);
       } else {
-        final canPublish =
-            venueProfile.hasCompletedSetup && venueProfile.isOpenForBookings;
+        // Check all profile completion requirements for publishing
+        final canPublish = venueProfile.hasCompletedSetup &&
+            venueProfile.isProfileVisible &&
+            venueProfile.isOpenForBookings;
 
         // Create new gig
         final request = CreateGigRequest(
@@ -743,10 +762,31 @@ class _CreateGigScreenState extends State<CreateGigScreen>
             (value) => setState(() => _parkingAvailable = value),
             brightness,
           ),
+          const SizedBox(height: 12),
+
+          _buildToggleOption(
+            'Accommodation',
+            'Overnight stay provided for performers',
+            Icons.hotel_rounded,
+            _accommodationProvided,
+            (value) => setState(() => _accommodationProvided = value),
+            brightness,
+          ),
 
           const SizedBox(height: 24),
 
-          _buildSectionHeader('Additional Requirements', brightness),
+          _buildSectionHeader('Additional Perks', brightness),
+          const SizedBox(height: 8),
+          _buildTextField(
+            controller: _additionalPerksController,
+            hint: 'e.g., Backstage passes, Meet & Greet, Free drinks...',
+            brightness: brightness,
+            maxLines: 2,
+          ),
+
+          const SizedBox(height: 24),
+
+          _buildSectionHeader('Specific Requirements', brightness),
           const SizedBox(height: 8),
           _buildTextField(
             controller: _requirementsController,

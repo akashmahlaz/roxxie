@@ -76,11 +76,11 @@ class Message {
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
       id: json['_id'] ?? json['id'] ?? '',
-      matchId: json['matchId'] ?? '',
-      senderId: json['senderId'] ?? '',
+      matchId: json['matchId'] ?? json['match']?.toString() ?? '',
+      senderId: json['senderId'] ?? json['sender']?.toString() ?? '',
       senderName: json['senderName'],
       content: json['content'] ?? '',
-      type: MessageType.fromString(json['type'] ?? 'text'),
+      type: MessageType.fromString(json['messageType'] ?? json['type'] ?? 'text'),
       status: MessageStatus.fromString(json['status'] ?? 'sent'),
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt']) : null,

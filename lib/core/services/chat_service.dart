@@ -596,7 +596,7 @@ class ChatService {
 
       await _checkAuthentication();
 
-      await _client.patch(
+      await _client.post(
         '${Endpoints.messagesConversations}/$conversationId/archive',
       );
 
@@ -622,7 +622,7 @@ class ChatService {
 
       await _checkAuthentication();
 
-      await _client.patch(
+      await _client.post(
         '${Endpoints.messagesConversations}/$conversationId/unarchive',
       );
 
@@ -648,7 +648,7 @@ class ChatService {
 
       await _checkAuthentication();
 
-      await _client.patch(
+      await _client.post(
         '${Endpoints.messagesConversations}/$conversationId/pin',
       );
 
@@ -674,7 +674,7 @@ class ChatService {
 
       await _checkAuthentication();
 
-      await _client.patch(
+      await _client.post(
         '${Endpoints.messagesConversations}/$conversationId/unpin',
       );
 
@@ -700,7 +700,7 @@ class ChatService {
 
       await _checkAuthentication();
 
-      await _client.patch(
+      await _client.post(
         '${Endpoints.messagesConversations}/$conversationId/mute',
       );
 
@@ -726,7 +726,7 @@ class ChatService {
 
       await _checkAuthentication();
 
-      await _client.patch(
+      await _client.post(
         '${Endpoints.messagesConversations}/$conversationId/unmute',
       );
 
@@ -742,6 +742,46 @@ class ChatService {
     } catch (e) {
       debugPrint('❌ [ChatService] Failed to unmute conversation: $e');
       throw ChatServiceError('Failed to unmute conversation: $e');
+    }
+  }
+
+  /// Block a conversation
+  Future<bool> blockConversation(String conversationId, {String? reason}) async {
+    try {
+      debugPrint('💬 [ChatService] Blocking conversation: $conversationId');
+
+      await _checkAuthentication();
+
+      await _client.post(
+        '${Endpoints.messagesConversations}/$conversationId/block',
+        data: reason != null ? {'reason': reason} : null,
+      );
+
+      // Remove from cache
+      _conversationCache.remove(conversationId);
+
+      return true;
+    } catch (e) {
+      debugPrint('❌ [ChatService] Failed to block conversation: $e');
+      throw ChatServiceError('Failed to block conversation: $e');
+    }
+  }
+
+  /// Unblock a conversation
+  Future<bool> unblockConversation(String conversationId) async {
+    try {
+      debugPrint('💬 [ChatService] Unblocking conversation: $conversationId');
+
+      await _checkAuthentication();
+
+      await _client.post(
+        '${Endpoints.messagesConversations}/$conversationId/unblock',
+      );
+
+      return true;
+    } catch (e) {
+      debugPrint('❌ [ChatService] Failed to unblock conversation: $e');
+      throw ChatServiceError('Failed to unblock conversation: $e');
     }
   }
 

@@ -20,6 +20,7 @@ import '../../core/services/gigs_service.dart';
 import '../../core/models/gig_models.dart' as api;
 import '../../widgets/widgets.dart';
 import 'create_gig_screen.dart';
+import '../gig_details_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODEL - Local UI model that maps from API
@@ -494,7 +495,16 @@ class _GigsScreenState extends State<GigsScreen>
 
   void _showGigDetails(Gig gig) {
     HapticFeedback.selectionClick();
-    // TODO: Navigate to gig details
+    // Navigate to gig details screen using the source API gig's ID
+    final gigId = gig.source?.id ?? gig.id;
+    if (gigId.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => GigDetailsScreen(gigId: gigId),
+        ),
+      );
+    }
   }
 
   Future<void> _editGig(Gig gig) async {
@@ -511,16 +521,62 @@ class _GigsScreenState extends State<GigsScreen>
     }
   }
 
-  void _duplicateGig(Gig gig) {
+  Future<void> _duplicateGig(Gig gig) async {
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Gig duplicated as draft'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+
+    // Get the source API gig if available
+    final apiGig = gig.source;
+
+    if (apiGig == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Cannot duplicate: gig data unavailable'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    try {
+      setState(() => _isLoading = true);
+      await _gigsService.duplicateGig(apiGig);
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Gig duplicated as draft'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+
+      _loadGigs();
+    } catch (e) {
+      debugPrint('Duplicate gig error: $e');
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to duplicate gig: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 
   void _deleteGig(Gig gig) {
@@ -554,7 +610,7 @@ class _GigsScreenState extends State<GigsScreen>
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                setState(() => _gigs.removeWhere((g) => g.id == gig.id));
+                _confirmDeleteGig(gig);
               },
               child: const Text(
                 'Delete',
@@ -565,6 +621,45 @@ class _GigsScreenState extends State<GigsScreen>
         );
       },
     );
+  }
+
+  Future<void> _confirmDeleteGig(Gig gig) async {
+    try {
+      setState(() => _isLoading = true);
+      await _gigsService.deleteGig(gig.id);
+
+      if (!mounted) return;
+      setState(() => _gigs.removeWhere((g) => g.id == gig.id));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Gig deleted successfully'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Delete gig error: $e');
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete gig: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 }
 

@@ -296,6 +296,14 @@ class Endpoints {
   static String unmuteConversation(String id) =>
       '/messages/conversations/$id/unmute';
 
+  /// Block conversation
+  static String blockConversation(String id) =>
+      '/messages/conversations/$id/block';
+
+  /// Unblock conversation
+  static String unblockConversation(String id) =>
+      '/messages/conversations/$id/unblock';
+
   /// Delete conversation
   static String deleteConversation(String id) => '/messages/conversations/$id';
 
