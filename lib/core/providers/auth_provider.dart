@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import '../api/api.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 
@@ -64,6 +65,14 @@ class AuthProvider extends ChangeNotifier {
   bool get isArtist => _user?.role == UserRole.artist;
   bool get isVenue => _user?.role == UserRole.venue;
   bool get isProfileComplete => _user?.isProfileComplete ?? false;
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SUBSCRIPTION HELPERS - Added for 2026 subscription system
+  // ═══════════════════════════════════════════════════════════════════════
+  bool get isPro => _user?.isPro ?? false;
+  bool get isPremium => _user?.isPremium ?? false;
+  bool get isPaidUser => _user?.isPaidUser ?? false;
+  SubscriptionTier get subscriptionTier => _user?.subscriptionTier ?? SubscriptionTier.free;
 
   /// 🎯 Has completed onboarding (venue/artist profile exists)
   /// This is separate from isProfileComplete which is for full Me tab completion
@@ -434,6 +443,55 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SUBSCRIPTION REFRESH - Added for 2026 subscription system
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// 🔄 Refresh user subscription from server
+  /// Called after successful payment to update subscription status
+  Future<void> refreshUserSubscription() async {
+    if (_user == null) return;
+
+    try {
+      debugPrint('🔐 [AuthProvider] Refreshing subscription status...');
+
+      // Fetch fresh user profile (should include subscriptionTier)
+      final updatedUser = await _authService.getProfile();
+
+      // Update local user with subscription data
+      _user = _user!.copyWith(
+        subscriptionTier: updatedUser.subscriptionTier,
+        hasActiveSubscription: updatedUser.hasActiveSubscription,
+      );
+
+      debugPrint(
+        '🔐 [AuthProvider] Subscription updated: ${_user!.subscriptionTier.name}, active: ${_user!.hasActiveSubscription}',
+      );
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('🔐 [AuthProvider] Failed to refresh subscription: $e');
+      // Fallback: try to get subscription directly from subscription service
+      try {
+        final subscriptionService = SubscriptionService(apiClient: ApiClient());
+        final subscription = await subscriptionService.getSubscription();
+
+        if (subscription != null && _user != null) {
+          _user = _user!.copyWith(
+            subscriptionTier: subscription.tier,
+            hasActiveSubscription: subscription.hasActiveSubscription,
+          );
+          debugPrint(
+            '🔐 [AuthProvider] Subscription updated from service: ${subscription.tier.name}',
+          );
+          notifyListeners();
+        }
+      } catch (e2) {
+        debugPrint('🔐 [AuthProvider] Fallback subscription fetch also failed: $e2');
+      }
     }
   }
 

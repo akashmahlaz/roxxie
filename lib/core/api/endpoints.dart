@@ -352,8 +352,14 @@ class Endpoints {
   /// Discover gigs
   static const String gigsDiscover = '/gigs/discover';
 
-  /// Create gig request/application
-  static const String gigApply = '/gigs/apply';
+  /// Apply to a gig (POST /gigs/:id/apply)
+  static String gigApply(String gigId) => '/gigs/$gigId/apply';
+
+  /// Accept gig offer (POST /gigs/:id/accept)
+  static String gigAccept(String gigId) => '/gigs/$gigId/accept';
+
+  /// Decline gig offer (POST /gigs/:id/decline)
+  static String gigDecline(String gigId) => '/gigs/$gigId/decline';
 
   /// Get gig applications
   static String gigApplications(String gigId) => '/gigs/$gigId/applications';
@@ -394,8 +400,8 @@ class Endpoints {
   /// Confirm booking completion
   static String confirmBooking(String id) => '/bookings/$id/confirm';
 
-  /// Get user's bookings
-  static const String myBookings = '/bookings/my';
+  /// Get user's bookings (matches backend /bookings/me)
+  static const String myBookings = '/bookings/me';
 
   /// Get venue's bookings
   static String venueBookingsList(String venueId) =>
@@ -619,14 +625,14 @@ class Endpoints {
   /// Get messages
   static const String messagesGet = '/messages';
 
-  /// Send message
-  static const String messagesSend = '/messages/send';
+  /// Send message (POST /messages)
+  static const String messagesSend = '/messages';
 
-  /// Mark messages as read
+  /// Mark messages as read (POST /messages/read)
   static const String messagesRead = '/messages/read';
 
-  /// Delete message
-  static const String messageDelete = '/messages/delete';
+  /// Delete message (DELETE /messages/:id)
+  static String messageDelete(String id) => '/messages/$id';
 
   // ═══════════════════════════════════════════════════════════════════════
   // UPLOADS

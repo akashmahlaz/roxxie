@@ -6,14 +6,18 @@
 /// - Animated success states
 /// - Optimistic button for subscription
 /// - REAL API integration with SubscriptionService
-///
-/// Upgrade to premium features
+/// - Shows current subscription status and allows upgrades
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';import 'package:flutter_stripe/flutter_stripe.dart';import '../core/theme/theme.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:provider/provider.dart';
+import '../core/theme/theme.dart';
 import '../core/api/api.dart';
 import '../core/services/services.dart';
+import '../core/providers/providers.dart';
+import '../core/models/user_models.dart' show SubscriptionTier;
 import '../widgets/widgets.dart';
 
 class PremiumScreen extends StatefulWidget {
@@ -32,6 +36,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
   late final SubscriptionService _subscriptionService;
 
   List<SubscriptionPlan> _plans = [];
+  UserSubscription? _currentSubscription;
+
   final List<PremiumFeature> _features = [
     PremiumFeature(
       icon: Icons.visibility_rounded,
@@ -84,25 +90,32 @@ class _PremiumScreenState extends State<PremiumScreen> {
   void initState() {
     super.initState();
     _subscriptionService = SubscriptionService(apiClient: ApiClient());
-    _loadPlans();
+    _loadData();
   }
 
-  Future<void> _loadPlans() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
+
     try {
+      // Load plans
       _plans = await _subscriptionService.loadAvailablePlans();
-      // Filter out free plan and sort by price
       _plans = _plans.where((p) => p.tier != SubscriptionTier.free).toList()
         ..sort((a, b) => a.monthlyPrice.compareTo(b.monthlyPrice));
 
-      // Set default to middle plan (Pro)
       if (_plans.length > 1) {
         _selectedPlanIndex = 1;
       }
+
+      // Load current subscription status
+      _currentSubscription = await _subscriptionService.getSubscription();
+      debugPrint(
+        '💰 [PremiumScreen] Current subscription: ${_currentSubscription?.tier.name ?? 'none'}',
+      );
     } catch (e) {
-      debugPrint('Failed to load plans: $e');
+      debugPrint('Failed to load data: $e');
       _plans = _getDefaultPlans();
     }
+
     setState(() => _isLoading = false);
   }
 
@@ -227,6 +240,83 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     ),
                   ),
                 ),
+
+                // Current Subscription Status Banner (if user has active subscription)
+                if (_currentSubscription?.hasActiveSubscription == true)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.success.withValues(alpha: 0.1),
+                            AppColors.success.withValues(alpha: 0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.check_circle,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${_currentSubscription?.tier.name[0].toUpperCase()}${_currentSubscription?.tier.name.substring(1)} Active',
+                                  style: TextStyle(
+                                    color: AppColors.text(brightness),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (_currentSubscription?.currentPeriodEnd != null)
+                                  Text(
+                                    'Renews on ${_formatDate(_currentSubscription!.currentPeriodEnd!)}',
+                                    style: TextStyle(
+                                      color: AppColors.textSec(brightness),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // Show manage subscription dialog or navigate
+                              _showManageSubscriptionDialog(context, brightness);
+                            },
+                            child: Text(
+                              'Manage',
+                              style: TextStyle(
+                                color: AppColors.crimson,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 // Content
                 SliverToBoxAdapter(
@@ -678,6 +768,51 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // SUBSCRIPTION POLLING - Wait for webhook to activate subscription
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Poll for subscription activation after successful payment
+  /// Webhooks may take 1-5 seconds to process
+  Future<UserSubscription?> _pollForSubscriptionActivation(
+    SubscriptionTier expectedTier,
+  ) async {
+    const maxAttempts = 10;
+    const pollInterval = Duration(seconds: 2);
+
+    debugPrint('💰 [PremiumScreen] Starting subscription polling...');
+
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final subscription = await _subscriptionService.getSubscription();
+
+        if (subscription != null &&
+            subscription.hasActiveSubscription &&
+            (subscription.tier == expectedTier ||
+                subscription.tier.value == expectedTier.value)) {
+          debugPrint(
+            '💰 [PremiumScreen] Subscription activated on attempt $attempt: ${subscription.tier.name}',
+          );
+          return subscription;
+        }
+
+        debugPrint(
+          '💰 [PremiumScreen] Poll attempt $attempt/$maxAttempts: ${subscription?.tier.name ?? 'none'} (waiting for ${expectedTier.name})',
+        );
+      } catch (e) {
+        debugPrint('💰 [PremiumScreen] Poll error: $e');
+      }
+
+      if (attempt < maxAttempts) {
+        await Future.delayed(pollInterval);
+      }
+    }
+
+    debugPrint('💰 [PremiumScreen] Polling timeout - subscription may still be activating');
+    // Return null to indicate polling completed but subscription might still be processing
+    return null;
+  }
+
   Future<void> _subscribe(SubscriptionPlan plan) async {
     if (_isProcessing) return;
 
@@ -721,27 +856,65 @@ class _PremiumScreenState extends State<PremiumScreen> {
       // Present the Payment Sheet
       await Stripe.instance.presentPaymentSheet();
 
-      // Payment successful!
+      // Payment successful! Show processing message
       messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
               const SizedBox(width: 12),
-              Text('Welcome to ${plan.name}! 🎉'),
+              const Text('Activating your subscription...'),
             ],
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: AppColors.info,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          duration: const Duration(seconds: 3),
         ),
       );
 
-      // Refresh subscription status and go back
-      await _subscriptionService.refreshSubscription();
+      // Poll for subscription activation (webhook may take a few seconds)
+      final subscription = await _pollForSubscriptionActivation(plan.tier);
+
+      // Update local state
+      _currentSubscription = subscription;
+
+      // Also update AuthProvider
       if (mounted) {
+        final authProvider = context.read<AuthProvider>();
+        await authProvider.refreshUserSubscription();
+      }
+
+      // Show success message
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text('Welcome to ${plan.name}! 🎉'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+
+        // Refresh UI and go back
+        await _loadData();
         navigator.pop(true); // Return success
       }
     } on StripeException catch (e) {
@@ -788,6 +961,129 @@ class _PremiumScreenState extends State<PremiumScreen> {
         setState(() => _isProcessing = false);
       }
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // HELPER METHODS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  void _showManageSubscriptionDialog(BuildContext context, Brightness brightness) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        title: Text(
+          'Manage Subscription',
+          style: TextStyle(color: AppColors.text(brightness)),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_currentSubscription != null) ...[
+              ListTile(
+                leading: const Icon(Icons.card_membership),
+                title: Text('Current: ${_currentSubscription!.tier.name}'),
+                subtitle: _currentSubscription!.currentPeriodEnd != null
+                    ? Text('Renews on ${_formatDate(_currentSubscription!.currentPeriodEnd!)}')
+                    : null,
+              ),
+            ],
+            ListTile(
+              leading: const Icon(Icons.receipt_long),
+              title: const Text('View Invoices'),
+              onTap: () {
+                Navigator.pop(ctx);
+                // Navigate to invoices
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.payment),
+              title: const Text('Update Payment Method'),
+              onTap: () {
+                Navigator.pop(ctx);
+                // Navigate to payment methods
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.cancel, color: AppColors.error),
+              title: Text(
+                'Cancel Subscription',
+                style: TextStyle(color: AppColors.error),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showCancelConfirmation(context, brightness);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Close',
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelConfirmation(BuildContext context, Brightness brightness) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        title: Text(
+          'Cancel Subscription?',
+          style: TextStyle(color: AppColors.error),
+        ),
+        content: Text(
+          'Are you sure you want to cancel? You will lose access to premium features at the end of your billing period.',
+          style: TextStyle(color: AppColors.textSec(brightness)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Keep Subscription',
+              style: TextStyle(color: AppColors.crimson),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Capture context before async operations
+              final scaffoldMessenger = ScaffoldMessenger.of(ctx);
+              Navigator.pop(ctx);
+              // Cancel subscription
+              try {
+                await _subscriptionService.cancelSubscription(immediately: false);
+                await _loadData();
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: const Text('Subscription will cancel at period end'),
+                      backgroundColor: AppColors.warning,
+                    ),
+                  );
+                }
+              } catch (e) {
+                debugPrint('Cancel failed: $e');
+              }
+            },
+            child: Text(
+              'Cancel Anyway',
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -36,6 +36,27 @@ enum UserStatus {
   }
 }
 
+/// Subscription Tier Enum (mirrors backend)
+enum SubscriptionTier {
+  free('free'),
+  pro('pro'),
+  premium('premium');
+
+  final String value;
+  const SubscriptionTier(this.value);
+
+  static SubscriptionTier fromString(String value) {
+    return SubscriptionTier.values.firstWhere(
+      (e) => e.value == value.toLowerCase(),
+      orElse: () => SubscriptionTier.free,
+    );
+  }
+
+  bool get isPro => this == SubscriptionTier.pro;
+  bool get isPremium => this == SubscriptionTier.premium;
+  bool get isPaid => this == SubscriptionTier.pro || this == SubscriptionTier.premium;
+}
+
 /// Main User Model
 class User {
   final String id;
@@ -54,6 +75,12 @@ class User {
   final String? artistId;
   final String? venueId;
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // SUBSCRIPTION FIELDS - Added for 2026 subscription system
+  // ═══════════════════════════════════════════════════════════════════════
+  final SubscriptionTier subscriptionTier;
+  final bool hasActiveSubscription;
+
   User({
     required this.id,
     required this.email,
@@ -70,6 +97,8 @@ class User {
     required this.updatedAt,
     this.artistId,
     this.venueId,
+    this.subscriptionTier = SubscriptionTier.free,
+    this.hasActiveSubscription = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -89,26 +118,32 @@ class User {
       updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
       artistId: json['artistId'],
       venueId: json['venueId'],
+      subscriptionTier: SubscriptionTier.fromString(
+        json['subscriptionTier'] ?? json['tier'] ?? 'free',
+      ),
+      hasActiveSubscription: json['hasActiveSubscription'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'email': email,
-    'fullName': name,
-    'role': role.value,
-    'status': status.value,
-    'profilePhotoUrl': profilePhotoUrl,
-    'phone': phone,
-    'isEmailVerified': isEmailVerified,
-    'isProfileComplete': isProfileComplete,
-    'pushNotificationsEnabled': pushNotificationsEnabled,
-    'emailNotificationsEnabled': emailNotificationsEnabled,
-    'createdAt': createdAt.toIso8601String(),
-    'updatedAt': updatedAt.toIso8601String(),
-    'artistId': artistId,
-    'venueId': venueId,
-  };
+        'id': id,
+        'email': email,
+        'fullName': name,
+        'role': role.value,
+        'status': status.value,
+        'profilePhotoUrl': profilePhotoUrl,
+        'phone': phone,
+        'isEmailVerified': isEmailVerified,
+        'isProfileComplete': isProfileComplete,
+        'pushNotificationsEnabled': pushNotificationsEnabled,
+        'emailNotificationsEnabled': emailNotificationsEnabled,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+        'artistId': artistId,
+        'venueId': venueId,
+        'subscriptionTier': subscriptionTier.value,
+        'hasActiveSubscription': hasActiveSubscription,
+      };
 
   User copyWith({
     String? id,
@@ -126,6 +161,8 @@ class User {
     DateTime? updatedAt,
     String? artistId,
     String? venueId,
+    SubscriptionTier? subscriptionTier,
+    bool? hasActiveSubscription,
   }) {
     return User(
       id: id ?? this.id,
@@ -145,11 +182,21 @@ class User {
       updatedAt: updatedAt ?? this.updatedAt,
       artistId: artistId ?? this.artistId,
       venueId: venueId ?? this.venueId,
+      subscriptionTier: subscriptionTier ?? this.subscriptionTier,
+      hasActiveSubscription:
+          hasActiveSubscription ?? this.hasActiveSubscription,
     );
   }
 
   bool get isArtist => role == UserRole.artist;
   bool get isVenue => role == UserRole.venue;
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SUBSCRIPTION HELPERS - Convenience getters
+  // ═══════════════════════════════════════════════════════════════════════
+  bool get isPro => subscriptionTier == SubscriptionTier.pro;
+  bool get isPremium => subscriptionTier == SubscriptionTier.premium;
+  bool get isPaidUser => hasActiveSubscription && subscriptionTier.isPaid;
 }
 
 /// Location Model
@@ -191,23 +238,23 @@ class Location {
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-    
+
     // Backend requires city and country as strings (not optional)
     // Send them even if empty to satisfy validation
     json['city'] = city ?? '';
     json['country'] = country ?? '';
-    
+
     // Only send coordinates if valid (not [0,0])
-    if (coordinates.length >= 2 && 
+    if (coordinates.length >= 2 &&
         (coordinates[0] != 0.0 || coordinates[1] != 0.0)) {
       json['coordinates'] = coordinates;
     }
-    
+
     // Optional fields that backend accepts
     if (formattedAddress != null && formattedAddress!.isNotEmpty) {
       json['formattedAddress'] = formattedAddress;
     }
-    
+
     return json;
   }
 
@@ -245,11 +292,11 @@ class SocialLinks {
   }
 
   Map<String, dynamic> toJson() => {
-    if (instagram != null) 'instagram': instagram,
-    if (spotify != null) 'spotify': spotify,
-    if (youtube != null) 'youtube': youtube,
-    if (soundcloud != null) 'soundcloud': soundcloud,
-    if (tiktok != null) 'tiktok': tiktok,
-    if (website != null) 'website': website,
-  };
+        if (instagram != null) 'instagram': instagram,
+        if (spotify != null) 'spotify': spotify,
+        if (youtube != null) 'youtube': youtube,
+        if (soundcloud != null) 'soundcloud': soundcloud,
+        if (tiktok != null) 'tiktok': tiktok,
+        if (website != null) 'website': website,
+      };
 }

@@ -6,6 +6,7 @@
 - Single underscore: `(_, _, _)` not `(_, __, ___)`
 - Enum comparison: `userRole == UserRole.artist`
 - Dont use deprecated APIs use latest and long support and from official flutter.dev not random publishers 
+- backend in gigmatch folder if any time changes needed after changes run pnpm exec tsc --noemit
 ### Dont do
 - `withOpacity()` → use `withValues(alpha: 0.5)`
 - `WillPopScope` → use `PopScope`

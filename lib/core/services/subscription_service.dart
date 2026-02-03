@@ -17,14 +17,14 @@ library;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../api/api.dart';
+import '../models/user_models.dart' show SubscriptionTier;
 import '../providers/auth_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
-// SUBSCRIPTION TIERS
+// SUBSCRIPTION TIERS - Now imported from user_models.dart
 /// ═══════════════════════════════════════════════════════════════════════
 
-/// Subscription tiers available in the app
-enum SubscriptionTier { free, pro, premium }
+// SubscriptionTier is now defined in ../models/user_models.dart
 
 /// Status of a subscription
 enum SubscriptionStatus { active, pastDue, canceled, unpaid, trialing, paused }
