@@ -12,7 +12,8 @@
       "Bash(codex --profile m21)",
       "Bash(npx tsc --noEmit)",
       "Bash(flutter pub get)",
-      "Bash(grep -r \"class.*StatefulWidget\" lib/screens/*.dart)"
+      "Bash(grep -r \"class.*StatefulWidget\" lib/screens/*.dart)",
+      "Bash(npx tsc --noemit)"
     ]
   }
 }
