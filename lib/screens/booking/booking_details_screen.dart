@@ -268,49 +268,6 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
         false;
   }
 
-  void _showPaymentProcessingDialog() {
-    final brightness = Theme.of(context).brightness;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: AppColors.surface(brightness),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(
-                color: AppColors.crimson,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Processing Payment...',
-                style: TextStyle(
-                  color: AppColors.text(brightness),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Please wait while we process your payment.',
-                style: TextStyle(
-                  color: AppColors.textSec(brightness),
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showPaymentSuccessDialog(double amount) {
     final brightness = Theme.of(context).brightness;
     showDialog(

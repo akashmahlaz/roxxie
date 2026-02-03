@@ -397,8 +397,24 @@ class Endpoints {
   /// Get booking timeline
   static String bookingTimeline(String id) => '/bookings/$id/timeline';
 
-  /// Confirm booking completion
+  /// Confirm booking
   static String confirmBooking(String id) => '/bookings/$id/confirm';
+
+  /// Complete booking
+  static String completeBooking(String id) => '/bookings/$id/complete';
+
+  /// Pay deposit for booking
+  static String payDeposit(String id) => '/bookings/$id/pay-deposit';
+
+  /// Pay final payment for booking
+  static String payFinal(String id) => '/bookings/$id/pay-final';
+
+  /// Sign contract for booking
+  static String signContract(String id) => '/bookings/$id/sign-contract';
+
+  /// Accept proposal from message
+  static String acceptProposal(String messageId) =>
+      '/messages/$messageId/accept-proposal';
 
   /// Get user's bookings (matches backend /bookings/me)
   static const String myBookings = '/bookings/me';
@@ -430,6 +446,23 @@ class Endpoints {
   /// Delete review
   static String deleteReview(String id) => '/reviews/$id';
 
+  /// Get reviews for an artist (GET /reviews/artist/:artistId)
+  static String reviewsArtist(String artistId) => '/reviews/artist/$artistId';
+
+  /// Get artist review stats (GET /reviews/artist/:artistId/stats)
+  static String reviewsArtistStats(String artistId) =>
+      '/reviews/artist/$artistId/stats';
+
+  /// Get reviews for a venue (GET /reviews/venue/:venueId)
+  static String reviewsVenue(String venueId) => '/reviews/venue/$venueId';
+
+  /// Get venue review stats (GET /reviews/venue/:venueId/stats)
+  static String reviewsVenueStats(String venueId) =>
+      '/reviews/venue/$venueId/stats';
+
+  /// Get my reviews (reviews about me)
+  static const String reviewsMe = '/reviews/me';
+
   /// Get reviews for user
   static String userReviews(String userId, String userType) =>
       '/users/$userType/$userId/reviews';
@@ -442,6 +475,9 @@ class Endpoints {
 
   /// Respond to review
   static String respondToReview(String id) => '/reviews/$id/respond';
+
+  /// Mark review helpful
+  static String reviewHelpful(String id) => '/reviews/$id/helpful';
 
   // ═══════════════════════════════════════════════════════════════════════
   // NOTIFICATIONS
@@ -505,8 +541,11 @@ class Endpoints {
   /// Restore purchases (iOS/Android)
   static const String subscriptionRestore = '/subscription/restore';
 
-  /// Use profile boost
-  static const String subscriptionUseBoost = '/subscription/boost';
+  /// Use profile boost (POST /subscription/boosts/use)
+  static const String subscriptionUseBoost = '/subscription/boosts/use';
+
+  /// Get remaining boosts (GET /subscription/boosts)
+  static const String subscriptionBoosts = '/subscription/boosts';
 
   /// Get payment methods
   static const String paymentMethods = '/subscription/payment-methods';
@@ -550,8 +589,17 @@ class Endpoints {
   /// Get gig analytics
   static const String analyticsGigs = '/analytics/gigs';
 
+  /// Get review analytics
+  static const String analyticsReviews = '/analytics/reviews';
+
   /// Export analytics data
   static const String analyticsExport = '/analytics/export';
+
+  /// Track analytics event
+  static const String analyticsTrack = '/analytics/track';
+
+  /// Batch track analytics events
+  static const String analyticsTrackBatch = '/analytics/track/batch';
 
   // ═══════════════════════════════════════════════════════════════════════
   // IDENTITY VERIFICATION

@@ -26,7 +26,7 @@ class BookingService {
     debugPrint('📅 [BookingService] Creating booking...');
 
     try {
-      final response = await _api.post('/bookings', data: request.toJson());
+      final response = await _api.post(Endpoints.createBooking, data: request.toJson());
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         debugPrint('✅ [BookingService] Booking created');
@@ -48,7 +48,7 @@ class BookingService {
     debugPrint('📅 [BookingService] Fetching booking: $bookingId');
 
     try {
-      final response = await _api.get('/bookings/$bookingId');
+      final response = await _api.get(Endpoints.bookingById(bookingId));
 
       if (response.statusCode == 200) {
         return Booking.fromJson(response.data);
@@ -125,7 +125,7 @@ class BookingService {
     debugPrint('📅 [BookingService] Confirming booking: $bookingId');
 
     try {
-      final response = await _api.post('/bookings/$bookingId/confirm');
+      final response = await _api.post(Endpoints.confirmBooking(bookingId));
 
       if (response.statusCode == 200) {
         debugPrint('✅ [BookingService] Booking confirmed');
@@ -172,7 +172,7 @@ class BookingService {
     debugPrint('📅 [BookingService] Marking complete: $bookingId');
 
     try {
-      final response = await _api.post('/bookings/$bookingId/complete');
+      final response = await _api.post(Endpoints.completeBooking(bookingId));
 
       if (response.statusCode == 200) {
         debugPrint('✅ [BookingService] Marked as complete');
@@ -198,7 +198,7 @@ class BookingService {
     debugPrint('💳 [BookingService] Creating deposit payment: $bookingId');
 
     try {
-      final response = await _api.post('/bookings/$bookingId/pay-deposit');
+      final response = await _api.post(Endpoints.payDeposit(bookingId));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('✅ [BookingService] Payment intent created');
@@ -220,7 +220,7 @@ class BookingService {
     debugPrint('💳 [BookingService] Creating final payment: $bookingId');
 
     try {
-      final response = await _api.post('/bookings/$bookingId/pay-final');
+      final response = await _api.post(Endpoints.payFinal(bookingId));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('✅ [BookingService] Final payment intent created');
@@ -299,7 +299,7 @@ class BookingService {
     debugPrint('📝 [BookingService] Signing contract: $bookingId');
 
     try {
-      final response = await _api.post('/bookings/$bookingId/sign-contract');
+      final response = await _api.post(Endpoints.signContract(bookingId));
 
       if (response.statusCode == 200) {
         debugPrint('✅ [BookingService] Contract signed');
@@ -353,7 +353,7 @@ class BookingService {
     debugPrint('📅 [BookingService] Accepting proposal: $messageId');
 
     try {
-      final response = await _api.post('/messages/$messageId/accept-proposal');
+      final response = await _api.post(Endpoints.acceptProposal(messageId));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('✅ [BookingService] Proposal accepted, booking created');

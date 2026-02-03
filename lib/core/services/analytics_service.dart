@@ -1007,7 +1007,7 @@ class AnalyticsService {
   /// Send event to server
   Future<void> _sendEvent(Map<String, dynamic> event) async {
     try {
-      await _client.post('/analytics/track', data: event);
+      await _client.post(Endpoints.analyticsTrack, data: event);
       _eventQueue.remove(event);
     } catch (e) {
       debugPrint('⚠️ [AnalyticsService] Failed to send event: $e');
@@ -1026,7 +1026,7 @@ class AnalyticsService {
     _eventQueue.clear();
 
     try {
-      await _client.post('/analytics/track/batch', data: {'events': events});
+      await _client.post(Endpoints.analyticsTrackBatch, data: {'events': events});
     } catch (e) {
       debugPrint('⚠️ [AnalyticsService] Batch sync failed: $e');
       // Re-queue failed events
@@ -1101,7 +1101,7 @@ class AnalyticsService {
   /// Get remaining boosts
   Future<int> getRemainingBoosts() async {
     try {
-      final response = await _client.get('/subscription/boosts/remaining');
+      final response = await _client.get(Endpoints.subscriptionBoosts);
       return response.data?['count'] ?? 0;
     } catch (e) {
       debugPrint('⚠️ [AnalyticsService] Failed to get remaining boosts: $e');

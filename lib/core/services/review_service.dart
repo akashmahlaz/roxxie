@@ -265,7 +265,7 @@ class ReviewService {
       };
 
       final response = await _client.get(
-        '/reviews/artist/$artistId',
+        Endpoints.reviewsArtist(artistId),
         queryParameters: queryParams,
       );
 
@@ -281,7 +281,7 @@ class ReviewService {
     try {
       debugPrint('⭐ [ReviewService] Getting stats for artist: $artistId');
 
-      final response = await _client.get('/reviews/artist/$artistId/stats');
+      final response = await _client.get(Endpoints.reviewsArtistStats(artistId));
       return ReviewStats.fromJson(response.data);
     } on DioException catch (e) {
       debugPrint('❌ [ReviewService] Get artist stats failed: $e');
@@ -308,7 +308,7 @@ class ReviewService {
       };
 
       final response = await _client.get(
-        '/reviews/venue/$venueId',
+        Endpoints.reviewsVenue(venueId),
         queryParameters: queryParams,
       );
 
@@ -324,7 +324,7 @@ class ReviewService {
     try {
       debugPrint('⭐ [ReviewService] Getting stats for venue: $venueId');
 
-      final response = await _client.get('/reviews/venue/$venueId/stats');
+      final response = await _client.get(Endpoints.reviewsVenueStats(venueId));
       return ReviewStats.fromJson(response.data);
     } on DioException catch (e) {
       debugPrint('❌ [ReviewService] Get venue stats failed: $e');
@@ -337,7 +337,7 @@ class ReviewService {
     try {
       debugPrint('⭐ [ReviewService] Creating review for gig: ${request.gigId}');
 
-      final response = await _client.post('/reviews', data: request.toJson());
+      final response = await _client.post(Endpoints.createReview, data: request.toJson());
 
       return Review.fromJson(response.data);
     } on DioException catch (e) {
@@ -352,7 +352,7 @@ class ReviewService {
       debugPrint('⭐ [ReviewService] Getting my reviews');
 
       final response = await _client.get(
-        '/reviews/me',
+        Endpoints.reviewsMe,
         queryParameters: {'page': page.toString(), 'limit': limit.toString()},
       );
 
@@ -369,7 +369,7 @@ class ReviewService {
       debugPrint('⭐ [ReviewService] Responding to review: $reviewId');
 
       final res = await _client.put(
-        '/reviews/$reviewId/respond',
+        Endpoints.respondToReview(reviewId),
         data: {'response': response},
       );
 
@@ -385,7 +385,7 @@ class ReviewService {
     try {
       debugPrint('⭐ [ReviewService] Marking review helpful: $reviewId');
 
-      await _client.post('/reviews/$reviewId/helpful');
+      await _client.post(Endpoints.reviewHelpful(reviewId));
     } on DioException catch (e) {
       debugPrint('❌ [ReviewService] Mark helpful failed: $e');
       throw _handleError(e);

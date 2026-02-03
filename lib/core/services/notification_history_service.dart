@@ -114,7 +114,7 @@ class NotificationHistoryService {
     try {
       debugPrint('🔔 [NotificationService] Fetching unread count...');
 
-      final response = await _client.get('/notifications/unread');
+      final response = await _client.get(Endpoints.notificationsUnreadCount);
       return response.data['count'] ?? 0;
     } on DioException catch (e) {
       debugPrint('❌ [NotificationService] Get unread count failed: $e');

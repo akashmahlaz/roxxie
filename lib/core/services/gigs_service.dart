@@ -24,7 +24,7 @@ class GigsService {
   /// Fetch full details of a specific gig
   Future<Gig> getGigById(String gigId) async {
     try {
-      final response = await _client.get('/gigs/$gigId');
+      final response = await _client.get(Endpoints.gigById(gigId));
       return Gig.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       debugPrint('Get gig by ID error: $e');
@@ -35,7 +35,7 @@ class GigsService {
   /// ✅ Accept a gig offer (Artist)
   Future<Gig> acceptGig(String gigId) async {
     try {
-      final response = await _client.post('/gigs/$gigId/accept');
+      final response = await _client.post(Endpoints.gigAccept(gigId));
       return Gig.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       debugPrint('Accept gig error: $e');
