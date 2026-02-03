@@ -75,6 +75,8 @@ class GigPerks {
   final bool providesDrinks;
   final bool providesAccommodation;
   final bool providesTransport;
+  final bool providesEquipment;
+  final bool providesParking;
   final List<String> additionalPerks;
 
   const GigPerks({
@@ -82,6 +84,8 @@ class GigPerks {
     this.providesDrinks = false,
     this.providesAccommodation = false,
     this.providesTransport = false,
+    this.providesEquipment = false,
+    this.providesParking = false,
     this.additionalPerks = const [],
   });
 

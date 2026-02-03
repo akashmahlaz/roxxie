@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/theme.dart';
 import '../../core/services/gigs_service.dart';
 import '../../core/models/gig_models.dart';
+import '../gig_details_screen.dart';
 
 class MyApplicationsScreen extends StatefulWidget {
   const MyApplicationsScreen({super.key});
@@ -202,14 +203,13 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen>
   }
 
   void _navigateToGigDetails(ArtistGigApplication application) {
-    // TODO: Navigate to gig details screen
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (_) => GigDetailsScreen(gigId: application.gigId),
-    //   ),
-    // );
     HapticFeedback.selectionClick();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GigDetailsScreen(gigId: application.gigId),
+      ),
+    );
   }
 }
 

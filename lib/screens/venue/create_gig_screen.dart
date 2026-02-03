@@ -137,10 +137,10 @@ class _CreateGigScreenState extends State<CreateGigScreen>
     }
 
     _selectedGenres.addAll(gig.requiredGenres);
-    // Fixed: Load correct perk fields (backend provides equipment-related perks)
-    _equipmentProvided = gig.perks?.providesFood ?? true;
-    _mealIncluded = gig.perks?.providesDrinks ?? true;
-    _parkingAvailable = gig.perks?.providesTransport ?? true;
+    // Fixed: Load correct perk fields from backend
+    _equipmentProvided = gig.perks?.providesEquipment ?? true;
+    _mealIncluded = gig.perks?.providesFood ?? true;
+    _parkingAvailable = gig.perks?.providesParking ?? true;
     _accommodationProvided = gig.perks?.providesAccommodation ?? false;
     final perks = gig.perks;
     if (perks case final p?) {
@@ -219,9 +219,9 @@ class _CreateGigScreenState extends State<CreateGigScreen>
           : null;
 
       final perks = GigPerks(
-        providesFood: _equipmentProvided,
-        providesDrinks: _mealIncluded,
-        providesTransport: _parkingAvailable,
+        providesEquipment: _equipmentProvided,
+        providesFood: _mealIncluded,
+        providesParking: _parkingAvailable,
         providesAccommodation: _accommodationProvided,
         additionalPerks: _additionalPerksController.text.isNotEmpty
             ? _additionalPerksController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()

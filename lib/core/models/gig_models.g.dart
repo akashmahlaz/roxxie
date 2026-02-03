@@ -44,6 +44,8 @@ GigPerks _$GigPerksFromJson(Map<String, dynamic> json) => GigPerks(
   providesDrinks: json['providesDrinks'] as bool? ?? false,
   providesAccommodation: json['providesAccommodation'] as bool? ?? false,
   providesTransport: json['providesTransport'] as bool? ?? false,
+  providesEquipment: json['providesEquipment'] as bool? ?? false,
+  providesParking: json['providesParking'] as bool? ?? false,
   additionalPerks:
       (json['additionalPerks'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -56,6 +58,8 @@ Map<String, dynamic> _$GigPerksToJson(GigPerks instance) => <String, dynamic>{
   'providesDrinks': instance.providesDrinks,
   'providesAccommodation': instance.providesAccommodation,
   'providesTransport': instance.providesTransport,
+  'providesEquipment': instance.providesEquipment,
+  'providesParking': instance.providesParking,
   'additionalPerks': instance.additionalPerks,
 };
 
