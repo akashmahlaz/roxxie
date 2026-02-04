@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark mode colors (same as day for GigMatch dark theme) -->
+    <color name="splash_background">#000000</color>
+    <color name="ic_launcher_background">#000000</color>
+</resources>

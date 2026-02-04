@@ -154,15 +154,49 @@ dev_dependencies:
   # App icon generator
   flutter_launcher_icons: ^0.14.4
 
+  # Native splash screen (Android 12+ compatible)
+  flutter_native_splash: ^2.4.7
+
 # Flutter Launcher Icons configuration
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/app_icon.png"
-  # Uncomment below to customize
-  # min_sdk_android: 21
-  # remove_alpha_ios: true
-  # background_color_ios: "#ffffff"
+  min_sdk_android: 26
+  remove_alpha_ios: true
+  background_color_ios: "#000000"
+  # Adaptive icons for Android 8+ with black background
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/app_icon.png"
+
+# Flutter Native Splash configuration
+# This handles the splash screen for ALL Android versions including Android 12+
+flutter_native_splash:
+  # Background color for pre-Android 12 (crimson brand color)
+  color: "#DC2626"
+  color_dark: "#DC2626"
+  
+  # Splash image (white G logo on transparent - will show on crimson bg)
+  image: assets/images/splash_logo.png
+  image_dark: assets/images/splash_logo.png
+  
+  # Fullscreen mode (hide status bar)
+  fullscreen: true
+  
+  # Android 12+ specific configuration
+  android_12:
+    # Window background color (crimson)
+    color: "#DC2626"
+    color_dark: "#DC2626"
+    
+    # Center icon (white G logo - will be masked to circle)
+    # Size should be 1152x1152 with logo fitting in 768px diameter circle
+    image: assets/images/splash_logo.png
+    image_dark: assets/images/splash_logo.png
+    
+    # Icon background color (crimson - matches the brand)
+    icon_background_color: "#DC2626"
+    icon_background_color_dark: "#DC2626"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
