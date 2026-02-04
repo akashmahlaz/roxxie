@@ -172,10 +172,27 @@ class _GigsScreenState extends State<GigsScreen>
       // Load from real API
       final response = await _gigsService.getMyGigs(page: 1, limit: 50);
 
+      debugPrint('📊 [GigsScreen] Loaded ${response.items.length} gigs from API');
+      
+      final convertedGigs = response.items.map((apiGig) {
+        debugPrint('  - Gig: ${apiGig.title}, Status: ${apiGig.status}');
+        return Gig.fromApi(apiGig);
+      }).toList();
+
+      debugPrint('📊 [GigsScreen] After conversion: ${convertedGigs.length} gigs');
+      convertedGigs.asMap().forEach((index, gig) {
+        debugPrint('  [$index] ${gig.title} - Status: ${gig.status} (isPast: ${gig.isPast})');
+      });
+
       setState(() {
-        _gigs = response.items.map((apiGig) => Gig.fromApi(apiGig)).toList();
+        _gigs = convertedGigs;
         _isLoading = false;
       });
+
+      debugPrint('📊 [GigsScreen] Filtered counts:');
+      debugPrint('  - Active: ${_activeGigs.length}');
+      debugPrint('  - Draft: ${_draftGigs.length}');
+      debugPrint('  - Past: ${_pastGigs.length}');
     } catch (e) {
       debugPrint('Error loading gigs: $e');
       setState(() {

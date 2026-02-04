@@ -34,7 +34,12 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    // Schedule loadProfile after frame to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadProfile();
+      }
+    });
   }
 
   Future<void> _loadProfile() async {

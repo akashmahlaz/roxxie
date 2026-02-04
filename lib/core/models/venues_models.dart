@@ -755,8 +755,9 @@ class GigPreferences {
       prefs.gigTypes = List<String>.from(json['gigTypes']);
     }
     prefs.paymentType = json['paymentType'];
-    prefs.minBudget = (json['minBudget'] ?? 0).toDouble();
-    prefs.maxBudget = (json['maxBudget'] ?? 0).toDouble();
+    // Backend uses budgetMin/budgetMax, DTO uses minBudget/maxBudget - support both
+    prefs.minBudget = (json['minBudget'] ?? json['budgetMin'] ?? 0).toDouble();
+    prefs.maxBudget = (json['maxBudget'] ?? json['budgetMax'] ?? 0).toDouble();
     prefs.currency = json['currency'] ?? 'USD';
     prefs.avgGigDuration = (json['avgGigDuration'] ?? 3).toDouble();
     prefs.providesMusicianMeals = json['providesMusicianMeals'] ?? false;
@@ -1344,9 +1345,19 @@ class Venue {
           : null,
       location: location,
       displayLocation: json['displayLocation'],
+      // If gigPreferences exists use it, otherwise create from root-level budget fields
       gigPreferences: json['gigPreferences'] != null
           ? GigPreferences.fromJson(json['gigPreferences'])
-          : null,
+          : (json['budgetMin'] != null || json['budgetMax'] != null || json['currency'] != null)
+              ? GigPreferences.fromJson({
+                  'budgetMin': json['budgetMin'],
+                  'budgetMax': json['budgetMax'],
+                  'minBudget': json['minBudget'],
+                  'maxBudget': json['maxBudget'],
+                  'currency': json['currency'],
+                  'preferredGenres': json['preferredGenres'],
+                })
+              : null,
       reviewStatsAverageRating: json['reviewStats']?['averageRating']
           ?.toDouble(),
       totalGigsHosted: json['totalGigsHosted'],
