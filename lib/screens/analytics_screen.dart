@@ -15,6 +15,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../core/theme/theme.dart';
 import '../core/services/services.dart';
 import '../core/api/api.dart';
@@ -65,6 +66,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     _chartController.dispose();
     _countController.dispose();
     super.dispose();
+  }
+
+  void _shareAnalytics() {
+    final periodName = _selectedPeriod.name;
+    final profileViews = _analytics['profileViews'] ?? 0;
+    final matchRate = _analytics['matchRate'] ?? 0;
+    final responseRate = _analytics['responseRate'] ?? 0;
+
+    final shareText = '''📊 My GigMatch Analytics ($periodName)
+
+👀 Profile Views: $profileViews
+💫 Match Rate: $matchRate%
+⚡ Response Rate: $responseRate%
+
+Check out GigMatch - the best platform for live music bookings! 🎵''';
+
+    SharePlus.instance.share(ShareParams(text: shareText, subject: 'My GigMatch Analytics'));
   }
 
   Future<void> _loadAnalytics() async {
@@ -287,7 +305,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       actions: [
         IconButton(
           icon: Icon(Icons.share_rounded, color: AppColors.text(brightness)),
-          onPressed: () => HapticFeedback.lightImpact(),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            _shareAnalytics();
+          },
         ),
         const SizedBox(width: 8),
       ],

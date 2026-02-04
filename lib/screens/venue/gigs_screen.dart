@@ -144,8 +144,7 @@ class _GigsScreenState extends State<GigsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
-  // ignore: unused_field
-  String? _errorMessage;
+  bool _isActionLoading = false;
   List<Gig> _gigs = [];
   final GigsService _gigsService = GigsService();
 
@@ -165,7 +164,6 @@ class _GigsScreenState extends State<GigsScreen>
   Future<void> _loadGigs() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -196,10 +194,21 @@ class _GigsScreenState extends State<GigsScreen>
     } catch (e) {
       debugPrint('Error loading gigs: $e');
       setState(() {
-        _errorMessage = 'Failed to load gigs. Please try again.';
         _isLoading = false;
         _gigs = [];
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to load gigs. Please try again.'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -230,7 +239,19 @@ class _GigsScreenState extends State<GigsScreen>
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       appBar: _buildAppBar(brightness),
-      body: _isLoading ? _buildSkeleton(brightness) : _buildContent(brightness),
+      body: Stack(
+        children: [
+          _isLoading ? _buildSkeleton(brightness) : _buildContent(brightness),
+          // Overlay loading for delete/duplicate operations
+          if (_isActionLoading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.3),
+              child: const Center(
+                child: CircularProgressIndicator(color: AppColors.crimson),
+              ),
+            ),
+        ],
+      ),
       floatingActionButton: _buildFAB(brightness),
     );
   }
@@ -259,7 +280,19 @@ class _GigsScreenState extends State<GigsScreen>
               color: AppColors.text(brightness),
             ),
           ),
-          onPressed: () => HapticFeedback.lightImpact(),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Notifications coming soon!'),
+                backgroundColor: AppColors.crimson,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          },
         ),
         const SizedBox(width: 8),
       ],
@@ -528,10 +561,18 @@ class _GigsScreenState extends State<GigsScreen>
     HapticFeedback.lightImpact();
     if (gig.source == null) return;
 
+    setState(() {
+      _isActionLoading = true;
+    });
+
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => CreateGigScreen(gig: gig.source)),
     );
+
+    setState(() {
+      _isActionLoading = false;
+    });
 
     if (result == true) {
       _loadGigs();
@@ -556,19 +597,24 @@ class _GigsScreenState extends State<GigsScreen>
       return;
     }
 
+    setState(() {
+      _isActionLoading = true;
+    });
+
     try {
-      setState(() => _isLoading = true);
       await _gigsService.duplicateGig(apiGig);
 
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() {
+        _isActionLoading = false;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
               Icon(Icons.check_circle_rounded, color: Colors.white),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Text('Gig duplicated as draft'),
             ],
           ),
@@ -583,7 +629,9 @@ class _GigsScreenState extends State<GigsScreen>
       debugPrint('Duplicate gig error: $e');
 
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() {
+        _isActionLoading = false;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -642,13 +690,13 @@ class _GigsScreenState extends State<GigsScreen>
 
   Future<void> _confirmDeleteGig(Gig gig) async {
     try {
-      setState(() => _isLoading = true);
+      setState(() => _isActionLoading = true);
       await _gigsService.deleteGig(gig.id);
 
       if (!mounted) return;
       setState(() {
         _gigs.removeWhere((g) => g.id == gig.id);
-        _isLoading = false;
+        _isActionLoading = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -669,7 +717,7 @@ class _GigsScreenState extends State<GigsScreen>
       debugPrint('Delete gig error: $e');
 
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() => _isActionLoading = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -803,39 +851,50 @@ class _GigCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  ...gig.genres
-                      .take(2)
-                      .map(
-                        (genre) => Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.crimson.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              genre,
-                              style: TextStyle(
-                                color: AppColors.crimson,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                  if (gig.genres.isEmpty)
+                    Text(
+                      'No genres specified',
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness),
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else ...[
+                    ...gig.genres
+                        .take(2)
+                        .map(
+                          (genre) => Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.crimson.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                genre,
+                                style: TextStyle(
+                                  color: AppColors.crimson,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
                         ),
+                    if (gig.genres.length > 2)
+                      Text(
+                        '+${gig.genres.length - 2}',
+                        style: TextStyle(
+                          color: AppColors.textSec(brightness),
+                          fontSize: 11,
+                        ),
                       ),
-                  if (gig.genres.length > 2)
-                    Text(
-                      '+${gig.genres.length - 2}',
-                      style: TextStyle(
-                        color: AppColors.textSec(brightness),
-                        fontSize: 11,
-                      ),
-                    ),
+                  ],
                 ],
               ),
 
@@ -855,7 +914,17 @@ class _GigCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 18,
-                        backgroundImage: NetworkImage(gig.bookedArtistImage!),
+                        backgroundImage: gig.bookedArtistImage != null
+                            ? NetworkImage(gig.bookedArtistImage!)
+                            : null,
+                        backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
+                        child: gig.bookedArtistImage == null
+                            ? Icon(
+                                Icons.person_rounded,
+                                color: AppColors.crimson,
+                                size: 18,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -871,7 +940,7 @@ class _GigCard extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              gig.bookedArtistName!,
+                              gig.bookedArtistName ?? 'Unknown Artist',
                               style: TextStyle(
                                 color: AppColors.text(brightness),
                                 fontSize: 14,
@@ -905,6 +974,56 @@ class _GigCard extends StatelessWidget {
                       AppColors.textSec(brightness),
                     ),
                   ],
+                ),
+              ] else if (gig.status == GigStatus.draft) ...[
+                // Show draft info
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.warning.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.edit_note_rounded,
+                        color: AppColors.warning,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Draft',
+                              style: TextStyle(
+                                color: AppColors.warning,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              'Ready to publish',
+                              style: TextStyle(
+                                color: AppColors.textSec(brightness),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.textSec(brightness),
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -947,8 +1066,8 @@ class _GigCard extends StatelessWidget {
         label.toUpperCase(),
         style: TextStyle(
           color: color,
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
         ),
       ),
@@ -967,7 +1086,7 @@ class _GigCard extends StatelessWidget {
         gig.gigType,
         style: TextStyle(
           color: AppColors.textSec(brightness),
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),

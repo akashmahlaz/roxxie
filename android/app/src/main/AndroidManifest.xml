@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Network permissions for Stripe API calls -->
+    <!-- Network permissions for API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
@@ -14,13 +14,25 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    
+    <!-- Push notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
-        android:label="gigmatch"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:enableOnBackInvokedCallback="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="tiramisu">
+
+        <!-- Privacy Policy URL for Play Store compliance -->
+        <meta-data
+            android:name="privacy_policy_url"
+            android:value="https://gigmatch.com/privacy-policy" />
 
         <!-- Main Activity - FlutterFragmentActivity for Stripe Payment Sheet -->
         <activity
@@ -37,8 +49,7 @@
             <!-- Normal theme for after splash -->
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme"
-                />
+                android:resource="@style/NormalTheme" />
 
             <!-- Launch intent -->
             <intent-filter>
@@ -55,17 +66,28 @@
                     android:scheme="https"
                     android:host="gigmatch.com" />
             </intent-filter>
+            
+            <!-- Custom scheme deep link -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="gigmatch" />
+            </intent-filter>
         </activity>
 
         <!-- Flutter embedding version -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
-        <!-- Stripe publishable key -->
+            
+        <!-- Firebase Cloud Messaging -->
         <meta-data
-            android:name="com.stripe.publishableKey"
-            android:value="pk_test_51SmC3CFPTeSKTr2qb1nt2PAyUvI85xpBGjuEXnjD8s91QDROaCMaPNDmmUKTZ3KvXMPMDR0V13PzHZA8C2PqZcOO00SFROGUN9" />
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="gigmatch_general" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
 
     </application>
 
@@ -78,6 +100,11 @@
         <!-- Query for browser -->
         <intent>
             <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
+</manifest>
             <data android:scheme="https"/>
         </intent>
     </queries>

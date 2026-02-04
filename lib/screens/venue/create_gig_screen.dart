@@ -211,7 +211,64 @@ class _CreateGigScreenState extends State<CreateGigScreen>
     super.dispose();
   }
 
+  bool _validateStep(int step) {
+    switch (step) {
+      case 0:
+        // Basic Info validation
+        if (_titleController.text.trim().isEmpty) {
+          _showValidationError('Please enter a gig title');
+          return false;
+        }
+        if (_selectedGenres.isEmpty) {
+          _showValidationError('Please select at least one genre');
+          return false;
+        }
+        if (_paymentController.text.trim().isEmpty) {
+          _showValidationError('Please enter a payment amount');
+          return false;
+        }
+        if (double.tryParse(_paymentController.text) == null) {
+          _showValidationError('Please enter a valid payment amount');
+          return false;
+        }
+        return true;
+      case 1:
+        // Date & Time validation
+        if (_selectedDate == null) {
+          _showValidationError('Please select a date');
+          return false;
+        }
+        if (_startTime == null) {
+          _showValidationError('Please select a start time');
+          return false;
+        }
+        return true;
+      case 2:
+        // Requirements step - no required fields
+        return true;
+      default:
+        return true;
+    }
+  }
+
+  void _showValidationError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.warning,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
   void _nextStep() {
+    if (!_validateStep(_currentStep)) {
+      HapticFeedback.heavyImpact();
+      return;
+    }
+
     if (_currentStep < _totalSteps - 1) {
       HapticFeedback.selectionClick();
       setState(() => _currentStep++);
@@ -220,7 +277,7 @@ class _CreateGigScreenState extends State<CreateGigScreen>
         curve: Curves.easeOutCubic,
       );
     } else {
-      _saveGig();
+      _confirmSaveGig();
     }
   }
 
@@ -331,10 +388,18 @@ class _CreateGigScreenState extends State<CreateGigScreen>
         if (!canPublish && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
-                'Gig saved as draft. Complete venue setup to publish.',
+              content: Row(
+                children: [
+                  Icon(Icons.save_rounded, color: Colors.white),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Gig saved as draft. Complete venue setup to publish.',
+                    ),
+                  ),
+                ],
               ),
-              backgroundColor: AppColors.crimson,
+              backgroundColor: AppColors.warning,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -394,63 +459,115 @@ class _CreateGigScreenState extends State<CreateGigScreen>
     }
   }
 
+  void _confirmSaveGig() {
+    final brightness = Theme.of(context).brightness;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          widget.gig != null ? 'Save Changes?' : 'Publish Gig?',
+          style: TextStyle(color: AppColors.text(brightness)),
+        ),
+        content: Text(
+          widget.gig != null
+              ? 'Are you sure you want to save your changes to this gig?'
+              : 'This gig will be published and visible to artists. Continue?',
+          style: TextStyle(color: AppColors.textSec(brightness)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _saveGig();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.crimson,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(widget.gig != null ? 'Save' : 'Publish'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
 
-    return Scaffold(
-      backgroundColor: AppColors.background(brightness),
-      appBar: AppBar(
-        backgroundColor: AppColors.surface(brightness),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.close_rounded, color: AppColors.text(brightness)),
-          onPressed: () => _showExitConfirmation(brightness),
-        ),
-        title: Text(
-          widget.gig != null ? 'Edit Gig' : 'Create Gig',
-          style: TextStyle(
-            color: AppColors.text(brightness),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (!_hasUnsavedChanges) {
+          Navigator.of(context).pop();
+          return;
+        }
+        _showExitConfirmation(brightness);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        appBar: AppBar(
+          backgroundColor: AppColors.surface(brightness),
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.close_rounded, color: AppColors.text(brightness)),
+            onPressed: () => _showExitConfirmation(brightness),
           ),
-        ),
-        actions: [
-          if (_currentStep > 0)
-            TextButton(
-              onPressed: _previousStep,
-              child: Text(
-                'Back',
-                style: TextStyle(
-                  color: AppColors.textSec(brightness),
-                  fontWeight: FontWeight.w600,
+          title: Text(
+            widget.gig != null ? 'Edit Gig' : 'Create Gig',
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          actions: [
+            if (_currentStep > 0)
+              TextButton(
+                onPressed: _previousStep,
+                child: Text(
+                  'Back',
+                  style: TextStyle(
+                    color: AppColors.textSec(brightness),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Progress indicator
-          _buildProgressIndicator(brightness),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Progress indicator
+            _buildProgressIndicator(brightness),
 
-          // Step content
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildBasicInfoStep(brightness),
-                _buildDateTimeStep(brightness),
-                _buildRequirementsStep(brightness),
-                _buildReviewStep(brightness),
-              ],
+            // Step content
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildBasicInfoStep(brightness),
+                  _buildDateTimeStep(brightness),
+                  _buildRequirementsStep(brightness),
+                  _buildReviewStep(brightness),
+                ],
+              ),
             ),
-          ),
 
-          // Bottom action bar
-          _buildBottomBar(brightness),
-        ],
+            // Bottom action bar
+            _buildBottomBar(brightness),
+          ],
+        ),
       ),
     );
   }
@@ -714,6 +831,13 @@ class _CreateGigScreenState extends State<CreateGigScreen>
 
           const SizedBox(height: 24),
 
+          // Duration
+          _buildSectionHeader('Duration', brightness),
+          const SizedBox(height: 12),
+          _buildDurationSelector(brightness),
+
+          const SizedBox(height: 24),
+
           // Recurring option
           _buildToggleOption(
             'Recurring Gig',
@@ -725,6 +849,50 @@ class _CreateGigScreenState extends State<CreateGigScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDurationSelector(Brightness brightness) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _durationOptions.map((duration) {
+        final isSelected = int.tryParse(_durationController.text) == duration;
+        final label = duration < 60
+            ? '$duration min'
+            : '${duration ~/ 60}${duration % 60 > 0 ? '.5' : ''} hr${duration >= 120 ? 's' : ''}';
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            setState(() {
+              _durationController.text = duration.toString();
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.crimson.withValues(alpha: 0.15)
+                  : AppColors.surface(brightness),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? AppColors.crimson : AppColors.border(brightness),
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? AppColors.crimson : AppColors.text(brightness),
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 

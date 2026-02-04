@@ -40,6 +40,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
   bool _isLoading = true;
   String? _errorMessage;
   String _selectedFilter = 'all';
+  String _sortBy = 'recent'; // recent, oldest, highest, lowest
 
   ReviewStats _stats = const ReviewStats(
     averageRating: 0,
@@ -176,22 +177,117 @@ class _ReviewsScreenState extends State<ReviewsScreen>
   }
 
   List<Review> get _filteredReviews {
+    List<Review> filtered;
     switch (_selectedFilter) {
       case '5':
-        return _reviews.where((r) => r.rating == 5).toList();
+        filtered = _reviews.where((r) => r.rating == 5).toList();
+        break;
       case '4':
-        return _reviews.where((r) => r.rating == 4).toList();
+        filtered = _reviews.where((r) => r.rating == 4).toList();
+        break;
       case '3':
-        return _reviews.where((r) => r.rating == 3).toList();
+        filtered = _reviews.where((r) => r.rating == 3).toList();
+        break;
       case '2':
-        return _reviews.where((r) => r.rating == 2).toList();
+        filtered = _reviews.where((r) => r.rating == 2).toList();
+        break;
       case '1':
-        return _reviews.where((r) => r.rating == 1).toList();
+        filtered = _reviews.where((r) => r.rating == 1).toList();
+        break;
       case 'unanswered':
-        return _reviews.where((r) => !r.hasResponse).toList();
+        filtered = _reviews.where((r) => !r.hasResponse).toList();
+        break;
       default:
-        return _reviews;
+        filtered = List.from(_reviews);
     }
+
+    // Apply sorting
+    switch (_sortBy) {
+      case 'oldest':
+        filtered.sort((a, b) => a.date.compareTo(b.date));
+        break;
+      case 'highest':
+        filtered.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'lowest':
+        filtered.sort((a, b) => a.rating.compareTo(b.rating));
+        break;
+      case 'recent':
+      default:
+        filtered.sort((a, b) => b.date.compareTo(a.date));
+    }
+
+    return filtered;
+  }
+
+  void _showSortOptions(Brightness brightness) {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface(brightness),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bottomSheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.border(brightness),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Sort Reviews',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.text(brightness),
+                  ),
+                ),
+              ),
+              _buildSortOption('recent', 'Most Recent', Icons.schedule_rounded, brightness, bottomSheetContext),
+              _buildSortOption('oldest', 'Oldest First', Icons.history_rounded, brightness, bottomSheetContext),
+              _buildSortOption('highest', 'Highest Rating', Icons.star_rounded, brightness, bottomSheetContext),
+              _buildSortOption('lowest', 'Lowest Rating', Icons.star_outline_rounded, brightness, bottomSheetContext),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSortOption(String value, String label, IconData icon, Brightness brightness, BuildContext bottomSheetContext) {
+    final isSelected = _sortBy == value;
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected ? AppColors.crimson : AppColors.textSec(brightness),
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? AppColors.crimson : AppColors.text(brightness),
+          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        ),
+      ),
+      trailing: isSelected
+          ? const Icon(Icons.check_rounded, color: AppColors.crimson)
+          : null,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _sortBy = value);
+        Navigator.pop(bottomSheetContext);
+      },
+    );
   }
 
   @override
@@ -344,7 +440,7 @@ class _ReviewsScreenState extends State<ReviewsScreen>
       ),
       actions: [
         AnimatedTapFeedback(
-          onTap: () => HapticFeedback.selectionClick(),
+          onTap: () => _showSortOptions(brightness),
           child: Container(
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.all(10),

@@ -2,6 +2,7 @@
 /// Models for swiping, matching, and discovery
 library;
 
+import 'package:flutter/foundation.dart';
 import 'artist_models.dart';
 import 'gig_models.dart';
 import 'venues_models.dart';
@@ -193,10 +194,11 @@ class DiscoveryCard {
   }
 
   factory DiscoveryCard.fromJson(Map<String, dynamic> json) {
-    final isGig = json['title'] != null && json['budget'] != null;
-    final isArtist = json['type'] == 'artist' || json['stageName'] != null;
+    // Check type field first (most reliable from backend)
+    final typeValue = json['type'];
+    final type = typeValue?.toString().toLowerCase();
 
-    if (isGig) {
+    if (type == 'gig') {
       final gig = Gig.fromJson(json);
       return DiscoveryCard.fromGig(
         gig,
@@ -204,7 +206,7 @@ class DiscoveryCard {
       );
     }
 
-    if (isArtist) {
+    if (type == 'artist' || json['stageName'] != null || json['displayName'] != null) {
       final artist = Artist.fromJson(json);
       return DiscoveryCard.fromArtist(
         artist,
@@ -212,6 +214,7 @@ class DiscoveryCard {
       );
     }
 
+    // Default to venue
     final venue = Venue.fromJson(json);
     return DiscoveryCard.fromVenue(
       venue,
@@ -333,21 +336,34 @@ class DiscoveryResponse {
     // Backend returns 'gigs' for artists, 'artists' for venues, or 'profiles'/'data' as fallback
     final rawProfiles =
         json['profiles'] ??
+        json['items'] ??
         json['artists'] ??
         json['gigs'] ??
         json['data'] ??
         [];
 
+    // Handle case where profiles might be nested in a 'data' object
+    final profilesList = rawProfiles is Map ? rawProfiles['data'] ?? rawProfiles : rawProfiles;
+
+    final List<DiscoveryCard> profiles = [];
+    if (profilesList is List) {
+      for (final item in profilesList) {
+        try {
+          if (item is Map<String, dynamic>) {
+            profiles.add(DiscoveryCard.fromJson(item));
+          }
+        } catch (err) {
+          debugPrint('Failed to parse discovery card: $err');
+        }
+      }
+    }
+
     return DiscoveryResponse(
-      profiles: (rawProfiles as List)
-          .map<DiscoveryCard>((e) => DiscoveryCard.fromJson(e))
-          .toList(),
+      profiles: profiles,
       page: json['page'] ?? 1,
       limit: json['limit'] ?? 20,
-      total: json['total'] ?? 0,
-      hasMore:
-          json['hasMore'] ??
-          ((json['total'] ?? 0) > (json['page'] ?? 1) * (json['limit'] ?? 20)),
+      total: json['total'] ?? profiles.length,
+      hasMore: json['hasMore'] ?? (profiles.length >= (json['limit'] ?? 20)),
     );
   }
 }

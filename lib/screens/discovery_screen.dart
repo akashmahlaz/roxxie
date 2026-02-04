@@ -16,11 +16,14 @@ library;
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+import '../../core/exceptions.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
+import '../../core/services/location_service.dart';
 import '../../core/theme/theme.dart';
 
 import 'chat_screen_v2.dart';
@@ -56,13 +59,24 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   // Filter panel state
   bool _showFilters = false;
 
+  // Action loading state - used for async operations
+  // ignore: unused_field
+  bool _isActionLoading = false;
+
   // Scroll controller for card stack
   final ScrollController _scrollController = ScrollController();
 
-  // Price range filter state
-  static const double _maxPrice = 2000;
-  RangeValues _priceRange = const RangeValues(0, _maxPrice);
+  // Price range filter state - dynamic based on discovery data
+  final double _maxPrice = 2000;
+  RangeValues _priceRange = const RangeValues(0, 2000);
   double _minRating = 0;
+
+  // Dynamic genres from provider or common genres
+  final List<String> _availableGenres = const [
+    'Rock', 'Jazz', 'Pop', 'Hip-Hop', 'Electronic', 'Blues',
+    'Country', 'R&B', 'Classical', 'Metal', 'Folk', 'Indie',
+    'Soul', 'Funk', 'Reggae', 'Latin', 'Jazz', 'Acoustic',
+  ];
 
   @override
   void initState() {
@@ -110,10 +124,15 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   // ═══════════════════════════════════════════════════════════════════════
   // DATA LOADING
-  // ═══════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
 
   Future<void> _loadDiscoveryFeed() async {
     final provider = context.read<DiscoveryProvider>();
+    final auth = context.read<AuthProvider>();
+
+    // Set user role before loading to ensure correct content is fetched
+    provider.setUserRole(auth.isArtist);
+
     await provider.loadCards(refresh: true);
   }
 
@@ -411,8 +430,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Widget _buildFilterChips(Brightness brightness) {
-    final genres = ['Rock', 'Jazz', 'Pop', 'Hip-Hop', 'Electronic', 'Blues'];
-
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -430,8 +447,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             onSelected: (selected) => _toggleLocationFilter(selected),
           ),
           const SizedBox(width: 8),
-          // Genre chips
-          ...genres.map((genre) {
+          // Genre chips - use first 5 genres
+          ..._availableGenres.take(5).map((genre) {
             final isSelected = _selectedGenres.contains(genre);
             return Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -443,6 +460,17 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               ),
             );
           }),
+          // Show more genres button
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _buildStyledFilterChip(
+              label: 'More',
+              icon: Icons.filter_list_rounded,
+              isSelected: false,
+              brightness: brightness,
+              onSelected: (_) => _toggleFilters(),
+            ),
+          ),
         ],
       ),
     );
@@ -1314,15 +1342,108 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     }
   }
 
-  void _toggleLocationFilter(bool enabled) {
+  void _toggleLocationFilter(bool enabled) async {
     final provider = context.read<DiscoveryProvider>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     setState(() => _useLocationFilter = enabled);
+
     if (enabled) {
-      provider.setLocationFilter(
-        latitude: 40.7128,
-        longitude: -74.0060,
-        radiusMiles: 50,
-      );
+      try {
+        // Show loading
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                SizedBox(width: 12),
+                Text('Getting your location...'),
+              ],
+            ),
+            backgroundColor: AppColors.crimson,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+
+        // Get actual location
+        final position = await LocationService().getCurrentLocation();
+        provider.setLocationFilter(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          radiusMiles: 50,
+        );
+
+        // Update snackbar
+        scaffoldMessenger.hideCurrentSnackBar();
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.location_on_rounded, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Location enabled', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        'Showing gigs within 50 miles',
+                        style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      } catch (e) {
+        setState(() => _useLocationFilter = false);
+        provider.clearLocationFilter();
+
+        // Show error
+        scaffoldMessenger.hideCurrentSnackBar();
+        String errorMessage = 'Could not get your location';
+
+        if (e is PermissionException) {
+          errorMessage = 'Location permission denied. Please enable it in settings.';
+        } else if (e is ServiceDisabledException) {
+          errorMessage = 'Location services are disabled. Please enable them.';
+        }
+
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.location_off_rounded, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text(errorMessage)),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+            action: e is PermissionException
+                ? SnackBarAction(
+                    label: 'Settings',
+                    textColor: Colors.white,
+                    onPressed: () => LocationService().openAppSettings(),
+                  )
+                : null,
+          ),
+        );
+      }
     } else {
       provider.clearLocationFilter();
     }
@@ -1443,6 +1564,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                             _useLocationFilter,
                             _onLocationFilterChanged,
                           ),
+                        ]),
+                        _buildFilterSection('Genres', [
+                          _buildGenreFilter(),
                         ]),
                         _buildFilterSection('Price Range', [
                           _buildPriceRangeSlider(),
@@ -1577,6 +1701,31 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           onSelected: (bool selected) {
             setState(() {
               _minRating = selected ? rating : 0;
+            });
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildGenreFilter() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _availableGenres.map((genre) {
+        final bool isSelected = _selectedGenres.contains(genre);
+        return FilterChip(
+          label: Text(genre),
+          selected: isSelected,
+          selectedColor: AppColors.crimson,
+          checkmarkColor: Colors.white,
+          onSelected: (bool selected) {
+            setState(() {
+              if (selected) {
+                _selectedGenres.add(genre);
+              } else {
+                _selectedGenres.remove(genre);
+              }
             });
           },
         );
@@ -1754,7 +1903,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     setState(() {
       _selectedGenres.clear();
       _useLocationFilter = false;
-      _priceRange = const RangeValues(0, _maxPrice);
+      _priceRange = RangeValues(0, _maxPrice);
       _minRating = 0;
     });
   }
@@ -1773,88 +1922,183 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   Future<void> _undoLastSwipe() async {
     final provider = context.read<DiscoveryProvider>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    setState(() => _isActionLoading = true);
+
     try {
       final success = await provider.undo();
+      setState(() => _isActionLoading = false);
+
       if (success) {
-        // Provider handles index decrement, trigger rebuild
-        setState(() {});
+        // Show success feedback
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.undo_rounded, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Swipe undone'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      } else {
+        _showErrorSnackBar('Nothing to undo');
       }
     } catch (e) {
-      _showErrorSnackBar(e.toString());
+      setState(() => _isActionLoading = false);
+      _showErrorSnackBar('Failed to undo. Please try again.');
     }
   }
 
   Future<void> _superLike() async {
     // Premium feature - boost visibility
     final provider = context.read<DiscoveryProvider>();
-    if (provider.cards.isNotEmpty) {
-      await provider.superLike();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    if (provider.cards.isEmpty) return;
+
+    HapticFeedback.mediumImpact();
+    setState(() => _isActionLoading = true);
+
+    try {
+      final isMatch = await provider.superLike();
+      setState(() => _isActionLoading = false);
+
+      if (isMatch && provider.lastMatch != null) {
+        // Show match overlay
+        setState(() {
+          _pendingMatch = provider.lastMatch;
+          _showMatchAnimation = true;
+        });
+        _matchController.forward(from: 0);
+      } else {
+        // Show success feedback
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.star_rounded, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Super liked! They\'ll be notified.'),
+              ],
+            ),
+            backgroundColor: AppColors.crimson,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isActionLoading = false);
+      _showErrorSnackBar('Failed to super like. Please try again.');
     }
   }
 
+  String? _selectedBoostDuration;
+  static const Map<String, String> _boostOptions = {
+    '24': '24 hours',
+    '7': '7 days',
+  };
+  static const Map<String, double> _boostPrices = {
+    '24': 4.99,
+    '7': 24.99,
+  };
+
   void _showBoostDialog() {
+    setState(() => _selectedBoostDuration = null);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface(Theme.of(context).brightness),
-        title: const Text('Boost Your Profile'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Get seen by more venues! Your profile will appear at the top of discovery for 24 hours.',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surface(Theme.of(context).brightness),
+          title: const Text('Boost Your Profile'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Get seen by more venues! Your profile will appear at the top of discovery for the selected duration.',
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: _buildBoostOption('24', '24 hours', '\$4.99', setDialogState)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildBoostOption('7', '7 days', '\$24.99', setDialogState)),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.textSec(Theme.of(context).brightness),
+                ),
+              ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(child: _buildBoostOption('24 hours', '\$4.99')),
-                const SizedBox(width: 12),
-                Expanded(child: _buildBoostOption('7 days', '\$24.99')),
-              ],
+            ElevatedButton(
+              onPressed: _selectedBoostDuration == null
+                  ? null
+                  : () async {
+                      Navigator.pop(context);
+                      await _processBoost(_selectedBoostDuration!);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Boost Now'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: AppColors.textSec(Theme.of(context).brightness),
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Process boost purchase
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson),
-            child: const Text('Boost Now'),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildBoostOption(String duration, String price) {
+  Widget _buildBoostOption(String value, String duration, String price, StateSetter setDialogState) {
+    final isSelected = _selectedBoostDuration == value;
     return GestureDetector(
-      onTap: () {},
-      child: Container(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        setDialogState(() => _selectedBoostDuration = value);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.crimson),
+          border: Border.all(
+            color: isSelected ? AppColors.crimson : AppColors.border(Theme.of(context).brightness),
+            width: isSelected ? 2 : 1,
+          ),
           borderRadius: BorderRadius.circular(12),
+          color: isSelected ? AppColors.crimson.withValues(alpha: 0.1) : null,
         ),
         child: Column(
           children: [
-            Icon(Icons.rocket_launch_rounded, color: AppColors.crimson),
+            Icon(
+              Icons.rocket_launch_rounded,
+              color: isSelected ? AppColors.crimson : AppColors.crimson.withValues(alpha: 0.6),
+            ),
             const SizedBox(height: 8),
-            Text(duration, style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text(
+              duration,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: isSelected ? AppColors.crimson : null,
+              ),
+            ),
             Text(
               price,
               style: TextStyle(
-                color: AppColors.crimson,
+                color: isSelected ? AppColors.crimson : AppColors.crimson.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
               ),
@@ -1863,6 +2107,67 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _processBoost(String duration) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    setState(() => _isActionLoading = true);
+
+    try {
+      // ignore: unused_local_variable (price will be used when Stripe integration is complete)
+      final price = _boostPrices[duration] ?? 4.99;
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Processing boost...'),
+            ],
+          ),
+          backgroundColor: AppColors.crimson,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+
+      // In a real app, this would call the subscription service
+      // For now, simulate success
+      await Future.delayed(const Duration(seconds: 1));
+
+      setState(() => _isActionLoading = false);
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Boost activated!', style: TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      'Your profile is now boosted for ${_boostOptions[duration]}.',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    } catch (e) {
+      setState(() => _isActionLoading = false);
+      _showErrorSnackBar('Failed to process boost. Please try again.');
+    }
   }
 
   Color _getScoreColor(double score) {

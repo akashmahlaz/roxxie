@@ -50,4 +50,9 @@ app.*.map.json
 /ios/Runner/GoogleService-Info.plist
 /lib/firebase_options.dart
 
+# Release signing (NEVER commit keystore or credentials)
+/android/key.properties
+/android/*.jks
+/android/*.keystore
+
 gigmatch/

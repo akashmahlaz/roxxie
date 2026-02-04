@@ -13,6 +13,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../core/theme/theme.dart';
 import '../core/services/services.dart';
 import '../core/models/models.dart' as models;
@@ -161,6 +162,25 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  void _shareGig() {
+    HapticFeedback.selectionClick();
+    if (_gig == null) return;
+
+    final shareText = '''🎵 Check out this gig on GigMatch!
+
+📍 ${_gig!.venueName}
+📅 ${_gig!.date.day}/${_gig!.date.month}/${_gig!.date.year}
+⏰ ${_gig!.startTime}
+🎸 ${_gig!.genre}
+💰 \$${_gig!.payment}
+
+${_gig!.description}
+
+Download GigMatch to discover live music opportunities! 🎶''';
+
+    SharePlus.instance.share(ShareParams(text: shareText, subject: 'Gig at ${_gig!.venueName}'));
   }
 
   Future<void> _acceptGig() async {
@@ -378,7 +398,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
               ),
               actions: [
                 AnimatedTapFeedback(
-                  onTap: () => HapticFeedback.selectionClick(),
+                  onTap: () => _shareGig(),
                   child: Container(
                     margin: const EdgeInsets.all(8),
                     padding: const EdgeInsets.all(10),
@@ -576,7 +596,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
                                       ),
                                     ),
                                     Text(
-                                      'Sound check at 6:00 PM',
+                                      'Get ready for an amazing performance!',
                                       style: TextStyle(
                                         color: AppColors.textSec(brightness),
                                         fontSize: 13,

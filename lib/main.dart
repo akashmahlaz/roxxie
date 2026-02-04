@@ -9,6 +9,7 @@ import 'firebase_options.dart';
 import 'core/theme/theme.dart';
 import 'core/providers/providers.dart';
 import 'core/services/error_handling_service.dart';
+import 'core/config/app_config.dart';
 import 'widgets/global_error_handler.dart';
 
 // Screens - Ultra-Premium 2026 Design
@@ -79,9 +80,8 @@ void main() async {
   // Initialize error handling service
   await ErrorHandlingService().initialize();
 
-  // Initialize Stripe with publishable key
-  // TODO: Move to environment config for production
-  Stripe.publishableKey = 'pk_test_51SmC3CFPTeSKTr2qb1nt2PAyUvI85xpBGjuEXnjD8s91QDROaCMaPNDmmUKTZ3KvXMPMDR0V13PzHZA8C2PqZcOO00SFROGUN9';
+  // Initialize Stripe with environment-specific publishable key
+  Stripe.publishableKey = AppConfig.stripePublishableKey;
 
   // Set system UI overlay style for premium immersive experience
   SystemChrome.setSystemUIOverlayStyle(AppTheme.systemOverlayStyle);

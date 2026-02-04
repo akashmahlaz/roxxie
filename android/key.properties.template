@@ -1,0 +1,13 @@
+# Release Keystore Configuration
+# DO NOT COMMIT THIS FILE TO VERSION CONTROL
+#
+# To generate a keystore:
+# keytool -genkeypair -v -storetype PKCS12 -keyalg RSA -keysize 2048 \
+#   -validity 10000 -alias gigmatch -keystore gigmatch-release-key.jks
+#
+# Then fill in these values:
+
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=gigmatch
+storeFile=../gigmatch-release-key.jks
