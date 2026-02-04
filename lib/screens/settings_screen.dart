@@ -48,6 +48,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _pushNotifications = user.pushNotificationsEnabled;
         _emailNotifications = user.emailNotificationsEnabled;
+        _matchNotifications = user.matchNotificationsEnabled;
+        _messageNotifications = user.messageNotificationsEnabled;
+        _gigReminders = user.gigRemindersEnabled;
+        _showOnlineStatus = user.showOnlineStatus;
+        _showDistance = user.showDistance;
+        _maxDistance = user.maxDistance;
       });
     }
   }
@@ -59,9 +65,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await auth.updateProfile({
         'pushNotificationsEnabled': _pushNotifications,
         'emailNotificationsEnabled': _emailNotifications,
+        'matchNotificationsEnabled': _matchNotifications,
+        'messageNotificationsEnabled': _messageNotifications,
+        'gigRemindersEnabled': _gigReminders,
       });
     } catch (e) {
       debugPrint('Failed to save notification settings: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _savePrivacySettings() async {
+    setState(() => _isSaving = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      await auth.updateProfile({
+        'showOnlineStatus': _showOnlineStatus,
+        'showDistance': _showDistance,
+        'maxDistance': _maxDistance,
+      });
+    } catch (e) {
+      debugPrint('Failed to save privacy settings: $e');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -119,7 +144,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'Get notified when you match',
                 Icons.favorite_rounded,
                 _matchNotifications,
-                (value) => setState(() => _matchNotifications = value),
+                (value) {
+                  setState(() => _matchNotifications = value);
+                  _saveNotificationSettings();
+                },
                 brightness,
               ),
               _buildSwitchTile(
@@ -127,7 +155,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'Get notified for new messages',
                 Icons.chat_bubble_rounded,
                 _messageNotifications,
-                (value) => setState(() => _messageNotifications = value),
+                (value) {
+                  setState(() => _messageNotifications = value);
+                  _saveNotificationSettings();
+                },
                 brightness,
               ),
               _buildSwitchTile(
@@ -135,7 +166,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'Reminders for upcoming gigs',
                 Icons.event_rounded,
                 _gigReminders,
-                (value) => setState(() => _gigReminders = value),
+                (value) {
+                  setState(() => _gigReminders = value);
+                  _saveNotificationSettings();
+                },
                 brightness,
               ),
             ]),
@@ -148,7 +182,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'Let others see when you\'re online',
                 Icons.circle,
                 _showOnlineStatus,
-                (value) => setState(() => _showOnlineStatus = value),
+                (value) {
+                  setState(() => _showOnlineStatus = value);
+                  _savePrivacySettings();
+                },
                 brightness,
               ),
               _buildSwitchTile(
@@ -156,7 +193,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'Display distance on your profile',
                 Icons.location_on_rounded,
                 _showDistance,
-                (value) => setState(() => _showDistance = value),
+                (value) {
+                  setState(() => _showDistance = value);
+                  _savePrivacySettings();
+                },
                 brightness,
               ),
             ]),
@@ -171,7 +211,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _maxDistance.toDouble(),
                 5,
                 100,
-                (value) => setState(() => _maxDistance = value.toInt()),
+                (value) {
+                  setState(() => _maxDistance = value.toInt());
+                  _savePrivacySettings();
+                },
                 brightness,
               ),
             ]),

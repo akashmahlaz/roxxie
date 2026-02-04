@@ -1321,7 +1321,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       provider.setLocationFilter(
         latitude: 40.7128,
         longitude: -74.0060,
-        maxDistance: 50,
+        radiusMiles: 50,
       );
     } else {
       provider.clearLocationFilter();

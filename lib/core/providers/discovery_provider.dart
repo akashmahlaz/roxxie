@@ -17,6 +17,7 @@ class DiscoveryProvider extends ChangeNotifier {
   Match? _lastMatch;
   String? _errorMessage;
   bool _isLoading = false;
+  bool _isArtist = true; // Default to artist, set externally based on user role
 
   // Pagination
   int _page = 1;
@@ -48,6 +49,22 @@ class DiscoveryProvider extends ChangeNotifier {
   Match? get lastMatch => _lastMatch;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
+
+  /// Whether the current user is an artist (vs venue)
+  /// Set this externally based on auth state before loading discovery
+  bool get isArtist => _isArtist;
+
+  /// Set the user role - call this before loading discovery
+  void setUserRole(bool isArtist) {
+    if (_isArtist != isArtist) {
+      _isArtist = isArtist;
+      _cards = [];
+      _currentIndex = 0;
+      _page = 1;
+      _hasMore = true;
+      notifyListeners();
+    }
+  }
   bool get hasCards => _cards.isNotEmpty && _currentIndex < _cards.length;
   List<String>? get selectedGenres => _genres;
 

@@ -70,6 +70,12 @@ class User {
   final bool isProfileComplete;
   final bool pushNotificationsEnabled;
   final bool emailNotificationsEnabled;
+  final bool matchNotificationsEnabled;
+  final bool messageNotificationsEnabled;
+  final bool gigRemindersEnabled;
+  final bool showOnlineStatus;
+  final bool showDistance;
+  final int maxDistance;
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? artistId;
@@ -93,6 +99,12 @@ class User {
     this.isProfileComplete = false,
     this.pushNotificationsEnabled = true,
     this.emailNotificationsEnabled = true,
+    this.matchNotificationsEnabled = true,
+    this.messageNotificationsEnabled = true,
+    this.gigRemindersEnabled = true,
+    this.showOnlineStatus = true,
+    this.showDistance = true,
+    this.maxDistance = 50,
     required this.createdAt,
     required this.updatedAt,
     this.artistId,
@@ -114,6 +126,12 @@ class User {
       isProfileComplete: json['isProfileComplete'] ?? false,
       pushNotificationsEnabled: json['pushNotificationsEnabled'] ?? true,
       emailNotificationsEnabled: json['emailNotificationsEnabled'] ?? true,
+      matchNotificationsEnabled: json['matchNotificationsEnabled'] ?? true,
+      messageNotificationsEnabled: json['messageNotificationsEnabled'] ?? true,
+      gigRemindersEnabled: json['gigRemindersEnabled'] ?? true,
+      showOnlineStatus: json['showOnlineStatus'] ?? true,
+      showDistance: json['showDistance'] ?? true,
+      maxDistance: json['maxDistance'] ?? 50,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
       artistId: json['artistId'],
@@ -137,6 +155,12 @@ class User {
         'isProfileComplete': isProfileComplete,
         'pushNotificationsEnabled': pushNotificationsEnabled,
         'emailNotificationsEnabled': emailNotificationsEnabled,
+        'matchNotificationsEnabled': matchNotificationsEnabled,
+        'messageNotificationsEnabled': messageNotificationsEnabled,
+        'gigRemindersEnabled': gigRemindersEnabled,
+        'showOnlineStatus': showOnlineStatus,
+        'showDistance': showDistance,
+        'maxDistance': maxDistance,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
         'artistId': artistId,
@@ -157,6 +181,12 @@ class User {
     bool? isProfileComplete,
     bool? pushNotificationsEnabled,
     bool? emailNotificationsEnabled,
+    bool? matchNotificationsEnabled,
+    bool? messageNotificationsEnabled,
+    bool? gigRemindersEnabled,
+    bool? showOnlineStatus,
+    bool? showDistance,
+    int? maxDistance,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? artistId,
@@ -178,6 +208,14 @@ class User {
           pushNotificationsEnabled ?? this.pushNotificationsEnabled,
       emailNotificationsEnabled:
           emailNotificationsEnabled ?? this.emailNotificationsEnabled,
+      matchNotificationsEnabled:
+          matchNotificationsEnabled ?? this.matchNotificationsEnabled,
+      messageNotificationsEnabled:
+          messageNotificationsEnabled ?? this.messageNotificationsEnabled,
+      gigRemindersEnabled: gigRemindersEnabled ?? this.gigRemindersEnabled,
+      showOnlineStatus: showOnlineStatus ?? this.showOnlineStatus,
+      showDistance: showDistance ?? this.showDistance,
+      maxDistance: maxDistance ?? this.maxDistance,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       artistId: artistId ?? this.artistId,

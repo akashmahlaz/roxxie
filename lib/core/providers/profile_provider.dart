@@ -98,7 +98,14 @@ class ProfileProvider extends ChangeNotifier {
 
   int get profileCompleteness {
     if (_venue != null) return _venue!.profileCompleteness;
+    if (_artist != null) return _artist!.profileCompletionPercent;
     return 0;
+  }
+
+  bool get hasCompletedSetup {
+    if (_venue != null) return _venue!.hasCompletedSetup;
+    if (_artist != null) return _artist!.hasCompletedSetup;
+    return false;
   }
 
   /// Load artist profile

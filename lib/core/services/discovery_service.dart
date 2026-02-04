@@ -374,6 +374,10 @@ class SwipeRecord {
 /// ═══════════════════════════════════════════════════════════════════════
 /// DISCOVERY FILTERS
 /// ═══════════════════════════════════════════════════════════════════════
+///
+/// Note: Type filtering (includeArtists/includeVenues/includeGigs) is determined
+/// by user role on the backend - artists see gigs, venues see artists.
+/// These filters are kept for documentation but are not used.
 
 class DiscoveryFilters {
   // Location
@@ -394,11 +398,6 @@ class DiscoveryFilters {
   // Availability filters
   final DateTime? availableFrom;
   final DateTime? availableTo;
-
-  // Type filters
-  final bool includeArtists;
-  final bool includeVenues;
-  final bool includeGigs;
 
   // Quality filters
   final double? minRating;
@@ -425,9 +424,6 @@ class DiscoveryFilters {
     this.currency,
     this.availableFrom,
     this.availableTo,
-    this.includeArtists = true,
-    this.includeVenues = true,
-    this.includeGigs = true,
     this.minRating,
     this.verifiedOnly = false,
     this.boostedOnly = false,
@@ -465,14 +461,8 @@ class DiscoveryFilters {
       params['availableTo'] = availableTo!.toIso8601String().split('T')[0];
     }
 
-    // Types
-    if (!includeArtists || !includeVenues || !includeGigs) {
-      params['types'] = [
-        if (includeArtists) 'artist',
-        if (includeVenues) 'venue',
-        if (includeGigs) 'gig',
-      ].join(',');
-    }
+    // Note: Type filtering (artist/venue/gig) is determined by user role on backend
+    // Artists see gigs, venues see artists - no type filter needed
 
     // Quality
     if (minRating != null) params['minRating'] = minRating.toString();
@@ -502,9 +492,6 @@ class DiscoveryFilters {
     String? currency,
     DateTime? availableFrom,
     DateTime? availableTo,
-    bool? includeArtists,
-    bool? includeVenues,
-    bool? includeGigs,
     double? minRating,
     bool? verifiedOnly,
     bool? boostedOnly,
@@ -525,9 +512,6 @@ class DiscoveryFilters {
       currency: currency ?? this.currency,
       availableFrom: availableFrom ?? this.availableFrom,
       availableTo: availableTo ?? this.availableTo,
-      includeArtists: includeArtists ?? this.includeArtists,
-      includeVenues: includeVenues ?? this.includeVenues,
-      includeGigs: includeGigs ?? this.includeGigs,
       minRating: minRating ?? this.minRating,
       verifiedOnly: verifiedOnly ?? this.verifiedOnly,
       boostedOnly: boostedOnly ?? this.boostedOnly,
