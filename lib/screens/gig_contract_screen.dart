@@ -1304,9 +1304,10 @@ class _GigContractScreenState extends State<GigContractScreen>
   }
 
   void _showExitConfirmation(Brightness brightness) {
+    final parentContext = context; // Cache parent context before dialog
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surface(brightness),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
@@ -1319,7 +1320,7 @@ class _GigContractScreenState extends State<GigContractScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(
               'Stay',
               style: TextStyle(color: AppColors.textSec(brightness)),
@@ -1327,8 +1328,10 @@ class _GigContractScreenState extends State<GigContractScreen>
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(dialogContext); // Close dialog
+              if (parentContext.mounted) {
+                Navigator.pop(parentContext); // Close contract screen
+              }
             },
             child: const Text(
               'Leave',

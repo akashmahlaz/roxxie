@@ -91,6 +91,21 @@ class _CreateGigScreenState extends State<CreateGigScreen>
     'Festival Set',
   ];
 
+  // Track initial values for unsaved changes detection
+  String _initialTitle = '';
+  String _initialDescription = '';
+  String _initialPayment = '';
+  DateTime? _initialDate;
+  TimeOfDay? _initialStartTime;
+  TimeOfDay? _initialEndTime;
+  List<String> _initialGenres = [];
+
+  // Duration controller
+  final _durationController = TextEditingController();
+
+  // Duration options
+  final List<int> _durationOptions = [30, 45, 60, 90, 120, 180];
+
   @override
   void initState() {
     super.initState();
@@ -102,7 +117,36 @@ class _CreateGigScreenState extends State<CreateGigScreen>
 
     if (widget.gig != null) {
       _initializeFromGig(widget.gig!);
+      _captureInitialValues();
     }
+  }
+
+  void _captureInitialValues() {
+    _initialTitle = _titleController.text;
+    _initialDescription = _descriptionController.text;
+    _initialPayment = _paymentController.text;
+    _initialDate = _selectedDate;
+    _initialStartTime = _startTime;
+    _initialEndTime = _endTime;
+    _initialGenres = List<String>.from(_selectedGenres);
+  }
+
+  bool get _hasUnsavedChanges {
+    return _titleController.text != _initialTitle ||
+        _descriptionController.text != _initialDescription ||
+        _paymentController.text != _initialPayment ||
+        _selectedDate != _initialDate ||
+        _startTime != _initialStartTime ||
+        _endTime != _initialEndTime ||
+        !_listsEqual(_selectedGenres, _initialGenres);
+  }
+
+  bool _listsEqual(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   void _initializeFromGig(Gig gig) {
@@ -110,6 +154,7 @@ class _CreateGigScreenState extends State<CreateGigScreen>
     _descriptionController.text = gig.description ?? '';
     _paymentController.text = gig.budget.toStringAsFixed(0);
     _requirementsController.text = gig.specificRequirements ?? '';
+    _durationController.text = gig.durationMinutes.toString();
 
     _selectedDate = gig.date;
 
@@ -1302,9 +1347,10 @@ class _CreateGigScreenState extends State<CreateGigScreen>
   }
 
   void _showExitConfirmation(Brightness brightness) {
+    final parentContext = context; // Cache parent context before dialog
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surface(brightness),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
@@ -1317,7 +1363,7 @@ class _CreateGigScreenState extends State<CreateGigScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(
               'Keep Editing',
               style: TextStyle(color: AppColors.textSec(brightness)),
@@ -1325,8 +1371,10 @@ class _CreateGigScreenState extends State<CreateGigScreen>
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(dialogContext); // Close dialog
+              if (parentContext.mounted) {
+                Navigator.pop(parentContext); // Close create gig screen
+              }
             },
             child: const Text(
               'Discard',

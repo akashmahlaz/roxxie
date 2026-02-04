@@ -555,28 +555,31 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+        final parentContext = context; // Cache before dialog
         // Show save draft confirmation
         final shouldPop =
             await showDialog<bool>(
               context: context,
-              builder: (context) => AlertDialog(
+              builder: (dialogContext) => AlertDialog(
                 title: const Text('Save your progress?'),
                 content: const Text(
                   'Your profile will be saved as a draft. You can continue setup later from Settings.',
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context, true),
+                    onPressed: () => Navigator.pop(dialogContext, true),
                     child: const Text('Discard'),
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context, false);
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/home',
-                        (route) => false,
-                      );
+                      Navigator.pop(dialogContext, false);
+                      if (parentContext.mounted) {
+                        Navigator.pushNamedAndRemoveUntil(
+                          parentContext,
+                          '/home',
+                          (route) => false,
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.crimson,
@@ -587,8 +590,8 @@ class _VenueProfileSetupScreenState extends State<VenueProfileSetupScreen> {
               ),
             ) ??
             false;
-        if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+        if (shouldPop && parentContext.mounted) {
+          Navigator.of(parentContext).pop();
         }
       },
       child: Scaffold(

@@ -598,11 +598,11 @@ class _GigsScreenState extends State<GigsScreen>
 
   void _deleteGig(Gig gig) {
     HapticFeedback.heavyImpact();
+    final brightness = Theme.of(context).brightness;
     // Show confirmation dialog
     showDialog(
       context: context,
-      builder: (context) {
-        final brightness = Theme.of(context).brightness;
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: AppColors.surface(brightness),
           shape: RoundedRectangleBorder(
@@ -618,7 +618,7 @@ class _GigsScreenState extends State<GigsScreen>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(
                 'Cancel',
                 style: TextStyle(color: AppColors.textSec(brightness)),
@@ -626,7 +626,7 @@ class _GigsScreenState extends State<GigsScreen>
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 _confirmDeleteGig(gig);
               },
               child: const Text(
@@ -646,7 +646,10 @@ class _GigsScreenState extends State<GigsScreen>
       await _gigsService.deleteGig(gig.id);
 
       if (!mounted) return;
-      setState(() => _gigs.removeWhere((g) => g.id == gig.id));
+      setState(() {
+        _gigs.removeWhere((g) => g.id == gig.id);
+        _isLoading = false;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
