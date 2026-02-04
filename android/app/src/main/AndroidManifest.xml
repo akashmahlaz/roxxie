@@ -105,8 +105,3 @@
         </intent>
     </queries>
 </manifest>
-            <data android:scheme="https"/>
-        </intent>
-    </queries>
-
-</manifest>
