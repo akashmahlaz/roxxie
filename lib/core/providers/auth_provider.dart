@@ -23,6 +23,9 @@ class AuthProvider extends ChangeNotifier {
   final SocialAuthService _socialAuthService = SocialAuthService();
   final ArtistService _artistService = ArtistService();
   final VenueService _venueService = VenueService();
+  
+  // Subscription service for listening to subscription changes
+  SubscriptionService? _subscriptionService;
 
   AuthStatus _status = AuthStatus.initial;
   User? _user;
@@ -124,6 +127,9 @@ class AuthProvider extends ChangeNotifier {
               ? AuthStatus.authenticated
               : AuthStatus.profileIncomplete;
           debugPrint('🔐 Auth status: $_status');
+          
+          // Setup subscription change listener
+          _setupSubscriptionListener();
         } catch (e) {
           debugPrint('🔐 Profile fetch failed: $e, trying token refresh...');
           // Token might be expired, try refresh
@@ -142,6 +148,9 @@ class AuthProvider extends ChangeNotifier {
             _status = hasCompletedOnboarding
                 ? AuthStatus.authenticated
                 : AuthStatus.profileIncomplete;
+            
+            // Setup subscription change listener
+            _setupSubscriptionListener();
           } else {
             debugPrint('🔐 Token refresh failed, setting unauthenticated');
             _status = AuthStatus.unauthenticated;
@@ -158,6 +167,22 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('🔐 AuthProvider.init() complete. Status: $_status');
       _setLoading(false);
     }
+  }
+  
+  /// 🔔 Setup subscription change listener to refresh user on subscription updates
+  void _setupSubscriptionListener() {
+    _subscriptionService ??= SubscriptionService(apiClient: ApiClient());
+    _subscriptionService!.subscriptionChangeStream.listen((_) async {
+      debugPrint('🔐 Subscription change detected, refreshing user...');
+      try {
+        final updatedUser = await _authService.getProfile();
+        _user = updatedUser;
+        notifyListeners();
+        debugPrint('🔐 User refreshed after subscription change: tier=${_user?.subscriptionTier}');
+      } catch (e) {
+        debugPrint('🔐 Failed to refresh user after subscription change: $e');
+      }
+    });
   }
 
   /// 📝 Register

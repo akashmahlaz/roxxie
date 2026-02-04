@@ -90,7 +90,21 @@ class _PremiumScreenState extends State<PremiumScreen> {
   void initState() {
     super.initState();
     _subscriptionService = SubscriptionService(apiClient: ApiClient());
+    
+    // Listen for subscription changes while screen is active
+    _subscriptionService.subscriptionChangeStream.listen((_) {
+      if (mounted) {
+        _loadData(); // Refresh subscription status
+      }
+    });
+    
     _loadData();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh when screen becomes visible again (e.g., after payment flow)
   }
 
   Future<void> _loadData() async {

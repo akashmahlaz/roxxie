@@ -43,3 +43,6 @@ export 'smart_location_picker.dart';
 export 'mini_audio_player.dart';
 export 'audio_message_bubble.dart';
 export 'voice_recorder_button.dart';
+
+// Premium/Subscription Components
+export 'premium_gate.dart';
