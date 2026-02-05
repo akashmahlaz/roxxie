@@ -18,7 +18,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.gigmatch.app"
+    namespace = "com.gigmatch.music"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -35,7 +35,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.gigmatch.app"
+        applicationId = "com.gigmatch.music"
         minSdk = 26  // Android 8.0+ for better security and features
         targetSdk = 35  // Android 15 - Required for 16KB page size compliance
         versionCode = flutter.versionCode
