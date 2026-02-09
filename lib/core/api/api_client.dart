@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_config.dart';
+import 'cache_interceptor.dart';
 import 'endpoints.dart';
 import '../models/auth_models.dart';
 import '../services/error_handling_service.dart';
@@ -13,6 +14,7 @@ import '../services/error_handling_service.dart';
 class ApiClient {
   static ApiClient? _instance;
   late final Dio _dio;
+  late final CacheInterceptor _cacheInterceptor;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 🔐 SECURE STORAGE CONFIGURATION
@@ -63,14 +65,22 @@ class ApiClient {
     );
 
     // Add interceptors
+    _cacheInterceptor = CacheInterceptor();
     _dio.interceptors.addAll([
       _AuthInterceptor(this),
+      _cacheInterceptor,
       _RetryInterceptor(this),
       if (kDebugMode) _LoggingInterceptor(),
     ]);
   }
 
   Dio get dio => _dio;
+
+  /// Invalidate cached responses containing the given path
+  void invalidateCache(String pathContains) => _cacheInterceptor.invalidate(pathContains);
+
+  /// Clear all cached API responses
+  void clearCache() => _cacheInterceptor.clearAll();
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 🔑 TOKEN MANAGEMENT

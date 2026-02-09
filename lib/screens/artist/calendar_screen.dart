@@ -6,12 +6,17 @@
 /// - Add/Edit/Delete availability
 /// - Professional UI with loading states
 /// - Pull to refresh
+/// - Action Needed section for pending bookings
+/// - Quick stats bar
 library;
 
 import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
 import '../../core/services/calendar_service.dart';
+import '../../core/services/booking_service.dart';
+import '../../core/models/booking_models.dart';
 import '../../widgets/time_range_picker.dart';
+import '../booking/booking_details_screen.dart';
 
 class ArtistCalendarScreen extends StatefulWidget {
   const ArtistCalendarScreen({super.key});
@@ -22,6 +27,7 @@ class ArtistCalendarScreen extends StatefulWidget {
 
 class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   final CalendarService _calendarService = CalendarService();
+  final BookingService _bookingService = BookingService();
 
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDate = DateTime.now();
@@ -29,6 +35,16 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   CalendarResponse? _calendarData;
   bool _isLoading = true;
   String? _errorMessage;
+
+  // Pending bookings that need action
+  List<Booking> _pendingBookings = [];
+  
+  // Monthly stats
+  double _monthEarnings = 0;
+  int _monthBookingsCount = 0;
+  
+  // View mode toggle
+  bool _isWeekView = true; // Default to compact week view
 
   // Date formatters
   static const _weekdays = [
@@ -73,14 +89,37 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
       final startDate = DateTime(_focusedDay.year, _focusedDay.month, 1);
       final endDate = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
 
-      final data = await _calendarService.getCalendar(
-        startDate: startDate,
-        endDate: endDate,
-      );
+      // Load calendar data and pending bookings in parallel
+      final results = await Future.wait([
+        _calendarService.getCalendar(
+          startDate: startDate,
+          endDate: endDate,
+        ),
+        _bookingService.getMyBookings(status: 'pending', limit: 10),
+        _bookingService.getMyBookings(upcoming: true, limit: 50),
+      ]);
+
+      final calendarData = results[0] as CalendarResponse;
+      final pendingBookings = results[1] as List<Booking>;
+      final upcomingBookings = results[2] as List<Booking>;
+
+      // Calculate monthly stats from upcoming bookings
+      double monthEarnings = 0;
+      int monthBookingsCount = 0;
+      for (final booking in upcomingBookings) {
+        if (booking.date.month == _focusedDay.month &&
+            booking.date.year == _focusedDay.year) {
+          monthBookingsCount++;
+          monthEarnings += booking.agreedAmount;
+        }
+      }
 
       if (mounted) {
         setState(() {
-          _calendarData = data;
+          _calendarData = calendarData;
+          _pendingBookings = pendingBookings;
+          _monthEarnings = monthEarnings;
+          _monthBookingsCount = monthBookingsCount;
           _isLoading = false;
         });
       }
@@ -150,12 +189,21 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
 
     for (final event in events) {
       if (event.eventType == CalendarEventType.availability) {
+        // Determine isOvernight by comparing start/end times
+        final startParts = event.startTime.split(':');
+        final endParts = event.endTime.split(':');
+        final startMins = (int.tryParse(startParts[0]) ?? 0) * 60 +
+            (startParts.length > 1 ? int.tryParse(startParts[1]) ?? 0 : 0);
+        final endMins = (int.tryParse(endParts[0]) ?? 0) * 60 +
+            (endParts.length > 1 ? int.tryParse(endParts[1]) ?? 0 : 0);
+        final isOvernight = endMins <= startMins;
+
         slots.add(
           AvailabilitySlot(
             date: date,
             startTime: event.startTime,
             endTime: event.endTime,
-            isOvernight: false, // Will be determined by time comparison
+            isOvernight: isOvernight,
           ),
         );
       }
@@ -248,25 +296,189 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
       body: RefreshIndicator(
         onRefresh: _loadCalendar,
         color: AppColors.crimson,
-        child: Column(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Action Needed Section
+              if (_pendingBookings.isNotEmpty && !_isLoading)
+                _buildActionNeededSection(brightness),
+
+              // Quick Stats Bar
+              if (!_isLoading && _calendarData != null)
+                _buildQuickStatsBar(brightness),
+
+              // Week/Month View Toggle + Calendar
+              _buildViewToggle(brightness),
+              
+              // Calendar View (Week or Month)
+              if (_isWeekView)
+                _buildWeekStripView(brightness)
+              else
+                _buildMonthView(brightness),
+
+              const SizedBox(height: 16),
+
+              // Selected Date Header
+              _buildSelectedDateHeader(brightness),
+
+              const SizedBox(height: 8),
+
+              // Events List (now in a constrained height container)
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.35,
+                child: _isLoading
+                    ? _buildLoadingState(brightness)
+                    : _errorMessage != null
+                    ? _buildErrorState(brightness)
+                    : _buildEventList(brightness),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⚠️ ACTION NEEDED SECTION
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildActionNeededSection(Brightness brightness) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.warning.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.notification_important_rounded,
+                color: AppColors.warning,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'ACTION NEEDED',
+                style: TextStyle(
+                  color: AppColors.warning,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.warning,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${_pendingBookings.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...(_pendingBookings.take(2).map((booking) => _buildPendingBookingCard(booking, brightness))),
+          if (_pendingBookings.length > 2)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '+${_pendingBookings.length - 2} more pending...',
+                style: TextStyle(
+                  color: AppColors.textSec(brightness),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingBookingCard(Booking booking, Brightness brightness) {
+    return GestureDetector(
+      onTap: () => _navigateToBookingDetails(booking),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border(brightness)),
+        ),
+        child: Row(
           children: [
-            // Month View
-            _buildMonthView(brightness),
-
-            const SizedBox(height: 16),
-
-            // Selected Date Header
-            _buildSelectedDateHeader(brightness),
-
-            const SizedBox(height: 8),
-
-            // Events List
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.music_note_rounded,
+                color: AppColors.crimson,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
-              child: _isLoading
-                  ? _buildLoadingState(brightness)
-                  : _errorMessage != null
-                  ? _buildErrorState(brightness)
-                  : _buildEventList(brightness),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    booking.title,
+                    style: TextStyle(
+                      color: AppColors.text(brightness),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${_formatDateShort(booking.date)} • \$${booking.agreedAmount.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      color: AppColors.textSec(brightness),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.crimson,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Confirm',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
@@ -274,9 +486,271 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
     );
   }
 
+  String _formatDateShort(DateTime date) {
+    return '${_months[date.month - 1].substring(0, 3)} ${date.day}';
+  }
+
+  void _navigateToBookingDetails(Booking booking) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingDetailsScreen(bookingId: booking.id),
+      ),
+    ).then((_) => _loadCalendar());
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📊 QUICK STATS BAR
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildQuickStatsBar(Brightness brightness) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border(brightness)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildStatItem(
+              value: '$_monthBookingsCount',
+              label: 'Gigs',
+              accent: AppColors.crimson,
+              brightness: brightness,
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 36,
+            color: AppColors.border(brightness),
+          ),
+          Expanded(
+            child: _buildStatItem(
+              value: '\$${_monthEarnings.toStringAsFixed(0)}',
+              label: 'This Month',
+              accent: null,
+              brightness: brightness,
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 36,
+            color: AppColors.border(brightness),
+          ),
+          Expanded(
+            child: _buildStatItem(
+              value: '${_calendarData?.availableCount ?? 0}',
+              label: 'Available',
+              accent: AppColors.success,
+              brightness: brightness,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required String value,
+    required String label,
+    required Color? accent,
+    required Brightness brightness,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: accent ?? AppColors.text(brightness),
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.textSec(brightness),
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 📅 CALENDAR WIDGETS
   // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Toggle between week and month view - Material 3 SegmentedButton
+  Widget _buildViewToggle(Brightness brightness) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      child: Row(
+        children: [
+          Text(
+            _isWeekView ? 'This Week' : _formatMonthYear(_focusedDay),
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Spacer(),
+          // M3 SegmentedButton
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment<bool>(
+                value: true,
+                icon: Icon(Icons.view_week_rounded, size: 18),
+              ),
+              ButtonSegment<bool>(
+                value: false,
+                icon: Icon(Icons.calendar_month_rounded, size: 18),
+              ),
+            ],
+            selected: {_isWeekView},
+            onSelectionChanged: (Set<bool> newSelection) {
+              setState(() => _isWeekView = newSelection.first);
+            },
+            showSelectedIcon: false,
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return AppColors.crimson;
+                }
+                return AppColors.surface(brightness);
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Colors.white;
+                }
+                return AppColors.textSec(brightness);
+              }),
+              side: WidgetStateProperty.all(
+                BorderSide(color: AppColors.border(brightness)),
+              ),
+              padding: WidgetStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              minimumSize: WidgetStateProperty.all(const Size(44, 36)),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Compact horizontal week strip view - M3 styling
+  Widget _buildWeekStripView(Brightness brightness) {
+    final now = DateTime.now();
+    final weekStart = now.subtract(Duration(days: now.weekday % 7));
+    final weekDays = List.generate(7, (i) => weekStart.add(Duration(days: i)));
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: BoxDecoration(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(brightness)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: weekDays.map((day) {
+          final isSelected = DateUtils.isSameDay(day, _selectedDate);
+          final isToday = DateUtils.isSameDay(day, now);
+          final events = _getEventsForDay(day);
+          final hasGig = events.any((e) => e.isGig);
+          final hasAvailability = events.any((e) => e.isAvailability);
+
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => _onDaySelected(day, _focusedDay),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.crimson
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  border: isToday && !isSelected
+                      ? Border.all(color: AppColors.crimson, width: 1.5)
+                      : null,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _weekdaysShort[day.weekday % 7],
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white.withValues(alpha: 0.8)
+                            : AppColors.textSec(brightness),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : isToday
+                                ? AppColors.crimson
+                                : AppColors.text(brightness),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Event indicators
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (hasGig)
+                          Container(
+                            width: 6,
+                            height: 6,
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : AppColors.crimson,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        if (hasAvailability)
+                          Container(
+                            width: 6,
+                            height: 6,
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        if (!hasGig && !hasAvailability)
+                          const SizedBox(height: 6),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget _buildMonthView(Brightness brightness) {
     return Container(
@@ -284,15 +758,8 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border(brightness)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -417,8 +884,6 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.crimson
-                        : isToday
-                        ? AppColors.crimson.withValues(alpha: 0.1)
                         : Colors.transparent,
                     shape: BoxShape.circle,
                     border: isToday && !isSelected
@@ -659,54 +1124,68 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   Widget _buildEventList(Brightness brightness) {
     final events = _getEventsForDay(_selectedDate);
 
-    // Check if selected date is in the past
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final selectedDay = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-    );
-    final isPastDate = selectedDay.isBefore(today);
-
     if (events.isEmpty) {
+      // Check if selected date is in the past
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final selectedDay = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+      );
+      final isPastDate = selectedDay.isBefore(today);
+
       return SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 32),
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface(brightness),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isPastDate
-                      ? Icons.history_rounded
-                      : Icons.event_available_rounded,
-                  color: AppColors.textTert(brightness),
-                  size: 32,
-                ),
+              Icon(
+                isPastDate
+                    ? Icons.history_rounded
+                    : Icons.calendar_today_outlined,
+                color: isPastDate
+                    ? AppColors.textTert(brightness)
+                    : AppColors.crimson.withValues(alpha: 0.6),
+                size: 40,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Text(
                 isPastDate ? 'Past date' : 'No events',
                 style: TextStyle(
                   color: AppColors.text(brightness),
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               if (!isPastDate) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Tap + to add availability',
+                  'Let venues know when you\'re available',
                   style: TextStyle(
                     color: AppColors.textTert(brightness),
                     fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Quick-add button right here
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () =>
+                        _showAddAvailabilitySheet(context, brightness),
+                    icon: const Icon(Icons.add_rounded, size: 20),
+                    label: const Text('Add Availability'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.crimson,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1033,6 +1512,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
       isScrollControlled: true,
       enableDrag: true,
       isDismissible: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1044,97 +1526,103 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
             20,
             MediaQuery.of(ctx).viewInsets.bottom + 20,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.border(brightness),
-                    borderRadius: BorderRadius.circular(2.5),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.border(brightness),
+                      borderRadius: BorderRadius.circular(2.5),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Edit Availability',
-                style: TextStyle(
-                  color: AppColors.text(brightness),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    size: 14,
-                    color: AppColors.crimson,
-                  ),
-                  const SizedBox(width: 6),
+                  const SizedBox(height: 16),
                   Text(
-                    _formatMonthDay(event.date),
+                    'Edit Availability',
                     style: TextStyle(
-                      color: AppColors.crimson,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      color: AppColors.text(brightness),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 14,
+                        color: AppColors.crimson,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatMonthDay(event.date),
+                        style: TextStyle(
+                          color: AppColors.crimson,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
 
-              // Time Range Picker
-              TimeRangePicker(
-                date: event.date,
-                initialSlot: timeSlot,
-                brightness: brightness,
-                onChanged: (slot) {
-                  setSheetState(() => timeSlot = slot);
-                },
-              ),
+                  // Time Range Picker
+                  TimeRangePicker(
+                    date: event.date,
+                    initialSlot: timeSlot,
+                    brightness: brightness,
+                    existingSlots: _getExistingSlotsForDay(event.date),
+                    onChanged: (slot) {
+                      setSheetState(() => timeSlot = slot);
+                    },
+                  ),
 
-              const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-              // Update Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: timeSlot.isValid
-                      ? () => _updateAvailability(ctx, event, timeSlot)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: timeSlot.isValid
-                        ? AppColors.success
-                        : AppColors.ash,
-                    disabledBackgroundColor: AppColors.ash,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    elevation: timeSlot.isValid ? 2 : 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                  // Update Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: timeSlot.isValid
+                          ? () => _updateAvailability(ctx, event, timeSlot)
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: timeSlot.isValid
+                            ? AppColors.success
+                            : AppColors.ash,
+                        disabledBackgroundColor: AppColors.ash,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: timeSlot.isValid ? 2 : 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        timeSlot.isValid
+                            ? 'Update Availability'
+                            : 'Invalid Time Slot',
+                        style: TextStyle(
+                          color: timeSlot.isValid
+                              ? Colors.white
+                              : AppColors.textDisabled,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
-                  child: Text(
-                    timeSlot.isValid
-                        ? 'Update Availability'
-                        : 'Invalid Time Slot',
-                    style: TextStyle(
-                      color: timeSlot.isValid
-                          ? Colors.white
-                          : AppColors.textDisabled,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+                SizedBox(
+                  height: MediaQuery.of(ctx).viewPadding.bottom + 8,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1142,7 +1630,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   }
 
   /// Update existing availability
-  void _updateAvailability(
+  Future<void> _updateAvailability(
     BuildContext context,
     CalendarEvent existingEvent,
     GigTimeSlot timeSlot,
@@ -1150,12 +1638,37 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
 
-    try {
-      // Delete old and add new (simple update approach)
-      await _calendarService.removeAvailability(existingEvent.date);
+    // Save old slot data for rollback
+    final oldSlot = AvailabilitySlot(
+      date: existingEvent.date,
+      startTime: existingEvent.startTime,
+      endTime: existingEvent.endTime,
+      isOvernight: false,
+    );
 
-      final slot = AvailabilitySlot.fromTimeSlot(timeSlot);
-      await _calendarService.addAvailability(slot);
+    try {
+      // Remove only the specific slot by its ID
+      final slotId = existingEvent.id.startsWith('avail-')
+          ? existingEvent.id.substring(6)
+          : null;
+      await _calendarService.removeAvailability(
+        existingEvent.date,
+        slotId: slotId,
+      );
+
+      // Add new — if this fails, rollback by re-adding old
+      try {
+        final slot = AvailabilitySlot.fromTimeSlot(timeSlot);
+        await _calendarService.addAvailability(slot);
+      } catch (addError) {
+        // Rollback: re-add the original slot
+        try {
+          await _calendarService.addAvailability(oldSlot);
+        } catch (_) {
+          // Rollback also failed — data is lost
+        }
+        rethrow;
+      }
 
       _loadCalendar();
       scaffoldMessenger.showSnackBar(
@@ -1167,6 +1680,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
         ),
       );
     } catch (e) {
+      _loadCalendar();
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(
@@ -1205,7 +1719,14 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
 
     if (confirmed == true) {
       try {
-        await _calendarService.removeAvailability(event.date);
+        // Extract slotId from event.id (format: "avail-<mongoId>")
+        final slotId = event.id.startsWith('avail-')
+            ? event.id.substring(6)
+            : null;
+        await _calendarService.removeAvailability(
+          event.date,
+          slotId: slotId,
+        );
         _loadCalendar();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1254,8 +1775,8 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   }
 
   void _showAddAvailabilitySheet(BuildContext context, Brightness brightness) {
-    // Initialize with evening preset
     GigTimeSlot timeSlot = GigTimeSlot.evening(_selectedDate);
+    bool showCustomTime = false;
 
     showModalBottomSheet(
       context: context,
@@ -1263,134 +1784,256 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
       isScrollControlled: true,
       enableDrag: true,
       isDismissible: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => GestureDetector(
-          // Prevent scroll from blocking sheet dismiss
-          behavior: HitTestBehavior.opaque,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.85,
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                12,
-                20,
-                MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Handle bar - drag indicator
-                    Center(
-                      child: GestureDetector(
-                        onVerticalDragEnd: (details) {
-                          if (details.primaryVelocity != null &&
-                              details.primaryVelocity! > 300) {
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: Container(
-                          width: 40,
-                          height: 5,
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: AppColors.border(brightness),
-                            borderRadius: BorderRadius.circular(2.5),
-                          ),
-                        ),
-                      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            12,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.border(brightness),
+                      borderRadius: BorderRadius.circular(2.5),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Add Availability',
-                      style: TextStyle(
-                        color: AppColors.text(brightness),
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
+                  ),
+                ),
+
+              // Header
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.calendar_today_rounded,
-                          size: 14,
-                          color: AppColors.crimson,
-                        ),
-                        const SizedBox(width: 6),
                         Text(
-                          _formatMonthDay(_selectedDate),
+                          'Add Availability',
                           style: TextStyle(
-                            color: AppColors.crimson,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            color: AppColors.text(brightness),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              size: 14,
+                              color: AppColors.crimson,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _formatMonthDay(_selectedDate),
+                              style: TextStyle(
+                                color: AppColors.crimson,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
 
-                    // Slider-Based Time Picker with conflict detection
-                    TimeRangePicker(
-                      date: _selectedDate,
-                      initialSlot: timeSlot,
-                      brightness: brightness,
-                      existingSlots: _getExistingSlotsForDay(_selectedDate),
-                      lastWeekSlot: _getLastWeekSlot(_selectedDate),
-                      onChanged: (slot) {
-                        setSheetState(() => timeSlot = slot);
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Submit Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: timeSlot.isValid
-                            ? () => _submitAvailability(context, timeSlot)
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: timeSlot.isValid
-                              ? AppColors.crimson
-                              : AppColors.ash,
-                          disabledBackgroundColor: AppColors.ash,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: timeSlot.isValid ? 2 : 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: Text(
-                          timeSlot.isValid
-                              ? 'Add Availability'
-                              : 'Invalid Time Slot',
-                          style: TextStyle(
-                            color: timeSlot.isValid
-                                ? Colors.white
-                                : AppColors.textDisabled,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              // Quick presets — one tap to add
+              Text(
+                'TAP TO ADD',
+                style: TextStyle(
+                  color: AppColors.textSec(brightness),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
                 ),
               ),
+              const SizedBox(height: 10),
+              _QuickPresetRow(
+                label: 'Morning',
+                time: '9 AM – 12 PM',
+                icon: Icons.wb_sunny_outlined,
+                brightness: brightness,
+                onTap: () => _quickAdd(ctx, GigTimeSlot(
+                  date: _selectedDate,
+                  startHour: 9,
+                  endHour: 12,
+                )),
+              ),
+              _QuickPresetRow(
+                label: 'Afternoon',
+                time: '12 PM – 6 PM',
+                icon: Icons.wb_cloudy_outlined,
+                brightness: brightness,
+                onTap: () => _quickAdd(ctx, GigTimeSlot(
+                  date: _selectedDate,
+                  startHour: 12,
+                  endHour: 18,
+                )),
+              ),
+              _QuickPresetRow(
+                label: 'Evening',
+                time: '6 PM – 11 PM',
+                icon: Icons.nights_stay_outlined,
+                brightness: brightness,
+                onTap: () => _quickAdd(ctx, GigTimeSlot.evening(_selectedDate)),
+              ),
+              _QuickPresetRow(
+                label: 'Late Night',
+                time: '10 PM – 2 AM',
+                icon: Icons.dark_mode_outlined,
+                brightness: brightness,
+                onTap: () => _quickAdd(ctx, GigTimeSlot.lateNight(_selectedDate)),
+              ),
+              _QuickPresetRow(
+                label: 'All Day',
+                time: '10 AM – 11 PM',
+                icon: Icons.schedule_rounded,
+                brightness: brightness,
+                onTap: () => _quickAdd(ctx, GigTimeSlot.allDay(_selectedDate)),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Custom time — expandable
+              GestureDetector(
+                onTap: () {
+                  setSheetState(() {
+                    showCustomTime = !showCustomTime;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface(brightness),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border(brightness)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.tune_rounded,
+                        size: 18,
+                        color: AppColors.textSec(brightness),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Custom Time',
+                        style: TextStyle(
+                          color: AppColors.text(brightness),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        showCustomTime
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        color: AppColors.textSec(brightness),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Custom time picker (collapsible)
+              if (showCustomTime) ...[
+                const SizedBox(height: 12),
+                TimeRangePicker(
+                  date: _selectedDate,
+                  initialSlot: timeSlot,
+                  brightness: brightness,
+                  existingSlots: _getExistingSlotsForDay(_selectedDate),
+                  lastWeekSlot: _getLastWeekSlot(_selectedDate),
+                  onChanged: (slot) {
+                    setSheetState(() => timeSlot = slot);
+                  },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: timeSlot.isValid
+                        ? () => _submitAvailability(ctx, timeSlot)
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: timeSlot.isValid
+                          ? AppColors.crimson
+                          : AppColors.ash,
+                      disabledBackgroundColor: AppColors.ash,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      timeSlot.isValid
+                          ? 'Add Custom Time'
+                          : 'Select Valid Time',
+                      style: TextStyle(
+                        color: timeSlot.isValid
+                            ? Colors.white
+                            : AppColors.textDisabled,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+
+              SizedBox(
+                height: MediaQuery.of(ctx).viewPadding.bottom + 8,
+              ),
+              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  bool _isSaving = false;
+
+  /// Quick-add a preset — one tap, instant save
+  void _quickAdd(BuildContext sheetContext, GigTimeSlot timeSlot) {
+    if (_isSaving) return; // Guard against rapid taps
+
+    // Check for conflicts first
+    final eventsOnDate = _calendarData?.getEventsForDate(_selectedDate) ?? [];
+    final hasConflict = eventsOnDate.any((e) => timeSlot.overlapsEvent(e));
+
+    if (hasConflict) {
+      // Fall through to the full submit flow with conflict dialog
+      _submitAvailability(sheetContext, timeSlot);
+      return;
+    }
+
+    // No conflict — save immediately
+    _doAddAvailability(sheetContext, timeSlot);
   }
 
   /// Submit availability with proper validation and conflict detection
@@ -1537,6 +2180,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
 
   /// Actually add the availability after all validation passes
   void _doAddAvailability(BuildContext context, GigTimeSlot timeSlot) {
+    if (_isSaving) return; // Guard against rapid taps
+    _isSaving = true;
+
     // Store scaffold messenger before popping
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     Navigator.pop(context); // Close bottom sheet
@@ -1567,6 +2213,9 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
               backgroundColor: AppColors.error,
             ),
           );
+        })
+        .whenComplete(() {
+          _isSaving = false;
         });
   }
 
@@ -1684,44 +2333,42 @@ class _EventCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: AppColors.surface(brightness),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: accentColor.withValues(alpha: 0.3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border(brightness)),
           ),
           child: Row(
             children: [
               // Time Column
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    event.displayStartTime,
-                    style: TextStyle(
-                      color: AppColors.text(brightness),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+              SizedBox(
+                width: 72,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.displayStartTime,
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  Text(
-                    event.displayEndTime,
-                    style: TextStyle(
-                      color: AppColors.textTert(brightness),
-                      fontSize: 12,
+                    Text(
+                      event.displayEndTime,
+                      style: TextStyle(
+                        color: AppColors.textTert(brightness),
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: 16),
 
@@ -1795,3 +2442,84 @@ class _EventCard extends StatelessWidget {
     );
   }
 }
+
+/// Quick preset row — full width, easy to tap, one-tap add
+class _QuickPresetRow extends StatelessWidget {
+  final String label;
+  final String time;
+  final IconData icon;
+  final Brightness brightness;
+  final VoidCallback onTap;
+
+  const _QuickPresetRow({
+    required this.label,
+    required this.time,
+    required this.icon,
+    required this.brightness,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: AppColors.surface(brightness),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border(brightness)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.crimson.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: AppColors.crimson),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: AppColors.text(brightness),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        time,
+                        style: TextStyle(
+                          color: AppColors.textSec(brightness),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.add_circle_outline_rounded,
+                  color: AppColors.crimson,
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

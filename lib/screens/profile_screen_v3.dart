@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 
@@ -311,7 +312,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                   radius: 18,
                   backgroundImage: profilePhoto != null &&
                           profilePhoto.isNotEmpty
-                      ? NetworkImage(profilePhoto)
+                      ? CachedNetworkImageProvider(profilePhoto)
                       : null,
                   backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
                   child: profilePhoto == null ||
@@ -448,11 +449,11 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
         ],
       ),
       child: CircleAvatar(
-        radius: 44, // Reduced from 56 to 44
+        radius: 44,
         backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
         backgroundImage:
             profilePhoto != null && profilePhoto.isNotEmpty
-                ? NetworkImage(profilePhoto)
+                ? CachedNetworkImageProvider(profilePhoto)
                 : null,
         child: Semantics(
           label: profilePhoto != null && profilePhoto.isNotEmpty

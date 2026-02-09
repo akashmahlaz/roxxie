@@ -15,6 +15,7 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
@@ -1000,10 +1001,10 @@ class _MediaScreenState extends State<MediaScreen>
           children: [
             // Thumbnail
             if (video.thumbnailUrl != null)
-              Image.network(
-                video.thumbnailUrl!,
+              CachedNetworkImage(
+                imageUrl: video.thumbnailUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, e, s) => _buildVideoPlaceholder(brightness),
+                errorWidget: (_, e, s) => _buildVideoPlaceholder(brightness),
               )
             else
               _buildVideoPlaceholder(brightness),
@@ -1381,7 +1382,7 @@ class _MediaScreenState extends State<MediaScreen>
                           ? DecorationImage(
                               image: _newProfilePhoto != null
                                   ? FileImage(_newProfilePhoto!)
-                                  : NetworkImage(_profilePhotoUrl!)
+                                  : CachedNetworkImageProvider(_profilePhotoUrl!)
                                         as ImageProvider,
                               fit: BoxFit.cover,
                             )
@@ -1534,10 +1535,10 @@ class _MediaScreenState extends State<MediaScreen>
           if (photo.localPath != null)
             Image.file(File(photo.localPath!), fit: BoxFit.cover)
           else if (photo.url != null)
-            Image.network(
-              photo.url!,
+            CachedNetworkImage(
+              imageUrl: photo.url!,
               fit: BoxFit.cover,
-              errorBuilder: (_, e, s) => Container(
+              errorWidget: (_, e, s) => Container(
                 color: AppColors.charcoal,
                 child: Icon(
                   Icons.broken_image_outlined,

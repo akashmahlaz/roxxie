@@ -103,7 +103,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     if (_booking == null) return;
 
     final booking = _booking!;
-    final depositAmount = booking.payment?.depositAmount ?? (booking.agreedAmount * 0.3);
+    final depositAmount = booking.payment?.depositAmount ?? (booking.agreedAmount * 0.25);
 
     // Show payment confirmation dialog
     HapticFeedback.mediumImpact();
@@ -545,6 +545,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       BookingStatus.pending: AppColors.warning,
       BookingStatus.confirmed: AppColors.cyan,
       BookingStatus.depositPaid: AppColors.success,
+      BookingStatus.paid: AppColors.success,
       BookingStatus.inProgress: AppColors.crimson,
       BookingStatus.completed: AppColors.success,
       BookingStatus.cancelled: AppColors.error,
@@ -555,6 +556,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       BookingStatus.pending: Icons.hourglass_empty_rounded,
       BookingStatus.confirmed: Icons.check_circle_outline,
       BookingStatus.depositPaid: Icons.payment_rounded,
+      BookingStatus.paid: Icons.check_rounded,
       BookingStatus.inProgress: Icons.play_circle_outline,
       BookingStatus.completed: Icons.celebration_rounded,
       BookingStatus.cancelled: Icons.cancel_outlined,
@@ -617,6 +619,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
         return 'Booking confirmed! Deposit payment required';
       case BookingStatus.depositPaid:
         return 'Deposit received. Ready for the gig!';
+      case BookingStatus.paid:
+        return 'Fully paid. All set for the gig!';
       case BookingStatus.inProgress:
         return 'Gig is happening now';
       case BookingStatus.completed:
@@ -838,8 +842,9 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
       );
     }
 
-    // Mark complete button (if deposit paid and gig date has passed)
+    // Mark complete button (if deposit paid, fully paid, or in progress, and gig date has passed)
     if (booking.status == BookingStatus.depositPaid ||
+        booking.status == BookingStatus.paid ||
         booking.status == BookingStatus.inProgress) {
       final canMarkComplete = isArtist
           ? !booking.artistMarkedComplete

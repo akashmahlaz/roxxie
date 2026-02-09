@@ -3,6 +3,8 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 
@@ -317,6 +319,7 @@ class DiscoveryProvider extends ChangeNotifier {
 
   void _moveToNext() {
     _currentIndex++;
+    _prefetchUpcomingImages();
     notifyListeners();
   }
 
@@ -324,6 +327,34 @@ class DiscoveryProvider extends ChangeNotifier {
     // Load more when 5 cards remaining
     if (remainingCards < 5 && _hasMore && !_isLoading) {
       loadCards();
+    }
+  }
+
+  /// Prefetch images for next 3 discovery cards for smooth UX
+  void _prefetchUpcomingImages() {
+    const prefetchCount = 3;
+    for (int i = 0; i < prefetchCount; i++) {
+      final idx = _currentIndex + 1 + i;
+      if (idx < _cards.length) {
+        final card = _cards[idx];
+        // Prefetch primary photo
+        if (card.primaryPhotoUrl.isNotEmpty) {
+          _prefetchImage(card.primaryPhotoUrl);
+        }
+        // Prefetch first gallery image
+        if (card.galleryUrls.isNotEmpty) {
+          _prefetchImage(card.galleryUrls.first);
+        }
+      }
+    }
+  }
+
+  /// Prefetch a single image URL into the cache
+  void _prefetchImage(String url) {
+    try {
+      CachedNetworkImageProvider(url).resolve(const ImageConfiguration());
+    } catch (_) {
+      // Silently ignore prefetch errors
     }
   }
 }

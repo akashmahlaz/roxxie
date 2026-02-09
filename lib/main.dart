@@ -10,6 +10,7 @@ import 'core/theme/theme.dart';
 import 'core/providers/providers.dart';
 import 'core/services/error_handling_service.dart';
 import 'core/config/app_config.dart';
+import 'core/services/hive_cache_service.dart';
 import 'widgets/global_error_handler.dart';
 
 // Screens - Ultra-Premium 2026 Design
@@ -79,6 +80,9 @@ void main() async {
 
   // Initialize error handling service
   await ErrorHandlingService().initialize();
+
+  // 💾 Initialize Hive cache (must be before runApp)
+  await initializeHiveCache();
 
   // Initialize Stripe with environment-specific publishable key
   Stripe.publishableKey = AppConfig.stripePublishableKey;

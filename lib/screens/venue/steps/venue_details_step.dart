@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/models/venues_models.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/services/services.dart';
@@ -424,14 +425,14 @@ class _VenueDetailsStepState extends State<VenueDetailsStep> {
                 fit: StackFit.expand,
                 children: [
                   if (_hasCoords)
-                    Image.network(
-                      _buildOsmTileUrl(
+                    CachedNetworkImage(
+                      imageUrl: _buildOsmTileUrl(
                         widget.profileData.location.latitude,
                         widget.profileData.location.longitude,
                         _mapZoom,
                       ),
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
+                      errorWidget: (context, error, stackTrace) =>
                           _buildMapPlaceholder(brightness),
                     )
                   else

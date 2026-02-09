@@ -74,24 +74,54 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  /// Map backend notification type strings to local NotificationType enum
   NotificationType _mapNotificationType(String type) {
     switch (type.toLowerCase()) {
+      // Match notifications
       case 'match':
         return NotificationType.match;
+      
+      // Message/Chat notifications
       case 'message':
       case 'chat':
         return NotificationType.message;
+      
+      // Gig notifications
       case 'gig':
       case 'gig_opportunity':
       case 'gigopportunity':
+      case 'gig_reminder':
+      case 'gig_cancelled':
+      case 'gig_confirmation':
         return NotificationType.gig;
+      
+      // Booking notifications (map to gig type for display)
+      case 'booking_confirmation':
+      case 'booking_confirmed':
+      case 'booking_cancelled':
+      case 'booking_declined':
+        return NotificationType.gig;
+      
+      // Profile notifications
       case 'profile':
       case 'profile_view':
         return NotificationType.profile;
+      
+      // Boost notifications
       case 'boost':
         return NotificationType.boost;
+      
+      // Payment notifications
       case 'payment':
+      case 'payment_received':
         return NotificationType.payment;
+      
+      // Review notifications (map to profile type)
+      case 'review_received':
+        return NotificationType.profile;
+      
+      // System notifications (map to gig as fallback)
+      case 'system':
       default:
         return NotificationType.gig;
     }

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/models/venues_models.dart';
@@ -375,7 +376,7 @@ class _VenueIdentityStepState extends State<VenueIdentityStep> {
         return Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(path, fit: BoxFit.cover),
+            CachedNetworkImage(imageUrl: path, fit: BoxFit.cover),
             Container(color: Colors.black.withValues(alpha: 0.3)),
           ],
         );

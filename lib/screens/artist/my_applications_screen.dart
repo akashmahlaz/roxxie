@@ -10,6 +10,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/theme.dart';
@@ -379,7 +380,7 @@ class _ApplicationCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 14,
                     backgroundImage: application.venueInfo.photo != null
-                        ? NetworkImage(application.venueInfo.photo!)
+                        ? CachedNetworkImageProvider(application.venueInfo.photo!)
                         : null,
                     backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
                     child: application.venueInfo.photo == null

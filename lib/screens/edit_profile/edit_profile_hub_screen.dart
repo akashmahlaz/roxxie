@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/theme.dart';
@@ -308,10 +309,10 @@ class _EditProfileHubScreenState extends State<EditProfileHubScreen> {
                 ),
                 child: ClipOval(
                   child: photoUrl != null && photoUrl.isNotEmpty
-                      ? Image.network(
-                          photoUrl,
+                      ? CachedNetworkImage(
+                          imageUrl: photoUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stack) =>
+                          errorWidget: (context, error, stack) =>
                               _buildDefaultAvatar(isArtist, brightness),
                         )
                       : _buildDefaultAvatar(isArtist, brightness),

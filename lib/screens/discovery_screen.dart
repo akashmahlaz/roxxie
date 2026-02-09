@@ -1869,7 +1869,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                 ) !=
                 null
             ? DecorationImage(
-                image: NetworkImage(
+                image: CachedNetworkImageProvider(
                   _pendingMatch!.getOtherPartyPhoto(
                     context.read<AuthProvider>().isArtist,
                   ),

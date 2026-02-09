@@ -12,6 +12,10 @@ class ChatProvider extends ChangeNotifier {
   final MessageService _messageService = MessageService();
   final ChatSocketService _socketService = ChatSocketService();
 
+  // Cache services
+  final MessageCacheService _messageCache = MessageCacheService();
+  final PendingMessageQueueService _pendingQueue = PendingMessageQueueService();
+
   ChatStatus _status = ChatStatus.initial;
   String? _currentMatchId;
   List<Message> _messages = [];
@@ -38,6 +42,10 @@ class ChatProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isSending => _isSending;
   bool get isConnected => _socketService.isConnected;
+
+  // Cache getters
+  MessageCacheService get messageCache => _messageCache;
+  PendingMessageQueueService get pendingQueue => _pendingQueue;
 
   /// 🔌 Initialize WebSocket connection
   Future<void> initSocket() async {
@@ -101,6 +109,16 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // First, load from cache for instant display
+      if (!loadMore) {
+        final cachedMessages = await _messageCache.getCachedMessages(_currentMatchId!);
+        if (cachedMessages.isNotEmpty) {
+          _messages = cachedMessages;
+          notifyListeners();
+        }
+      }
+
+      // Then fetch from network
       final response = await _messageService.getMessages(
         matchId: _currentMatchId!,
         page: loadMore ? _page : 1,
@@ -114,6 +132,9 @@ class ChatProvider extends ChangeNotifier {
         _page = 1;
       }
 
+      // Update cache
+      await _messageCache.cacheMessages(_currentMatchId!, _messages);
+
       _hasMore = response.hasMore;
       _page++;
       _status = ChatStatus.loaded;
@@ -123,6 +144,17 @@ class ChatProvider extends ChangeNotifier {
       _status = ChatStatus.error;
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 🔄 Load cached messages only (for offline)
+  Future<void> loadCachedMessages() async {
+    if (_currentMatchId == null) return;
+
+    final cachedMessages = await _messageCache.getCachedMessages(_currentMatchId!);
+    if (cachedMessages.isNotEmpty) {
+      _messages = cachedMessages;
       notifyListeners();
     }
   }
@@ -141,8 +173,9 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     // Create optimistic message
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final tempMessage = Message(
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      id: tempId,
       matchId: _currentMatchId!,
       senderId: 'me', // Will be replaced by actual sender ID
       content: content,
@@ -171,10 +204,13 @@ class ChatProvider extends ChangeNotifier {
       );
 
       // Replace temp message with real one
-      final index = _messages.indexWhere((m) => m.id == tempMessage.id);
+      final index = _messages.indexWhere((m) => m.id == tempId);
       if (index != -1) {
         _messages[index] = sentMessage;
       }
+
+      // Update cache
+      await _messageCache.addMessage(_currentMatchId!, sentMessage);
 
       _isSending = false;
       notifyListeners();
@@ -183,10 +219,19 @@ class ChatProvider extends ChangeNotifier {
       debugPrint('Send message error: $e');
 
       // Mark as failed
-      final index = _messages.indexWhere((m) => m.id == tempMessage.id);
+      final index = _messages.indexWhere((m) => m.id == tempId);
       if (index != -1) {
         _messages[index] = tempMessage.copyWith(status: MessageStatus.failed);
       }
+
+      // Add to pending queue for retry
+      final pending = PendingMessage(
+        tempId: tempId,
+        matchId: _currentMatchId!,
+        message: tempMessage,
+        createdAt: DateTime.now(),
+      );
+      await _pendingQueue.add(pending);
 
       _isSending = false;
       notifyListeners();
@@ -320,5 +365,58 @@ class ChatProvider extends ChangeNotifier {
   void _handleNewMatch(Match match) {
     // This will be handled by MatchProvider
     debugPrint('New match notification: ${match.id}');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OFFLINE SYNC METHODS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// 🔄 Sync pending messages when coming back online
+  Future<void> syncPendingMessages() async {
+    final pending = await _pendingQueue.getRetryableMessages();
+
+    for (final item in pending) {
+      try {
+        final sentMessage = await _messageService.sendMessage(
+          SendMessageRequest(
+            matchId: item.matchId,
+            content: item.message.content,
+            type: item.message.type,
+            mediaUrl: item.message.mediaUrl,
+          ),
+        );
+
+        // Remove from pending queue
+        await _pendingQueue.remove(item.tempId);
+
+        // Update message in list if current match
+        if (item.matchId == _currentMatchId) {
+          final index = _messages.indexWhere((m) => m.id == item.tempId);
+          if (index != -1) {
+            _messages[index] = sentMessage;
+          }
+        }
+
+        debugPrint('Synced pending message: ${item.tempId}');
+      } catch (e) {
+        await _pendingQueue.incrementRetry(item.tempId);
+        debugPrint('Failed to sync pending message: ${item.tempId}');
+      }
+    }
+
+    notifyListeners();
+  }
+
+  /// 🔄 Sync all chat data (call on app start or reconnection)
+  Future<void> syncAllChats() async {
+    await syncPendingMessages();
+    await refreshUnreadCount();
+  }
+
+  /// 🧹 Clear all cached data
+  Future<void> clearCache() async {
+    await _messageCache.clearAll();
+    await _pendingQueue.clear();
+    debugPrint('Chat cache cleared');
   }
 }

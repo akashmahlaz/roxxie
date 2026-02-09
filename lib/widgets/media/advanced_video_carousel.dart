@@ -10,6 +10,7 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import '../../core/theme/theme.dart';
@@ -266,10 +267,10 @@ class _VideoCardState extends State<_VideoCard> {
             if (_isInitialized && _controller != null)
               VideoPlayer(_controller!)
             else if (widget.video.thumbnailUrl != null)
-              Image.network(
-                widget.video.thumbnailUrl!,
+              CachedNetworkImage(
+                imageUrl: widget.video.thumbnailUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _buildPlaceholder(brightness),
+                errorWidget: (_, _, _) => _buildPlaceholder(brightness),
               )
             else
               _buildPlaceholder(brightness),

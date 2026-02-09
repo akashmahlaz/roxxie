@@ -19,6 +19,7 @@ class MatchProvider extends ChangeNotifier {
   int _unreadCount = 0;
   String? _errorMessage;
   bool _isLoading = false;
+  DateTime? _lastFetchTime;
 
   // Who Liked Me state
   List<DiscoveryCard> _whoLikedMe = [];
@@ -41,6 +42,12 @@ class MatchProvider extends ChangeNotifier {
   int get unreadCount => _unreadCount;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
+
+  /// Whether data is stale (older than 3 minutes)
+  bool get isStale {
+    if (_lastFetchTime == null) return true;
+    return DateTime.now().difference(_lastFetchTime!) > const Duration(minutes: 3);
+  }
 
   // Who Liked Me getters
   List<DiscoveryCard> get whoLikedMe => _whoLikedMe;
@@ -148,6 +155,7 @@ class MatchProvider extends ChangeNotifier {
       _page++;
       _status = MatchListStatus.loaded;
       _errorMessage = null;
+      _lastFetchTime = DateTime.now();
 
       // Also fetch unread count
       await refreshUnreadCount();
@@ -158,6 +166,13 @@ class MatchProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Load matches only if data is stale or empty
+  Future<void> loadMatchesIfStale() async {
+    if (isStale || _matches.isEmpty) {
+      await loadMatches(refresh: true);
     }
   }
 
@@ -291,10 +306,10 @@ class MatchProvider extends ChangeNotifier {
 
   /// 🔍 Get match by ID
   Match? getMatchById(String id) {
-    try {
-      return _matches.firstWhere((m) => m.id == id);
-    } catch (e) {
-      return null;
+    final index = _matches.indexWhere((m) => m.id == id);
+    if (index != -1) {
+      return _matches[index];
     }
+    return null;
   }
 }

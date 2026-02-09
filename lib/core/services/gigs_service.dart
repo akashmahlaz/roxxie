@@ -32,13 +32,45 @@ class GigsService {
     }
   }
 
-  /// ✅ Accept a gig offer (Artist)
+  /// ✅ Accept a gig offer (Artist) - DEPRECATED
+  /// Use [confirmGigBooking] instead for the new flow
+  @Deprecated('Use confirmGigBooking instead')
   Future<Gig> acceptGig(String gigId) async {
+    // ignore: deprecated_member_use_from_same_package
     try {
       final response = await _client.post(Endpoints.gigAccept(gigId));
       return Gig.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       debugPrint('Accept gig error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Confirm booking for accepted gig application (Artist)
+  ///
+  /// After venue accepts an artist's application and creates a booking,
+  /// the artist uses this to confirm the booking from their side.
+  /// Returns the confirmed booking details.
+  Future<Map<String, dynamic>> confirmGigBooking(String gigId) async {
+    try {
+      final response = await _client.post(Endpoints.gigConfirmBooking(gigId));
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Confirm gig booking error: $e');
+      rethrow;
+    }
+  }
+
+  /// ✅ Withdraw a pending application (Artist)
+  Future<Map<String, dynamic>> withdrawApplication(String gigId, {String? reason}) async {
+    try {
+      final response = await _client.post(
+        Endpoints.gigWithdraw(gigId),
+        data: reason != null ? {'reason': reason} : null,
+      );
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Withdraw application error: $e');
       rethrow;
     }
   }

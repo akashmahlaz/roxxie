@@ -15,7 +15,8 @@
       "Bash(grep -r \"class.*StatefulWidget\" lib/screens/*.dart)",
       "Bash(npx tsc --noemit)",
       "Bash(git checkout lib/core/services/chat_service.dart)",
-      "Bash(flutter build appbundle --debug)"
+      "Bash(flutter build appbundle --debug)",
+      "Bash(grep -rn \"CachedNetworkImage\" lib/screens/*.dart lib/widgets/*.dart)"
     ]
   }
 }

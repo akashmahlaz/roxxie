@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_selector/file_selector.dart';
 import '../core/theme/theme.dart';
@@ -119,12 +120,12 @@ class _GalleryUploadGridState extends State<GalleryUploadGrid> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                widget.imageUrls[index],
+              child: CachedNetworkImage(
+                imageUrl: widget.imageUrls[index],
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
-                errorBuilder: (context, error, stackTrace) => Container(
+                errorWidget: (context, error, stackTrace) => Container(
                   color: AppColors.surface(widget.brightness),
                   child: const Icon(Icons.broken_image),
                 ),

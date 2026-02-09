@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/models/venues_models.dart';
 import '../../../core/theme/theme.dart';
@@ -48,7 +49,7 @@ class _VenueMediaStepState extends State<VenueMediaStep> {
   /// Helper to get correct ImageProvider based on path type
   ImageProvider _getImageProvider(String path) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      return NetworkImage(path);
+      return CachedNetworkImageProvider(path);
     } else {
       return FileImage(File(path));
     }

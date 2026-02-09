@@ -14,6 +14,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/theme.dart';
 import '../core/services/booking_service.dart';
 import '../core/models/booking_models.dart';
@@ -146,6 +147,7 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
         status = RequestStatus.pending;
       case BookingStatus.confirmed:
       case BookingStatus.depositPaid:
+      case BookingStatus.paid:
       case BookingStatus.inProgress:
         status = RequestStatus.accepted;
       case BookingStatus.completed:
@@ -687,7 +689,16 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen>
                       children: [
                         CircleAvatar(
                           radius: 28,
-                          backgroundImage: NetworkImage(request.senderImage),
+                          backgroundImage: request.senderImage.isNotEmpty
+                              ? CachedNetworkImageProvider(request.senderImage)
+                              : null,
+                          backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
+                          child: request.senderImage.isEmpty
+                              ? Icon(
+                                  Icons.person_rounded,
+                                  color: AppColors.crimson,
+                                )
+                              : null,
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -1146,7 +1157,16 @@ class _RequestCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundImage: NetworkImage(request.senderImage),
+                    backgroundImage: request.senderImage.isNotEmpty
+                        ? CachedNetworkImageProvider(request.senderImage)
+                        : null,
+                    backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
+                    child: request.senderImage.isEmpty
+                        ? Icon(
+                            Icons.person_rounded,
+                            color: AppColors.crimson,
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(

@@ -15,9 +15,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
+import 'chat_screen_v2.dart';
 
 class MatchesScreenV2 extends StatefulWidget {
   const MatchesScreenV2({super.key});
@@ -720,7 +722,7 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
                           CircleAvatar(
                             radius: 28,
                             backgroundImage: profile.primaryPhotoUrl.isNotEmpty
-                                ? NetworkImage(profile.primaryPhotoUrl)
+                                ? CachedNetworkImageProvider(profile.primaryPhotoUrl)
                                 : null,
                             backgroundColor: AppColors.surface(brightness),
                             child: profile.primaryPhotoUrl.isEmpty
@@ -909,9 +911,23 @@ class _MatchesScreenV2State extends State<MatchesScreenV2>
 
   void _openChat(Match match) {
     HapticFeedback.lightImpact();
-    // Assuming Route is setup or direct push
-    // Using simple push for now as verified in matches_screen
-    Navigator.of(context, rootNavigator: true).pushNamed('/chat/${match.id}');
+
+    // Determine the other party's info
+    final currentUserIsArtist = context.read<AuthProvider>().user?.role == UserRole.artist;
+    final participantName = match.getOtherPartyName(currentUserIsArtist);
+    final participantPhoto = match.getOtherPartyPhoto(currentUserIsArtist);
+
+    // Use constructor-based navigation (consistent with messages_screen.dart)
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreenV2(
+          matchId: match.id,
+          participantName: participantName,
+          participantPhoto: participantPhoto,
+          isParticipantArtist: !currentUserIsArtist,
+        ),
+      ),
+    );
   }
 }
 
@@ -1020,10 +1036,10 @@ class _PremiumMatchCard extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 // Image
-                Image.network(
-                  photo,
+                CachedNetworkImage(
+                  imageUrl: photo,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) =>
+                  errorWidget: (_, _, _) =>
                       Container(color: AppColors.surface(brightness)),
                 ),
 
@@ -1137,7 +1153,15 @@ class _PremiumMessageTile extends StatelessWidget {
                   CircleAvatar(
                     radius: 28,
                     backgroundColor: AppColors.surface(brightness),
-                    backgroundImage: NetworkImage(photo),
+                    backgroundImage: photo.isNotEmpty
+                        ? CachedNetworkImageProvider(photo)
+                        : null,
+                    child: photo.isEmpty
+                        ? Icon(
+                            Icons.person_rounded,
+                            color: AppColors.textTert(brightness),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(

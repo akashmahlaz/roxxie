@@ -31,6 +31,7 @@ import '../core/providers/providers.dart';
 import '../core/models/models.dart';
 import '../core/services/services.dart';
 import '../widgets/widgets.dart';
+import 'full_screen_media_preview.dart';
 
 class ChatScreenV2 extends StatefulWidget {
   final String? matchId;
@@ -143,6 +144,29 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     });
 
     setState(() {});
+  }
+
+  /// Detect Cloudinary resource type from file path and MIME type
+  String _detectResourceType(String filePath, String mimeType) {
+    final ext = filePath.split('.').last.toLowerCase();
+
+    // Define file type groups
+    final imageExts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp', 'svg'};
+    final videoExts = {'mp4', 'mov', 'avi', 'webm', 'mkv', '3gp', 'flv', 'wmv'};
+    final audioExts = {'mp3', 'wav', 'aac', 'm4a', 'ogg', 'flac', 'wma', 'aiff'};
+
+    // Check MIME type first for more accurate detection
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType.startsWith('audio/')) return 'raw';
+
+    // Fall back to extension detection
+    if (imageExts.contains(ext)) return 'image';
+    if (videoExts.contains(ext)) return 'video';
+    if (audioExts.contains(ext)) return 'raw';
+
+    // Documents default to raw (Cloudinary's non-media type)
+    return 'raw';
   }
 
   Future<void> _initializeChat() async {
@@ -341,9 +365,13 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         HapticFeedback.lightImpact();
         _showLoading('Uploading file...');
 
-        // Upload file to server - use image type for Cloudinary
+        // Detect actual file type for proper Cloudinary upload
+        final resourceType = _detectResourceType(file.path, file.mimeType ?? '');
+        debugPrint('Uploading file as type: $resourceType');
+
+        // Upload file to server with correct resource type
         final chatService = ChatService();
-        final uploadedUrl = await chatService.uploadMedia(file.path, 'image');
+        final uploadedUrl = await chatService.uploadMedia(file.path, resourceType);
 
         if (mounted) {
           Navigator.of(context).pop(); // Remove loading dialog
@@ -1442,9 +1470,8 @@ class _MessageBubble extends StatelessWidget {
                     bottomLeft: Radius.circular(isOwn ? 18 : 4),
                     bottomRight: Radius.circular(isOwn ? 4 : 18),
                   ),
-                  border: isOwn
-                      ? null
-                      : Border.all(color: AppColors.border(brightness)),
+                  // No border for consistency - all messages have no border
+                  border: null,
                 ),
                 child: _buildContent(context),
               ),
@@ -1510,31 +1537,50 @@ class _MessageBubble extends StatelessWidget {
   Widget _buildImageContent(BuildContext context) {
     final imageUrl = message.mediaUrl ?? message.content;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        width: 200,
-        height: 150,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
+    return GestureDetector(
+      onTap: () {
+        // Open full-screen preview
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            pageBuilder: (_, _, _) => FullScreenMediaPreview(
+              mediaUrl: imageUrl,
+              type: ChatMediaType.image,
+            ),
+            transitionsBuilder: (_, animation, _, child) => FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+            transitionDuration: const Duration(milliseconds: 300),
+          ),
+        );
+      },
+      onLongPress: () => _showMessageOptions(context),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
           width: 200,
           height: 150,
-          color: AppColors.surface(brightness),
-          child: const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.crimson,
-              strokeWidth: 2,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            width: 200,
+            height: 150,
+            color: AppColors.surface(brightness),
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.crimson,
+                strokeWidth: 2,
+              ),
             ),
           ),
-        ),
-        errorWidget: (context, url, error) => Container(
-          width: 200,
-          height: 150,
-          color: AppColors.surface(brightness),
-          child: Icon(
-            Icons.broken_image_rounded,
-            color: AppColors.textTert(brightness),
+          errorWidget: (context, url, error) => Container(
+            width: 200,
+            height: 150,
+            color: AppColors.surface(brightness),
+            child: Icon(
+              Icons.broken_image_rounded,
+              color: AppColors.textTert(brightness),
+            ),
           ),
         ),
       ),

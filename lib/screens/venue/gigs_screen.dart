@@ -15,6 +15,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/theme.dart';
 import '../../core/services/gigs_service.dart';
 import '../../core/models/gig_models.dart' as api;
@@ -915,7 +916,7 @@ class _GigCard extends StatelessWidget {
                       CircleAvatar(
                         radius: 18,
                         backgroundImage: gig.bookedArtistImage != null
-                            ? NetworkImage(gig.bookedArtistImage!)
+                            ? CachedNetworkImageProvider(gig.bookedArtistImage!)
                             : null,
                         backgroundColor: AppColors.crimson.withValues(alpha: 0.2),
                         child: gig.bookedArtistImage == null

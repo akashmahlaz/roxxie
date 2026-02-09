@@ -736,7 +736,7 @@ class _GigContractScreenState extends State<GigContractScreen>
   // Step 1: Review
   Widget _buildReviewStep(Brightness brightness) {
     final booking = _booking!;
-    final depositAmount = booking.payment?.depositAmount ?? (booking.agreedAmount * 0.3);
+    final depositAmount = booking.payment?.depositAmount ?? (booking.agreedAmount * 0.25);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),

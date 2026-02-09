@@ -10,6 +10,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/theme.dart';
@@ -157,7 +158,7 @@ class _GigApplicationsScreenState extends State<GigApplicationsScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundImage: application.artistPhoto != null
-                        ? NetworkImage(application.artistPhoto!)
+                        ? CachedNetworkImageProvider(application.artistPhoto!)
                         : null,
                     child: application.artistPhoto == null
                         ? const Icon(Icons.person)
@@ -719,7 +720,7 @@ class _ApplicationCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 28,
                   backgroundImage: application.artistPhoto != null
-                      ? NetworkImage(application.artistPhoto!)
+                      ? CachedNetworkImageProvider(application.artistPhoto!)
                       : null,
                   backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
                   child: application.artistPhoto == null

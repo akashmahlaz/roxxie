@@ -183,7 +183,8 @@ Download GigMatch to discover live music opportunities! 🎶''';
     SharePlus.instance.share(ShareParams(text: shareText, subject: 'Gig at ${_gig!.venueName}'));
   }
 
-  Future<void> _acceptGig() async {
+  /// Confirm the gig booking (for artists with accepted applications)
+  Future<void> _confirmGigBooking() async {
     if (_apiGig == null) return;
 
     HapticFeedback.mediumImpact();
@@ -193,7 +194,7 @@ Download GigMatch to discover live music opportunities! 🎶''';
     });
 
     try {
-      await _gigsService.acceptGig(_apiGig!.id);
+      await _gigsService.confirmGigBooking(_apiGig!.id);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -202,7 +203,7 @@ Download GigMatch to discover live music opportunities! 🎶''';
               children: [
                 const AnimatedSuccessCheck(size: 20, color: Colors.white),
                 const SizedBox(width: 12),
-                const Text('Gig accepted! Check your calendar.'),
+                const Text('Booking confirmed! Check your calendar.'),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -221,7 +222,7 @@ Download GigMatch to discover live music opportunities! 🎶''';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to accept gig: ${e.toString()}'),
+            content: Text('Failed to confirm booking: ${e.toString()}'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -793,12 +794,12 @@ Download GigMatch to discover live music opportunities! 🎶''';
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Accept button
+                    // Confirm Booking button
                     Expanded(
                       child: ElevatedButton(
                         onPressed: _isLoading || _isAccepted
                             ? null
-                            : _acceptGig,
+                            : _confirmGigBooking,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _isAccepted
                               ? AppColors.success

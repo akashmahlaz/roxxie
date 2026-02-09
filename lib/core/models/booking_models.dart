@@ -4,10 +4,12 @@
 library;
 
 /// Booking Status
+/// Matches backend booking.schema.ts status enum
 enum BookingStatus {
   pending('pending'),
   confirmed('confirmed'),
   depositPaid('deposit_paid'),
+  paid('paid'), // Full payment received (after final payment)
   inProgress('in_progress'),
   completed('completed'),
   cancelled('cancelled'),
@@ -31,6 +33,8 @@ enum BookingStatus {
         return 'Confirmed';
       case BookingStatus.depositPaid:
         return 'Deposit Paid';
+      case BookingStatus.paid:
+        return 'Fully Paid';
       case BookingStatus.inProgress:
         return 'In Progress';
       case BookingStatus.completed:
@@ -116,7 +120,7 @@ class BookingParticipant {
       userId: json['userId'] ?? '',
       name: json['displayName'] ?? json['name'] ?? 'Unknown',
       photo: json['profilePhoto'] ?? json['photo'],
-      rating: (json['averageRating'] ?? json['rating'] as num?)?.toDouble(),
+      rating: ((json['averageRating'] as num?) ?? (json['rating'] as num?))?.toDouble(),
     );
   }
 }

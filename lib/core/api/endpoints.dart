@@ -363,11 +363,19 @@ class Endpoints {
   /// Apply to a gig (POST /gigs/:id/apply)
   static String gigApply(String gigId) => '/gigs/$gigId/apply';
 
-  /// Accept gig offer (POST /gigs/:id/accept)
+  /// Accept gig offer (POST /gigs/:id/accept) - DEPRECATED
+  @Deprecated('Use gigConfirmBooking instead')
   static String gigAccept(String gigId) => '/gigs/$gigId/accept';
+
+  /// Confirm booking for accepted application (POST /gigs/:id/confirm-booking)
+  /// This is the recommended endpoint for artists to confirm gig bookings
+  static String gigConfirmBooking(String gigId) => '/gigs/$gigId/confirm-booking';
 
   /// Decline gig offer (POST /gigs/:id/decline)
   static String gigDecline(String gigId) => '/gigs/$gigId/decline';
+
+  /// Withdraw application (POST /gigs/:id/withdraw)
+  static String gigWithdraw(String gigId) => '/gigs/$gigId/withdraw';
 
   /// Get gig applications
   static String gigApplications(String gigId) => '/gigs/$gigId/applications';

@@ -21,6 +21,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/services/services.dart';
@@ -206,6 +207,13 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   String get _deepLinkUrl {
     final type = _isArtist ? 'artist' : 'venue';
     return 'https://gigmatch.app/$type/$_profileId';
+  }
+
+  String _getPhotoUrl() {
+    if (_isArtist) {
+      return _artist?.profilePhoto ?? '';
+    }
+    return _venue?.profilePhotoUrl ?? '';
   }
 
   @override
@@ -536,10 +544,10 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
               decoration: const BoxDecoration(shape: BoxShape.circle),
               child: ClipOval(
                 child: avatarUrl != null
-                    ? Image.network(
-                        avatarUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: avatarUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
+                        errorWidget: (_, _, _) =>
                             _buildAvatarFallback(brightness),
                       )
                     : _buildAvatarFallback(brightness),
@@ -1682,11 +1690,16 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                           children: [
                             CircleAvatar(
                               radius: 24,
-                              backgroundImage: NetworkImage(
-                                _isArtist
-                                    ? (_artist?.profilePhoto ?? 'https://via.placeholder.com/150')
-                                    : (_venue?.profilePhotoUrl ?? 'https://via.placeholder.com/150'),
-                              ),
+                              backgroundImage: _getPhotoUrl().isNotEmpty
+                                  ? CachedNetworkImageProvider(_getPhotoUrl())
+                                  : null,
+                              backgroundColor: AppColors.crimson.withValues(alpha: 0.1),
+                              child: _getPhotoUrl().isEmpty
+                                  ? Icon(
+                                      Icons.person_rounded,
+                                      color: AppColors.crimson,
+                                    )
+                                  : null,
                             ),
                             const SizedBox(width: 14),
                             Expanded(

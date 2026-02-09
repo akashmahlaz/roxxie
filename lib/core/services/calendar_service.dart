@@ -74,12 +74,25 @@ class CalendarEvent {
 
   static String _formatTime(String time24) {
     try {
-      final parts = time24.split(':');
-      final hour = int.parse(parts[0]);
-      final minute = parts.length > 1 ? parts[1] : '00';
-      final period = hour >= 12 ? 'PM' : 'AM';
-      final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-      return '$displayHour:$minute $period';
+      // If it's already in HH:MM format
+      if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(time24)) {
+        final parts = time24.split(':');
+        final hour = int.parse(parts[0]);
+        final minute = parts[1];
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '$displayHour:$minute $period';
+      }
+      // If it's a full Date string (old data), try to parse it
+      final parsed = DateTime.tryParse(time24);
+      if (parsed != null) {
+        final hour = parsed.hour;
+        final minute = parsed.minute.toString().padLeft(2, '0');
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '$displayHour:$minute $period';
+      }
+      return time24;
     } catch (_) {
       return time24;
     }
@@ -709,16 +722,19 @@ class CalendarService {
     }
   }
 
-  /// Remove availability for a specific date
-  Future<void> removeAvailability(DateTime date) async {
+  /// Remove availability for a specific slot or all slots on a date
+  Future<void> removeAvailability(DateTime date, {String? slotId}) async {
     try {
       final dateStr =
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      debugPrint('📅 [CalendarService] Removing availability for $dateStr...');
+      debugPrint('📅 [CalendarService] Removing availability for $dateStr (slotId: $slotId)...');
 
       await _client.delete(
         Endpoints.artistsRemoveAvailability,
-        data: {'date': dateStr},
+        data: {
+          'date': dateStr,
+          if (slotId != null) 'slotId': slotId,
+        },
       );
 
       debugPrint('📅 [CalendarService] Availability removed successfully');

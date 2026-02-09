@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/models/venues_models.dart';
 
@@ -193,7 +194,7 @@ class VenuePreviewStep extends StatelessWidget {
   /// Helper to get proper image provider for local or network images
   ImageProvider _getImageProvider(String path) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      return NetworkImage(path);
+      return CachedNetworkImageProvider(path);
     } else {
       return FileImage(File(path));
     }

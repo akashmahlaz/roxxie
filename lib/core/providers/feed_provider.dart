@@ -19,11 +19,13 @@ class FeedProvider extends ChangeNotifier {
   bool _hasMorePosts = true;
   int _postsPage = 1;
   FeedSort _currentSort = FeedSort.trending;
+  DateTime? _lastPostsFetch;
 
   // Stories state
   FeedStatus _storiesStatus = FeedStatus.initial;
   List<Story> _stories = [];
   bool _hasMoreStories = true;
+  DateTime? _lastStoriesFetch;
 
   // Error
   String? _errorMessage;
@@ -43,6 +45,18 @@ class FeedProvider extends ChangeNotifier {
   bool get isLoading =>
       _postsStatus == FeedStatus.loading ||
       _storiesStatus == FeedStatus.loading;
+
+  /// Whether posts data is stale (older than 5 minutes)
+  bool get isPostsStale {
+    if (_lastPostsFetch == null) return true;
+    return DateTime.now().difference(_lastPostsFetch!) > const Duration(minutes: 5);
+  }
+
+  /// Whether stories data is stale (older than 2 minutes)
+  bool get isStoriesStale {
+    if (_lastStoriesFetch == null) return true;
+    return DateTime.now().difference(_lastStoriesFetch!) > const Duration(minutes: 2);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // POSTS
@@ -79,6 +93,7 @@ class FeedProvider extends ChangeNotifier {
       _hasMorePosts = response.hasMore;
       _postsPage++;
       _postsStatus = FeedStatus.loaded;
+      _lastPostsFetch = DateTime.now();
     } catch (e) {
       _errorMessage = e.toString();
       _postsStatus = FeedStatus.error;
@@ -218,6 +233,7 @@ class FeedProvider extends ChangeNotifier {
       _stories = response.stories;
       _hasMoreStories = response.hasMore;
       _storiesStatus = FeedStatus.loaded;
+      _lastStoriesFetch = DateTime.now();
     } catch (e) {
       _errorMessage = e.toString();
       _storiesStatus = FeedStatus.error;
@@ -229,7 +245,11 @@ class FeedProvider extends ChangeNotifier {
 
   /// Mark story item as viewed
   Future<void> markStoryViewed(String storyId, String itemId) async {
-    await _feedService.markStoryViewed(storyId, itemId);
+    try {
+      await _feedService.markStoryViewed(storyId, itemId);
+    } catch (e) {
+      debugPrint('FeedProvider.markStoryViewed error: $e');
+    }
 
     // Update local state
     final storyIndex = _stories.indexWhere((s) => s.id == storyId);
@@ -306,6 +326,28 @@ class FeedProvider extends ChangeNotifier {
     await loadFeed(refresh: true);
   }
 
+  /// Load posts only if data is stale or empty
+  Future<void> loadPostsIfStale() async {
+    if (isPostsStale || _posts.isEmpty) {
+      await loadPosts(refresh: true);
+    }
+  }
+
+  /// Load stories only if data is stale or empty
+  Future<void> loadStoriesIfStale() async {
+    if (isStoriesStale || _stories.isEmpty) {
+      await loadStories(refresh: true);
+    }
+  }
+
+  /// Load entire feed only if stale
+  Future<void> loadFeedIfStale() async {
+    await Future.wait([
+      if (isPostsStale || _posts.isEmpty) loadPosts(refresh: true),
+      if (isStoriesStale || _stories.isEmpty) loadStories(refresh: true),
+    ]);
+  }
+
   /// Clear all data
   void clear() {
     _posts = [];
@@ -316,6 +358,8 @@ class FeedProvider extends ChangeNotifier {
     _postsStatus = FeedStatus.initial;
     _storiesStatus = FeedStatus.initial;
     _errorMessage = null;
+    _lastPostsFetch = null;
+    _lastStoriesFetch = null;
     notifyListeners();
   }
 }
