@@ -1813,11 +1813,22 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                         onPressed: () {
                           _hideMatchDialog();
                           if (_pendingMatch != null) {
+                            final match = _pendingMatch!;
+                            final auth = context.read<AuthProvider>();
+                            final isArtist = auth.isArtist;
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    ChatScreenV2(matchId: _pendingMatch!.id),
+                                builder: (context) => ChatScreenV2(
+                                  matchId: match.id,
+                                  participantId: match.otherUserProfileId ??
+                                      (isArtist ? match.venueId : match.artistId),
+                                  participantName: match.otherUserName ??
+                                      (isArtist ? match.venue?.name : match.artist?.stageName),
+                                  participantPhoto: match.otherUserPhoto ??
+                                      (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto),
+                                  isParticipantArtist: match.otherUserType == 'artist' || !isArtist,
+                                ),
                               ),
                             );
                           }
@@ -1921,6 +1932,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Future<void> _undoLastSwipe() async {
+    // Premium feature — Rewind requires Pro
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isPaidUser) {
+      _showPremiumUpsell('Unlimited Rewinds', 'Go back and change your last swipe with Pro.');
+      return;
+    }
+
     final provider = context.read<DiscoveryProvider>();
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
@@ -1957,7 +1975,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Future<void> _superLike() async {
-    // Premium feature - boost visibility
+    // Premium feature — Super Like requires Pro
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isPaidUser) {
+      _showPremiumUpsell('Super Likes', 'Stand out and get noticed with Super Likes. Upgrade to Pro!');
+      return;
+    }
+
     final provider = context.read<DiscoveryProvider>();
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     if (provider.cards.isEmpty) return;
@@ -2011,6 +2035,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   };
 
   void _showBoostDialog() {
+    // Premium feature — Boost requires Pro
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isPaidUser) {
+      _showPremiumUpsell('Profile Boost', 'Get 10x more profile views! Upgrade to Pro to use boosts.');
+      return;
+    }
+
     setState(() => _selectedBoostDuration = null);
     showDialog(
       context: context,
@@ -2105,6 +2136,65 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showPremiumUpsell(String feature, String message) {
+    final brightness = Theme.of(context).brightness;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    HapticFeedback.mediumImpact();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.star_rounded, color: Colors.amber.shade600, size: 28),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                feature,
+                style: TextStyle(
+                  color: AppColors.text(brightness),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: TextStyle(
+            color: AppColors.textSec(brightness),
+            fontSize: 15,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Later',
+              style: TextStyle(color: AppColors.textSec(brightness)),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              navigator.pushNamed('/premium');
+            },
+            icon: const Icon(Icons.diamond_rounded, size: 18),
+            label: const Text('Upgrade to Pro'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.crimson,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

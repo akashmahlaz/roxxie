@@ -3,7 +3,9 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
+import '../core/providers/providers.dart';
 import '../widgets/widgets.dart';
 
 class SupportScreen extends StatefulWidget {
@@ -154,6 +156,28 @@ class _SupportScreenState extends State<SupportScreen> {
                     brightness,
                   ),
                   const SizedBox(height: 12),
+                  // VIP Priority Support — Premium only
+                  Builder(
+                    builder: (context) {
+                      final isPremium = context.watch<AuthProvider>().isPremium;
+                      if (isPremium) {
+                        return Column(
+                          children: [
+                            _buildActionCard(
+                              'VIP Priority Support',
+                              'Premium members get priority response within 1 hour',
+                              Icons.workspace_premium_rounded,
+                              () => _contactSupport('vip'),
+                              brightness,
+                              accentColor: const Color(0xFFDAA520),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                   _buildActionCard(
                     'Report a Bug',
                     'Help us improve the app',
@@ -257,8 +281,10 @@ class _SupportScreenState extends State<SupportScreen> {
     String subtitle,
     IconData icon,
     VoidCallback onTap,
-    Brightness brightness,
-  ) {
+    Brightness brightness, {
+    Color? accentColor,
+  }) {
+    final color = accentColor ?? AppColors.crimson;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -267,17 +293,19 @@ class _SupportScreenState extends State<SupportScreen> {
         decoration: BoxDecoration(
           color: AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border(brightness)),
+          border: Border.all(color: accentColor != null
+              ? accentColor.withValues(alpha: 0.3)
+              : AppColors.border(brightness)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.crimson.withValues(alpha: 0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.crimson, size: 24),
+              child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(

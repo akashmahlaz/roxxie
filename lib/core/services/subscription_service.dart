@@ -113,7 +113,7 @@ class UserSubscription {
   final SubscriptionStatus status;
   final DateTime? currentPeriodStart;
   final DateTime? currentPeriodEnd;
-  final DateTime? cancelAtPeriodEnd;
+  final bool cancelAtPeriodEnd;
   final DateTime? trialEnd;
   final String? stripeSubscriptionId;
   final String? stripeCustomerId;
@@ -125,7 +125,7 @@ class UserSubscription {
     required this.status,
     this.currentPeriodStart,
     this.currentPeriodEnd,
-    this.cancelAtPeriodEnd,
+    this.cancelAtPeriodEnd = false,
     this.trialEnd,
     this.stripeSubscriptionId,
     this.stripeCustomerId,
@@ -136,7 +136,7 @@ class UserSubscription {
   bool get isInTrial => trialEnd != null && trialEnd!.isAfter(DateTime.now());
 
   /// Check if subscription will cancel at period end
-  bool get willCancelAtPeriodEnd => cancelAtPeriodEnd != null;
+  bool get willCancelAtPeriodEnd => cancelAtPeriodEnd;
 
   /// Get days remaining in current period
   int get daysRemainingInPeriod {
@@ -156,9 +156,7 @@ class UserSubscription {
       currentPeriodEnd: json['currentPeriodEnd'] != null
           ? DateTime.tryParse(json['currentPeriodEnd'])
           : null,
-      cancelAtPeriodEnd: json['cancelAtPeriodEnd'] != null
-          ? DateTime.tryParse(json['cancelAtPeriodEnd'])
-          : null,
+      cancelAtPeriodEnd: json['cancelAtPeriodEnd'] == true,
       trialEnd: json['trialEnd'] != null
           ? DateTime.tryParse(json['trialEnd'])
           : null,
@@ -223,8 +221,11 @@ class PaymentMethod {
   String get maskedNumber => '•••• •••• •••• $last4';
 
   /// Get expiry string
-  String get expiryString =>
-      '${expiryMonth?.toString().padLeft(2, '0')}/${expiryYear?.toString().substring(2)}';
+  String get expiryString {
+    final month = expiryMonth?.toString().padLeft(2, '0') ?? '--';
+    final year = expiryYear != null ? expiryYear.toString().substring(2) : '--';
+    return '$month/$year';
+  }
 
   /// Create from JSON
   factory PaymentMethod.fromJson(Map<String, dynamic> json) {
@@ -555,8 +556,9 @@ class SubscriptionService {
         return null;
       }
 
+      final data = response.data['data'] ?? response.data;
       _currentSubscription = UserSubscription.fromJson(
-        response.data as Map<String, dynamic>,
+        data as Map<String, dynamic>,
       );
 
       // Update feature access
@@ -639,7 +641,7 @@ class SubscriptionService {
         Endpoints.subscriptionCreatePaymentIntent,
         data: {
           'priceId': plan.getStripePriceId(isYearly),
-          'amount': isYearly ? (plan.monthlyPrice * 10 * 100).toInt() : (plan.monthlyPrice * 100).toInt(),
+          'amount': isYearly ? (plan.yearlyPrice * 100).toInt() : (plan.monthlyPrice * 100).toInt(),
           'currency': 'usd',
         },
       );
@@ -690,9 +692,10 @@ class SubscriptionService {
 
       if (response.data != null) {
         // Update subscription from restored data
-        if (response.data['subscription'] != null) {
+        final data = response.data['data'] ?? response.data['subscription'];
+        if (data != null) {
           _currentSubscription = UserSubscription.fromJson(
-            response.data['subscription'],
+            data as Map<String, dynamic>,
           );
           _subscriptionStream.add(_currentSubscription);
         }
@@ -715,14 +718,15 @@ class SubscriptionService {
         '💰 [SubscriptionService] Canceling subscription (immediately: $immediately)',
       );
 
-      final response = await _client.post(
+      final response = await _client.delete(
         Endpoints.subscriptionCancel,
-        data: {'immediately': immediately},
+        queryParameters: {'immediately': immediately.toString()},
       );
 
       if (response.data != null) {
+        final data = response.data['data'] ?? response.data;
         _currentSubscription = UserSubscription.fromJson(
-          response.data as Map<String, dynamic>,
+          data as Map<String, dynamic>,
         );
         _subscriptionStream.add(_currentSubscription);
         _subscriptionChangeStream.add(true);
@@ -746,8 +750,9 @@ class SubscriptionService {
       final response = await _client.post(Endpoints.subscriptionResume);
 
       if (response.data != null) {
+        final data = response.data['data'] ?? response.data;
         _currentSubscription = UserSubscription.fromJson(
-          response.data as Map<String, dynamic>,
+          data as Map<String, dynamic>,
         );
         _subscriptionStream.add(_currentSubscription);
         _subscriptionChangeStream.add(true);
@@ -773,17 +778,18 @@ class SubscriptionService {
         '💰 [SubscriptionService] Updating subscription to ${newPlan.name}',
       );
 
-      final response = await _client.post(
+      final response = await _client.put(
         Endpoints.subscriptionUpdate,
         data: {
-          'priceId': newPlan.getStripePriceId(isYearly),
+          'newPriceId': newPlan.getStripePriceId(isYearly),
           'isYearly': isYearly,
         },
       );
 
       if (response.data != null) {
+        final data = response.data['data'] ?? response.data;
         _currentSubscription = UserSubscription.fromJson(
-          response.data as Map<String, dynamic>,
+          data as Map<String, dynamic>,
         );
         _featureAccess = FeatureAccess.forTier(_currentSubscription!.tier);
         _subscriptionStream.add(_currentSubscription);
@@ -811,8 +817,9 @@ class SubscriptionService {
       );
 
       if (response.data != null) {
+        final data = response.data['data'] ?? response.data;
         _currentSubscription = UserSubscription.fromJson(
-          response.data as Map<String, dynamic>,
+          data as Map<String, dynamic>,
         );
         _featureAccess = FeatureAccess.forTier(_currentSubscription!.tier);
         _subscriptionStream.add(_currentSubscription);
@@ -1024,9 +1031,8 @@ class SubscriptionService {
         '💰 [SubscriptionService] Setting default payment method: $paymentMethodId',
       );
 
-      await _client.post(
-        Endpoints.paymentMethodsSetDefault,
-        data: {'paymentMethodId': paymentMethodId},
+      await _client.put(
+        Endpoints.paymentMethodsSetDefault(paymentMethodId),
       );
 
       // Update local cache

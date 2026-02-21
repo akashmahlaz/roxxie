@@ -22,7 +22,6 @@ import 'screens/venue_signup_screen_v2.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/discovery_screen.dart';
-import 'screens/matches_screen_v2.dart';
 import 'screens/chat_screen_v2.dart';
 import 'screens/profile_screen_v3.dart';
 import 'screens/messages_screen.dart';
@@ -163,7 +162,7 @@ class GigMatchApp extends StatelessWidget {
             '/register': (context) => const RegisterScreen(),
             '/home': (context) => const AppShell(),
             '/discovery': (context) => const DiscoveryScreen(),
-            '/matches': (context) => const MatchesScreenV2(),
+            '/matches': (context) => const MessagesScreen(),
             '/profile': (context) => const ProfileScreenV3(),
             '/edit-profile': (context) => const EditProfileHubScreen(),
             // Consolidated: both routes now use ProfilePreviewScreen

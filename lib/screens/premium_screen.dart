@@ -9,6 +9,8 @@
 /// - Shows current subscription status and allows upgrades
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -34,6 +36,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
   bool _isProcessing = false;
 
   late final SubscriptionService _subscriptionService;
+  StreamSubscription<bool>? _streamSubscription;
 
   List<SubscriptionPlan> _plans = [];
   UserSubscription? _currentSubscription;
@@ -92,7 +95,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
     _subscriptionService = SubscriptionService(apiClient: ApiClient());
     
     // Listen for subscription changes while screen is active
-    _subscriptionService.subscriptionChangeStream.listen((_) {
+    _streamSubscription = _subscriptionService.subscriptionChangeStream.listen((_) {
       if (mounted) {
         _loadData(); // Refresh subscription status
       }
@@ -101,6 +104,13 @@ class _PremiumScreenState extends State<PremiumScreen> {
     _loadData();
   }
   
+  @override
+  void dispose() {
+    _streamSubscription?.cancel();
+    _subscriptionService.dispose();
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -116,7 +126,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
       _plans = _plans.where((p) => p.tier != SubscriptionTier.free).toList()
         ..sort((a, b) => a.monthlyPrice.compareTo(b.monthlyPrice));
 
-      if (_plans.length > 1) {
+      // Pre-select an appropriate plan
+      if (_currentSubscription?.hasActiveSubscription == true) {
+        // Pre-select a plan different from the current tier (for upgrade)
+        final idx = _plans.indexWhere(
+          (p) => p.tier != _currentSubscription!.tier,
+        );
+        _selectedPlanIndex = idx >= 0 ? idx : 0;
+      } else if (_plans.length > 1) {
         _selectedPlanIndex = 1;
       }
 
@@ -514,8 +531,15 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
+  /// Check if a plan matches the user's current active subscription tier
+  bool _isCurrentActivePlan(SubscriptionPlan plan) {
+    return _currentSubscription?.hasActiveSubscription == true &&
+        _currentSubscription!.tier == plan.tier;
+  }
+
   Widget _buildPlanCard(SubscriptionPlan plan, int index, Brightness brightness) {
     final isSelected = _selectedPlanIndex == index;
+    final isCurrentPlan = _isCurrentActivePlan(plan);
     final price = _isYearly ? plan.yearlyPrice : plan.monthlyPrice;
     final pricePerMonth = _isYearly
         ? (plan.yearlyPrice / 12)
@@ -526,22 +550,28 @@ class _PremiumScreenState extends State<PremiumScreen> {
         : 0;
 
     return AnimatedTapFeedback(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedPlanIndex = index);
-      },
+      onTap: isCurrentPlan
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              setState(() => _selectedPlanIndex = index);
+            },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.crimson.withValues(alpha: 0.05)
-              : AppColors.surface(brightness),
+          color: isCurrentPlan
+              ? AppColors.success.withValues(alpha: 0.06)
+              : isSelected
+                  ? AppColors.crimson.withValues(alpha: 0.05)
+                  : AppColors.surface(brightness),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected
-                ? AppColors.crimson
-                : AppColors.border(brightness),
-            width: isSelected ? 2 : 1,
+            color: isCurrentPlan
+                ? AppColors.success
+                : isSelected
+                    ? AppColors.crimson
+                    : AppColors.border(brightness),
+            width: (isSelected || isCurrentPlan) ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
@@ -559,32 +589,47 @@ class _PremiumScreenState extends State<PremiumScreen> {
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  // Radio button
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.crimson
-                            : AppColors.border(brightness),
-                        width: 2,
+                  // Radio button / current plan indicator
+                  if (isCurrentPlan)
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                    child: isSelected
-                        ? Center(
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: AppColors.crimson,
-                                shape: BoxShape.circle,
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.crimson
+                              : AppColors.border(brightness),
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? Center(
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.crimson,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
-                            ),
-                          )
-                        : null,
-                  ),
+                            )
+                          : null,
+                    ),
 
                   const SizedBox(width: 16),
 
@@ -603,7 +648,27 @@ class _PremiumScreenState extends State<PremiumScreen> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            if (plan.isPopular) ...[
+                            if (isCurrentPlan) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.success,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'CURRENT PLAN',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ] else if (plan.isPopular) ...[
                               const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -724,6 +789,26 @@ class _PremiumScreenState extends State<PremiumScreen> {
     final selectedPlan = _plans[_selectedPlanIndex];
     final price = _isYearly ? selectedPlan.yearlyPrice : selectedPlan.monthlyPrice;
     final period = _isYearly ? 'year' : 'month';
+    final isCurrentPlan = _isCurrentActivePlan(selectedPlan);
+    final hasActiveSub = _currentSubscription?.hasActiveSubscription == true;
+
+    // Determine button label
+    String buttonLabel;
+    if (isCurrentPlan) {
+      buttonLabel = 'Current Plan';
+    } else if (hasActiveSub) {
+      // User already has a different plan — offer upgrade/switch
+      final currentTierIndex = _currentSubscription!.tier.index;
+      final selectedTierIndex = selectedPlan.tier.index;
+      buttonLabel = selectedTierIndex > currentTierIndex
+          ? 'Upgrade to ${selectedPlan.name}'
+          : 'Switch to ${selectedPlan.name}';
+    } else {
+      buttonLabel = 'Start Free Trial';
+    }
+
+    // Disable if it's the current plan or processing
+    final isDisabled = _isProcessing || isCurrentPlan;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -732,14 +817,18 @@ class _PremiumScreenState extends State<PremiumScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _isProcessing ? null : () => _subscribe(selectedPlan),
+              onPressed: isDisabled ? null : () => _subscribe(selectedPlan),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.crimson,
+                backgroundColor: isCurrentPlan
+                    ? AppColors.success
+                    : AppColors.crimson,
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
-                disabledBackgroundColor: AppColors.crimson.withValues(alpha: 0.5),
+                disabledBackgroundColor: isCurrentPlan
+                    ? AppColors.success.withValues(alpha: 0.5)
+                    : AppColors.crimson.withValues(alpha: 0.5),
               ),
               child: _isProcessing
                   ? const SizedBox(
@@ -750,33 +839,60 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
-                      'Start Free Trial',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (isCurrentPlan)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: Icon(
+                              Icons.check_circle,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        Text(
+                          buttonLabel,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            'Then \$${price.toStringAsFixed(2)} per $period',
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 13,
+          if (!isCurrentPlan) ...[
+            Text(
+              hasActiveSub
+                  ? '\$${price.toStringAsFixed(2)} per $period'
+                  : 'Then \$${price.toStringAsFixed(2)} per $period',
+              style: TextStyle(
+                color: AppColors.textSec(brightness),
+                fontSize: 13,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'By continuing, you agree to our Terms of Service',
-            style: TextStyle(
-              color: AppColors.textTert(brightness),
-              fontSize: 11,
+            const SizedBox(height: 8),
+            Text(
+              'By continuing, you agree to our Terms of Service',
+              style: TextStyle(
+                color: AppColors.textTert(brightness),
+                fontSize: 11,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
+          ] else ...[
+            Text(
+              'You\'re currently on this plan',
+              style: TextStyle(
+                color: AppColors.success,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -15,10 +15,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../core/theme/theme.dart';
 import '../core/services/services.dart';
 import '../core/api/api.dart';
+import '../core/providers/providers.dart';
 import '../widgets/widgets.dart';
 
 enum TimePeriod { week, month, quarter, year }
@@ -252,11 +254,18 @@ Check out GigMatch - the best platform for live music bookings! 🎵''';
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: AppColors.background(brightness),
       appBar: _buildAppBar(brightness),
-      body: _isLoading
+      body: !authProvider.isPaidUser
+          ? PremiumGate(
+              featureName: 'Advanced Analytics',
+              message: 'Get detailed insights about your profile performance, views, and engagement trends.',
+              requirePro: true,
+            )
+          : _isLoading
           ? _buildSkeleton(brightness)
           : _hasError
               ? _buildErrorState(brightness)

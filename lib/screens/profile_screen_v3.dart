@@ -18,6 +18,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../widgets/widgets.dart';
 
 class ProfileScreenV3 extends StatefulWidget {
   const ProfileScreenV3({super.key});
@@ -206,6 +207,9 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                         Icons.analytics_outlined,
                         '/analytics',
                         Colors.purple,
+                        trailing: !auth.isPaidUser
+                            ? const PremiumBadge(label: 'PRO', mini: false)
+                            : null,
                       ),
                       _MenuItemData(
                         'Wallet',
@@ -749,17 +753,34 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildQuickActionTile(
-                  isArtist ? 'Go Premium' : 'Post Gig',
-                  isArtist
-                      ? Icons.diamond_rounded
-                      : Icons.add_circle_outline_rounded,
-                  isArtist ? const Color(0xFFDAA520) : Colors.green,
-                  () => Navigator.of(
-                    context,
-                    rootNavigator: true,
-                  ).pushNamed(isArtist ? '/premium' : '/contracts'),
-                  brightness,
+                child: Builder(
+                  builder: (context) {
+                    final authProv = context.watch<AuthProvider>();
+                    if (isArtist && authProv.isPaidUser) {
+                      return _buildQuickActionTile(
+                        'Manage Plan',
+                        Icons.workspace_premium_rounded,
+                        AppColors.success,
+                        () => Navigator.of(
+                          context,
+                          rootNavigator: true,
+                        ).pushNamed('/premium'),
+                        brightness,
+                      );
+                    }
+                    return _buildQuickActionTile(
+                      isArtist ? 'Go Premium' : 'Post Gig',
+                      isArtist
+                          ? Icons.diamond_rounded
+                          : Icons.add_circle_outline_rounded,
+                      isArtist ? const Color(0xFFDAA520) : Colors.green,
+                      () => Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamed(isArtist ? '/premium' : '/contracts'),
+                      brightness,
+                    );
+                  },
                 ),
               ),
             ],
@@ -866,6 +887,7 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                           item.route,
                           item.color,
                           brightness,
+                          trailing: item.trailing,
                         ),
                         if (index < items.length - 1)
                           Divider(
@@ -890,8 +912,9 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
     IconData icon,
     String route,
     Color color,
-    Brightness brightness,
-  ) {
+    Brightness brightness, {
+    Widget? trailing,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -923,6 +946,10 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                   ),
                 ),
               ),
+              if (trailing != null) ...[
+                trailing!,
+                const SizedBox(width: 8),
+              ],
               Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.textSec(brightness),
@@ -1152,6 +1179,7 @@ class _MenuItemData {
   final IconData icon;
   final String route;
   final Color color;
+  final Widget? trailing;
 
-  _MenuItemData(this.title, this.icon, this.route, this.color);
+  _MenuItemData(this.title, this.icon, this.route, this.color, {this.trailing});
 }

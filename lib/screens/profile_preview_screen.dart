@@ -1564,11 +1564,18 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
             child: IconButton(
               onPressed: () {
                 final id = _isArtist ? _artist?.id : _venue?.id;
+                final name = _isArtist ? _artist?.displayName : _venue?.venueName;
+                final photo = _isArtist ? _artist?.profilePhoto : _venue?.profilePhotoUrl;
                 if (id != null && mounted) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ChatScreenV2(participantId: id),
+                      builder: (_) => ChatScreenV2(
+                        participantId: id,
+                        participantName: name,
+                        participantPhoto: photo,
+                        isParticipantArtist: _isArtist,
+                      ),
                     ),
                   );
                 }

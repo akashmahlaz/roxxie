@@ -151,7 +151,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         if (matchId != null && matchId.isNotEmpty) {
           nav.pushNamed('/chat/$matchId');
         } else {
-          nav.pushNamed('/matches');
+          nav.pushNamed('/messages');
         }
         break;
 

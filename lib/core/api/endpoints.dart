@@ -567,11 +567,11 @@ class Endpoints {
   static const String paymentMethods = '/subscription/payment-methods';
 
   /// Add payment method
-  static const String paymentMethodsAdd = '/subscription/payment-methods/add';
+  static const String paymentMethodsAdd = '/subscription/payment-methods';
 
   /// Set default payment method
-  static const String paymentMethodsSetDefault =
-      '/subscription/payment-methods/default';
+  static String paymentMethodsSetDefault(String methodId) =>
+      '/subscription/payment-methods/$methodId/default';
 
   /// Remove payment method
   static String removePaymentMethod(String id) =>

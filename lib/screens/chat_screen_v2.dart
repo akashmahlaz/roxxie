@@ -25,6 +25,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
@@ -170,66 +171,112 @@ class _ChatScreenV2State extends State<ChatScreenV2>
 
   Future<void> _initializeChat() async {
     final chatProvider = context.read<ChatProvider>();
+    final matchProvider = context.read<MatchProvider>();
+    final auth = context.read<AuthProvider>();
+    final isCurrentUserArtist = auth.isArtist;
 
     try {
-      final matchId = widget.matchId ?? widget.participantId;
-      if (matchId != null) {
-        String? conversationId;
-        String? participantName = widget.participantName;
-        String? participantPhoto = widget.participantPhoto;
+      String? conversationId;
+      String? participantName = widget.participantName;
+      String? participantPhoto = widget.participantPhoto;
+      String? participantId = widget.participantId;
+      bool isParticipantArtist = widget.isParticipantArtist;
 
-        // If we have a participantId but no matchId, we need to get or create a conversation
-        if (widget.matchId == null && widget.participantId != null) {
-          debugPrint('💬 [ChatScreenV2] No existing match, creating conversation...');
-          final chatService = ChatService();
-          final conversation = await chatService.getOrCreateConversation(
-            participantId: widget.participantId!,
-            participantType: widget.isParticipantArtist ? 'artist' : 'venue',
-          );
-          conversationId = conversation.id;
-          
-          // Use participant info from conversation if available
-          participantName ??= conversation.participantName;
-          participantPhoto ??= conversation.participantPhoto;
-          
-          debugPrint('💬 [ChatScreenV2] Got conversation: $conversationId, participant: $participantName');
-        } else {
-          conversationId = matchId;
-        }
-
-        await chatProvider.enterChat(conversationId);
-
-        // If participant info is still missing, fetch it from the backend
-        if ((participantName == null || participantName.isEmpty) &&
-            widget.participantId != null) {
-          try {
-            if (widget.isParticipantArtist) {
-              final artistService = ArtistService();
-              final artist = await artistService.getArtistById(widget.participantId!);
-              participantName = artist.displayName;
-              participantPhoto ??= artist.profilePhoto;
-            } else {
-              final venueService = VenueService();
-              final venue = await venueService.getVenueById(widget.participantId!);
-              participantName = venue.venueName;
-              participantPhoto ??= venue.profilePhotoUrl;
-            }
-          } catch (e) {
-            debugPrint('Failed to fetch participant info: $e');
+      // Case 1: Opening chat from profile (participantId provided, no matchId)
+      if (widget.matchId == null && widget.participantId != null) {
+        debugPrint('💬 [ChatScreenV2] Opening chat from profile, creating conversation...');
+        final chatService = ChatService();
+        final conversation = await chatService.getOrCreateConversation(
+          participantId: widget.participantId!,
+          participantType: widget.isParticipantArtist ? 'artist' : 'venue',
+        );
+        conversationId = conversation.id;
+        
+        // Use participant info from conversation if available
+        participantName ??= conversation.participantName;
+        participantPhoto ??= conversation.participantPhoto;
+        
+        debugPrint('💬 [ChatScreenV2] Got conversation: $conversationId, participant: $participantName');
+      }
+      // Case 2: Opening chat from match/messages (matchId provided)
+      else if (widget.matchId != null) {
+        conversationId = widget.matchId;
+        
+        // If participant info not provided, try to get from provider cache first
+        if (participantName == null || participantName.isEmpty) {
+          final cachedMatch = matchProvider.getMatchById(widget.matchId!);
+          if (cachedMatch != null) {
+            debugPrint('💬 [ChatScreenV2] Using cached match data');
+            participantName = cachedMatch.otherUserName ?? 
+                (isCurrentUserArtist ? cachedMatch.venue?.name : cachedMatch.artist?.stageName);
+            participantPhoto = cachedMatch.otherUserPhoto ?? 
+                (isCurrentUserArtist ? cachedMatch.venue?.profilePhotoUrl : cachedMatch.artist?.profilePhoto);
+            participantId = cachedMatch.otherUserProfileId ?? 
+                (isCurrentUserArtist ? cachedMatch.venueId : cachedMatch.artistId);
+            isParticipantArtist = cachedMatch.otherUserType == 'artist' || !isCurrentUserArtist;
           }
         }
-
-        setState(() {
-          _conversationId = conversationId;
-          _participantName = participantName ?? 'Chat';
-          _participantPhoto = participantPhoto;
-          // Don't set online status - we don't have reliable presence data
-          // Will show neutral status or typing indicator
-        });
+        
+        // If still missing, fetch from backend
+        if (participantName == null || participantName.isEmpty) {
+          debugPrint('💬 [ChatScreenV2] Fetching match details from backend...');
+          try {
+            final swipeService = SwipeService();
+            final match = await swipeService.getMatchById(widget.matchId!);
+            participantName = match.otherUserName ?? 
+                (isCurrentUserArtist ? match.venue?.name : match.artist?.stageName);
+            participantPhoto = match.otherUserPhoto ?? 
+                (isCurrentUserArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto);
+            participantId = match.otherUserProfileId ?? 
+                (isCurrentUserArtist ? match.venueId : match.artistId);
+            isParticipantArtist = match.otherUserType == 'artist' || !isCurrentUserArtist;
+            debugPrint('💬 [ChatScreenV2] Got participant from match: $participantName');
+          } catch (e) {
+            debugPrint('💬 [ChatScreenV2] Failed to fetch match: $e');
+          }
+        }
       }
+
+      if (conversationId == null) {
+        debugPrint('❌ [ChatScreenV2] No conversation ID available');
+        _showError('Unable to start chat');
+        return;
+      }
+
+      await chatProvider.enterChat(conversationId);
+
+      // Last resort: fetch participant profile directly if still missing
+      if ((participantName == null || participantName.isEmpty) && participantId != null) {
+        debugPrint('💬 [ChatScreenV2] Fetching participant profile...');
+        try {
+          if (isParticipantArtist) {
+            final artistService = ArtistService();
+            final artist = await artistService.getArtistById(participantId);
+            participantName = artist.displayName;
+            participantPhoto ??= artist.profilePhoto;
+          } else {
+            final venueService = VenueService();
+            final venue = await venueService.getVenueById(participantId);
+            participantName = venue.venueName;
+            participantPhoto ??= venue.profilePhotoUrl;
+          }
+        } catch (e) {
+          debugPrint('Failed to fetch participant profile: $e');
+        }
+      }
+
+      if (!mounted) return;
+      
+      setState(() {
+        _conversationId = conversationId;
+        _participantName = participantName ?? 'Chat';
+        _participantPhoto = participantPhoto;
+      });
     } catch (e) {
       debugPrint('❌ [ChatScreenV2] Failed to initialize chat: $e');
-      _showError('Failed to load chat');
+      if (mounted) {
+        _showError('Failed to load chat');
+      }
     }
   }
 
@@ -1533,20 +1580,293 @@ class _MessageBubble extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
+    // Check for special content types based on metadata
+    final metadata = message.metadata;
+    
+    // Handle document messages
+    if (metadata?['isDocument'] == true) {
+      return _buildDocumentContent(context, metadata!);
+    }
+    
+    // Handle location messages
+    if (metadata?['isLocation'] == true) {
+      return _buildLocationContent(context, metadata!);
+    }
+
     switch (message.type) {
       case MessageType.image:
         return _buildImageContent(context);
       case MessageType.audio:
         return _buildAudioContent(context);
       default:
-        return Text(
+        return _buildTextContent(context);
+    }
+  }
+
+  Widget _buildTextContent(BuildContext context) {
+    // Check if content contains a URL for link preview
+    final urlRegex = RegExp(r'https?://[^\s]+');
+    final hasUrl = urlRegex.hasMatch(message.content);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SelectableText(
           message.content,
           style: TextStyle(
             color: isOwn ? Colors.white : AppColors.text(brightness),
             fontSize: 15,
             height: 1.4,
           ),
-        );
+        ),
+        if (hasUrl) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: (isOwn ? Colors.white : AppColors.crimson).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.link_rounded,
+                  size: 14,
+                  color: isOwn ? Colors.white70 : AppColors.crimson,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Contains link',
+                  style: TextStyle(
+                    color: isOwn ? Colors.white70 : AppColors.crimson,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDocumentContent(BuildContext context, Map<String, dynamic> metadata) {
+    final documentName = metadata['documentName'] ?? 'Document';
+    final documentUrl = metadata['documentUrl'] ?? '';
+    final documentSize = metadata['documentSize'] as int?;
+    
+    String sizeText = '';
+    if (documentSize != null) {
+      if (documentSize < 1024) {
+        sizeText = '$documentSize B';
+      } else if (documentSize < 1024 * 1024) {
+        sizeText = '${(documentSize / 1024).toStringAsFixed(1)} KB';
+      } else {
+        sizeText = '${(documentSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+      }
+    }
+
+    return GestureDetector(
+      onTap: () {
+        // Launch URL to download document
+        _launchUrl(documentUrl);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isOwn 
+              ? Colors.white.withValues(alpha: 0.15)
+              : AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isOwn 
+                ? Colors.white.withValues(alpha: 0.3)
+                : AppColors.border(brightness),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isOwn 
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : AppColors.crimson.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                _getDocumentIcon(documentName),
+                color: isOwn ? Colors.white : AppColors.crimson,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    documentName,
+                    style: TextStyle(
+                      color: isOwn ? Colors.white : AppColors.text(brightness),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (sizeText.isNotEmpty)
+                    Text(
+                      sizeText,
+                      style: TextStyle(
+                        color: isOwn 
+                            ? Colors.white70 
+                            : AppColors.textSec(brightness),
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.download_rounded,
+              color: isOwn ? Colors.white70 : AppColors.textSec(brightness),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getDocumentIcon(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf_rounded;
+      case 'doc':
+      case 'docx':
+        return Icons.description_rounded;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart_rounded;
+      case 'ppt':
+      case 'pptx':
+        return Icons.slideshow_rounded;
+      case 'zip':
+      case 'rar':
+        return Icons.folder_zip_rounded;
+      case 'mp3':
+      case 'wav':
+        return Icons.audio_file_rounded;
+      case 'mp4':
+      case 'mov':
+        return Icons.video_file_rounded;
+      default:
+        return Icons.insert_drive_file_rounded;
+    }
+  }
+
+  Widget _buildLocationContent(BuildContext context, Map<String, dynamic> metadata) {
+    final address = metadata['address'] ?? 'Location';
+    final mapsUrl = metadata['mapsUrl'] ?? '';
+
+    return GestureDetector(
+      onTap: () {
+        if (mapsUrl.isNotEmpty) {
+          _launchUrl(mapsUrl);
+        }
+      },
+      child: Container(
+        width: 220,
+        decoration: BoxDecoration(
+          color: isOwn 
+              ? Colors.white.withValues(alpha: 0.1)
+              : AppColors.surface(brightness),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isOwn 
+                ? Colors.white.withValues(alpha: 0.2)
+                : AppColors.border(brightness),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Map placeholder
+            Container(
+              height: 100,
+              decoration: BoxDecoration(
+                color: isOwn 
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppColors.crimson.withValues(alpha: 0.1),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.location_on_rounded,
+                      color: isOwn ? Colors.white : AppColors.crimson,
+                      size: 32,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tap to open map',
+                      style: TextStyle(
+                        color: isOwn ? Colors.white70 : AppColors.textSec(brightness),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Address
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      address,
+                      style: TextStyle(
+                        color: isOwn ? Colors.white : AppColors.text(brightness),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(
+                    Icons.open_in_new_rounded,
+                    color: isOwn ? Colors.white60 : AppColors.textSec(brightness),
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      // URL launcher is imported via services
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('Failed to launch URL: $e');
     }
   }
 
@@ -1573,31 +1893,91 @@ class _MessageBubble extends StatelessWidget {
       onLongPress: () => _showMessageOptions(context),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: CachedNetworkImage(
-          imageUrl: imageUrl,
-          width: 200,
-          height: 150,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            width: 200,
-            height: 150,
-            color: AppColors.surface(brightness),
-            child: const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.crimson,
-                strokeWidth: 2,
+        child: Stack(
+          children: [
+            CachedNetworkImage(
+              imageUrl: imageUrl,
+              width: 200,
+              height: 150,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                width: 200,
+                height: 150,
+                color: AppColors.surface(brightness),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(
+                      color: AppColors.crimson,
+                      strokeWidth: 2,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(
+                        color: AppColors.textSec(brightness),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                width: 200,
+                height: 150,
+                color: AppColors.surface(brightness),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.broken_image_rounded,
+                      color: AppColors.textTert(brightness),
+                      size: 32,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Failed to load',
+                      style: TextStyle(
+                        color: AppColors.textTert(brightness),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          errorWidget: (context, url, error) => Container(
-            width: 200,
-            height: 150,
-            color: AppColors.surface(brightness),
-            child: Icon(
-              Icons.broken_image_rounded,
-              color: AppColors.textTert(brightness),
+            // Tap to view overlay
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.fullscreen_rounded,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Tap to view',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -1629,6 +2009,9 @@ class _MessageBubble extends StatelessWidget {
   }
 
   Widget _buildStatusIcon() {
+    // Read receipts (blue double-check) are a Pro feature
+    final isPaid = Provider.of<AuthProvider>(context, listen: false).isPaidUser;
+
     switch (message.status) {
       case MessageStatus.sending:
         return Icon(
@@ -1649,7 +2032,15 @@ class _MessageBubble extends StatelessWidget {
           color: AppColors.textTert(brightness),
         );
       case MessageStatus.read:
-        return const Icon(Icons.done_all_rounded, size: 14, color: Colors.blue);
+        // Free users see delivered (grey), Pro users see read (blue)
+        if (isPaid) {
+          return const Icon(Icons.done_all_rounded, size: 14, color: Colors.blue);
+        }
+        return Icon(
+          Icons.done_all_rounded,
+          size: 14,
+          color: AppColors.textTert(brightness),
+        );
       case MessageStatus.failed:
         return const Icon(
           Icons.error_outline_rounded,
