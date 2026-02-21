@@ -75,7 +75,6 @@ class _ChatScreenV2State extends State<ChatScreenV2>
   String? _conversationId;
   String? _participantName;
   String? _participantPhoto;
-  bool _isParticipantOnline = false;
   bool _isMuted = false;
 
   // Reply feature
@@ -224,7 +223,8 @@ class _ChatScreenV2State extends State<ChatScreenV2>
           _conversationId = conversationId;
           _participantName = participantName ?? 'Chat';
           _participantPhoto = participantPhoto;
-          _isParticipantOnline = chatProvider.isConnected;
+          // Don't set online status - we don't have reliable presence data
+          // Will show neutral status or typing indicator
         });
       }
     } catch (e) {
@@ -644,39 +644,47 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     final auth = context.watch<AuthProvider>();
     final currentUserId = auth.user?.id;
 
-    return Scaffold(
-      backgroundColor: AppColors.background(brightness),
-      appBar: _buildAppBar(brightness),
-      body: Column(
-        children: [
-          // Typing indicator
-          Consumer<ChatProvider>(
-            builder: (context, chatProvider, _) {
-              if (chatProvider.isOtherUserTyping) {
-                return _TypingIndicator(
-                  name: _participantName ?? 'User',
-                  brightness: brightness,
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-
-          // Messages list
-          Expanded(
-            child: Consumer<ChatProvider>(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        // Ensure proper cleanup when popping
+        if (didPop) {
+          debugPrint('💬 [ChatScreenV2] Popped, cleaning up...');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        appBar: _buildAppBar(brightness),
+        body: Column(
+          children: [
+            // Typing indicator
+            Consumer<ChatProvider>(
               builder: (context, chatProvider, _) {
-                if (chatProvider.status == ChatStatus.loading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.crimson),
+                if (chatProvider.isOtherUserTyping) {
+                  return _TypingIndicator(
+                    name: _participantName ?? 'User',
+                    brightness: brightness,
                   );
                 }
+                return const SizedBox.shrink();
+              },
+            ),
 
-                if (chatProvider.messages.isEmpty) {
-                  return _buildEmptyChat(brightness);
-                }
+            // Messages list
+            Expanded(
+              child: Consumer<ChatProvider>(
+                builder: (context, chatProvider, _) {
+                  if (chatProvider.status == ChatStatus.loading) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppColors.crimson),
+                    );
+                  }
 
-                return _buildMessagesList(
+                  if (chatProvider.messages.isEmpty) {
+                    return _buildEmptyChat(brightness);
+                  }
+
+                  return _buildMessagesList(
                   chatProvider.messages,
                   brightness,
                   currentUserId,
@@ -692,6 +700,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
           // Input area
           _buildInputArea(brightness),
         ],
+      ),
       ),
     );
   }
@@ -758,7 +767,12 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        onPressed: () => Navigator.pop(context),
+        onPressed: () {
+          // Ensure we can pop before popping to avoid exiting the app
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+        },
         icon: Icon(Icons.arrow_back_rounded, color: AppColors.text(brightness)),
       ),
       titleSpacing: 0,
@@ -793,13 +807,8 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                         ),
                       );
                     }
-                    return Text(
-                      _isParticipantOnline ? 'Online' : 'Offline',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: _isParticipantOnline ? Colors.green : AppColors.textTert(brightness),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    );
+                    // Don't show misleading Offline - just show empty or subtle text
+                    return const SizedBox.shrink();
                   },
                 ),
               ],
@@ -953,22 +962,29 @@ class _ChatScreenV2State extends State<ChatScreenV2>
                   ),
                 ),
         ),
-        // Online indicator
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: _isParticipantOnline ? Colors.green : Colors.grey.shade400,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.surface(brightness),
-                width: 2,
+        // Online indicator - only show when typing (confirmed active)
+        Consumer<ChatProvider>(
+          builder: (context, chatProvider, _) {
+            if (!chatProvider.isOtherUserTyping) {
+              return const SizedBox.shrink();
+            }
+            return Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.surface(brightness),
+                    width: 2,
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );

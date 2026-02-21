@@ -241,6 +241,13 @@ class Match {
   final int unreadCount;
   final bool isViewedByArtist;
   final bool isViewedByVenue;
+  
+  // From otherUser field (new backend format)
+  final String? otherUserId;
+  final String? otherUserName;
+  final String? otherUserPhoto;
+  final String? otherUserType;
+  final String? otherUserProfileId;
 
   Match({
     required this.id,
@@ -255,17 +262,26 @@ class Match {
     this.unreadCount = 0,
     this.isViewedByArtist = false,
     this.isViewedByVenue = false,
+    this.otherUserId,
+    this.otherUserName,
+    this.otherUserPhoto,
+    this.otherUserType,
+    this.otherUserProfileId,
   });
 
   factory Match.fromJson(Map<String, dynamic> json) {
+    // Parse otherUser if present (new backend format)
+    final otherUser = json['otherUser'] as Map<String, dynamic>?;
+    final lastMessage = json['lastMessage'] as Map<String, dynamic>?;
+    
     return Match(
       id: json['_id'] ?? json['id'] ?? '',
       artistId: json['artistId'] is Map
           ? json['artistId']['_id']
-          : json['artistId'] ?? '',
+          : json['artistId'] ?? json['artistUser'] ?? '',
       venueId: json['venueId'] is Map
           ? json['venueId']['_id']
-          : json['venueId'] ?? '',
+          : json['venueId'] ?? json['venueUser'] ?? '',
       artist: json['artistId'] is Map
           ? Artist.fromJson(json['artistId'])
           : null,
@@ -274,13 +290,21 @@ class Match {
       matchedAt:
           DateTime.tryParse(json['matchedAt'] ?? json['createdAt'] ?? '') ??
           DateTime.now(),
-      lastMessageAt: json['lastMessageAt'] != null
-          ? DateTime.tryParse(json['lastMessageAt'])
-          : null,
-      lastMessagePreview: json['lastMessagePreview'],
+      lastMessageAt: lastMessage != null
+          ? DateTime.tryParse(lastMessage['sentAt'] ?? '')
+          : json['lastMessageAt'] != null
+              ? DateTime.tryParse(json['lastMessageAt'])
+              : null,
+      lastMessagePreview: lastMessage?['content'] ?? json['lastMessagePreview'],
       unreadCount: json['unreadCount'] ?? 0,
       isViewedByArtist: json['isViewedByArtist'] ?? false,
       isViewedByVenue: json['isViewedByVenue'] ?? false,
+      // New otherUser fields
+      otherUserId: otherUser?['id'],
+      otherUserName: otherUser?['name'],
+      otherUserPhoto: otherUser?['profilePhoto'],
+      otherUserType: otherUser?['type'],
+      otherUserProfileId: otherUser?['profileId'],
     );
   }
 

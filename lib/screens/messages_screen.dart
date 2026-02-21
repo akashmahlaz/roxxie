@@ -304,57 +304,56 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }) {
     final isSelected = _activeFilter == filter;
 
-    return GestureDetector(
-      onTap: () {
+    // Material 3 FilterChip
+    return FilterChip(
+      selected: isSelected,
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          if (badgeCount > 0) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : AppColors.crimson,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$badgeCount',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+      onSelected: (selected) {
         HapticFeedback.selectionClick();
         setState(() => _activeFilter = filter);
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.crimson : AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.crimson
-                : AppColors.border(brightness),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: AppTypography.labelMedium.copyWith(
-                color: isSelected ? Colors.white : AppColors.text(brightness),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-            if (badgeCount > 0) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : AppColors.crimson,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$badgeCount',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: isSelected ? Colors.white : Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            ],
-          ],
+      selectedColor: AppColors.crimson,
+      backgroundColor: AppColors.surface(brightness),
+      checkmarkColor: Colors.white,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : AppColors.text(brightness),
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected
+              ? AppColors.crimson
+              : AppColors.border(brightness),
         ),
       ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     );
   }
 
@@ -576,14 +575,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final auth = context.read<AuthProvider>();
     final isArtist = auth.isArtist;
 
-    final participantName = isArtist
-        ? match.venue?.name
-        : match.artist?.stageName;
-    final participantPhoto = isArtist
-        ? match.venue?.profilePhotoUrl
-        : match.artist?.profilePhoto;
-    // If current user is artist, participant is venue (and vice versa)
-    final isParticipantArtist = !isArtist;
+    // Get correct participant info - use otherUser fields as primary (new backend format)
+    // Fall back to artist/venue objects if otherUser not available
+    final participantId = match.otherUserProfileId ?? 
+        (isArtist ? match.venueId : match.artistId);
+    final participantName = match.otherUserName ?? 
+        (isArtist ? match.venue?.name : match.artist?.stageName);
+    final participantPhoto = match.otherUserPhoto ?? 
+        (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto);
+    // Determine if participant is artist based on otherUserType or current user role
+    final isParticipantArtist = match.otherUserType == 'artist' || !isArtist;
 
     HapticFeedback.lightImpact();
 
@@ -591,6 +592,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       MaterialPageRoute(
         builder: (_) => ChatScreenV2(
           matchId: match.id,
+          participantId: participantId,
           participantName: participantName,
           participantPhoto: participantPhoto,
           isParticipantArtist: isParticipantArtist,
@@ -958,12 +960,12 @@ class _NewMatchAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = isArtist
-        ? (match.venue?.name ?? 'Venue')
-        : (match.artist?.stageName ?? 'Artist');
-    final photo = isArtist
-        ? match.venue?.profilePhotoUrl
-        : match.artist?.profilePhoto;
+    // Use otherUser fields first (new backend format), fall back to old format
+    final name = match.otherUserName ?? 
+        (isArtist ? (match.venue?.name ?? 'Venue') : (match.artist?.stageName ?? 'Artist'));
+    final photo = match.otherUserPhoto ?? 
+        (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto);
+    final isVenue = match.otherUserType == 'venue' || isArtist;
 
     return Padding(
       padding: const EdgeInsets.only(right: 16),
@@ -999,7 +1001,7 @@ class _NewMatchAvatar extends StatelessWidget {
                       : null,
                   child: photo == null || photo.isEmpty
                       ? Icon(
-                          isArtist
+                          isVenue
                               ? Icons.location_city_rounded
                               : Icons.music_note_rounded,
                           color: AppColors.textSec(brightness),
@@ -1053,12 +1055,12 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = isArtist
-        ? (match.venue?.name ?? 'Venue')
-        : (match.artist?.stageName ?? 'Artist');
-    final photo = isArtist
-        ? match.venue?.profilePhotoUrl
-        : match.artist?.profilePhoto;
+    // Use otherUser fields first (new backend format), fall back to old format
+    final name = match.otherUserName ?? 
+        (isArtist ? (match.venue?.name ?? 'Venue') : (match.artist?.stageName ?? 'Artist'));
+    final photo = match.otherUserPhoto ?? 
+        (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto);
+    final isVenue = match.otherUserType == 'venue' || isArtist;
     final lastMessage = match.lastMessagePreview ?? 'Start a conversation';
     final unread = match.unreadCount;
     final time = match.lastMessageAt ?? match.matchedAt;
@@ -1103,42 +1105,21 @@ class _ConversationTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Avatar with online indicator
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: AppColors.surface(brightness),
-                      backgroundImage: photo != null && photo.isNotEmpty
-                          ? CachedNetworkImageProvider(photo)
-                          : null,
-                      child: photo == null || photo.isEmpty
-                          ? Icon(
-                              isArtist
-                                  ? Icons.location_city_rounded
-                                  : Icons.music_note_rounded,
-                              color: AppColors.textSec(brightness),
-                            )
-                          : null,
-                    ),
-                    // Online indicator (placeholder - would come from real data)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.background(brightness),
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                // Avatar
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: AppColors.surface(brightness),
+                  backgroundImage: photo != null && photo.isNotEmpty
+                      ? CachedNetworkImageProvider(photo)
+                      : null,
+                  child: photo == null || photo.isEmpty
+                      ? Icon(
+                          isVenue
+                              ? Icons.location_city_rounded
+                              : Icons.music_note_rounded,
+                          color: AppColors.textSec(brightness),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
 

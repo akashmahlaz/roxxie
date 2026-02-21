@@ -64,10 +64,12 @@ class MatchProvider extends ChangeNotifier {
       _matches.where((m) => m.status == MatchStatus.active).toList();
   List<Match> get archivedMatches =>
       _matches.where((m) => m.status == MatchStatus.archived).toList();
+  /// New matches = no messages yet (both lastMessageAt AND lastMessagePreview are null)
   List<Match> get newMatches =>
-      _matches.where((m) => m.lastMessageAt == null).toList();
+      _matches.where((m) => m.lastMessageAt == null && m.lastMessagePreview == null).toList();
+  /// Conversation matches = has messages (either lastMessageAt OR lastMessagePreview present)
   List<Match> get conversationMatches =>
-      _matches.where((m) => m.lastMessageAt != null).toList();
+      _matches.where((m) => m.lastMessageAt != null || m.lastMessagePreview != null).toList();
 
   /// 🔎 Get filtered matches based on current filter
   List<Match> get filteredMatches {
