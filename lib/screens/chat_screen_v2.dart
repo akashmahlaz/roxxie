@@ -73,10 +73,17 @@ class _ChatScreenV2State extends State<ChatScreenV2>
   // State
   bool _isSending = false;
   bool _isRecording = false;
+  int _recordingDuration = 0;
   String? _conversationId;
   String? _participantName;
   String? _participantPhoto;
   bool _isMuted = false;
+
+  // Voice recorder key for cancel access
+  final _voiceRecorderKey = GlobalKey<VoiceRecorderButtonState>();
+
+  // Upload progress (non-blocking inline indicator)
+  String? _uploadStatus;
 
   // Reply feature
   String? _replyToMessageId;
@@ -361,14 +368,16 @@ class _ChatScreenV2State extends State<ChatScreenV2>
 
       if (image != null && mounted) {
         HapticFeedback.lightImpact();
-        _showLoading('Uploading image...');
+        setState(() => _uploadStatus = 'Uploading image...');
+        debugPrint('📤 [ChatScreen] Starting image upload: ${image.path}');
 
         // Upload image to server first
         final chatService = ChatService();
         final imageUrl = await chatService.uploadMedia(image.path, 'image');
+        debugPrint('✅ [ChatScreen] Image uploaded: $imageUrl');
 
         if (mounted) {
-          Navigator.of(context).pop(); // Remove loading dialog
+          setState(() => _uploadStatus = null);
 
           final chatProvider = context.read<ChatProvider>();
           await chatProvider.sendMessage(
@@ -381,15 +390,15 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         }
       }
     } on PlatformException catch (e) {
-      debugPrint('Image picker error: $e');
+      debugPrint('❌ [ChatScreen] Image picker error: $e');
       if (mounted) {
-        Navigator.of(context).pop();
+        setState(() => _uploadStatus = null);
       }
       _showError('Failed to pick image');
     } catch (e) {
-      debugPrint('Image send error: $e');
+      debugPrint('❌ [ChatScreen] Image send error: $e');
       if (mounted) {
-        Navigator.of(context).pop();
+        setState(() => _uploadStatus = null);
       }
       _showError('Failed to send image');
     }
@@ -410,18 +419,20 @@ class _ChatScreenV2State extends State<ChatScreenV2>
 
       if (file != null && mounted) {
         HapticFeedback.lightImpact();
-        _showLoading('Uploading file...');
+        setState(() => _uploadStatus = 'Uploading file...');
+        debugPrint('📤 [ChatScreen] Starting document upload: ${file.name}');
 
         // Detect actual file type for proper Cloudinary upload
         final resourceType = _detectResourceType(file.path, file.mimeType ?? '');
-        debugPrint('Uploading file as type: $resourceType');
+        debugPrint('📤 [ChatScreen] Uploading file as type: $resourceType');
 
         // Upload file to server with correct resource type
         final chatService = ChatService();
         final uploadedUrl = await chatService.uploadMedia(file.path, resourceType);
+        debugPrint('✅ [ChatScreen] Document uploaded: $uploadedUrl');
 
         if (mounted) {
-          Navigator.of(context).pop(); // Remove loading dialog
+          setState(() => _uploadStatus = null);
 
           final chatProvider = context.read<ChatProvider>();
           final fileSize = await file.length();
@@ -441,9 +452,9 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         }
       }
     } catch (e) {
-      debugPrint('Document picker error: $e');
+      debugPrint('❌ [ChatScreen] Document picker error: $e');
       if (mounted) {
-        Navigator.of(context).pop();
+        setState(() => _uploadStatus = null);
       }
       _showError('Failed to send file');
     }
@@ -463,7 +474,8 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         }
       }
 
-      _showLoading('Getting location...');
+      setState(() => _uploadStatus = 'Getting location...');
+      debugPrint('📍 [ChatScreen] Getting current location...');
 
       // Get current location
       final position = await Geolocator.getCurrentPosition(
@@ -479,11 +491,12 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       );
 
       if (mounted) {
-        Navigator.of(context).pop(); // Remove loading dialog
+        setState(() => _uploadStatus = null);
 
         final placemark = placemarks.first;
         final address = '${placemark.street}, ${placemark.locality}, ${placemark.country}';
         final mapsUrl = 'https://www.google.com/maps?q=${position.latitude},${position.longitude}';
+        debugPrint('📍 [ChatScreen] Location resolved: $address');
 
         final chatProvider = context.read<ChatProvider>();
         await chatProvider.sendMessage(
@@ -502,8 +515,10 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         _scrollToBottom();
       }
     } catch (e) {
-      debugPrint('Location error: $e');
-      if (mounted) Navigator.of(context).pop();
+      debugPrint('❌ [ChatScreen] Location error: $e');
+      if (mounted) {
+        setState(() => _uploadStatus = null);
+      }
       _showError('Failed to get location');
     }
   }
@@ -515,14 +530,16 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     HapticFeedback.lightImpact();
 
     try {
-      _showLoading('Uploading voice message...');
+      setState(() => _uploadStatus = 'Sending voice message...');
+      debugPrint('📤 [ChatScreen] Starting audio upload: $audioPath (${durationSeconds}s)');
 
       // Upload audio to server
       final chatService = ChatService();
       final audioUrl = await chatService.uploadMedia(audioPath, 'audio');
+      debugPrint('✅ [ChatScreen] Audio uploaded: $audioUrl');
 
       if (mounted) {
-        Navigator.of(context).pop(); // Remove loading dialog
+        setState(() => _uploadStatus = null);
 
         final chatProvider = context.read<ChatProvider>();
         await chatProvider.sendMessage(
@@ -535,28 +552,14 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         _scrollToBottom();
       }
     } catch (e) {
-      debugPrint('Audio upload error: $e');
-      if (mounted) Navigator.of(context).pop();
+      debugPrint('❌ [ChatScreen] Audio upload error: $e');
+      if (mounted) {
+        setState(() => _uploadStatus = null);
+      }
       _showError('Failed to send voice message');
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
-  }
-
-  void _showLoading(String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        content: Row(
-          children: [
-            const CircularProgressIndicator(color: AppColors.crimson),
-            const SizedBox(width: 16),
-            Text(message),
-          ],
-        ),
-      ),
-    );
   }
 
   void _showError(String message) {
@@ -647,14 +650,17 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     if (_conversationId == null) return;
 
     try {
-      _showLoading('Blocking user...');
+      setState(() => _uploadStatus = 'Blocking user...');
+      debugPrint('🚫 [ChatScreen] Blocking user in conversation: $_conversationId');
       final chatService = ChatService();
       await chatService.blockConversation(_conversationId!);
       
       if (mounted) {
-        Navigator.of(context).pop(); // Remove loading
-        Navigator.of(context).pop(); // Go back to messages
-        ScaffoldMessenger.of(context).showSnackBar(
+        setState(() => _uploadStatus = null);
+        final nav = Navigator.of(context);
+        final scaffold = ScaffoldMessenger.of(context);
+        nav.pop(); // Go back to messages
+        scaffold.showSnackBar(
           SnackBar(
             content: Text('${_participantName ?? 'User'} has been blocked'),
             backgroundColor: Colors.green,
@@ -664,9 +670,9 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         );
       }
     } catch (e) {
-      debugPrint('Block error: $e');
+      debugPrint('❌ [ChatScreen] Block error: $e');
       if (mounted) {
-        Navigator.of(context).pop(); // Remove loading
+        setState(() => _uploadStatus = null);
       }
       _showError('Failed to block user');
     }
@@ -1090,17 +1096,6 @@ class _ChatScreenV2State extends State<ChatScreenV2>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildInputArea(Brightness brightness) {
-    if (_isRecording) {
-      return VoiceRecorderButton(
-        onRecordingComplete: (path, duration) {
-          setState(() => _isRecording = false);
-          _sendAudio(path, duration);
-        },
-        onRecordingStarted: () => setState(() => _isRecording = true),
-        onRecordingCancelled: () => setState(() => _isRecording = false),
-      );
-    }
-
     final hasText = _messageController.text.trim().isNotEmpty;
 
     return Container(
@@ -1110,103 +1105,226 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Attachment button
-            IconButton(
-              onPressed: () => _showAttachmentOptions(brightness),
-              icon: Icon(
-                Icons.add_circle_outline_rounded,
-                color: AppColors.crimson,
-                size: 28,
-              ),
-            ),
-
-            // Text input - clean round design without border
-            Expanded(
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 120),
+            // Upload progress indicator (non-blocking)
+            if (_uploadStatus != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: brightness == Brightness.dark
-                      ? Colors.grey.shade800.withValues(alpha: 0.5)
-                      : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(24),
+                  color: AppColors.crimson.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: TextField(
-                  controller: _messageController,
-                  focusNode: _inputFocusNode,
-                  maxLines: null,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    hintText: 'Type a message...',
-                    hintStyle: TextStyle(
-                      color: AppColors.textTert(brightness),
-                      fontSize: 15,
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.crimson,
+                      ),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                    const SizedBox(width: 12),
+                    Text(
+                      _uploadStatus!,
+                      style: TextStyle(
+                        color: AppColors.text(brightness),
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                  style: TextStyle(
-                    color: AppColors.text(brightness),
-                    fontSize: 15,
-                  ),
-                  onSubmitted: (_) => _sendMessage(),
+                  ],
                 ),
               ),
-            ),
 
-            const SizedBox(width: 8),
-
-            // Send or Voice button
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) =>
-                  ScaleTransition(scale: animation, child: child),
-              child: hasText || _isSending
-                  ? ScaleTransition(
-                      key: const ValueKey('send'),
-                      scale: _sendButtonScale,
-                      child: FilledButton(
-                        onPressed: _isSending ? null : _sendMessage,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.crimson,
-                          shape: const CircleBorder(),
-                          padding: const EdgeInsets.all(12),
-                        ),
-                        child: _isSending
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.send_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                      ),
-                    )
-                  : VoiceRecorderButton(
-                      key: const ValueKey('voice'),
-                      onRecordingComplete: _sendAudio,
-                      onRecordingStarted: () =>
-                          setState(() => _isRecording = true),
-                      onRecordingCancelled: () =>
-                          setState(() => _isRecording = false),
+            // Input row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Attachment button OR cancel recording button
+                if (_isRecording)
+                  IconButton(
+                    onPressed: _cancelRecording,
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red.shade400,
+                      size: 28,
                     ),
+                    tooltip: 'Cancel recording',
+                  )
+                else
+                  IconButton(
+                    onPressed: () => _showAttachmentOptions(brightness),
+                    icon: Icon(
+                      Icons.add_circle_outline_rounded,
+                      color: AppColors.crimson,
+                      size: 28,
+                    ),
+                  ),
+
+                // Text input OR recording timer display
+                Expanded(
+                  child: _isRecording
+                      ? Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.crimson.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Row(
+                            children: [
+                              // Pulsing red dot
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0.3, end: 1.0),
+                                duration: const Duration(milliseconds: 800),
+                                builder: (context, value, child) {
+                                  return Opacity(
+                                    opacity: value,
+                                    child: Icon(
+                                      Icons.fiber_manual_record_rounded,
+                                      color: Colors.red,
+                                      size: 12,
+                                    ),
+                                  );
+                                },
+                                onEnd: () {
+                                  // Restart animation
+                                  if (mounted && _isRecording) {
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatRecordingDuration(_recordingDuration),
+                                style: TextStyle(
+                                  color: AppColors.crimson,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Recording voice message...',
+                                  style: TextStyle(
+                                    color: AppColors.textSec(brightness),
+                                    fontSize: 13,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Container(
+                          constraints: const BoxConstraints(maxHeight: 120),
+                          decoration: BoxDecoration(
+                            color: brightness == Brightness.dark
+                                ? Colors.grey.shade800.withValues(alpha: 0.5)
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: TextField(
+                            controller: _messageController,
+                            focusNode: _inputFocusNode,
+                            maxLines: null,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              hintText: 'Type a message...',
+                              hintStyle: TextStyle(
+                                color: AppColors.textTert(brightness),
+                                fontSize: 15,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                            style: TextStyle(
+                              color: AppColors.text(brightness),
+                              fontSize: 15,
+                            ),
+                            onSubmitted: (_) => _sendMessage(),
+                          ),
+                        ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // Send or Voice button — always 48×48 fixed size
+                if (hasText || _isSending)
+                  ScaleTransition(
+                    scale: _sendButtonScale,
+                    child: FilledButton(
+                      onPressed: _isSending ? null : _sendMessage,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.crimson,
+                        shape: const CircleBorder(),
+                        padding: const EdgeInsets.all(12),
+                      ),
+                      child: _isSending
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                    ),
+                  )
+                else
+                  VoiceRecorderButton(
+                    key: _voiceRecorderKey,
+                    onRecordingComplete: _sendAudio,
+                    onRecordingStarted: () =>
+                        setState(() {
+                          _isRecording = true;
+                          _recordingDuration = 0;
+                        }),
+                    onRecordingCancelled: () =>
+                        setState(() {
+                          _isRecording = false;
+                          _recordingDuration = 0;
+                        }),
+                    onDurationChanged: (duration) =>
+                        setState(() => _recordingDuration = duration),
+                  ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+
+  void _cancelRecording() {
+    debugPrint('🎙️ [ChatScreen] Cancelling recording');
+    _voiceRecorderKey.currentState?.cancelRecording();
+    setState(() {
+      _isRecording = false;
+      _recordingDuration = 0;
+    });
+  }
+
+  String _formatRecordingDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '$minutes:${secs.toString().padLeft(2, '0')}';
+  }
+
 
   void _showAttachmentOptions(Brightness brightness) {
     HapticFeedback.lightImpact();
@@ -1500,6 +1618,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFailed = message.status == MessageStatus.failed;
+    final isMediaMessage = _isMediaType();
 
     return Align(
       alignment: isOwn ? Alignment.centerRight : Alignment.centerLeft,
@@ -1515,29 +1634,30 @@ class _MessageBubble extends StatelessWidget {
                 ? CrossAxisAlignment.end
                 : CrossAxisAlignment.start,
             children: [
-              // Message content
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isOwn
-                      ? (isFailed
-                            ? Colors.red.withValues(alpha: 0.8)
-                            : AppColors.crimson)
-                      : AppColors.surface(brightness),
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(18),
-                    topRight: const Radius.circular(18),
-                    bottomLeft: Radius.circular(isOwn ? 18 : 4),
-                    bottomRight: Radius.circular(isOwn ? 4 : 18),
+              // Message content — media types rendered raw, text gets bubble
+              if (isMediaMessage)
+                _buildContent(context)
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
                   ),
-                  // No border for consistency - all messages have no border
-                  border: null,
+                  decoration: BoxDecoration(
+                    color: isOwn
+                        ? (isFailed
+                              ? Colors.red.withValues(alpha: 0.8)
+                              : AppColors.crimson)
+                        : AppColors.surface(brightness),
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(18),
+                      topRight: const Radius.circular(18),
+                      bottomLeft: Radius.circular(isOwn ? 18 : 4),
+                      bottomRight: Radius.circular(isOwn ? 4 : 18),
+                    ),
+                  ),
+                  child: _buildContent(context),
                 ),
-                child: _buildContent(context),
-              ),
 
               // Time & status
               Padding(
@@ -1577,6 +1697,16 @@ class _MessageBubble extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Check if this message is a media/attachment type (no text bubble needed)
+  bool _isMediaType() {
+    final metadata = message.metadata;
+    if (metadata?['isDocument'] == true) return true;
+    if (metadata?['isLocation'] == true) return true;
+    if (message.type == MessageType.image) return true;
+    if (message.type == MessageType.audio) return true;
+    return false;
   }
 
   Widget _buildContent(BuildContext context) {
@@ -1677,14 +1807,9 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isOwn 
-              ? Colors.white.withValues(alpha: 0.15)
+              ? AppColors.crimson
               : AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isOwn 
-                ? Colors.white.withValues(alpha: 0.3)
-                : AppColors.border(brightness),
-          ),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1785,14 +1910,9 @@ class _MessageBubble extends StatelessWidget {
         width: 220,
         decoration: BoxDecoration(
           color: isOwn 
-              ? Colors.white.withValues(alpha: 0.1)
+              ? AppColors.crimson
               : AppColors.surface(brightness),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isOwn 
-                ? Colors.white.withValues(alpha: 0.2)
-                : AppColors.border(brightness),
-          ),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1804,7 +1924,7 @@ class _MessageBubble extends StatelessWidget {
                 color: isOwn 
                     ? Colors.white.withValues(alpha: 0.1)
                     : AppColors.crimson.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
               ),
               child: Center(
                 child: Column(

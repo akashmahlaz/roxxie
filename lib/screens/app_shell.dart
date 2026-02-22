@@ -71,9 +71,14 @@ class _AppShellState extends State<AppShell>
     super.initState();
     _index = widget.initialTab.index;
 
-    // Load initial match data for badge counts
+    // Load initial match data for badge counts + connect chat WebSocket
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MatchProvider>().refreshUnreadCount();
+      // Initialize WebSocket for real-time messaging
+      final chatProvider = context.read<ChatProvider>();
+      chatProvider.initSocket();
+      chatProvider.refreshUnreadCount();
+      debugPrint('🔌 [AppShell] WebSocket + unread count initialized');
     });
   }
 
@@ -218,10 +223,13 @@ class _AppShellState extends State<AppShell>
             top: false,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Consumer<MatchProvider>(
-                builder: (context, matchProvider, _) {
-                  // Get actual unread count from provider
-                  final unreadMessages = matchProvider.unreadCount;
+              child: Consumer2<MatchProvider, ChatProvider>(
+                builder: (context, matchProvider, chatProvider, _) {
+                  // Use max of match-level unread (conversations with unread)
+                  // and chat-level total unread (individual messages) for badge
+                  final unreadMessages = chatProvider.totalUnread > 0
+                      ? chatProvider.totalUnread
+                      : matchProvider.unreadCount;
 
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,

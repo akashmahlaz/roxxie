@@ -1,12 +1,13 @@
-/// 🎙️ GIGMATCH Voice Recorder Button
+/// 🎙️ GIGMATCH Voice Recorder Button — Professional Tap-to-Record
 ///
-/// Hold-to-record voice message button for chat
+/// Tap to start recording, tap again to send. Clean, reliable UX.
 /// Features:
-/// - Hold to record
-/// - Swipe to cancel
-/// - Visual recording indicator
-/// - Duration display while recording
+/// - Tap to start/stop recording (no fragile long-press)
+/// - Fixed 48×48 size — never causes layout overflow
+/// - Parent handles recording UI (timer, cancel)
+/// - Duration callback for parent timer display
 /// - Haptic feedback
+/// - Permission handling
 library;
 
 import 'dart:async';
@@ -22,32 +23,32 @@ class VoiceRecorderButton extends StatefulWidget {
   final Function(String audioPath, int durationSeconds) onRecordingComplete;
   final VoidCallback? onRecordingStarted;
   final VoidCallback? onRecordingCancelled;
+  final ValueChanged<int>? onDurationChanged;
 
   const VoiceRecorderButton({
     super.key,
     required this.onRecordingComplete,
     this.onRecordingStarted,
     this.onRecordingCancelled,
+    this.onDurationChanged,
   });
 
   @override
-  State<VoiceRecorderButton> createState() => _VoiceRecorderButtonState();
+  State<VoiceRecorderButton> createState() => VoiceRecorderButtonState();
 }
 
-class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
+class VoiceRecorderButtonState extends State<VoiceRecorderButton>
     with SingleTickerProviderStateMixin {
   final AudioRecorder _recorder = AudioRecorder();
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
   bool _isRecording = false;
-  bool _isCancelling = false;
   int _recordingDuration = 0;
   Timer? _durationTimer;
   String? _recordingPath;
-  double _dragOffset = 0;
 
-  static const double _cancelThreshold = -80;
+  bool get isRecording => _isRecording;
 
   @override
   void initState() {
@@ -56,7 +57,7 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
@@ -65,8 +66,37 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
   void dispose() {
     _durationTimer?.cancel();
     _pulseController.dispose();
+    // Stop recording if active when widget is disposed (e.g. cancel)
+    if (_isRecording) {
+      _recorder.stop().then((_) {
+        // Clean up temp file
+        if (_recordingPath != null) {
+          final file = File(_recordingPath!);
+          file.exists().then((exists) {
+            if (exists) {
+              file.delete();
+            }
+          });
+        }
+      });
+    }
     _recorder.dispose();
     super.dispose();
+  }
+
+  /// Called by parent to cancel an active recording
+  void cancelRecording() {
+    if (!_isRecording) return;
+    debugPrint('🎙️ [VoiceRecorder] Recording cancelled by parent');
+    _stopRecording(cancelled: true);
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      await _stopRecording(cancelled: false);
+    } else {
+      await _startRecording();
+    }
   }
 
   Future<void> _startRecording() async {
@@ -93,6 +123,7 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
 
       // Start recording
       await _recorder.start(config, path: _recordingPath!);
+      debugPrint('🎙️ [VoiceRecorder] Recording started: $_recordingPath');
 
       // Haptic feedback
       HapticFeedback.mediumImpact();
@@ -100,8 +131,6 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
       setState(() {
         _isRecording = true;
         _recordingDuration = 0;
-        _isCancelling = false;
-        _dragOffset = 0;
       });
 
       // Start pulse animation
@@ -111,6 +140,7 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
       _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (mounted && _isRecording) {
           setState(() => _recordingDuration++);
+          widget.onDurationChanged?.call(_recordingDuration);
         }
       });
 
@@ -120,7 +150,7 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
     }
   }
 
-  Future<void> _stopRecording({bool cancelled = false}) async {
+  Future<void> _stopRecording({required bool cancelled}) async {
     _durationTimer?.cancel();
     _pulseController.stop();
     _pulseController.reset();
@@ -129,15 +159,17 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
 
     try {
       final path = await _recorder.stop();
+      debugPrint(
+        '🎙️ [VoiceRecorder] Recording stopped. cancelled=$cancelled, '
+        'path=$path, duration=${_recordingDuration}s',
+      );
 
       setState(() {
         _isRecording = false;
-        _isCancelling = false;
-        _dragOffset = 0;
       });
 
-      if (cancelled || path == null) {
-        // Delete the file if cancelled
+      if (cancelled || path == null || _recordingDuration < 1) {
+        // Delete the file if cancelled or too short
         if (_recordingPath != null) {
           final file = File(_recordingPath!);
           if (await file.exists()) {
@@ -155,24 +187,9 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
       debugPrint('❌ [VoiceRecorder] Error stopping recording: $e');
       setState(() {
         _isRecording = false;
-        _isCancelling = false;
       });
+      widget.onRecordingCancelled?.call();
     }
-  }
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    if (!_isRecording) return;
-
-    setState(() {
-      _dragOffset += details.delta.dx;
-      _isCancelling = _dragOffset < _cancelThreshold;
-    });
-  }
-
-  String _formatDuration(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '$minutes:${secs.toString().padLeft(2, '0')}';
   }
 
   void _showPermissionDeniedMessage() {
@@ -184,7 +201,9 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
             Icon(Icons.mic_off_rounded, color: Colors.white),
             SizedBox(width: 12),
             Expanded(
-              child: Text('Microphone permission is required for voice messages'),
+              child: Text(
+                'Microphone permission is required for voice messages',
+              ),
             ),
           ],
         ),
@@ -195,7 +214,6 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
           label: 'Settings',
           textColor: Colors.white,
           onPressed: () {
-            // Open app settings
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
           },
         ),
@@ -205,143 +223,47 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
 
   @override
   Widget build(BuildContext context) {
-    if (_isRecording) {
-      return _buildRecordingOverlay();
-    }
-
+    // Always 48×48 — prevents unbounded constraint crash
     return GestureDetector(
-      onLongPressStart: (_) => _startRecording(),
-      onLongPressEnd: (_) => _stopRecording(cancelled: _isCancelling),
-      onLongPressMoveUpdate: (details) {
-        _handleDragUpdate(DragUpdateDetails(
-          globalPosition: details.globalPosition,
-          localPosition: details.localPosition,
-          delta: details.offsetFromOrigin,
-        ));
-      },
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.crimson,
-              AppColors.crimson.withValues(alpha: 0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.crimson.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.mic_rounded,
-          color: Colors.white,
-          size: 24,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecordingOverlay() {
-    final brightness = Theme.of(context).brightness;
-
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface(brightness),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.crimson.withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Cancel hint with slide animation
-          AnimatedOpacity(
-            opacity: _isCancelling ? 1.0 : 0.7,
-            duration: const Duration(milliseconds: 150),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.arrow_back_rounded,
-                  size: 16,
-                  color: _isCancelling
-                      ? Colors.red
-                      : AppColors.textSec(brightness),
+      onTap: _toggleRecording,
+      child: AnimatedBuilder(
+        animation: _pulseAnimation,
+        builder: (context, child) {
+          final scale = _isRecording ? _pulseAnimation.value : 1.0;
+          return Transform.scale(
+            scale: scale,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _isRecording
+                      ? [Colors.red.shade600, Colors.red.shade400]
+                      : [
+                          AppColors.crimson,
+                          AppColors.crimson.withValues(alpha: 0.8),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  _isCancelling ? 'Release to cancel' : 'Slide to cancel',
-                  style: TextStyle(
-                    color: _isCancelling
-                        ? Colors.red
-                        : AppColors.textSec(brightness),
-                    fontSize: 13,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: (_isRecording ? Colors.red : AppColors.crimson)
+                        .withValues(alpha: 0.3 * scale),
+                    blurRadius: _isRecording ? 16 * scale : 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Icon(
+                _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
-          ),
-
-          const Spacer(),
-
-          // Recording duration
-          Text(
-            _formatDuration(_recordingDuration),
-            style: TextStyle(
-              color: AppColors.crimson,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Pulsing recording indicator
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _pulseAnimation.value,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.crimson,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.crimson.withValues(
-                          alpha: 0.5 * _pulseAnimation.value,
-                        ),
-                        blurRadius: 16 * _pulseAnimation.value,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.mic_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -269,8 +269,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
     Brightness brightness,
     bool isArtist,
   ) {
-    // Get unread count for badge
-    final unreadCount = context.watch<MatchProvider>().unreadCount;
+    // Get unread count for badge (prefer ChatProvider's real-time count)
+    final chatUnread = context.watch<ChatProvider>().totalUnread;
+    final matchUnread = context.watch<MatchProvider>().unreadCount;
+    final unreadCount = chatUnread > 0 ? chatUnread : matchUnread;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -515,11 +517,19 @@ class _MessagesScreenState extends State<MessagesScreen> {
       case MessageFilter.unread:
         return matches.where((m) => m.unreadCount > 0).toList();
       case MessageFilter.venues:
-        // For artists, show venue conversations
-        return isArtist ? matches : [];
+        // Show conversations where the other user is a venue
+        return matches
+            .where((m) =>
+                m.otherUserType?.toLowerCase() == 'venue' ||
+                (m.otherUserType == null && isArtist))
+            .toList();
       case MessageFilter.artists:
-        // For venues, show artist conversations
-        return !isArtist ? matches : [];
+        // Show conversations where the other user is an artist
+        return matches
+            .where((m) =>
+                m.otherUserType?.toLowerCase() == 'artist' ||
+                (m.otherUserType == null && !isArtist))
+            .toList();
     }
   }
 
@@ -662,6 +672,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   void _showOptionsMenu(Brightness brightness) {
     final matchProvider = context.read<MatchProvider>();
+    final chatProvider = context.read<ChatProvider>();
     final navigator = Navigator.of(context, rootNavigator: true);
     final scaffold = ScaffoldMessenger.of(context);
 
@@ -720,6 +731,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   }
                 }
                 await matchProvider.refreshUnreadCount();
+                // Also refresh chat provider's unread count
+                chatProvider.refreshUnreadCount();
 
                 scaffold.showSnackBar(
                   SnackBar(
