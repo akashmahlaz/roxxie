@@ -76,9 +76,13 @@ class _AppShellState extends State<AppShell>
       context.read<MatchProvider>().refreshUnreadCount();
       // Initialize WebSocket for real-time messaging
       final chatProvider = context.read<ChatProvider>();
+      final auth = context.read<AuthProvider>();
+      if (auth.user?.id != null) {
+        chatProvider.setCurrentUserId(auth.user!.id);
+      }
       chatProvider.initSocket();
       chatProvider.refreshUnreadCount();
-      debugPrint('🔌 [AppShell] WebSocket + unread count initialized');
+      debugPrint('🔌 [AppShell] WebSocket + unread count initialized for user: ${auth.user?.id}');
     });
   }
 

@@ -623,27 +623,44 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  void _archiveConversation(Match match) {
+  Future<void> _archiveConversation(Match match) async {
     HapticFeedback.mediumImpact();
-    context.read<MatchProvider>().archiveMatch(match.id);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Conversation archived'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () {
-            context.read<MatchProvider>().unarchiveMatch(match.id);
-          },
+    final matchProvider = context.read<MatchProvider>();
+    final scaffold = ScaffoldMessenger.of(context);
+    
+    final success = await matchProvider.archiveMatch(match.id);
+    if (!mounted) return;
+    
+    if (success) {
+      scaffold.showSnackBar(
+        SnackBar(
+          content: const Text('Conversation archived'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () {
+              matchProvider.unarchiveMatch(match.id);
+            },
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+      );
+    } else {
+      scaffold.showSnackBar(
+        SnackBar(
+          content: const Text('Failed to archive conversation'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 
   void _deleteConversation(Match match) {
     HapticFeedback.heavyImpact();
+    final matchProvider = context.read<MatchProvider>();
+    final scaffold = ScaffoldMessenger.of(context);
 
     showDialog(
       context: context,
@@ -658,9 +675,27 @@ class _MessagesScreenState extends State<MessagesScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              context.read<MatchProvider>().unmatch(match.id);
+              final success = await matchProvider.unmatch(match.id);
+              if (success) {
+                scaffold.showSnackBar(
+                  SnackBar(
+                    content: const Text('Conversation deleted'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
+              } else {
+                scaffold.showSnackBar(
+                  SnackBar(
+                    content: const Text('Failed to delete conversation'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
+              }
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),

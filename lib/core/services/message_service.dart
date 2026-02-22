@@ -85,7 +85,7 @@ class ChatSocketService {
 
   // Callbacks
   Function(Message)? onNewMessage;
-  Function(String matchId, String messageId)? onMessageRead;
+  Function(String matchId, String readBy)? onMessageRead;
   Function(String matchId, bool isTyping)? onTypingStatus;
   Function(Match)? onNewMatch;
   Function()? onConnected;
@@ -145,21 +145,36 @@ class ChatSocketService {
     });
 
     _socket?.on(SocketEvents.newMessage, (data) {
-      debugPrint('📬 New message received');
+      debugPrint('📬 New message received: ${data.runtimeType}');
       try {
-        final message = Message.fromJson(data);
+        // Backend sends { message: {...}, sender: {...} } — extract message
+        final messageData = data is Map && data.containsKey('message')
+            ? data['message'] as Map<String, dynamic>
+            : data as Map<String, dynamic>;
+        final message = Message.fromJson(messageData);
+        debugPrint('📬 Parsed message: id=${message.id} senderId=${message.senderId} matchId=${message.matchId}');
         onNewMessage?.call(message);
       } catch (e) {
         debugPrint('Error parsing message: $e');
       }
     });
 
-    _socket?.on(SocketEvents.messageRead, (data) {
-      debugPrint('👁️ Message read');
+    // Listen for both event names (backend emits 'messages_read')
+    _socket?.on('messages_read', (data) {
+      debugPrint('👁️ Messages read event: $data');
       final matchId = data['matchId'] as String?;
-      final messageId = data['messageId'] as String?;
-      if (matchId != null && messageId != null) {
-        onMessageRead?.call(matchId, messageId);
+      final readBy = data['readBy'] as String?;
+      if (matchId != null && readBy != null) {
+        onMessageRead?.call(matchId, readBy);
+      }
+    });
+
+    _socket?.on(SocketEvents.messageRead, (data) {
+      debugPrint('👁️ Message read (singular): $data');
+      final matchId = data['matchId'] as String?;
+      final readBy = data['readBy'] ?? data['messageId'] as String?;
+      if (matchId != null && readBy != null) {
+        onMessageRead?.call(matchId, readBy);
       }
     });
 

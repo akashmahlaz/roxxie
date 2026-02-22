@@ -81,7 +81,9 @@ class Message {
       senderName: json['senderName'],
       content: json['content'] ?? '',
       type: MessageType.fromString(json['messageType'] ?? json['type'] ?? 'text'),
-      status: MessageStatus.fromString(json['status'] ?? 'sent'),
+      status: MessageStatus.fromString(
+        json['deliveryStatus'] ?? json['status'] ?? 'sent',
+      ),
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt']) : null,
       mediaUrl: json['mediaUrl'],

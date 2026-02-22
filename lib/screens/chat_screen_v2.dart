@@ -165,12 +165,12 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     // Check MIME type first for more accurate detection
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
-    if (mimeType.startsWith('audio/')) return 'raw';
+    if (mimeType.startsWith('audio/')) return 'audio';
 
     // Fall back to extension detection
     if (imageExts.contains(ext)) return 'image';
     if (videoExts.contains(ext)) return 'video';
-    if (audioExts.contains(ext)) return 'raw';
+    if (audioExts.contains(ext)) return 'audio';
 
     // Documents default to raw (Cloudinary's non-media type)
     return 'raw';
@@ -279,6 +279,17 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         _participantName = participantName ?? 'Chat';
         _participantPhoto = participantPhoto;
       });
+
+      // Load mute state from cached match data
+      if (widget.matchId != null) {
+        final cachedMatch = matchProvider.getMatchById(widget.matchId!);
+        if (cachedMatch != null && mounted) {
+          setState(() {
+            _isMuted = cachedMatch.isMuted;
+          });
+          debugPrint('💬 [ChatScreenV2] Mute state from match: $_isMuted');
+        }
+      }
     } catch (e) {
       debugPrint('❌ [ChatScreenV2] Failed to initialize chat: $e');
       if (mounted) {
@@ -526,7 +537,11 @@ class _ChatScreenV2State extends State<ChatScreenV2>
   Future<void> _sendAudio(String audioPath, int durationSeconds) async {
     if (_conversationId == null) return;
 
-    setState(() => _isSending = true);
+    setState(() {
+      _isSending = true;
+      _isRecording = false;
+      _recordingDuration = 0;
+    });
     HapticFeedback.lightImpact();
 
     try {
@@ -657,6 +672,10 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       
       if (mounted) {
         setState(() => _uploadStatus = null);
+        // Update MatchProvider to remove from conversations list
+        final matchProvider = context.read<MatchProvider>();
+        matchProvider.blockMatch(_conversationId!);
+        
         final nav = Navigator.of(context);
         final scaffold = ScaffoldMessenger.of(context);
         nav.pop(); // Go back to messages

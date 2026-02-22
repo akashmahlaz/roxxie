@@ -18,6 +18,7 @@ class ChatProvider extends ChangeNotifier {
 
   ChatStatus _status = ChatStatus.initial;
   String? _currentMatchId;
+  String? _currentUserId;
   List<Message> _messages = [];
   int _totalUnread = 0;
   Map<String, int> _unreadByMatch = {};
@@ -46,6 +47,12 @@ class ChatProvider extends ChangeNotifier {
   // Cache getters
   MessageCacheService get messageCache => _messageCache;
   PendingMessageQueueService get pendingQueue => _pendingQueue;
+
+  /// Set the current user ID (call once after auth)
+  void setCurrentUserId(String userId) {
+    _currentUserId = userId;
+    debugPrint('👤 [ChatProvider] currentUserId set: $userId');
+  }
 
   /// 🔌 Initialize WebSocket connection
   Future<void> initSocket() async {
@@ -177,7 +184,7 @@ class ChatProvider extends ChangeNotifier {
     final tempMessage = Message(
       id: tempId,
       matchId: _currentMatchId!,
-      senderId: 'me', // Will be replaced by actual sender ID
+      senderId: _currentUserId ?? 'me',
       content: content,
       type: type,
       status: MessageStatus.sending,
@@ -326,6 +333,14 @@ class ChatProvider extends ChangeNotifier {
 
   // WebSocket event handlers
   void _handleNewMessage(Message message) {
+    debugPrint('📬 [ChatProvider] _handleNewMessage: id=${message.id} matchId=${message.matchId} senderId=${message.senderId}');
+
+    // Skip own messages (we already added optimistically + REST response replaced it)
+    if (message.senderId == _currentUserId) {
+      debugPrint('📬 [ChatProvider] Skipping own message from WS (already handled via REST)');
+      return;
+    }
+
     // Only add if it's for current chat
     if (message.matchId == _currentMatchId) {
       // Check if message already exists (avoid duplicates)
@@ -342,14 +357,24 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  void _handleMessageRead(String matchId, String messageId) {
+  void _handleMessageRead(String matchId, String readBy) {
+    debugPrint('👁️ [ChatProvider] _handleMessageRead: matchId=$matchId readBy=$readBy');
     if (matchId == _currentMatchId) {
-      final index = _messages.indexWhere((m) => m.id == messageId);
-      if (index != -1) {
-        _messages[index] = _messages[index].copyWith(
-          status: MessageStatus.read,
-          readAt: DateTime.now(),
-        );
+      // Bulk mark: all our sent messages as read by the other user
+      bool changed = false;
+      for (int i = 0; i < _messages.length; i++) {
+        final msg = _messages[i];
+        // Mark our messages that the other user has now read
+        if (msg.senderId == _currentUserId &&
+            msg.status != MessageStatus.read) {
+          _messages[i] = msg.copyWith(
+            status: MessageStatus.read,
+            readAt: DateTime.now(),
+          );
+          changed = true;
+        }
+      }
+      if (changed) {
         notifyListeners();
       }
     }

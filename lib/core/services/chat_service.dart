@@ -1376,8 +1376,21 @@ class ChatService {
         case 'video':
           response = await uploadService.uploadVideo(filePath);
           break;
+        case 'raw':
+        case 'document':
+          // Documents (PDF, DOC, TXT, etc.) upload as raw to Cloudinary
+          response = await uploadService.uploadDirectToCloudinary(
+            filePath: filePath,
+            resourceType: 'raw',
+          );
+          break;
         default:
-          throw ChatServiceError('Unsupported media type: $type');
+          // Fallback: try raw upload for unknown types
+          debugPrint('⚠️ [ChatService] Unknown media type "$type", uploading as raw');
+          response = await uploadService.uploadDirectToCloudinary(
+            filePath: filePath,
+            resourceType: 'raw',
+          );
       }
 
       debugPrint(

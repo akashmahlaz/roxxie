@@ -248,6 +248,7 @@ class Match {
   final String? otherUserPhoto;
   final String? otherUserType;
   final String? otherUserProfileId;
+  final bool isMuted;
 
   Match({
     required this.id,
@@ -267,6 +268,7 @@ class Match {
     this.otherUserPhoto,
     this.otherUserType,
     this.otherUserProfileId,
+    this.isMuted = false,
   });
 
   factory Match.fromJson(Map<String, dynamic> json) {
@@ -309,6 +311,7 @@ class Match {
       otherUserPhoto: otherUser?['profilePhoto'],
       otherUserType: otherUser?['type'],
       otherUserProfileId: otherUser?['profileId'],
+      isMuted: json['isMuted'] ?? false,
     );
   }
 
