@@ -1,4 +1,5 @@
 ### 0 issue method keep in mind for flutter app files 
+- if user make wrong decision dont follow blindly , dont sugarcoat , tell him this approach is your wrong , tell him best future proof solutions of all
 - Curly braces on ALL if/for/while: `if (x) { ... }`
 - Null safety: `artist.displayName ?? 'Unknown'`
 - Cache context before async: `final nav = Navigator.of(context);`

@@ -33,3 +33,4 @@ export 'pending_message_queue_service.dart';
 export 'media_download_service.dart';
 export 'permission_service.dart';
 export 'gallery_service.dart';
+export 'chat_manager.dart';

@@ -24,6 +24,7 @@ import '../../core/exceptions.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/location_service.dart';
+import '../../core/services/chat_manager.dart';
 import '../../core/theme/theme.dart';
 
 import 'chat_screen_v2.dart';
@@ -1838,19 +1839,26 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                             final match = _pendingMatch!;
                             final auth = context.read<AuthProvider>();
                             final isArtist = auth.isArtist;
+
+                            final target = ChatTarget(
+                              matchId: match.id,
+                              participantId: match.otherUserProfileId ??
+                                  (isArtist ? match.venueId : match.artistId),
+                              participantName: match.otherUserName ??
+                                  (isArtist ? match.venue?.name : match.artist?.stageName) ??
+                                  'Chat',
+                              participantPhoto: match.otherUserPhoto ??
+                                  (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto),
+                              isParticipantArtist: match.otherUserType == 'artist' || !isArtist,
+                              isMuted: match.isMuted,
+                            );
+
+                            ChatManager.instance.cacheFromMatches([match], isCurrentUserArtist: isArtist);
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ChatScreenV2(
-                                  matchId: match.id,
-                                  participantId: match.otherUserProfileId ??
-                                      (isArtist ? match.venueId : match.artistId),
-                                  participantName: match.otherUserName ??
-                                      (isArtist ? match.venue?.name : match.artist?.stageName),
-                                  participantPhoto: match.otherUserPhoto ??
-                                      (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto),
-                                  isParticipantArtist: match.otherUserType == 'artist' || !isArtist,
-                                ),
+                                builder: (_) => ChatScreenV2.fromTarget(target),
                               ),
                             );
                           }

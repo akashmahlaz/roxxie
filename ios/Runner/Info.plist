@@ -59,5 +59,22 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<!-- URL Schemes for deep linking -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>com.gigmatch.app</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>gigmatch</string>
+				</array>
+			</dict>
+		</array>
+		<!-- Allow app to handle universal links -->
+		<key>FlutterDeepLinkingEnabled</key>
+		<true/>
 	</dict>
 </plist>

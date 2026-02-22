@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import 'firebase_options.dart';
 import 'core/theme/theme.dart';
 import 'core/providers/providers.dart';
 import 'core/services/error_handling_service.dart';
+import 'core/services/deep_link_service.dart';
 import 'core/config/app_config.dart';
 import 'core/services/hive_cache_service.dart';
 import 'widgets/global_error_handler.dart';
@@ -86,6 +88,9 @@ void main() async {
   // Initialize Stripe with environment-specific publishable key
   Stripe.publishableKey = AppConfig.stripePublishableKey;
 
+  // 🔗 Initialize Deep Link Service (before runApp so initial link is captured)
+  await DeepLinkService().initialize();
+
   // Set system UI overlay style for premium immersive experience
   SystemChrome.setSystemUIOverlayStyle(AppTheme.systemOverlayStyle);
 
@@ -103,8 +108,71 @@ void main() async {
 /// Ultra-premium music gig matching platform
 /// Designed with world-class UI/UX principles
 
-class GigMatchApp extends StatelessWidget {
+/// Global navigator key for deep link navigation
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+class GigMatchApp extends StatefulWidget {
   const GigMatchApp({super.key});
+
+  @override
+  State<GigMatchApp> createState() => _GigMatchAppState();
+}
+
+class _GigMatchAppState extends State<GigMatchApp> {
+  late final DeepLinkService _deepLinkService;
+  StreamSubscription<String>? _deepLinkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _deepLinkService = DeepLinkService();
+    _listenToDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSub?.cancel();
+    super.dispose();
+  }
+
+  /// Listen to incoming deep links and navigate accordingly
+  void _listenToDeepLinks() {
+    _deepLinkSub = _deepLinkService.deepLinkStream.listen((path) {
+      debugPrint('🔗 [GigMatchApp] Deep link received: $path');
+      _navigateToDeepLink(path);
+    });
+
+    // Check for pending deep link (app cold-started via link)
+    final pending = _deepLinkService.pendingDeepLink;
+    if (pending != null) {
+      debugPrint('🔗 [GigMatchApp] Pending deep link: $pending');
+      // Delay to let splash screen / auth check finish
+      Future.delayed(const Duration(seconds: 2), () {
+        _navigateToDeepLink(pending);
+        _deepLinkService.clearPendingDeepLink();
+      });
+    }
+  }
+
+  /// Navigate to the correct screen based on deep link path
+  void _navigateToDeepLink(String path) {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) {
+      debugPrint('⚠️ [GigMatchApp] Navigator not ready for deep link: $path');
+      return;
+    }
+
+    debugPrint('🔗 [GigMatchApp] Navigating to: $path');
+
+    // Handle /share/* paths by stripping "share/" prefix
+    String effectivePath = path;
+    if (path.startsWith('/share/')) {
+      effectivePath = '/${path.substring(7)}'; // /share/artist/123 -> /artist/123
+    }
+
+    // Use pushNamed which goes through onGenerateRoute
+    navigator.pushNamed(effectivePath);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,6 +205,7 @@ class GigMatchApp extends StatelessWidget {
       child: GlobalErrorHandler(
         child: MaterialApp(
           title: 'GigMatch',
+          navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
 
           // Apply both light and dark themes with Material 3
@@ -262,6 +331,26 @@ class GigMatchApp extends StatelessWidget {
                 ProfilePreviewScreen(
                   profileId: venueId,
                   profileType: ProfileViewType.venue,
+                ),
+                settings,
+              );
+            }
+
+            // Post deep link route (from shared links)
+            if (settings.name?.startsWith('/post/') ?? false) {
+              // Navigate to home feed — post-specific view can be added later
+              debugPrint('🔗 [Router] Post deep link: ${settings.name}');
+              return _createFadeRoute(const AppShell(), settings);
+            }
+
+            // Story deep link route (from shared links)
+            if (settings.name?.startsWith('/story/') ?? false) {
+              final storyId = settings.name!.split('/').last;
+              debugPrint('🔗 [Router] Story deep link: $storyId');
+              return _createFadeRoute(
+                StoryViewerScreen(
+                  storyId: storyId,
+                  userId: '',
                 ),
                 settings,
               );

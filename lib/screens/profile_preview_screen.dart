@@ -208,8 +208,10 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   }
 
   String get _deepLinkUrl {
-    final type = _isArtist ? 'artist' : 'venue';
-    return 'https://gigmatch.app/$type/$_profileId';
+    return DeepLinkPatterns.shareableProfileUrl(
+      _profileId,
+      isArtist: _isArtist,
+    );
   }
 
   String _getPhotoUrl() {
@@ -1565,22 +1567,73 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
               borderRadius: BorderRadius.circular(14),
             ),
             child: IconButton(
-              onPressed: () {
+              onPressed: () async {
                 final id = _isArtist ? _artist?.id : _venue?.id;
                 final name = _isArtist ? _artist?.displayName : _venue?.venueName;
                 final photo = _isArtist ? _artist?.profilePhoto : _venue?.profilePhotoUrl;
-                if (id != null && mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatScreenV2(
-                        participantId: id,
-                        participantName: name,
-                        participantPhoto: photo,
-                        isParticipantArtist: _isArtist,
-                      ),
+                if (id == null || !mounted) return;
+
+                // Show loading indicator
+                final scaffold = ScaffoldMessenger.of(context);
+                final nav = Navigator.of(context);
+                scaffold.showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        SizedBox(
+                          width: 18, height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        ),
+                        SizedBox(width: 12),
+                        Text('Opening chat...'),
+                      ],
                     ),
+                    duration: const Duration(seconds: 10),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
+
+                try {
+                  final target = await ChatManager.instance.resolveChat(
+                    participantId: id,
+                    participantType: _isArtist ? 'artist' : 'venue',
+                    participantName: name,
+                    participantPhoto: photo,
+                    isParticipantArtist: _isArtist,
                   );
+
+                  scaffold.hideCurrentSnackBar();
+
+                  if (target != null && mounted) {
+                    nav.push(
+                      MaterialPageRoute(
+                        builder: (_) => ChatScreenV2.fromTarget(target),
+                      ),
+                    );
+                  } else if (mounted) {
+                    scaffold.showSnackBar(
+                      SnackBar(
+                        content: const Text('Unable to open chat. Please try again.'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('❌ [ProfilePreview] Chat open failed: $e');
+                  scaffold.hideCurrentSnackBar();
+                  if (mounted) {
+                    scaffold.showSnackBar(
+                      SnackBar(
+                        content: const Text('Failed to start conversation. Check your connection.'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  }
                 }
               },
               icon: Icon(

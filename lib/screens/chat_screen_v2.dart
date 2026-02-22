@@ -43,6 +43,10 @@ class ChatScreenV2 extends StatefulWidget {
   final String? replyToMessageId;
   final String? replyToMessageContent;
 
+  /// Pre-resolved chat target (from ChatManager).
+  /// When non-null, skip resolution in _initializeChat.
+  final ChatTarget? chatTarget;
+
   const ChatScreenV2({
     super.key,
     this.matchId,
@@ -52,7 +56,30 @@ class ChatScreenV2 extends StatefulWidget {
     this.isParticipantArtist = true,
     this.replyToMessageId,
     this.replyToMessageContent,
+    this.chatTarget,
   });
+
+  /// Preferred constructor: builds from a pre-resolved [ChatTarget].
+  /// The chat screen can render the header immediately without waiting
+  /// for any network call.
+  factory ChatScreenV2.fromTarget(
+    ChatTarget target, {
+    Key? key,
+    String? replyToMessageId,
+    String? replyToMessageContent,
+  }) {
+    return ChatScreenV2(
+      key: key,
+      matchId: target.matchId,
+      participantId: target.participantId,
+      participantName: target.participantName,
+      participantPhoto: target.participantPhoto,
+      isParticipantArtist: target.isParticipantArtist,
+      replyToMessageId: replyToMessageId,
+      replyToMessageContent: replyToMessageContent,
+      chatTarget: target,
+    );
+  }
 
   static const String route = '/chat';
 
@@ -182,118 +209,85 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     final auth = context.read<AuthProvider>();
     final isCurrentUserArtist = auth.isArtist;
 
+    // ── Step 1: Show whatever participant info we already have IMMEDIATELY ──
+    // This ensures the header renders even if the API call fails later.
+    if (widget.participantName != null || widget.chatTarget != null) {
+      setState(() {
+        _participantName = widget.chatTarget?.participantName ?? widget.participantName ?? 'Chat';
+        _participantPhoto = widget.chatTarget?.participantPhoto ?? widget.participantPhoto;
+        _isMuted = widget.chatTarget?.isMuted ?? false;
+      });
+    }
+
+    // ── Step 2: If we already have a pre-resolved ChatTarget, use it ──
+    if (widget.chatTarget != null) {
+      debugPrint('💬 [ChatScreenV2] Using pre-resolved ChatTarget: ${widget.chatTarget}');
+      try {
+        await chatProvider.enterChat(widget.chatTarget!.matchId);
+        if (!mounted) return;
+        setState(() {
+          _conversationId = widget.chatTarget!.matchId;
+        });
+        return;
+      } catch (e) {
+        debugPrint('❌ [ChatScreenV2] enterChat failed for target: $e');
+        if (mounted) {
+          _showError('Failed to load messages. Tap to retry.');
+        }
+        return;
+      }
+    }
+
+    // ── Step 3: Resolve via ChatManager (centralized) ──
     try {
-      String? conversationId;
-      String? participantName = widget.participantName;
-      String? participantPhoto = widget.participantPhoto;
-      String? participantId = widget.participantId;
-      bool isParticipantArtist = widget.isParticipantArtist;
+      final chatManager = ChatManager.instance;
 
-      // Case 1: Opening chat from profile (participantId provided, no matchId)
-      if (widget.matchId == null && widget.participantId != null) {
-        debugPrint('💬 [ChatScreenV2] Opening chat from profile, creating conversation...');
-        final chatService = ChatService();
-        final conversation = await chatService.getOrCreateConversation(
-          participantId: widget.participantId!,
-          participantType: widget.isParticipantArtist ? 'artist' : 'venue',
-        );
-        conversationId = conversation.id;
-        
-        // Use participant info from conversation if available
-        participantName ??= conversation.participantName;
-        participantPhoto ??= conversation.participantPhoto;
-        
-        debugPrint('💬 [ChatScreenV2] Got conversation: $conversationId, participant: $participantName');
-      }
-      // Case 2: Opening chat from match/messages (matchId provided)
-      else if (widget.matchId != null) {
-        conversationId = widget.matchId;
-        
-        // If participant info not provided, try to get from provider cache first
-        if (participantName == null || participantName.isEmpty) {
-          final cachedMatch = matchProvider.getMatchById(widget.matchId!);
-          if (cachedMatch != null) {
-            debugPrint('💬 [ChatScreenV2] Using cached match data');
-            participantName = cachedMatch.otherUserName ?? 
-                (isCurrentUserArtist ? cachedMatch.venue?.name : cachedMatch.artist?.stageName);
-            participantPhoto = cachedMatch.otherUserPhoto ?? 
-                (isCurrentUserArtist ? cachedMatch.venue?.profilePhotoUrl : cachedMatch.artist?.profilePhoto);
-            participantId = cachedMatch.otherUserProfileId ?? 
-                (isCurrentUserArtist ? cachedMatch.venueId : cachedMatch.artistId);
-            isParticipantArtist = cachedMatch.otherUserType == 'artist' || !isCurrentUserArtist;
-          }
-        }
-        
-        // If still missing, fetch from backend
-        if (participantName == null || participantName.isEmpty) {
-          debugPrint('💬 [ChatScreenV2] Fetching match details from backend...');
-          try {
-            final matchService = MatchService();
-            final match = await matchService.getMatchById(widget.matchId!);
-            participantName = match.otherUserName ?? 
-                (isCurrentUserArtist ? match.venue?.name : match.artist?.stageName);
-            participantPhoto = match.otherUserPhoto ?? 
-                (isCurrentUserArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto);
-            participantId = match.otherUserProfileId ?? 
-                (isCurrentUserArtist ? match.venueId : match.artistId);
-            isParticipantArtist = match.otherUserType == 'artist' || !isCurrentUserArtist;
-            debugPrint('💬 [ChatScreenV2] Got participant from match: $participantName');
-          } catch (e) {
-            debugPrint('💬 [ChatScreenV2] Failed to fetch match: $e');
-          }
-        }
+      // Try to pass a cached match if we have one
+      Match? cachedMatch;
+      if (widget.matchId != null) {
+        cachedMatch = matchProvider.getMatchById(widget.matchId!);
       }
 
-      if (conversationId == null) {
-        debugPrint('❌ [ChatScreenV2] No conversation ID available');
-        _showError('Unable to start chat');
+      final target = await chatManager.resolveChat(
+        matchId: widget.matchId,
+        participantId: widget.participantId,
+        participantType: widget.isParticipantArtist ? 'artist' : 'venue',
+        participantName: widget.participantName,
+        participantPhoto: widget.participantPhoto,
+        isParticipantArtist: widget.isParticipantArtist,
+        cachedMatch: cachedMatch,
+        isCurrentUserArtist: isCurrentUserArtist,
+      );
+
+      if (target == null) {
+        debugPrint('❌ [ChatScreenV2] ChatManager returned null');
+        if (mounted) {
+          _showError('Unable to start chat');
+        }
         return;
       }
 
-      await chatProvider.enterChat(conversationId);
+      debugPrint('💬 [ChatScreenV2] Resolved target: $target');
 
-      // Last resort: fetch participant profile directly if still missing
-      if ((participantName == null || participantName.isEmpty) && participantId != null) {
-        debugPrint('💬 [ChatScreenV2] Fetching participant profile...');
-        try {
-          if (isParticipantArtist) {
-            final artistService = ArtistService();
-            final artist = await artistService.getArtistById(participantId);
-            participantName = artist.displayName;
-            participantPhoto ??= artist.profilePhoto;
-          } else {
-            final venueService = VenueService();
-            final venue = await venueService.getVenueById(participantId);
-            participantName = venue.venueName;
-            participantPhoto ??= venue.profilePhotoUrl;
-          }
-        } catch (e) {
-          debugPrint('Failed to fetch participant profile: $e');
-        }
-      }
-
+      // Update header with resolved data
       if (!mounted) return;
-      
       setState(() {
-        _conversationId = conversationId;
-        _participantName = participantName ?? 'Chat';
-        _participantPhoto = participantPhoto;
+        _participantName = target.participantName;
+        _participantPhoto = target.participantPhoto;
+        _isMuted = target.isMuted;
       });
 
-      // Load mute state from cached match data
-      if (widget.matchId != null) {
-        final cachedMatch = matchProvider.getMatchById(widget.matchId!);
-        if (cachedMatch != null && mounted) {
-          setState(() {
-            _isMuted = cachedMatch.isMuted;
-          });
-          debugPrint('💬 [ChatScreenV2] Mute state from match: $_isMuted');
-        }
-      }
+      // Enter the chat room and load messages
+      await chatProvider.enterChat(target.matchId);
+
+      if (!mounted) return;
+      setState(() {
+        _conversationId = target.matchId;
+      });
     } catch (e) {
       debugPrint('❌ [ChatScreenV2] Failed to initialize chat: $e');
       if (mounted) {
-        _showError('Failed to load chat');
+        _showError('Failed to load chat. Please go back and try again.');
       }
     }
   }

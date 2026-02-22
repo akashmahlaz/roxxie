@@ -56,14 +56,17 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Deep link handling -->
+            <!-- Deep link handling - App Links for gigmatch.app -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
                     android:scheme="https"
-                    android:host="gigmatch.com" />
+                    android:host="gigmatch.app" />
+                <data
+                    android:scheme="https"
+                    android:host="www.gigmatch.app" />
             </intent-filter>
             
             <!-- Custom scheme deep link -->

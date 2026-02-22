@@ -18,6 +18,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../core/services/services.dart';
 import '../widgets/widgets.dart';
 
 class ProfileScreenV3 extends StatefulWidget {
@@ -72,8 +73,10 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
 
   void _shareProfile(ProfileProvider profile) {
     final auth = context.read<AuthProvider>();
-    final profileUrl =
-        'https://gigmatch.app/profile/${auth.isArtist ? 'artist' : 'venue'}/${profile.artist?.id ?? profile.venue?.id ?? ''}';
+    final profileUrl = DeepLinkPatterns.shareableProfileUrl(
+      profile.artist?.id ?? profile.venue?.id ?? '',
+      isArtist: auth.isArtist,
+    );
 
     SharePlus.instance.share(
       ShareParams(text: 'Check out my profile on GigMatch! 🎵\n$profileUrl'),

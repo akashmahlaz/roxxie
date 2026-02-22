@@ -10,9 +10,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:share_plus/share_plus.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
+import '../core/services/services.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -938,6 +940,11 @@ class _PostCardState extends State<_PostCard>
             icon: Icons.chat_bubble_outline_rounded,
             onTap: () => _openComments(context, post),
           ),
+          // Share
+          _ActionButton(
+            icon: Icons.send_rounded,
+            onTap: () => _sharePost(post),
+          ),
           // Boost (owner only, Pro/Premium feature)
           if (isOwner)
             _ActionButton(
@@ -987,6 +994,17 @@ class _PostCardState extends State<_PostCard>
         ],
       ),
     );
+  }
+
+  void _sharePost(Post post) {
+    HapticFeedback.lightImpact();
+    final shareUrl = DeepLinkPatterns.shareablePostUrl(post.id);
+    final caption = (post.caption ?? '').isNotEmpty ? '${post.caption}\n\n' : '';
+    final shareText = '${caption}Check out this post on GigMatch! 🎵\n$shareUrl';
+
+    debugPrint('📤 [HomeScreen] Sharing post ${post.id}: $shareUrl');
+    SharePlus.instance.share(ShareParams(text: shareText));
+    Clipboard.setData(ClipboardData(text: shareUrl));
   }
 
   void _handleBoostPost(Post post, bool isPaid) {

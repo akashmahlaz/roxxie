@@ -10,6 +10,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/providers/providers.dart';
 import '../core/models/feed_models.dart';
@@ -162,9 +164,27 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     }
   }
 
+  void _shareStory() {
+    HapticFeedback.lightImpact();
+    _pause();
+    final story = _story;
+    if (story == null) { return; }
+
+    final shareUrl = DeepLinkPatterns.shareableStoryUrl(story.id);
+    final caption = _currentItem?.caption;
+    final shareText = caption != null && caption.isNotEmpty
+        ? '$caption\n\nCheck out this story on GigMatch! 🎵\n$shareUrl'
+        : 'Check out this story on GigMatch! 🎵\n$shareUrl';
+
+    debugPrint('📤 [StoryViewer] Sharing story ${story.id}: $shareUrl');
+    SharePlus.instance.share(ShareParams(text: shareText));
+    Clipboard.setData(ClipboardData(text: shareUrl));
+    _resume();
+  }
+
   Future<void> _deleteStory() async {
     final story = _story;
-    if (story == null) return;
+    if (story == null) { return; }
     
     _pause();
     
@@ -518,6 +538,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             onPressed: _deleteStory,
             icon: Icon(Icons.delete_rounded, color: AppColors.error),
           ),
+        // Share button
+        IconButton(
+          onPressed: _shareStory,
+          icon: const Icon(Icons.send_rounded, color: Colors.white),
+        ),
         // Close button
         IconButton(
           onPressed: () => Navigator.pop(context),

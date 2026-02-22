@@ -18,6 +18,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/models/models.dart';
+import '../core/services/chat_manager.dart';
 import 'chat_screen_v2.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -597,28 +598,28 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final auth = context.read<AuthProvider>();
     final isArtist = auth.isArtist;
 
-    // Get correct participant info - use otherUser fields as primary (new backend format)
-    // Fall back to artist/venue objects if otherUser not available
-    final participantId = match.otherUserProfileId ?? 
-        (isArtist ? match.venueId : match.artistId);
-    final participantName = match.otherUserName ?? 
-        (isArtist ? match.venue?.name : match.artist?.stageName);
-    final participantPhoto = match.otherUserPhoto ?? 
-        (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto);
-    // Determine if participant is artist based on otherUserType or current user role
-    final isParticipantArtist = match.otherUserType == 'artist' || !isArtist;
+    // Build ChatTarget directly — we already have all data from the match list
+    final target = ChatTarget(
+      matchId: match.id,
+      participantId: match.otherUserProfileId ??
+          (isArtist ? match.venueId : match.artistId),
+      participantName: match.otherUserName ??
+          (isArtist ? match.venue?.name : match.artist?.stageName) ??
+          'Chat',
+      participantPhoto: match.otherUserPhoto ??
+          (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto),
+      isParticipantArtist: match.otherUserType == 'artist' || !isArtist,
+      isMuted: match.isMuted,
+    );
+
+    // Cache for future use (deep links, notifications, etc.)
+    ChatManager.instance.cacheFromMatches([match], isCurrentUserArtist: isArtist);
 
     HapticFeedback.lightImpact();
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ChatScreenV2(
-          matchId: match.id,
-          participantId: participantId,
-          participantName: participantName,
-          participantPhoto: participantPhoto,
-          isParticipantArtist: isParticipantArtist,
-        ),
+        builder: (_) => ChatScreenV2.fromTarget(target),
       ),
     );
   }

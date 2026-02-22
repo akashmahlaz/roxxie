@@ -168,6 +168,7 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
     HapticFeedback.selectionClick();
     if (_gig == null) return;
 
+    final shareUrl = DeepLinkPatterns.shareableGigUrl(_gig!.id);
     final shareText = '''🎵 Check out this gig on GigMatch!
 
 📍 ${_gig!.venueName}
@@ -178,9 +179,10 @@ class _GigDetailsScreenState extends State<GigDetailsScreen>
 
 ${_gig!.description}
 
-Download GigMatch to discover live music opportunities! 🎶''';
+$shareUrl''';
 
     SharePlus.instance.share(ShareParams(text: shareText, subject: 'Gig at ${_gig!.venueName}'));
+    Clipboard.setData(ClipboardData(text: shareUrl));
   }
 
   /// Confirm the gig booking (for artists with accepted applications)

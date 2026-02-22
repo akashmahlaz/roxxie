@@ -32,12 +32,19 @@ class DeepLinkPatterns {
   // Chat patterns
   static String chat(String matchId) => '/chat/$matchId';
 
-  // Generate shareable URLs
+  // Generate shareable URLs (point to OG-tag server for rich previews)
   static String shareableArtistUrl(String artistId) =>
-      'https://$host/artist/$artistId';
-  static String shareableGigUrl(String gigId) => 'https://$host/gig/$gigId';
+      'https://$host/share/artist/$artistId';
+  static String shareableGigUrl(String gigId) =>
+      'https://$host/share/gig/$gigId';
   static String shareableVenueUrl(String venueId) =>
-      'https://$host/venue/$venueId';
+      'https://$host/share/venue/$venueId';
+  static String shareablePostUrl(String postId) =>
+      'https://$host/share/post/$postId';
+  static String shareableStoryUrl(String storyId) =>
+      'https://$host/share/story/$storyId';
+  static String shareableProfileUrl(String id, {required bool isArtist}) =>
+      isArtist ? shareableArtistUrl(id) : shareableVenueUrl(id);
 }
 
 /// Deep Link Service for handling incoming links
