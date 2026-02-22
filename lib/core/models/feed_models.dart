@@ -211,6 +211,7 @@ class Post {
   final bool isPinned;
   final bool commentsDisabled;
   final bool likesHidden;
+  final bool isBoosted;
   final DateTime createdAt;
   final PostAuthor? author;
   final List<PostComment> comments;
@@ -233,6 +234,7 @@ class Post {
     this.isPinned = false,
     this.commentsDisabled = false,
     this.likesHidden = false,
+    this.isBoosted = false,
     required this.createdAt,
     this.author,
     this.comments = const [],
@@ -261,6 +263,7 @@ class Post {
       isPinned: json['isPinned'] ?? false,
       commentsDisabled: json['commentsDisabled'] ?? false,
       likesHidden: json['likesHidden'] ?? false,
+      isBoosted: json['isBoosted'] ?? false,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -278,6 +281,7 @@ class Post {
   Post copyWith({
     bool? isLiked,
     bool? isSaved,
+    bool? isBoosted,
     int? likeCount,
     int? commentCount,
     List<PostComment>? comments,
@@ -300,6 +304,7 @@ class Post {
       isPinned: isPinned,
       commentsDisabled: commentsDisabled,
       likesHidden: likesHidden,
+      isBoosted: isBoosted ?? this.isBoosted,
       createdAt: createdAt,
       author: author,
       comments: comments ?? this.comments,
@@ -385,6 +390,7 @@ class Story {
   final List<StoryItem> items;
   final DateTime expiresAt;
   final bool hasUnviewed;
+  final bool isBoosted;
   final String? latestItemUrl;
   final DateTime createdAt;
   final PostAuthor? author;
@@ -397,6 +403,7 @@ class Story {
     required this.items,
     required this.expiresAt,
     this.hasUnviewed = true,
+    this.isBoosted = false,
     this.latestItemUrl,
     required this.createdAt,
     this.author,
@@ -430,6 +437,7 @@ class Story {
           ? DateTime.parse(json['expiresAt'])
           : DateTime.now().add(const Duration(hours: 24)),
       hasUnviewed: json['hasUnviewed'] ?? true,
+      isBoosted: json['isBoosted'] ?? false,
       latestItemUrl: json['latestItemUrl'],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])

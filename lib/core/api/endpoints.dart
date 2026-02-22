@@ -907,6 +907,9 @@ class Endpoints {
   /// Get user's posts
   static String userPosts(String userId) => '/posts/user/$userId';
 
+  /// Boost a post (Pro/Premium only)
+  static String postBoost(String id) => '/posts/$id/boost';
+
   // ═══════════════════════════════════════════════════════════════════════
   // STORIES (24-hour ephemeral content)
   // ═══════════════════════════════════════════════════════════════════════
@@ -943,4 +946,7 @@ class Endpoints {
   /// Get story item viewers
   static String storyItemViewers(String storyId, String itemId) =>
       '/stories/$storyId/items/$itemId/viewers';
+
+  /// Boost a story (Pro/Premium only)
+  static String storyBoost(String id) => '/stories/$id/boost';
 }

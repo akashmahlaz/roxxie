@@ -34,6 +34,7 @@ class DiscoveryProvider extends ChangeNotifier {
   double? _minPrice;
   double? _maxPrice;
   double? _minRating;
+  bool _passportMode = false;
 
   // Track swipeIds for undo (last N swipes)
   final List<String> _swipeHistory = [];
@@ -69,6 +70,17 @@ class DiscoveryProvider extends ChangeNotifier {
   }
   bool get hasCards => _cards.isNotEmpty && _currentIndex < _cards.length;
   List<String>? get selectedGenres => _genres;
+  bool get passportMode => _passportMode;
+
+  /// 🌍 Toggle passport mode (removes location restrictions for pro/premium)
+  void togglePassportMode(bool enabled) {
+    if (_passportMode != enabled) {
+      _passportMode = enabled;
+      debugPrint('DiscoveryProvider: passport mode ${enabled ? "ON" : "OFF"}');
+      // Refresh discovery with new mode
+      loadCards(refresh: true);
+    }
+  }
 
   /// 🔄 Load discovery cards
   Future<void> loadCards({bool refresh = false}) async {
@@ -99,6 +111,7 @@ class DiscoveryProvider extends ChangeNotifier {
         minPrice: _minPrice,
         maxPrice: _maxPrice,
         minRating: _minRating,
+        passportMode: _passportMode,
       );
 
       if (refresh) {

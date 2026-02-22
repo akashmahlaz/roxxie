@@ -209,8 +209,12 @@ class _VideoCardState extends State<_VideoCard> {
 
   Future<void> _initializeController() async {
     try {
+      // Ensure HTTPS (Android blocks cleartext HTTP)
+      final videoUrl = widget.video.url.startsWith('http://')
+          ? widget.video.url.replaceFirst('http://', 'https://')
+          : widget.video.url;
       _controller = VideoPlayerController.networkUrl(
-        Uri.parse(widget.video.url),
+        Uri.parse(videoUrl),
       );
       await _controller!.initialize();
       _controller!.setLooping(true);
@@ -427,7 +431,11 @@ class _FullScreenVideoPlayerState extends State<_FullScreenVideoPlayer> {
 
   Future<void> _initializeVideo() async {
     final video = widget.videos[_currentIndex];
-    _videoController = VideoPlayerController.networkUrl(Uri.parse(video.url));
+    // Ensure HTTPS (Android blocks cleartext HTTP)
+    final videoUrl = video.url.startsWith('http://')
+        ? video.url.replaceFirst('http://', 'https://')
+        : video.url;
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
 
     try {
       await _videoController.initialize();

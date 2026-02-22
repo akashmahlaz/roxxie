@@ -20,6 +20,7 @@ class SwipeService {
     double? minPrice,
     double? maxPrice,
     double? minRating,
+    bool passportMode = false,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -39,6 +40,7 @@ class SwipeService {
       if (minPrice != null) queryParams['minBudget'] = minPrice.toString();
       if (maxPrice != null) queryParams['maxBudget'] = maxPrice.toString();
       if (minRating != null) queryParams['minRating'] = minRating.toString();
+      if (passportMode) queryParams['passportMode'] = 'true';
 
       final response = await _client.get(
         Endpoints.discover,
@@ -201,7 +203,7 @@ class MatchService {
   Future<int> getUnreadCount() async {
     try {
       final response = await _client.get(Endpoints.matchesUnreadCount);
-      return response.data['count'] ?? 0;
+      return response.data['unreadCount'] ?? response.data['count'] ?? 0;
     } catch (e) {
       debugPrint('Get unread count error: $e');
       return 0;

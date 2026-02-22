@@ -453,6 +453,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
   Widget _buildConversationsList(Brightness brightness) {
     return Consumer<MatchProvider>(
       builder: (context, provider, _) {
+        // Show loading on first load
+        if (provider.status == MatchListStatus.loading) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.crimson),
+            ),
+          );
+        }
+
         final auth = context.watch<AuthProvider>();
         final isArtist = auth.isArtist;
 
@@ -465,10 +475,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
         // Apply search
         if (_searchQuery.isNotEmpty) {
           conversations = conversations.where((m) {
+            final otherName = (m.otherUserName ?? '').toLowerCase();
             final name = isArtist
                 ? (m.venue?.name ?? '')
                 : (m.artist?.stageName ?? '');
-            return name.toLowerCase().contains(_searchQuery.toLowerCase());
+            final combined = '$otherName $name'.toLowerCase();
+            return combined.contains(_searchQuery.toLowerCase());
           }).toList();
         }
 
@@ -1061,9 +1073,14 @@ class _ConversationTile extends StatelessWidget {
     final photo = match.otherUserPhoto ?? 
         (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto);
     final isVenue = match.otherUserType == 'venue' || isArtist;
-    final lastMessage = match.lastMessagePreview ?? 'Start a conversation';
+    final rawLastMessage = match.lastMessagePreview ?? 'Start a conversation';
+    // Sanitize stale URL previews on the client side
+    final lastMessage = _formatMessagePreview(rawLastMessage);
     final unread = match.unreadCount;
     final time = match.lastMessageAt ?? match.matchedAt;
+
+    debugPrint('💬 [ConversationTile] name=$name photo=${photo != null} '
+        'lastMsg="$rawLastMessage" unread=$unread matchId=${match.id}');
 
     return Dismissible(
       key: Key('conversation_${match.id}'),
@@ -1194,6 +1211,24 @@ class _ConversationTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Sanitize stale URL previews — detect raw URLs and replace with friendly text
+  String _formatMessagePreview(String preview) {
+    if (preview.startsWith('http://') || preview.startsWith('https://')) {
+      final lower = preview.toLowerCase();
+      if (RegExp(r'\.(jpg|jpeg|png|gif|webp|heic|avif)').hasMatch(lower)) {
+        return '📷 Photo';
+      }
+      if (RegExp(r'\.(mp3|wav|m4a|aac|ogg|opus)').hasMatch(lower)) {
+        return '🎵 Audio message';
+      }
+      if (RegExp(r'\.(mp4|mov|avi|webm)').hasMatch(lower)) {
+        return '🎬 Video';
+      }
+      return '📎 Attachment';
+    }
+    return preview;
   }
 
   Widget _buildSwipeBackground({

@@ -336,8 +336,13 @@ class AudioSample {
   });
 
   factory AudioSample.fromJson(Map<String, dynamic> json) {
+    // Ensure HTTPS for Cloudinary URLs (Android blocks cleartext HTTP)
+    String rawUrl = json['url'] ?? '';
+    if (rawUrl.startsWith('http://')) {
+      rawUrl = rawUrl.replaceFirst('http://', 'https://');
+    }
     return AudioSample(
-      url: json['url'] ?? '',
+      url: rawUrl,
       title: json['title'],
       durationSeconds: json['durationSeconds'],
       cloudinaryPublicId: json['cloudinaryPublicId'],
@@ -367,10 +372,19 @@ class VideoSample {
   });
 
   factory VideoSample.fromJson(Map<String, dynamic> json) {
+    // Ensure HTTPS for Cloudinary URLs (Android blocks cleartext HTTP)
+    String rawUrl = json['url'] ?? '';
+    if (rawUrl.startsWith('http://')) {
+      rawUrl = rawUrl.replaceFirst('http://', 'https://');
+    }
+    String? thumb = json['thumbnailUrl'];
+    if (thumb != null && thumb.startsWith('http://')) {
+      thumb = thumb.replaceFirst('http://', 'https://');
+    }
     return VideoSample(
-      url: json['url'] ?? '',
+      url: rawUrl,
       title: json['title'],
-      thumbnailUrl: json['thumbnailUrl'],
+      thumbnailUrl: thumb,
       durationSeconds: json['durationSeconds'],
       cloudinaryPublicId: json['cloudinaryPublicId'],
     );

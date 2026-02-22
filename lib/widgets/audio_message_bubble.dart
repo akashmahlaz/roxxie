@@ -115,7 +115,11 @@ class AudioMessageBubbleState extends State<AudioMessageBubble> {
       if (_audioPlayer.audioSource == null) {
         setState(() => _isLoading = true);
         try {
-          await _audioPlayer.setUrl(widget.audioUrl);
+          // Ensure HTTPS (Android blocks cleartext HTTP)
+          final url = widget.audioUrl.startsWith('http://')
+              ? widget.audioUrl.replaceFirst('http://', 'https://')
+              : widget.audioUrl;
+          await _audioPlayer.setUrl(url);
         } catch (e) {
           debugPrint('❌ [AudioMessageBubble] Error loading audio: $e');
           if (mounted) {

@@ -430,12 +430,34 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Widget _buildFilterChips(Brightness brightness) {
+    final authProvider = context.watch<AuthProvider>();
+    final discoveryProvider = context.watch<DiscoveryProvider>();
+    final isPaid = authProvider.isPaidUser;
+
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
+          // 🌍 Passport Mode chip (Pro/Premium only)
+          _buildStyledFilterChip(
+            label: 'Passport',
+            icon: Icons.public_rounded,
+            isSelected: discoveryProvider.passportMode,
+            brightness: brightness,
+            onSelected: (selected) {
+              if (!isPaid) {
+                _showPremiumUpsell(
+                  'Passport Mode',
+                  'Discover gigs and artists worldwide — no location limits. Upgrade to Pro!',
+                );
+                return;
+              }
+              discoveryProvider.togglePassportMode(selected);
+            },
+          ),
+          const SizedBox(width: 8),
           // Location chip
           _buildStyledFilterChip(
             label: 'Nearby',

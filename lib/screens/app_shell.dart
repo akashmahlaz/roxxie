@@ -142,40 +142,55 @@ class _AppShellState extends State<AppShell>
 
     final isArtist = auth.isArtist;
 
-    return Scaffold(
-      backgroundColor: AppColors.background(brightness),
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        child: IndexedStack(
-          index: _index,
-          children: [
-            _TabNavigator(navigatorKey: _homeNavKey, root: const HomeScreen()),
-            _TabNavigator(
-              navigatorKey: _discoverNavKey,
-              root: const DiscoveryScreen(),
-            ),
-            _TabNavigator(
-              navigatorKey: _roleNavKey,
-              root: isArtist
-                  ? const ArtistCalendarScreen()
-                  : const GigsScreen(),
-            ),
-            _TabNavigator(
-              navigatorKey: _messagesNavKey,
-              root: const MessagesScreen(),
-            ),
-            _TabNavigator(
-              navigatorKey: _meNavKey,
-              root: const ProfileScreenV3(),
-            ),
-          ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        // Try to pop nested navigator first
+        final nav = _currentTabNavigator;
+        if (nav != null && nav.canPop()) {
+          nav.pop();
+        } else if (_index != 0) {
+          // Go to home tab instead of exiting
+          setState(() => _index = 0);
+        }
+        // If already on home tab root, do nothing (don't exit app)
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          child: IndexedStack(
+            index: _index,
+            children: [
+              _TabNavigator(navigatorKey: _homeNavKey, root: const HomeScreen()),
+              _TabNavigator(
+                navigatorKey: _discoverNavKey,
+                root: const DiscoveryScreen(),
+              ),
+              _TabNavigator(
+                navigatorKey: _roleNavKey,
+                root: isArtist
+                    ? const ArtistCalendarScreen()
+                    : const GigsScreen(),
+              ),
+              _TabNavigator(
+                navigatorKey: _messagesNavKey,
+                root: const MessagesScreen(),
+              ),
+              _TabNavigator(
+                navigatorKey: _meNavKey,
+                root: const ProfileScreenV3(),
+              ),
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar: _buildNavigationBar(
-        context: context,
-        brightness: brightness,
-        isArtist: isArtist,
+        bottomNavigationBar: _buildNavigationBar(
+          context: context,
+          brightness: brightness,
+          isArtist: isArtist,
+        ),
       ),
     );
   }
@@ -342,6 +357,17 @@ class _AppShellState extends State<AppShell>
       return;
     }
     setState(() => _index = newIndex);
+  }
+
+  /// Get the NavigatorState for the currently active tab
+  NavigatorState? get _currentTabNavigator {
+    return switch (AppShellTab.values[_index]) {
+      AppShellTab.home => _homeNavKey.currentState,
+      AppShellTab.discover => _discoverNavKey.currentState,
+      AppShellTab.roleTab => _roleNavKey.currentState,
+      AppShellTab.messages => _messagesNavKey.currentState,
+      AppShellTab.me => _meNavKey.currentState,
+    };
   }
 
   void _popToRootForIndex(int index) {

@@ -274,6 +274,10 @@ class Match {
     final otherUser = json['otherUser'] as Map<String, dynamic>?;
     final lastMessage = json['lastMessage'] as Map<String, dynamic>?;
     
+    final matchId = json['_id'] ?? json['id'] ?? '';
+    debugPrint('📇 [Match.fromJson] id=$matchId otherUser=${otherUser != null ? '{ name: ${otherUser['name']}, type: ${otherUser['type']}, photo: ${otherUser['profilePhoto'] != null}, profileId: ${otherUser['profileId']} }' : 'null'} '
+        'lastMsg=${lastMessage?['content'] ?? json['lastMessagePreview']} unread=${json['unreadCount']}');
+
     return Match(
       id: json['_id'] ?? json['id'] ?? '',
       artistId: json['artistId'] is Map
@@ -416,7 +420,7 @@ class MatchListResponse {
       page: json['page'] ?? 1,
       limit: json['limit'] ?? 20,
       total: json['total'] ?? 0,
-      hasMore: json['hasMore'] ?? false,
+      hasMore: json['hasMore'] ?? ((json['page'] ?? 1) < (json['pages'] ?? 1)),
     );
   }
 }

@@ -397,74 +397,107 @@ class _StoryAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasUnviewed = story.hasUnviewed;
+    final isBoosted = story.isBoosted;
     final profilePhoto = story.author?.profilePhoto;
     final name = story.author?.name ?? 'User';
+    final authProvider = context.read<AuthProvider>();
+    final isOwner = authProvider.user?.id == story.userId;
 
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         _openStoryViewer(context);
       },
+      onLongPress: isOwner ? () => _showBoostOption(context, authProvider) : null,
       child: Container(
         width: 72,
         margin: const EdgeInsets.only(right: 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Story ring
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: hasUnviewed
-                    ? const LinearGradient(
-                        colors: [
-                          AppColors.crimson,
-                          AppColors.rose,
-                          AppColors.crimsonLight,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                border: hasUnviewed
-                    ? null
-                    : Border.all(color: AppColors.border(brightness), width: 2),
-              ),
-              child: Container(
-                width: 54,
-                height: 54,
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.background(brightness),
-                ),
-                child: ClipOval(
-                  child: profilePhoto != null
-                      ? CachedNetworkImage(
-                          imageUrl: profilePhoto,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              Container(color: AppColors.surface(brightness)),
-                          errorWidget: (context, url, error) => Container(
-                            color: AppColors.surface(brightness),
-                            child: Icon(
-                              Icons.person_rounded,
-                              color: AppColors.textSec(brightness),
-                              size: 28,
+            // Story ring — gold gradient for boosted stories
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: isBoosted
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFFFA500), Color(0xFFFF8C00)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : hasUnviewed
+                            ? const LinearGradient(
+                                colors: [
+                                  AppColors.crimson,
+                                  AppColors.rose,
+                                  AppColors.crimsonLight,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                    border: (hasUnviewed || isBoosted)
+                        ? null
+                        : Border.all(color: AppColors.border(brightness), width: 2),
+                  ),
+                  child: Container(
+                    width: 54,
+                    height: 54,
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.background(brightness),
+                    ),
+                    child: ClipOval(
+                      child: profilePhoto != null
+                          ? CachedNetworkImage(
+                              imageUrl: profilePhoto,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) =>
+                                  Container(color: AppColors.surface(brightness)),
+                              errorWidget: (context, url, error) => Container(
+                                color: AppColors.surface(brightness),
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  color: AppColors.textSec(brightness),
+                                  size: 28,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              color: AppColors.surface(brightness),
+                              child: Icon(
+                                Icons.person_rounded,
+                                color: AppColors.textSec(brightness),
+                                size: 28,
+                              ),
                             ),
-                          ),
-                        )
-                      : Container(
-                          color: AppColors.surface(brightness),
-                          child: Icon(
-                            Icons.person_rounded,
-                            color: AppColors.textSec(brightness),
-                            size: 28,
-                          ),
-                        ),
+                    ),
+                  ),
                 ),
-              ),
+                // Boosted rocket badge
+                if (isBoosted)
+                  Positioned(
+                    bottom: -2,
+                    right: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: AppColors.background(brightness),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.rocket_launch_rounded,
+                        size: 14,
+                        color: Color(0xFFFFD700),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -487,6 +520,64 @@ class _StoryAvatar extends StatelessWidget {
     Navigator.of(context, rootNavigator: true).pushNamed(
       '/story-viewer',
       arguments: {'storyId': story.id, 'userId': story.userId},
+    );
+  }
+
+  void _showBoostOption(BuildContext context, AuthProvider authProvider) {
+    if (story.isBoosted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This story is already boosted!')),
+      );
+      return;
+    }
+
+    final isPaid = authProvider.isPaidUser;
+    final nav = Navigator.of(context, rootNavigator: true);
+    final feedProvider = context.read<FeedProvider>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Boost Story'),
+        content: Text(
+          isPaid
+              ? 'Boost this story to appear at the top of everyone\'s stories tray!'
+              : 'Upgrade to Pro or Premium to boost your stories to the top of the feed!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          if (isPaid)
+            FilledButton.icon(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final success = await feedProvider.boostStory(story.id);
+                if (success) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(content: Text('Story boosted! 🚀')),
+                  );
+                } else {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(content: Text('Failed to boost story')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.rocket_launch_rounded),
+              label: const Text('Boost'),
+            )
+          else
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                nav.pushNamed('/premium');
+              },
+              child: const Text('Upgrade'),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -823,6 +914,10 @@ class _PostCardState extends State<_PostCard>
   }
 
   Widget _buildActions(Post post, Brightness brightness) {
+    final authProvider = context.read<AuthProvider>();
+    final isOwner = authProvider.user?.id == post.userId;
+    final isPaid = authProvider.isPaidUser;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
       child: Row(
@@ -843,7 +938,41 @@ class _PostCardState extends State<_PostCard>
             icon: Icons.chat_bubble_outline_rounded,
             onTap: () => _openComments(context, post),
           ),
+          // Boost (owner only, Pro/Premium feature)
+          if (isOwner)
+            _ActionButton(
+              icon: post.isBoosted
+                  ? Icons.rocket_launch_rounded
+                  : Icons.rocket_launch_outlined,
+              color: post.isBoosted ? AppColors.crimson : null,
+              onTap: () => _handleBoostPost(post, isPaid),
+            ),
           const Spacer(),
+          // Boosted indicator badge
+          if (post.isBoosted)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.rocket_launch_rounded, size: 12, color: AppColors.crimson),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Boosted',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.crimson,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Save
           _ActionButton(
             icon: post.isSaved
@@ -854,6 +983,79 @@ class _PostCardState extends State<_PostCard>
               HapticFeedback.lightImpact();
               context.read<FeedProvider>().toggleSave(post.id);
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleBoostPost(Post post, bool isPaid) {
+    if (post.isBoosted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This post is already boosted!')),
+      );
+      return;
+    }
+
+    if (!isPaid) {
+      final nav = Navigator.of(context, rootNavigator: true);
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Boost Post'),
+          content: const Text(
+            'Boost your post to the top of everyone\'s feed! '
+            'Upgrade to Pro or Premium to unlock this feature.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Not now'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                nav.pushNamed('/premium');
+              },
+              child: const Text('Upgrade'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final feedProvider = context.read<FeedProvider>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Boost Post'),
+        content: const Text(
+          'Boost this post to appear at the top of everyone\'s feed. '
+          'The boost will last 24-48 hours depending on your plan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final success = await feedProvider.boostPost(post.id);
+              if (success) {
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('Post boosted! 🚀')),
+                );
+              } else {
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('Failed to boost post')),
+                );
+              }
+            },
+            icon: const Icon(Icons.rocket_launch_rounded),
+            label: const Text('Boost'),
           ),
         ],
       ),

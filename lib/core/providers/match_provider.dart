@@ -93,10 +93,11 @@ class MatchProvider extends ChangeNotifier {
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       result = result.where((m) {
-        // Search in both artist and venue names
+        // Search in otherUser name (new format) and artist/venue names (old format)
+        final otherName = (m.otherUserName ?? '').toLowerCase();
         final artistName = (m.artist?.stageName ?? '').toLowerCase();
         final venueName = (m.venue?.name ?? '').toLowerCase();
-        return artistName.contains(query) || venueName.contains(query);
+        return otherName.contains(query) || artistName.contains(query) || venueName.contains(query);
       }).toList();
     }
 
@@ -151,6 +152,11 @@ class MatchProvider extends ChangeNotifier {
         _matches = response.matches;
       } else {
         _matches.addAll(response.matches);
+      }
+
+      debugPrint('💕 [MatchProvider] Loaded ${response.matches.length} matches (total: ${_matches.length}, hasMore: ${response.hasMore})');
+      for (final m in response.matches) {
+        debugPrint('   📇 Match ${m.id}: otherUser=${m.otherUserName}, type=${m.otherUserType}, hasMsg=${m.lastMessageAt != null}');
       }
 
       _hasMore = response.hasMore;

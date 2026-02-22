@@ -192,7 +192,11 @@ class _AdvancedAudioPlayerState extends State<AdvancedAudioPlayer>
 
     try {
       final sample = widget.samples[index];
-      await _player.setUrl(sample.url);
+      // Ensure HTTPS (Android blocks cleartext HTTP)
+      final url = sample.url.startsWith('http://')
+          ? sample.url.replaceFirst('http://', 'https://')
+          : sample.url;
+      await _player.setUrl(url);
       await _player.setVolume(_volume);
     } catch (e) {
       if (mounted) {

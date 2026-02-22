@@ -119,9 +119,12 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       _userName = auth.user?.name ?? '';
 
       if (widget.profileId != null) {
-        // External profile view via deep link
-        _isOwnProfile = false;
-        debugPrint('👁️ [ProfilePreview] Loading external profile...');
+        // External profile view via deep link - check if it's actually the current user
+        final currentArtistId = auth.artistProfile?.id;
+        final currentVenueId = auth.venueProfile?.id;
+        final isSelf = widget.profileId == currentArtistId || widget.profileId == currentVenueId;
+        _isOwnProfile = isSelf;
+        debugPrint('👁️ [ProfilePreview] Loading external profile... isSelf=$isSelf');
         if (widget.profileType == ProfileViewType.venue) {
           _isArtist = false;
           debugPrint('👁️ [ProfilePreview] Fetching venue by ID: ${widget.profileId}');

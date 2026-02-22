@@ -69,7 +69,11 @@ class MiniAudioPlayerState extends State<MiniAudioPlayer>
     try {
       setState(() => _isLoading = true);
 
-      await _audioPlayer.setUrl(widget.audioUrl);
+      // Ensure HTTPS (Android blocks cleartext HTTP)
+      final url = widget.audioUrl.startsWith('http://')
+          ? widget.audioUrl.replaceFirst('http://', 'https://')
+          : widget.audioUrl;
+      await _audioPlayer.setUrl(url);
 
       if (widget.autoPlay) {
         await _audioPlayer.play();

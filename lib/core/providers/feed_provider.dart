@@ -362,4 +362,52 @@ class FeedProvider extends ChangeNotifier {
     _lastStoriesFetch = null;
     notifyListeners();
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BOOST (Premium Feature)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Boost a post to the top of feeds (Pro/Premium only)
+  Future<bool> boostPost(String postId) async {
+    try {
+      debugPrint('FeedProvider.boostPost: boosting post $postId');
+      final boostedPost = await _feedService.boostPost(postId);
+
+      // Update the post in the local list
+      final idx = _posts.indexWhere((p) => p.id == postId);
+      if (idx != -1) {
+        _posts[idx] = boostedPost;
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('FeedProvider.boostPost error: $e');
+      _errorMessage = 'Failed to boost post: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Boost a story to the top of the stories tray (Pro/Premium only)
+  Future<bool> boostStory(String storyId) async {
+    try {
+      debugPrint('FeedProvider.boostStory: boosting story $storyId');
+      final boostedStory = await _feedService.boostStory(storyId);
+
+      // Update the story in the local list
+      final idx = _stories.indexWhere((s) => s.id == storyId);
+      if (idx != -1) {
+        _stories[idx] = boostedStory;
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('FeedProvider.boostStory error: $e');
+      _errorMessage = 'Failed to boost story: $e';
+      notifyListeners();
+      return false;
+    }
+  }
 }

@@ -253,4 +253,34 @@ class FeedService {
       rethrow;
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BOOST (Premium Feature)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Boost a post to the top of feeds (Pro/Premium only)
+  Future<Post> boostPost(String postId) async {
+    try {
+      debugPrint('FeedService.boostPost: boosting post $postId');
+      final response = await _client.dio.post(Endpoints.postBoost(postId));
+      final postData = response.data['post'] ?? response.data;
+      return Post.fromJson(postData);
+    } catch (e) {
+      debugPrint('FeedService.boostPost error: $e');
+      rethrow;
+    }
+  }
+
+  /// Boost a story to the top of the stories tray (Pro/Premium only)
+  Future<Story> boostStory(String storyId) async {
+    try {
+      debugPrint('FeedService.boostStory: boosting story $storyId');
+      final response = await _client.dio.post(Endpoints.storyBoost(storyId));
+      final storyData = response.data['story'] ?? response.data;
+      return Story.fromJson(storyData);
+    } catch (e) {
+      debugPrint('FeedService.boostStory error: $e');
+      rethrow;
+    }
+  }
 }
