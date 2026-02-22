@@ -14,7 +14,12 @@ import 'package:app_links/app_links.dart';
 
 /// Deep link patterns for the app
 class DeepLinkPatterns {
-  static const String host = 'gigmatch.app';
+  /// Share host — change this when you get a custom domain (e.g. gigmatch.app)
+  /// For local dev, use LAN IP. For production, use gigmatch.onrender.com
+  static const String shareBaseUrl = String.fromEnvironment(
+    'SHARE_BASE_URL',
+    defaultValue: 'http://10.183.58.168:3000',
+  );
   static const String scheme = 'gigmatch';
 
   // Profile patterns
@@ -34,15 +39,15 @@ class DeepLinkPatterns {
 
   // Generate shareable URLs (point to OG-tag server for rich previews)
   static String shareableArtistUrl(String artistId) =>
-      'https://$host/share/artist/$artistId';
+      '$shareBaseUrl/share/artist/$artistId';
   static String shareableGigUrl(String gigId) =>
-      'https://$host/share/gig/$gigId';
+      '$shareBaseUrl/share/gig/$gigId';
   static String shareableVenueUrl(String venueId) =>
-      'https://$host/share/venue/$venueId';
+      '$shareBaseUrl/share/venue/$venueId';
   static String shareablePostUrl(String postId) =>
-      'https://$host/share/post/$postId';
+      '$shareBaseUrl/share/post/$postId';
   static String shareableStoryUrl(String storyId) =>
-      'https://$host/share/story/$storyId';
+      '$shareBaseUrl/share/story/$storyId';
   static String shareableProfileUrl(String id, {required bool isArtist}) =>
       isArtist ? shareableArtistUrl(id) : shareableVenueUrl(id);
 }
@@ -114,10 +119,17 @@ class DeepLinkService {
       return '/${uri.host}${uri.path}';
     }
 
-    // Handle https links: https://gigmatch.app/chat/123
+    // Handle https/http links
     if (uri.scheme == 'https' || uri.scheme == 'http') {
-      if (uri.host == DeepLinkPatterns.host ||
-          uri.host == 'www.${DeepLinkPatterns.host}') {
+      // Accept any known host (local IP, render, future custom domain)
+      final knownHosts = [
+        'gigmatch.onrender.com',
+        'www.gigmatch.onrender.com',
+        'gigmatch.app',
+        'www.gigmatch.app',
+        '10.183.58.168',
+      ];
+      if (knownHosts.contains(uri.host)) {
         return uri.path;
       }
     }

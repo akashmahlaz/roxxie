@@ -6,9 +6,8 @@
 	<string>development</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:gigmatch.app</string>
-		<string>applinks:www.gigmatch.app</string>
-		<string>webcredentials:gigmatch.app</string>
+		<string>applinks:gigmatch.onrender.com</string>
+		<string>webcredentials:gigmatch.onrender.com</string>
 	</array>
 </dict>
 </plist>
