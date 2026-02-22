@@ -260,10 +260,13 @@ Check out GigMatch - the best platform for live music bookings! 🎵''';
       backgroundColor: AppColors.background(brightness),
       appBar: _buildAppBar(brightness),
       body: !authProvider.isPaidUser
-          ? PremiumGate(
-              featureName: 'Advanced Analytics',
-              message: 'Get detailed insights about your profile performance, views, and engagement trends.',
-              requirePro: true,
+          ? Center(
+              child: PremiumGate(
+                featureName: 'Advanced Analytics',
+                message: 'Get detailed insights about your profile performance, views, and engagement trends.',
+                requirePro: true,
+                child: const SizedBox.shrink(),
+              ),
             )
           : _isLoading
           ? _buildSkeleton(brightness)

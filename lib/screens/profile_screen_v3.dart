@@ -946,8 +946,8 @@ class _ProfileScreenV3State extends State<ProfileScreenV3>
                   ),
                 ),
               ),
-              if (trailing != null) ...[
-                trailing!,
+              if (trailing case final trailingWidget?) ...[
+                trailingWidget,
                 const SizedBox(width: 8),
               ],
               Icon(

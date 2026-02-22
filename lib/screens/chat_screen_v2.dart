@@ -221,8 +221,8 @@ class _ChatScreenV2State extends State<ChatScreenV2>
         if (participantName == null || participantName.isEmpty) {
           debugPrint('💬 [ChatScreenV2] Fetching match details from backend...');
           try {
-            final swipeService = SwipeService();
-            final match = await swipeService.getMatchById(widget.matchId!);
+            final matchService = MatchService();
+            final match = await matchService.getMatchById(widget.matchId!);
             participantName = match.otherUserName ?? 
                 (isCurrentUserArtist ? match.venue?.name : match.artist?.stageName);
             participantPhoto = match.otherUserPhoto ?? 
@@ -1554,7 +1554,7 @@ class _MessageBubble extends StatelessWidget {
                     ),
                     if (isOwn) ...[
                       const SizedBox(width: 4),
-                      _buildStatusIcon(),
+                      _buildStatusIcon(context),
                     ],
                   ],
                 ),
@@ -2008,7 +2008,7 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusIcon() {
+  Widget _buildStatusIcon(BuildContext context) {
     // Read receipts (blue double-check) are a Pro feature
     final isPaid = Provider.of<AuthProvider>(context, listen: false).isPaidUser;
 
