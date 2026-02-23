@@ -656,7 +656,7 @@ class _ChatScreenV2State extends State<ChatScreenV2>
   }
 
   Future<void> _blockUser() async {
-    if (_conversationId == null) return;
+    if (_conversationId == null) { return; }
 
     try {
       setState(() => _uploadStatus = 'Blocking user...');
@@ -666,9 +666,9 @@ class _ChatScreenV2State extends State<ChatScreenV2>
       
       if (mounted) {
         setState(() => _uploadStatus = null);
-        // Update MatchProvider to remove from conversations list
+        // Remove from local matches list (no second API call — blockConversation already set blockedBy correctly)
         final matchProvider = context.read<MatchProvider>();
-        matchProvider.blockMatch(_conversationId!);
+        matchProvider.removeMatchLocally(_conversationId!);
         
         final nav = Navigator.of(context);
         final scaffold = ScaffoldMessenger.of(context);

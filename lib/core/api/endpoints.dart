@@ -259,6 +259,13 @@ class Endpoints {
   /// Get matches unread count
   static const String matchesUnreadCount = '/matches/unread-count';
 
+  /// Get blocked users list
+  static const String blockedUsers = '/matches/blocked-users';
+
+  /// Check block status with a profile
+  static String checkBlockStatus(String profileId, {required String type}) =>
+      '/matches/check-block/$profileId?type=$type';
+
   // ═══════════════════════════════════════════════════════════════════════
   // MESSAGES / CHAT
   // ═══════════════════════════════════════════════════════════════════════

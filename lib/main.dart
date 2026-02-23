@@ -28,6 +28,7 @@ import 'screens/chat_screen_v2.dart';
 import 'screens/profile_screen_v3.dart';
 import 'screens/messages_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/blocked_users_screen.dart';
 import 'screens/premium_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/support_screen.dart';
@@ -261,6 +262,9 @@ class _GigMatchAppState extends State<GigMatchApp> {
             // Feed & Social
             '/create-post': (context) => const CreatePostScreen(),
             '/create-story': (context) => const CreateStoryScreen(),
+
+            // Block management
+            '/blocked-users': (context) => const BlockedUsersScreen(),
           },
 
           // Handle dynamic routes with smooth transitions

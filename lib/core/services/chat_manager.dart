@@ -26,6 +26,8 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
+import '../exceptions.dart';
 import '../models/models.dart';
 import 'chat_service.dart';
 import 'swipe_service.dart';
@@ -52,6 +54,16 @@ class ChatTarget {
   @override
   String toString() =>
       'ChatTarget(matchId=$matchId, name=$participantName, artist=$isParticipantArtist)';
+}
+
+/// Error thrown when a conversation is blocked.
+/// Callers can catch this specifically to show user-friendly messages.
+class ChatBlockedError implements Exception {
+  final String message;
+  ChatBlockedError(this.message);
+
+  @override
+  String toString() => 'ChatBlockedError: $message';
 }
 
 /// Centralized chat resolution & navigation helper.
@@ -177,24 +189,43 @@ class ChatManager {
   }) async {
     debugPrint('🎯 [ChatManager] Resolving from participantId=$participantId');
 
-    final chatService = ChatService();
-    final conversation = await chatService.getOrCreateConversation(
-      participantId: participantId,
-      participantType: participantType,
-    );
+    try {
+      final chatService = ChatService();
+      final conversation = await chatService.getOrCreateConversation(
+        participantId: participantId,
+        participantType: participantType,
+      );
 
-    final target = ChatTarget(
-      matchId: conversation.id,
-      participantId: participantId,
-      participantName: participantName ?? conversation.participantName,
-      participantPhoto: participantPhoto ?? conversation.participantPhoto,
-      isParticipantArtist: isParticipantArtist,
-      isMuted: isMuted ?? conversation.isMuted,
-    );
+      final target = ChatTarget(
+        matchId: conversation.id,
+        participantId: participantId,
+        participantName: participantName ?? conversation.participantName,
+        participantPhoto: participantPhoto ?? conversation.participantPhoto,
+        isParticipantArtist: isParticipantArtist,
+        isMuted: isMuted ?? conversation.isMuted,
+      );
 
-    _cache[conversation.id] = target;
-    debugPrint('🎯 [ChatManager] Resolved: matchId=${conversation.id}, name=${target.participantName}');
-    return target;
+      _cache[conversation.id] = target;
+      debugPrint('🎯 [ChatManager] Resolved: matchId=${conversation.id}, name=${target.participantName}');
+      return target;
+    } on DioException catch (e) {
+      // Handle blocked error — provide clear message to caller
+      final statusCode = e.response?.statusCode;
+      final message = e.response?.data?['message']?.toString() ?? '';
+
+      if (statusCode == 400 && message.toLowerCase().contains('blocked')) {
+        debugPrint('🚫 [ChatManager] Conversation blocked: $message');
+        throw ChatBlockedError(message);
+      }
+      rethrow;
+    } on ChatServiceError catch (e) {
+      // Handle blocked error from ChatService wrapper
+      if (e.toString().toLowerCase().contains('blocked')) {
+        debugPrint('🚫 [ChatManager] Chat service blocked error: $e');
+        throw ChatBlockedError(e.toString());
+      }
+      rethrow;
+    }
   }
 
   /// Resolve from matchId → fetch match details → participant info

@@ -25,6 +25,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
 import '../core/services/services.dart';
+import '../core/api/api.dart';
 import '../core/models/models.dart';
 import '../widgets/media/media.dart';
 import '../widgets/widgets.dart';
@@ -64,6 +65,10 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   bool _isArtist = true;
   bool _isOwnProfile = true;
   String _userName = ''; // Cached user name for fallback
+
+  // Block status: 'none' | 'blocked_by_me' | 'blocked_by_them'
+  String _blockStatus = 'none';
+  String? _matchIdForBlock; // The match ID to use for unblock
 
   // Media state
   MediaType _selectedMediaType = MediaType.audio;
@@ -151,6 +156,11 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       // Load reviews
       await _loadReviews();
 
+      // Check block status (only for external profiles)
+      if (!_isOwnProfile && _profileId.isNotEmpty) {
+        await _checkBlockStatus();
+      }
+
       if (mounted) {
         _fadeController.forward();
         setState(() => _isLoading = false);
@@ -180,6 +190,143 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       }
     } catch (_) {
       // Reviews might not be available - non-critical
+    }
+  }
+
+  /// Check if there's a block between current user and this profile
+  Future<void> _checkBlockStatus() async {
+    try {
+      final type = _isArtist ? 'artist' : 'venue';
+      final client = ApiClient();
+      final response = await client.dio.get(
+        Endpoints.checkBlockStatus(_profileId, type: type),
+      );
+
+      if (response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        final isBlocked = data['isBlocked'] as bool? ?? false;
+        final blockedByMe = data['blockedByMe'] as bool? ?? false;
+        final matchId = data['matchId'] as String?;
+
+        if (isBlocked) {
+          setState(() {
+            _blockStatus = blockedByMe ? 'blocked_by_me' : 'blocked_by_them';
+            _matchIdForBlock = matchId;
+          });
+          debugPrint(
+            '🚫 [ProfilePreview] Block status: $_blockStatus, matchId=$matchId',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [ProfilePreview] Block check failed (non-critical): $e');
+      // Non-critical - continue showing profile normally
+    }
+  }
+
+  /// Unblock this user
+  Future<void> _unblockUser() async {
+    if (_matchIdForBlock == null) { return; }
+
+    try {
+      final chatService = ChatService();
+      await chatService.unblockConversation(_matchIdForBlock!);
+
+      if (mounted) {
+        setState(() {
+          _blockStatus = 'none';
+          _matchIdForBlock = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$_profileName has been unblocked'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [ProfilePreview] Unblock error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to unblock user'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Block this user from profile preview
+  Future<void> _blockUserFromProfile() async {
+    final id = _profileId;
+    if (id.isEmpty) { return; }
+
+    // Confirm block
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Block User'),
+        content: Text(
+          'Are you sure you want to block $_profileName? '
+          'They won\'t be able to see your profile, posts, or message you.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) { return; }
+
+    try {
+      // Use getOrCreateConversation + block (this creates the match if needed)
+      final chatService = ChatService();
+      final conversation = await chatService.getOrCreateConversation(
+        participantId: id,
+        participantType: _isArtist ? 'artist' : 'venue',
+      );
+
+      await chatService.blockConversation(conversation.id);
+
+      if (mounted) {
+        setState(() {
+          _blockStatus = 'blocked_by_me';
+          _matchIdForBlock = conversation.id;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$_profileName has been blocked'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [ProfilePreview] Block error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to block user'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     }
   }
 
@@ -235,6 +382,67 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       bottomNavigationBar: !_isLoading && _error == null && !_isOwnProfile
           ? _buildActionBar(brightness)
           : null,
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BLOCK BANNER
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildBlockBanner(Brightness brightness) {
+    final isBlockedByMe = _blockStatus == 'blocked_by_me';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.block_rounded, color: AppColors.error, size: 32),
+          const SizedBox(height: 8),
+          Text(
+            isBlockedByMe
+                ? 'You have blocked this user'
+                : 'This user is unavailable',
+            style: TextStyle(
+              color: AppColors.text(brightness),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isBlockedByMe
+                ? 'Unblock to see their content and message them.'
+                : 'This profile is currently not available.',
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 13,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (isBlockedByMe) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _unblockUser,
+              icon: const Icon(Icons.lock_open_rounded, size: 18),
+              label: const Text('Unblock'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.crimson,
+                side: BorderSide(color: AppColors.crimson.withValues(alpha: 0.5)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -339,6 +547,10 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
 
         // Profile Info Card
         SliverToBoxAdapter(child: _buildProfileInfoCard(brightness)),
+
+        // Block banner (if blocked)
+        if (_blockStatus != 'none')
+          SliverToBoxAdapter(child: _buildBlockBanner(brightness)),
 
         // Stats Row
         SliverToBoxAdapter(
@@ -1540,6 +1752,58 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildActionBar(Brightness brightness) {
+    // If blocked by the other user, show minimal action bar
+    if (_blockStatus == 'blocked_by_them') {
+      return Container(
+        padding: EdgeInsets.fromLTRB(
+          20, 16, 20, MediaQuery.of(context).padding.bottom + 16,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          border: Border(top: BorderSide(color: AppColors.divider(brightness))),
+        ),
+        child: Center(
+          child: Text(
+            'This user is unavailable',
+            style: TextStyle(
+              color: AppColors.textSec(brightness),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // If blocked by me, show unblock action bar
+    if (_blockStatus == 'blocked_by_me') {
+      return Container(
+        padding: EdgeInsets.fromLTRB(
+          20, 16, 20, MediaQuery.of(context).padding.bottom + 16,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface(brightness),
+          border: Border(top: BorderSide(color: AppColors.divider(brightness))),
+        ),
+        child: FilledButton.icon(
+          onPressed: _unblockUser,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.crimson,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          icon: const Icon(Icons.lock_open_rounded),
+          label: const Text(
+            'Unblock User',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -1560,6 +1824,41 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
       ),
       child: Row(
         children: [
+          // More actions (block/report) button
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.background(brightness),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'block') {
+                  _blockUserFromProfile();
+                }
+              },
+              itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'block',
+                  child: Row(
+                    children: [
+                      Icon(Icons.block_rounded, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('Block User', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Icon(
+                  Icons.more_vert_rounded,
+                  color: AppColors.text(brightness),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
           // Message button
           Container(
             decoration: BoxDecoration(
@@ -1571,7 +1870,7 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                 final id = _isArtist ? _artist?.id : _venue?.id;
                 final name = _isArtist ? _artist?.displayName : _venue?.venueName;
                 final photo = _isArtist ? _artist?.profilePhoto : _venue?.profilePhotoUrl;
-                if (id == null || !mounted) return;
+                if (id == null || !mounted) { return; }
 
                 // Show loading indicator
                 final scaffold = ScaffoldMessenger.of(context);
@@ -1616,6 +1915,22 @@ class _ProfilePreviewScreenState extends State<ProfilePreviewScreen>
                       SnackBar(
                         content: const Text('Unable to open chat. Please try again.'),
                         backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  }
+                } on ChatBlockedError catch (e) {
+                  debugPrint('🚫 [ProfilePreview] Chat blocked: $e');
+                  scaffold.hideCurrentSnackBar();
+                  if (mounted) {
+                    setState(() {
+                      _blockStatus = 'blocked_by_them';
+                    });
+                    scaffold.showSnackBar(
+                      SnackBar(
+                        content: const Text('This user has blocked you. You cannot send messages.'),
+                        backgroundColor: Colors.orange,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),

@@ -295,7 +295,13 @@ class MatchProvider extends ChangeNotifier {
       return false;
     }
   }
-
+  /// 🗑️ Remove match from local list only (no API call)
+  /// Used when another service (e.g. ChatService.blockConversation) already handled the server-side update.
+  void removeMatchLocally(String matchId) {
+    _matches.removeWhere((m) => m.id == matchId);
+    notifyListeners();
+    debugPrint('🗑️ [MatchProvider] Removed match $matchId from local list');
+  }
   /// 🆕 Add new match (from WebSocket event)
   void addNewMatch(Match match) {
     _matches.insert(0, match);
