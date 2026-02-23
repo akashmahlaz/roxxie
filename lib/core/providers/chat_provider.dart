@@ -16,6 +16,15 @@ class ChatProvider extends ChangeNotifier {
   final MessageCacheService _messageCache = MessageCacheService();
   final PendingMessageQueueService _pendingQueue = PendingMessageQueueService();
 
+  /// Callback to sync match list preview when messages change.
+  /// Set this from the widget tree: chatProvider.onMatchPreviewUpdate = matchProvider.updateMatchPreview;
+  void Function({
+    required String matchId,
+    required String preview,
+    required DateTime messageAt,
+    int? incrementUnread,
+  })? onMatchPreviewUpdate;
+
   ChatStatus _status = ChatStatus.initial;
   String? _currentMatchId;
   String? _currentUserId;
@@ -219,6 +228,14 @@ class ChatProvider extends ChangeNotifier {
       // Update cache
       await _messageCache.addMessage(_currentMatchId!, sentMessage);
 
+      // Sync match list preview so conversation tile updates immediately
+      _notifyMatchPreview(
+        matchId: _currentMatchId!,
+        content: content,
+        type: type,
+        messageAt: sentMessage.createdAt,
+      );
+
       _isSending = false;
       notifyListeners();
       return true;
@@ -331,6 +348,36 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  // ── Helper: generate preview text and notify MatchProvider ──
+  void _notifyMatchPreview({
+    required String matchId,
+    required String content,
+    required MessageType type,
+    required DateTime messageAt,
+    int? incrementUnread,
+  }) {
+    String preview;
+    switch (type) {
+      case MessageType.image:
+        preview = '📷 Photo';
+      case MessageType.audio:
+        preview = '🎵 Audio message';
+      case MessageType.gif:
+        preview = '🎞️ GIF';
+      default:
+        preview = content.length > 50
+            ? '${content.substring(0, 50)}…'
+            : content;
+    }
+    debugPrint('📋 [ChatProvider] _notifyMatchPreview: matchId=$matchId preview=$preview');
+    onMatchPreviewUpdate?.call(
+      matchId: matchId,
+      preview: preview,
+      messageAt: messageAt,
+      incrementUnread: incrementUnread,
+    );
+  }
+
   // WebSocket event handlers
   void _handleNewMessage(Message message) {
     debugPrint('📬 [ChatProvider] _handleNewMessage: id=${message.id} matchId=${message.matchId} senderId=${message.senderId}');
@@ -348,12 +395,28 @@ class ChatProvider extends ChangeNotifier {
         _messages.insert(0, message);
         notifyListeners();
       }
+      // Sync match list preview (no unread bump – user is viewing this chat)
+      _notifyMatchPreview(
+        matchId: message.matchId,
+        content: message.content,
+        type: message.type,
+        messageAt: message.createdAt,
+      );
     } else {
       // Update unread count for other chats
       _unreadByMatch[message.matchId] =
           (_unreadByMatch[message.matchId] ?? 0) + 1;
       _totalUnread = _unreadByMatch.values.fold(0, (a, b) => a + b);
       notifyListeners();
+
+      // Sync match list preview + bump unread badge
+      _notifyMatchPreview(
+        matchId: message.matchId,
+        content: message.content,
+        type: message.type,
+        messageAt: message.createdAt,
+        incrementUnread: 1,
+      );
     }
   }
 

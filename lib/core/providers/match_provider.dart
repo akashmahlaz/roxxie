@@ -317,7 +317,40 @@ class MatchProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+  /// \ud83d\udcac Update match last message preview + move to top of list
+  /// Called by ChatProvider when a message is sent or received
+  void updateMatchPreview({
+    required String matchId,
+    required String preview,
+    required DateTime messageAt,
+    int? incrementUnread,
+  }) {
+    final index = _matches.indexWhere((m) => m.id == matchId);
+    if (index == -1) {
+      debugPrint('\u26a0\ufe0f [MatchProvider] updateMatchPreview: match $matchId not found in list');
+      return;
+    }
 
+    final match = _matches[index];
+    final newUnread = incrementUnread != null
+        ? match.unreadCount + incrementUnread
+        : match.unreadCount;
+
+    _matches[index] = match.copyWith(
+      lastMessagePreview: preview,
+      lastMessageAt: messageAt,
+      unreadCount: newUnread,
+    );
+
+    // Move updated match to top (most recent message first)
+    if (index > 0) {
+      final updated = _matches.removeAt(index);
+      _matches.insert(0, updated);
+    }
+
+    notifyListeners();
+    debugPrint('\ud83d\udcac [MatchProvider] Updated preview for $matchId: \"$preview\"');
+  }
   /// 🔍 Get match by ID
   Match? getMatchById(String id) {
     final index = _matches.indexWhere((m) => m.id == id);

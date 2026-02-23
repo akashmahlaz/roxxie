@@ -354,7 +354,7 @@ class UploadService {
       return await _withRetry(
         () => uploadDirectToCloudinary(
           filePath: filePath,
-          resourceType: 'raw',
+          resourceType: 'video',
           onProgress: onProgress,
         ),
         label: 'audio-direct',

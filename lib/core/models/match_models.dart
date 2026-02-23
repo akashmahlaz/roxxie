@@ -345,6 +345,49 @@ class Match {
       return artist?.primaryPhoto ?? '';
     }
   }
+
+  /// Create a copy with updated fields
+  Match copyWith({
+    String? id,
+    String? artistId,
+    String? venueId,
+    Artist? artist,
+    Venue? venue,
+    MatchStatus? status,
+    DateTime? matchedAt,
+    DateTime? lastMessageAt,
+    String? lastMessagePreview,
+    int? unreadCount,
+    bool? isViewedByArtist,
+    bool? isViewedByVenue,
+    String? otherUserId,
+    String? otherUserName,
+    String? otherUserPhoto,
+    String? otherUserType,
+    String? otherUserProfileId,
+    bool? isMuted,
+  }) {
+    return Match(
+      id: id ?? this.id,
+      artistId: artistId ?? this.artistId,
+      venueId: venueId ?? this.venueId,
+      artist: artist ?? this.artist,
+      venue: venue ?? this.venue,
+      status: status ?? this.status,
+      matchedAt: matchedAt ?? this.matchedAt,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      lastMessagePreview: lastMessagePreview ?? this.lastMessagePreview,
+      unreadCount: unreadCount ?? this.unreadCount,
+      isViewedByArtist: isViewedByArtist ?? this.isViewedByArtist,
+      isViewedByVenue: isViewedByVenue ?? this.isViewedByVenue,
+      otherUserId: otherUserId ?? this.otherUserId,
+      otherUserName: otherUserName ?? this.otherUserName,
+      otherUserPhoto: otherUserPhoto ?? this.otherUserPhoto,
+      otherUserType: otherUserType ?? this.otherUserType,
+      otherUserProfileId: otherUserProfileId ?? this.otherUserProfileId,
+      isMuted: isMuted ?? this.isMuted,
+    );
+  }
 }
 
 /// Discovery Response (paginated)

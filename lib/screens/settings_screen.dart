@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/theme.dart';
 import '../core/providers/providers.dart';
+import '../core/api/api.dart';
 import '../widgets/widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -31,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showOnlineStatus = true;
   bool _showDistance = true;
   int _maxDistance = 50;
+  int _blockedCount = 0;
   // ignore: unused_field
   bool _isSaving = false;
 
@@ -38,7 +40,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     // Load settings from user profile
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUserSettings());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserSettings();
+      _loadBlockedCount();
+    });
   }
 
   void _loadUserSettings() {
@@ -55,6 +60,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _showDistance = user.showDistance;
         _maxDistance = user.maxDistance;
       });
+    }
+  }
+
+  Future<void> _loadBlockedCount() async {
+    try {
+      final response = await ApiClient().dio.get(Endpoints.blockedUsers);
+      if (response.data != null && response.data is List) {
+        if (mounted) {
+          setState(() {
+            _blockedCount = (response.data as List).length;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [Settings] Failed to load blocked count: $e');
     }
   }
 
@@ -231,8 +251,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildNavigationTile(
                 'Blocked Users',
                 Icons.block_rounded,
-                () => Navigator.pushNamed(context, '/blocked-users'),
+                () async {
+                  await Navigator.pushNamed(context, '/blocked-users');
+                  // Refresh count when returning — user may have unblocked someone
+                  _loadBlockedCount();
+                },
                 brightness,
+                trailingWidget: _blockedCount > 0
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.crimson.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$_blockedCount',
+                          style: TextStyle(
+                            color: AppColors.crimson,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      )
+                    : null,
               ),
               _buildNavigationTile(
                 'Delete Account',
@@ -444,6 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     VoidCallback onTap,
     Brightness brightness, {
     bool isDestructive = false,
+    Widget? trailingWidget,
   }) {
     return ListTile(
       leading: Icon(
@@ -458,9 +503,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           fontWeight: FontWeight.w500,
         ),
       ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: AppColors.textSec(brightness),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trailingWidget != null) ...[
+            trailingWidget,
+            const SizedBox(width: 8),
+          ],
+          Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.textSec(brightness),
+          ),
+        ],
       ),
       onTap: onTap,
     );

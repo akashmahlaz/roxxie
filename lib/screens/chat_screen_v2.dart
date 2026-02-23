@@ -327,9 +327,8 @@ class _ChatScreenV2State extends State<ChatScreenV2>
     // Cache provider before async gap
     final chatProvider = context.read<ChatProvider>();
 
-    // Animate button
-    await _sendButtonController.forward();
-    _sendButtonController.reverse();
+    // Animate button (fire-and-forget — don't block sending)
+    _sendButtonController.forward().then((_) => _sendButtonController.reverse());
 
     HapticFeedback.lightImpact();
 
