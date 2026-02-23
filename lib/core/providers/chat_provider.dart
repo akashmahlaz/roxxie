@@ -362,8 +362,6 @@ class ChatProvider extends ChangeNotifier {
         preview = '📷 Photo';
       case MessageType.audio:
         preview = '🎵 Audio message';
-      case MessageType.gif:
-        preview = '🎞️ GIF';
       default:
         preview = content.length > 50
             ? '${content.substring(0, 50)}…'

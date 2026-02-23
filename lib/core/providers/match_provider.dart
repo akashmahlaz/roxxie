@@ -16,6 +16,7 @@ class MatchProvider extends ChangeNotifier {
 
   MatchListStatus _status = MatchListStatus.initial;
   List<Match> _matches = [];
+  List<Match> _archivedMatches = [];
   int _unreadCount = 0;
   String? _errorMessage;
   bool _isLoading = false;
@@ -62,8 +63,7 @@ class MatchProvider extends ChangeNotifier {
   // Filtered lists
   List<Match> get activeMatches =>
       _matches.where((m) => m.status == MatchStatus.active).toList();
-  List<Match> get archivedMatches =>
-      _matches.where((m) => m.status == MatchStatus.archived).toList();
+  List<Match> get archivedMatches => _archivedMatches;
   /// New matches = no messages yet (both lastMessageAt AND lastMessagePreview are null)
   List<Match> get newMatches =>
       _matches.where((m) => m.lastMessageAt == null && m.lastMessagePreview == null).toList();
@@ -184,6 +184,23 @@ class MatchProvider extends ChangeNotifier {
     }
   }
 
+  /// 📦 Load archived matches from server
+  Future<void> loadArchivedMatches() async {
+    try {
+      debugPrint('📦 [MatchProvider] Loading archived matches…');
+      final response = await _matchService.getMatches(
+        page: 1,
+        limit: 100,
+        status: MatchStatus.archived,
+      );
+      _archivedMatches = response.matches;
+      debugPrint('📦 [MatchProvider] Loaded ${_archivedMatches.length} archived matches');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Load archived matches error: $e');
+    }
+  }
+
   /// 💕 Load who liked me (premium feature)
   Future<void> loadWhoLikedMe() async {
     if (_whoLikedMeLoading) return;
@@ -207,7 +224,11 @@ class MatchProvider extends ChangeNotifier {
 
   /// 🔄 Refresh all data
   Future<void> refreshAll() async {
-    await Future.wait([loadMatches(refresh: true), loadWhoLikedMe()]);
+    await Future.wait([
+      loadMatches(refresh: true),
+      loadArchivedMatches(),
+      loadWhoLikedMe(),
+    ]);
   }
 
   /// 🔢 Refresh unread count
@@ -240,28 +261,37 @@ class MatchProvider extends ChangeNotifier {
     try {
       await _matchService.archiveMatch(matchId);
 
-      // Update local state
+      // Move from active to archived list
       final index = _matches.indexWhere((m) => m.id == matchId);
       if (index != -1) {
-        _matches.removeAt(index);
+        final match = _matches.removeAt(index);
+        _archivedMatches.insert(0, match.copyWith(status: MatchStatus.archived));
         notifyListeners();
       }
+      debugPrint('📦 [MatchProvider] Match $matchId archived');
       return true;
     } catch (e) {
-      debugPrint('Archive match error: $e');
+      debugPrint('❌ Archive match error: $e');
       return false;
     }
   }
 
-  /// � Unarchive match
+  /// 📤 Unarchive match
   Future<bool> unarchiveMatch(String matchId) async {
     try {
       await _matchService.unarchiveMatch(matchId);
-      // Reload to get the match back
-      await loadMatches(refresh: true);
+
+      // Move from archived back to active list
+      final index = _archivedMatches.indexWhere((m) => m.id == matchId);
+      if (index != -1) {
+        final match = _archivedMatches.removeAt(index);
+        _matches.insert(0, match.copyWith(status: MatchStatus.active));
+      }
+      notifyListeners();
+      debugPrint('📤 [MatchProvider] Match $matchId unarchived');
       return true;
     } catch (e) {
-      debugPrint('Unarchive match error: $e');
+      debugPrint('❌ Unarchive match error: $e');
       return false;
     }
   }
@@ -349,7 +379,7 @@ class MatchProvider extends ChangeNotifier {
     }
 
     notifyListeners();
-    debugPrint('\ud83d\udcac [MatchProvider] Updated preview for $matchId: \"$preview\"');
+    debugPrint('💬 [MatchProvider] Updated preview for $matchId: "$preview"');
   }
   /// 🔍 Get match by ID
   Match? getMatchById(String id) {

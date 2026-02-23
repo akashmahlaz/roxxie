@@ -213,12 +213,14 @@ class MatchService {
   /// 🗑️ Archive match
   Future<void> archiveMatch(String matchId) async {
     try {
-      await _client.patch(
+      debugPrint('📦 [MatchService] Archiving match $matchId');
+      await _client.put(
         Endpoints.matchById(matchId),
         data: {'status': MatchStatus.archived.value},
       );
+      debugPrint('✅ [MatchService] Match $matchId archived');
     } catch (e) {
-      debugPrint('Archive match error: $e');
+      debugPrint('❌ Archive match error: $e');
       rethrow;
     }
   }
@@ -226,12 +228,14 @@ class MatchService {
   /// 📤 Unarchive match
   Future<void> unarchiveMatch(String matchId) async {
     try {
-      await _client.patch(
+      debugPrint('📦 [MatchService] Unarchiving match $matchId');
+      await _client.put(
         Endpoints.matchById(matchId),
         data: {'status': MatchStatus.active.value},
       );
+      debugPrint('✅ [MatchService] Match $matchId unarchived');
     } catch (e) {
-      debugPrint('Unarchive match error: $e');
+      debugPrint('❌ Unarchive match error: $e');
       rethrow;
     }
   }
@@ -239,9 +243,11 @@ class MatchService {
   /// 💔 Unmatch (delete match completely)
   Future<void> unmatch(String matchId) async {
     try {
+      debugPrint('💔 [MatchService] Deleting match $matchId');
       await _client.delete(Endpoints.matchById(matchId));
+      debugPrint('✅ [MatchService] Match $matchId deleted');
     } catch (e) {
-      debugPrint('Unmatch error: $e');
+      debugPrint('❌ Unmatch error: $e');
       rethrow;
     }
   }
@@ -249,12 +255,14 @@ class MatchService {
   /// 🚫 Block match
   Future<void> blockMatch(String matchId) async {
     try {
-      await _client.patch(
+      debugPrint('🚫 [MatchService] Blocking match $matchId');
+      await _client.put(
         Endpoints.matchById(matchId),
         data: {'status': MatchStatus.blocked.value},
       );
+      debugPrint('✅ [MatchService] Match $matchId blocked');
     } catch (e) {
-      debugPrint('Block match error: $e');
+      debugPrint('❌ Block match error: $e');
       rethrow;
     }
   }

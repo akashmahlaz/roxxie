@@ -189,7 +189,14 @@ class _GigMatchAppState extends State<GigMatchApp> {
         ChangeNotifierProvider(create: (_) => MatchProvider()),
 
         // Chat Provider - messages, real-time updates
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        // Wire match-preview callback so chat updates flow to conversation list
+        ChangeNotifierProxyProvider<MatchProvider, ChatProvider>(
+          create: (_) => ChatProvider(),
+          update: (_, matchProvider, chatProvider) {
+            chatProvider!.onMatchPreviewUpdate = matchProvider.updateMatchPreview;
+            return chatProvider;
+          },
+        ),
 
         // Profile Provider - artist/venue profile with real API data
         ChangeNotifierProvider(create: (_) => ProfileProvider()),

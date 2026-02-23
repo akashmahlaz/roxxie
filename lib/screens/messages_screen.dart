@@ -858,9 +858,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   void _showArchivedChats(Brightness brightness) {
     final matchProvider = context.read<MatchProvider>();
-    final archivedMatches = matchProvider.archivedMatches;
     final auth = context.read<AuthProvider>();
     final isArtist = auth.isArtist;
+    final scaffold = ScaffoldMessenger.of(context);
+
+    // Load archived matches from server before showing
+    matchProvider.loadArchivedMatches();
 
     showModalBottomSheet(
       context: context,
@@ -869,12 +872,17 @@ class _MessagesScreenState extends State<MessagesScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Column(
+      builder: (ctx) => ChangeNotifierProvider.value(
+        value: matchProvider,
+        child: Consumer<MatchProvider>(
+          builder: (_, mp, _) {
+            final archivedMatches = mp.archivedMatches;
+            return DraggableScrollableSheet(
+              initialChildSize: 0.6,
+              minChildSize: 0.3,
+              maxChildSize: 0.9,
+              expand: false,
+              builder: (sheetCtx, scrollController) => Column(
           children: [
             // Handle
             Container(
@@ -972,16 +980,19 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             trailing: FilledButton.tonal(
-                              onPressed: () {
+                              onPressed: () async {
                                 HapticFeedback.mediumImpact();
-                                matchProvider.unarchiveMatch(match.id);
+                                final matchName = name;
                                 Navigator.pop(ctx);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('$name unarchived'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
+                                final success = await matchProvider.unarchiveMatch(match.id);
+                                if (success) {
+                                  scaffold.showSnackBar(
+                                    SnackBar(
+                                      content: Text('$matchName unarchived'),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
                               },
                               style: FilledButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
@@ -996,6 +1007,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     ),
             ),
           ],
+        ),
+      );
+          },
         ),
       ),
     );
@@ -1147,10 +1161,15 @@ class _ConversationTile extends StatelessWidget {
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
-          onArchive();
+          // Fire archive callback but never actually dismiss —
+          // the list rebuilds after the item is removed from provider.
+          // Run in a microtask so confirmDismiss can return false before
+          // the provider removes the widget.
+          Future.microtask(() => onArchive());
           return false;
         } else {
-          onDelete();
+          // Delete opens a dialog; never dismiss the row itself
+          Future.microtask(() => onDelete());
           return false;
         }
       },
