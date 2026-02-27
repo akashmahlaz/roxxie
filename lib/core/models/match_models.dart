@@ -221,6 +221,25 @@ class DiscoveryCard {
       );
     }
 
+    // Detect gig by field signatures (fallback if 'type' field missing)
+    if (type == null && (json['requiredGenres'] != null || json['startTime'] != null || json['budget'] != null)) {
+      debugPrint('[DiscoveryCard] Auto-detected gig by field signature: id=${json['_id']}');
+      final gig = Gig.fromJson(json);
+      final card = DiscoveryCard.fromGig(
+        gig,
+        distance: (json['distance'] as num?)?.toDouble(),
+      );
+      return DiscoveryCard(
+        id: card.id, isArtist: card.isArtist, isGig: card.isGig,
+        name: card.name, bio: card.bio, primaryPhotoUrl: card.primaryPhotoUrl,
+        galleryUrls: card.galleryUrls, location: card.location,
+        distance: card.distance, genres: card.genres, rating: card.rating,
+        reviewCount: card.reviewCount, isVerified: card.isVerified,
+        isBoosted: card.isBoosted, recommendationScore: serverScore,
+        gig: card.gig,
+      );
+    }
+
     if (type == 'artist' || json['stageName'] != null || json['displayName'] != null) {
       final artist = Artist.fromJson(json);
       final card = DiscoveryCard.fromArtist(
@@ -454,13 +473,17 @@ class DiscoveryResponse {
 
     final List<DiscoveryCard> profiles = [];
     if (profilesList is List) {
-      for (final item in profilesList) {
+      for (int i = 0; i < profilesList.length; i++) {
+        final item = profilesList[i];
         try {
           if (item is Map<String, dynamic>) {
+            debugPrint('[DiscoveryResponse] Parsing card $i: type=${item['type']}, _id=${item['_id']}, title=${item['title']}, stageName=${item['stageName']}, requiredGenres=${item['requiredGenres']}, budget=${item['budget']}');
             profiles.add(DiscoveryCard.fromJson(item));
+            final last = profiles.last;
+            debugPrint('[DiscoveryResponse] Card $i parsed → isGig=${last.isGig}, isArtist=${last.isArtist}, name="${last.name}", id=${last.id}');
           }
         } catch (err) {
-          debugPrint('Failed to parse discovery card: $err');
+          debugPrint('[DiscoveryResponse] Failed to parse discovery card $i: $err');
         }
       }
     }
