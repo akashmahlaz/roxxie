@@ -1,0 +1,1541 @@
+/// 📅 Artist Calendar Screen — Modern 2-Tap Availability
+///
+/// Design: Professional · Simple · Clean · Bento Typography
+///
+/// Flow: Tap date → Tap preset → Done (auto-saves).
+/// No bottom sheet for common times. Custom picker only for advanced use.
+///
+/// 2026 Design Features:
+/// - Horizontal week strip with generous typography
+/// - One-tap preset cards (instant save, no sheet)
+/// - Collapsible month grid overlay
+/// - Timeline-style event cards
+/// - Haptic micro-interactions throughout
+/// - Bento-style typographic hierarchy
+library;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/theme/theme.dart';
+import '../../core/services/calendar_service.dart';
+import '../../widgets/time_range_picker.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PRESET DATA
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AvailPreset {
+  final String key;
+  final String label;
+  final String timeLabel;
+  final IconData icon;
+  final int startHour;
+  final int endHour;
+  final bool isOvernight;
+
+  const _AvailPreset({
+    required this.key,
+    required this.label,
+    required this.timeLabel,
+    required this.icon,
+    required this.startHour,
+    required this.endHour,
+    this.isOvernight = false,
+  });
+
+  GigTimeSlot toSlot(DateTime date) => GigTimeSlot(
+    date: date,
+    startHour: startHour,
+    endHour: isOvernight ? endHour - 24 : endHour,
+    isOvernight: isOvernight,
+  );
+}
+
+const _presets = [
+  _AvailPreset(
+    key: 'afternoon',
+    label: 'Afternoon',
+    timeLabel: '12 – 5 PM',
+    icon: Icons.wb_sunny_rounded,
+    startHour: 12,
+    endHour: 17,
+  ),
+  _AvailPreset(
+    key: 'evening',
+    label: 'Evening',
+    timeLabel: '6 – 11 PM',
+    icon: Icons.nights_stay_rounded,
+    startHour: 18,
+    endHour: 23,
+  ),
+  _AvailPreset(
+    key: 'latenight',
+    label: 'Late Night',
+    timeLabel: '10 PM – 2 AM',
+    icon: Icons.dark_mode_rounded,
+    startHour: 22,
+    endHour: 26,
+    isOvernight: true,
+  ),
+  _AvailPreset(
+    key: 'allday',
+    label: 'All Day',
+    timeLabel: '10 AM – 11 PM',
+    icon: Icons.calendar_today_rounded,
+    startHour: 10,
+    endHour: 23,
+  ),
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
+
+class ArtistCalendarScreen extends StatefulWidget {
+  const ArtistCalendarScreen({super.key});
+
+  @override
+  State<ArtistCalendarScreen> createState() => _ArtistCalendarScreenState();
+}
+
+class _ArtistCalendarScreenState extends State<ArtistCalendarScreen>
+    with TickerProviderStateMixin {
+  final CalendarService _calService = CalendarService();
+
+  // ── State ──────────────────────────────────────────────────────────────
+  bool _loading = true;
+  bool _saving = false;
+  String? _error;
+
+  late DateTime _selectedDate;
+  DateTime _loadedMonth = DateTime.now();
+  bool _monthExpanded = false;
+
+  CalendarResponse? _data;
+  Map<DateTime, List<CalendarEvent>> _eventsByDate = {};
+
+  // ── Animation ─────────────────────────────────────────────────────────
+  late AnimationController _quickAddCtrl;
+  late Animation<double> _quickAddAnim;
+  String? _savedPreset; // briefly set after save for checkmark feedback
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedDate = DateTime(now.year, now.month, now.day);
+    _loadedMonth = DateTime(now.year, now.month);
+
+    _quickAddCtrl = AnimationController(
+      duration: const Duration(milliseconds: 350),
+      vsync: this,
+    );
+    _quickAddAnim = CurvedAnimation(
+      parent: _quickAddCtrl,
+      curve: Curves.easeOutCubic,
+    );
+    _quickAddCtrl.forward();
+
+    _loadCalendar();
+  }
+
+  @override
+  void dispose() {
+    _quickAddCtrl.dispose();
+    super.dispose();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DATA
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> _loadCalendar() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final start = DateTime(_loadedMonth.year, _loadedMonth.month - 1, 1);
+      final end = DateTime(_loadedMonth.year, _loadedMonth.month + 2, 0);
+
+      debugPrint(
+        '📅 [Calendar] Load ${start.toIso8601String()} → ${end.toIso8601String()}',
+      );
+
+      final data = await _calService.getCalendar(
+        startDate: start,
+        endDate: end,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _data = data;
+        _eventsByDate = data.eventsByDate;
+        _loading = false;
+      });
+
+      debugPrint('📅 [Calendar] ${data.events.length} events loaded');
+    } catch (e) {
+      debugPrint('❌ [Calendar] $e');
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  List<CalendarEvent> _eventsFor(DateTime d) =>
+      _eventsByDate[DateTime(d.year, d.month, d.day)] ?? [];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ACTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  void _selectDate(DateTime date) {
+    HapticFeedback.selectionClick();
+    final oldMonth = _selectedDate.month;
+    final oldYear = _selectedDate.year;
+
+    setState(() {
+      _selectedDate = DateTime(date.year, date.month, date.day);
+    });
+
+    // Reload if month changed
+    if (date.month != oldMonth || date.year != oldYear) {
+      _loadedMonth = DateTime(date.year, date.month);
+      _loadCalendar();
+    }
+
+    _quickAddCtrl.reset();
+    _quickAddCtrl.forward();
+  }
+
+  void _shiftWeek(int delta) {
+    final newDate = _selectedDate.add(Duration(days: 7 * delta));
+    _selectDate(newDate);
+  }
+
+  /// One-tap preset save — the core 2-tap feature.
+  /// No bottom sheet. Saves directly to backend.
+  Future<void> _quickSave(_AvailPreset preset) async {
+    if (_saving) {
+      return;
+    }
+    HapticFeedback.mediumImpact();
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _saving = true;
+      _savedPreset = preset.key;
+    });
+
+    try {
+      final slot = preset.toSlot(_selectedDate);
+      final avail = AvailabilitySlot.fromTimeSlot(slot);
+      debugPrint('📅 [Calendar] Quick save: ${preset.key} → $avail');
+
+      await _calService.addAvailability(avail);
+
+      if (!mounted) return;
+
+      HapticFeedback.heavyImpact();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            '${preset.label} added for ${_shortDate(_selectedDate)}',
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      await _loadCalendar();
+    } catch (e) {
+      debugPrint('❌ [Calendar] Quick save failed: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to save: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+        Future.delayed(const Duration(milliseconds: 1200), () {
+          if (mounted) {
+            setState(() => _savedPreset = null);
+          }
+        });
+      }
+    }
+  }
+
+  /// Custom time via bottom sheet (for advanced users)
+  Future<void> _openCustomPicker() async {
+    final brightness = Theme.of(context).brightness;
+    GigTimeSlot? picked;
+
+    final existing = _eventsFor(_selectedDate)
+        .where((e) => e.isAvailability)
+        .map(
+          (e) => AvailabilitySlot(
+            date: e.date,
+            startTime: e.startTime,
+            endTime: e.endTime,
+          ),
+        )
+        .toList();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.sheetBackground(brightness),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border(brightness),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Title
+            Text(
+              'Custom Time — ${_shortDate(_selectedDate)}',
+              style: TextStyle(
+                color: AppColors.text(brightness),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Reuse existing time range picker
+            TimeRangePicker(
+              date: _selectedDate,
+              onChanged: (s) => picked = s,
+              brightness: brightness,
+              existingSlots: existing,
+            ),
+            const SizedBox(height: 24),
+
+            // Save
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  picked ??= GigTimeSlot.evening(_selectedDate);
+                  Navigator.pop(ctx);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Save Availability',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (picked == null || !mounted) {
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+
+    try {
+      await _calService.addAvailability(
+        AvailabilitySlot.fromTimeSlot(picked!),
+      );
+
+      if (!mounted) return;
+
+      HapticFeedback.heavyImpact();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Availability added for ${_shortDate(_selectedDate)}',
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+
+      await _loadCalendar();
+    } catch (e) {
+      debugPrint('❌ [Calendar] Custom save failed: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  /// Delete availability with confirmation
+  Future<void> _deleteEvent(CalendarEvent event) async {
+    final br = Theme.of(context).brightness;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(br),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Remove Availability?',
+          style: TextStyle(
+            color: AppColors.text(br),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          '${event.displayStartTime} – ${event.displayEndTime}\n${_shortDate(event.date)}',
+          style: TextStyle(
+            color: AppColors.textSec(br),
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSec(br)),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Remove',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true || !mounted) {
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+
+    try {
+      final slotId = event.id.startsWith('avail-')
+          ? event.id.substring(6)
+          : event.id;
+
+      debugPrint('📅 [Calendar] Deleting availability: $slotId');
+      await _calService.removeAvailability(event.date, slotId: slotId);
+
+      if (!mounted) return;
+
+      HapticFeedback.mediumImpact();
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Availability removed'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+
+      await _loadCalendar();
+    } catch (e) {
+      debugPrint('❌ [Calendar] Delete failed: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BUILD
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  @override
+  Widget build(BuildContext context) {
+    final br = Theme.of(context).brightness;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final isPast = _selectedDate.isBefore(today);
+
+    return Scaffold(
+      backgroundColor: AppColors.background(br),
+      body: SafeArea(
+        child: _error != null
+            ? _buildError(br)
+            : Column(
+                children: [
+                  // Fixed header + week strip
+                  _buildHeader(br),
+                  _buildWeekStrip(br, today),
+
+                  // Scrollable content
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _loadCalendar,
+                      color: AppColors.crimson,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        children: [
+                          // Collapsible month grid
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOutCubic,
+                            child: _monthExpanded
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: _buildMonthGrid(br, today),
+                                  )
+                                : const SizedBox(width: double.infinity),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Selected day header
+                          _buildDayHeader(br, isPast),
+
+                          const SizedBox(height: 16),
+
+                          // Quick add presets (future dates only)
+                          if (!isPast)
+                            FadeTransition(
+                              opacity: _quickAddAnim,
+                              child: _buildQuickAdd(br),
+                            ),
+
+                          if (!isPast) const SizedBox(height: 24),
+
+                          // Day events / schedule
+                          _buildDayEvents(br),
+
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  // ─── Header ────────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(Brightness br) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Bento title — tap to jump to today
+                GestureDetector(
+                  onTap: () {
+                    final now = DateTime.now();
+                    _selectDate(DateTime(now.year, now.month, now.day));
+                  },
+                  child: Text(
+                    'Calendar',
+                    style: TextStyle(
+                      color: AppColors.text(br),
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+
+                // Month label — tap to expand/collapse month grid
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    setState(() => _monthExpanded = !_monthExpanded);
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _monthYear(_selectedDate),
+                        style: TextStyle(
+                          color: AppColors.crimson,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      AnimatedRotation(
+                        turns: _monthExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 300),
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.crimson,
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Loading / saving indicator
+          if (_loading || _saving)
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.crimson,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Week Strip (Hero Element) ─────────────────────────────────────────────
+
+  Widget _buildWeekStrip(Brightness br, DateTime today) {
+    final weekStart = _getWeekStart(_selectedDate);
+    final days = List.generate(7, (i) => weekStart.add(Duration(days: i)));
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.border(br),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Previous week
+          GestureDetector(
+            onTap: () => _shiftWeek(-1),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Icon(
+                Icons.chevron_left_rounded,
+                color: AppColors.textSec(br),
+                size: 22,
+              ),
+            ),
+          ),
+
+          // 7 day cells
+          ...days.map((date) => _buildWeekDayCell(date, br, today)),
+
+          // Next week
+          GestureDetector(
+            onTap: () => _shiftWeek(1),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSec(br),
+                size: 22,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekDayCell(DateTime date, Brightness br, DateTime today) {
+    final isSelected = _isSameDay(date, _selectedDate);
+    final isToday = _isSameDay(date, today);
+    final isPast = date.isBefore(today);
+    final events = _eventsFor(date);
+    final hasGig = events.any((e) => e.isGig);
+    final hasAvail = events.any((e) => e.isAvailability);
+    final hasBlocked = events.any((e) => e.isBlocked);
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _selectDate(date),
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.crimson
+                : isToday
+                    ? AppColors.crimson.withValues(alpha: 0.08)
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            border: isToday && !isSelected
+                ? Border.all(
+                    color: AppColors.crimson.withValues(alpha: 0.4),
+                    width: 1,
+                  )
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Day abbreviation
+              Text(
+                _dayAbbrev(date.weekday),
+                style: TextStyle(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.8)
+                      : AppColors.textSec(br),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              // Day number (large bento-style)
+              Text(
+                '${date.day}',
+                style: TextStyle(
+                  color: isPast && !isSelected
+                      ? AppColors.textSec(br).withValues(alpha: 0.4)
+                      : isSelected
+                          ? Colors.white
+                          : AppColors.text(br),
+                  fontSize: 18,
+                  fontWeight: isSelected || isToday
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              // Event dot indicators
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasGig)
+                    _dot(isSelected ? Colors.white : AppColors.crimson),
+                  if (hasAvail)
+                    _dot(isSelected ? Colors.white : AppColors.success),
+                  if (hasBlocked)
+                    _dot(
+                      isSelected ? Colors.white : AppColors.textSec(br),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dot(Color color) {
+    return Container(
+      width: 5,
+      height: 5,
+      margin: const EdgeInsets.symmetric(horizontal: 1),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+
+  // ─── Month Grid (Collapsible) ──────────────────────────────────────────────
+
+  Widget _buildMonthGrid(Brightness br, DateTime today) {
+    final year = _selectedDate.year;
+    final month = _selectedDate.month;
+    final firstDay = DateTime(year, month, 1);
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    // Monday-based padding (Mon=0, Tue=1, ..., Sun=6)
+    final startPad = firstDay.weekday - 1;
+    final totalCells = startPad + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface(br),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(br)),
+      ),
+      child: Column(
+        children: [
+          // Month navigation row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: () {
+                  _selectDate(DateTime(year, month - 1, 1));
+                },
+                icon: Icon(
+                  Icons.chevron_left_rounded,
+                  color: AppColors.textSec(br),
+                  size: 20,
+                ),
+                visualDensity: VisualDensity.compact,
+              ),
+              Text(
+                _monthYear(DateTime(year, month)),
+                style: TextStyle(
+                  color: AppColors.text(br),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  _selectDate(DateTime(year, month + 1, 1));
+                },
+                icon: Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textSec(br),
+                  size: 20,
+                ),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Weekday labels (Monday-based, consistent with week strip)
+          Row(
+            children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                .map(
+                  (d) => Expanded(
+                    child: Center(
+                      child: Text(
+                        d,
+                        style: TextStyle(
+                          color: AppColors.textSec(br),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 6),
+
+          // Day grid
+          ...List.generate(rows, (row) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Row(
+                children: List.generate(7, (col) {
+                  final idx = row * 7 + col;
+                  final day = idx - startPad + 1;
+
+                  if (day < 1 || day > daysInMonth) {
+                    return const Expanded(child: SizedBox(height: 36));
+                  }
+
+                  final date = DateTime(year, month, day);
+                  final isSelected = _isSameDay(date, _selectedDate);
+                  final isToday = _isSameDay(date, today);
+                  final isPastDay = date.isBefore(today);
+                  final events = _eventsFor(date);
+                  final hasGig = events.any((e) => e.isGig);
+                  final hasAvail = events.any((e) => e.isAvailability);
+
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        _selectDate(date);
+                        setState(() => _monthExpanded = false);
+                      },
+                      child: Container(
+                        height: 36,
+                        margin: const EdgeInsets.all(1),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.crimson
+                              : isToday
+                                  ? AppColors.crimson.withValues(alpha: 0.1)
+                                  : null,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Text(
+                              '$day',
+                              style: TextStyle(
+                                color: isPastDay && !isSelected
+                                    ? AppColors.textSec(br)
+                                        .withValues(alpha: 0.35)
+                                    : isSelected
+                                        ? Colors.white
+                                        : AppColors.text(br),
+                                fontSize: 13,
+                                fontWeight: isSelected || isToday
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 3,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (hasGig)
+                                    _dot(
+                                      isSelected
+                                          ? Colors.white
+                                          : AppColors.crimson,
+                                    ),
+                                  if (hasAvail)
+                                    _dot(
+                                      isSelected
+                                          ? Colors.white
+                                          : AppColors.success,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ─── Selected Day Header ───────────────────────────────────────────────────
+
+  Widget _buildDayHeader(Brightness br, bool isPast) {
+    final now = DateTime.now();
+    final isToday = _isSameDay(
+      _selectedDate,
+      DateTime(now.year, now.month, now.day),
+    );
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Large day name (bento typography)
+              Text(
+                isToday ? 'Today' : _dayOfWeek(_selectedDate.weekday),
+                style: TextStyle(
+                  color: AppColors.text(br),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${_monthName(_selectedDate.month)} ${_selectedDate.day}',
+                style: TextStyle(
+                  color: AppColors.textSec(br),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Past badge
+        if (isPast)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.textSec(br).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Past',
+              style: TextStyle(
+                color: AppColors.textSec(br),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+        // Stats badge (compact, non-intrusive)
+        if (!isPast && _data != null) ...[
+          const SizedBox(width: 8),
+          _miniStatBadge(
+            _data!.availableCount,
+            AppColors.success,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _miniStatBadge(int count, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$count avail',
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Quick Add Section ─────────────────────────────────────────────────────
+
+  Widget _buildQuickAdd(Brightness br) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section label
+        Text(
+          'QUICK ADD',
+          style: TextStyle(
+            color: AppColors.textSec(br),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // 2×2 preset grid
+        Row(
+          children: [
+            Expanded(child: _presetCard(_presets[0], br)),
+            const SizedBox(width: 10),
+            Expanded(child: _presetCard(_presets[1], br)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(child: _presetCard(_presets[2], br)),
+            const SizedBox(width: 10),
+            Expanded(child: _presetCard(_presets[3], br)),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Custom time button
+        SizedBox(
+          width: double.infinity,
+          height: 44,
+          child: OutlinedButton.icon(
+            onPressed: _saving ? null : _openCustomPicker,
+            icon: Icon(
+              Icons.tune_rounded,
+              size: 18,
+              color: _saving ? AppColors.textSec(br) : AppColors.crimson,
+            ),
+            label: Text(
+              'Custom Time',
+              style: TextStyle(
+                color: _saving ? AppColors.textSec(br) : AppColors.crimson,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(
+                color: AppColors.crimson.withValues(alpha: 0.3),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _presetCard(_AvailPreset preset, Brightness br) {
+    final isSaved = _savedPreset == preset.key;
+    final isThisSaving = _saving && _savedPreset == preset.key;
+
+    return GestureDetector(
+      onTap: _saving ? null : () => _quickSave(preset),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSaved
+              ? AppColors.success.withValues(alpha: 0.12)
+              : AppColors.surface(br),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSaved ? AppColors.success : AppColors.border(br),
+            width: isSaved ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Animated icon: normal → loading → checkmark
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: isSaved
+                  ? Icon(
+                      Icons.check_circle_rounded,
+                      key: const ValueKey('check'),
+                      color: AppColors.success,
+                      size: 22,
+                    )
+                  : isThisSaving
+                      ? SizedBox(
+                          key: const ValueKey('spin'),
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.crimson,
+                          ),
+                        )
+                      : Icon(
+                          preset.icon,
+                          key: ValueKey(preset.key),
+                          color: AppColors.crimson,
+                          size: 22,
+                        ),
+            ),
+            const SizedBox(width: 10),
+
+            // Label + time
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    preset.label,
+                    style: TextStyle(
+                      color: AppColors.text(br),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    preset.timeLabel,
+                    style: TextStyle(
+                      color: AppColors.textSec(br),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Day Events / Schedule ─────────────────────────────────────────────────
+
+  Widget _buildDayEvents(Brightness br) {
+    final events = _eventsFor(_selectedDate);
+
+    // Empty state
+    if (events.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          children: [
+            Icon(
+              Icons.event_available_rounded,
+              color: AppColors.textSec(br).withValues(alpha: 0.2),
+              size: 48,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No events',
+              style: TextStyle(
+                color: AppColors.textSec(br),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Add availability to get discovered by venues',
+              style: TextStyle(
+                color: AppColors.textSec(br).withValues(alpha: 0.6),
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section label
+        Text(
+          'SCHEDULE',
+          style: TextStyle(
+            color: AppColors.textSec(br),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Event cards
+        ...events.map(
+          (e) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _eventCard(e, br),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _eventCard(CalendarEvent event, Brightness br) {
+    final isGig = event.isGig;
+    final isAvail = event.isAvailability;
+
+    final Color accent = isGig
+        ? AppColors.crimson
+        : isAvail
+            ? AppColors.success
+            : AppColors.textSec(br);
+
+    final IconData icon = isGig
+        ? Icons.music_note_rounded
+        : isAvail
+            ? Icons.check_circle_outline_rounded
+            : Icons.block_rounded;
+
+    return Dismissible(
+      key: ValueKey(event.id),
+      direction:
+          isAvail ? DismissDirection.endToStart : DismissDirection.none,
+      confirmDismiss: (_) async {
+        if (isAvail) {
+          await _deleteEvent(event);
+        }
+        return false; // handled via reload
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(Icons.delete_outline_rounded, color: AppColors.error),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface(br),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: accent.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            // Accent bar
+            Container(
+              width: 4,
+              height: 48,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Icon
+            Icon(icon, color: accent, size: 20),
+            const SizedBox(width: 12),
+
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    style: TextStyle(
+                      color: AppColors.text(br),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${event.displayStartTime} – ${event.displayEndTime}',
+                    style: TextStyle(
+                      color: AppColors.textSec(br),
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (event.venueName != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      event.venueName!,
+                      style: TextStyle(
+                        color: AppColors.textSec(br),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                  if (event.payment != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '\$${event.payment!.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // Actions
+            if (isGig && event.gigId != null)
+              IconButton(
+                onPressed: () => context.push('/gig/${event.gigId}'),
+                icon: Icon(
+                  Icons.open_in_new_rounded,
+                  color: AppColors.textSec(br),
+                  size: 18,
+                ),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'View Gig',
+              ),
+            if (isAvail)
+              IconButton(
+                onPressed: () => _deleteEvent(event),
+                icon: Icon(
+                  Icons.close_rounded,
+                  color: AppColors.error.withValues(alpha: 0.6),
+                  size: 18,
+                ),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Remove',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Error State ───────────────────────────────────────────────────────────
+
+  Widget _buildError(Brightness br) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              color: AppColors.error,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load calendar',
+              style: TextStyle(
+                color: AppColors.text(br),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error ?? '',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textSec(br),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadCalendar,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  DateTime _getWeekStart(DateTime date) {
+    // Monday-based week (ISO)
+    return DateTime(date.year, date.month, date.day - (date.weekday - 1));
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  String _shortDate(DateTime d) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return '${days[d.weekday - 1]}, ${months[d.month - 1]} ${d.day}';
+  }
+
+  String _monthYear(DateTime d) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return '${months[d.month - 1]} ${d.year}';
+  }
+
+  String _monthName(int m) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return months[m - 1];
+  }
+
+  String _dayOfWeek(int wd) {
+    const days = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+      'Friday', 'Saturday', 'Sunday',
+    ];
+    return days[wd - 1];
+  }
+
+  String _dayAbbrev(int wd) {
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return days[wd - 1];
+  }
+}
