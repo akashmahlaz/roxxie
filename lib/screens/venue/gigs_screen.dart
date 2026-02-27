@@ -114,16 +114,22 @@ class Gig {
       startTime: parseTime(apiGig.startTime),
       endTime: parseEndTime(apiGig.endTime),
       payment: apiGig.budget,
-      gigType: 'Live Performance',
+      gigType: apiGig.gigType ?? 'Live Performance',
       genres: apiGig.requiredGenres,
       status: mapStatus(apiGig.status),
       applicationsCount: apiGig.applicationCount,
       viewsCount: apiGig.viewCount,
       bookedArtistId: apiGig.bookedArtists.isNotEmpty
-          ? apiGig.bookedArtists.first
+          ? apiGig.bookedArtists.first.id
           : null,
-      equipmentProvided: apiGig.perks?.providesFood ?? false,
-      mealIncluded: apiGig.perks?.providesDrinks ?? false,
+      bookedArtistName: apiGig.bookedArtists.isNotEmpty
+          ? apiGig.bookedArtists.first.name
+          : null,
+      bookedArtistImage: apiGig.bookedArtists.isNotEmpty
+          ? apiGig.bookedArtists.first.photo
+          : null,
+      equipmentProvided: apiGig.perks?.providesEquipment ?? false,
+      mealIncluded: apiGig.perks?.providesFood ?? false,
       createdAt: apiGig.createdAt ?? DateTime.now(),
       source: apiGig,
     );

@@ -11,6 +11,7 @@
 /// Complete gig/booking details with actions
 library;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -421,23 +422,47 @@ $shareUrl''';
                 background: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Background gradient (placeholder for image)
-                    Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF1E3A5F), Color(0xFF0D1B2A)],
+                    // Background — show venue cover photo if available
+                    if (_gig!.venueImage.isNotEmpty)
+                      CachedNetworkImage(
+                        imageUrl: _gig!.venueImage,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorWidget: (_, _, _) => Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF1E3A5F), Color(0xFF0D1B2A)],
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.music_note_rounded,
+                              size: 80,
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF1E3A5F), Color(0xFF0D1B2A)],
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.music_note_rounded,
+                            size: 80,
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
                         ),
                       ),
-                      child: Center(
-                        child: Icon(
-                          Icons.music_note_rounded,
-                          size: 80,
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ),
                     // Gradient overlay
                     Container(
                       decoration: BoxDecoration(

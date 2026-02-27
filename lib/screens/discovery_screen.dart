@@ -1,16 +1,14 @@
-/// 🎯 GIGMATCH Discovery Screen - BULLETPROOF VERSION
+/// 🎯 GIGMATCH Discovery Screen
 ///
-/// Tinder-style swipe cards for discovering gigs and artists/venues
+/// Tinder-style swipe cards for discovering gigs (artists) or artists (venues).
 /// Features:
-/// - Tinder-like swipe gesture controls
-/// - Card stack with physics
-/// - Real-time swipe feedback
-/// - Match animation on mutual swipe
-/// - Smart recommendations display
-/// - Filter drawer
-/// - Premium boost indicators
-/// - Comprehensive error handling
-/// - Offline support
+/// - Gesture-driven card swipe with physics
+/// - 3-card visual stack with scale + offset
+/// - Match celebration overlay
+/// - Filter drawer (genre, location, price, rating, passport)
+/// - Super Like / Undo / Boost (Pro)
+/// - Server-side recommendation score badge
+/// - Image prefetch for buttery scrolling
 library;
 
 import 'dart:math' as math;
@@ -18,7 +16,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../core/exceptions.dart';
 import '../../core/models/models.dart';
@@ -29,7 +26,10 @@ import '../../core/theme/theme.dart';
 
 import 'chat_screen_v2.dart';
 
-/// 🎯 Discovery Screen - Main Widget
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCREEN
+// ═══════════════════════════════════════════════════════════════════════════════
+
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({super.key});
 
@@ -39,175 +39,124 @@ class DiscoveryScreen extends StatefulWidget {
 
 class _DiscoveryScreenState extends State<DiscoveryScreen>
     with TickerProviderStateMixin {
-  // Controllers
-  late AnimationController _cardController;
-  late AnimationController _matchController;
-  late AnimationController _overlayController;
-  late AnimationController _filterController;
+  // ── Controllers ──────────────────────────────────────────────────────────
+  late final AnimationController _cardCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 400),
+  );
+  late final AnimationController _matchCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 600),
+  );
+  late final AnimationController _filterCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 350),
+  );
 
-  // Swipe state
-  Offset _dragOffset = Offset.zero;
-  double _dragAngle = 0;
-  bool _isDragging = false;
+  // ── Swipe state ──────────────────────────────────────────────────────────
+  Offset _drag = Offset.zero;
+  double _angle = 0;
+  bool _dragging = false;
 
-  final Set<String> _selectedGenres = <String>{};
-  bool _useLocationFilter = false;
-
-  // Match animation state
-  bool _showMatchAnimation = false;
+  // ── UI state ─────────────────────────────────────────────────────────────
+  bool _showFilters = false;
+  bool _showMatch = false;
   Match? _pendingMatch;
 
-  // Filter panel state
-  bool _showFilters = false;
-
-  // Action loading state - used for async operations
-  // ignore: unused_field
-  bool _isActionLoading = false;
-
-  // Scroll controller for card stack
-  final ScrollController _scrollController = ScrollController();
-
-  // Price range filter state - dynamic based on discovery data
-  final double _maxPrice = 2000;
+  // ── Filter state ─────────────────────────────────────────────────────────
+  final Set<String> _selectedGenres = {};
+  bool _useLocation = false;
   RangeValues _priceRange = const RangeValues(0, 2000);
   double _minRating = 0;
+  static const double _maxPrice = 2000;
 
-  // Dynamic genres from provider or common genres
-  final List<String> _availableGenres = const [
+  static const List<String> _genres = [
     'Rock', 'Jazz', 'Pop', 'Hip-Hop', 'Electronic', 'Blues',
     'Country', 'R&B', 'Classical', 'Metal', 'Folk', 'Indie',
-    'Soul', 'Funk', 'Reggae', 'Latin', 'Jazz', 'Acoustic',
+    'Soul', 'Funk', 'Reggae', 'Latin', 'Acoustic',
   ];
+
+  // ── Lifecycle ────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
-
-    // Card swipe animation controller
-    _cardController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-
-    // Match animation controller
-    _matchController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    // Overlay animation controller
-    _overlayController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    // Filter panel animation controller
-    _filterController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-    );
-
-    // Load initial data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadDiscoveryFeed();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadFeed());
   }
 
   @override
   void dispose() {
-    _cardController.dispose();
-    _matchController.dispose();
-    _overlayController.dispose();
-    _filterController.dispose();
-    _scrollController.dispose();
+    _cardCtrl.dispose();
+    _matchCtrl.dispose();
+    _filterCtrl.dispose();
     super.dispose();
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // DATA LOADING
-  // ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DATA
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  Future<void> _loadDiscoveryFeed() async {
+  Future<void> _loadFeed() async {
     final provider = context.read<DiscoveryProvider>();
     final auth = context.read<AuthProvider>();
-
-    // Set user role before loading to ensure correct content is fetched
     provider.setUserRole(auth.isArtist);
-
     await provider.loadCards(refresh: true);
   }
 
-  Future<void> _loadMoreCards() async {
-    final provider = context.read<DiscoveryProvider>();
-    await provider.loadCards();
-  }
-
-  // ═══════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
   // SWIPE GESTURES
-  // ═══════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  void _onPanStart(DragStartDetails details) {
-    setState(() => _isDragging = true);
+  void _onPanStart(DragStartDetails _) {
+    setState(() => _dragging = true);
   }
 
-  void _onPanUpdate(DragUpdateDetails details) {
-    if (!_isDragging) return;
-
+  void _onPanUpdate(DragUpdateDetails d) {
+    if (!_dragging) { return; }
     setState(() {
-      _dragOffset += details.delta;
-      _dragAngle = _dragOffset.dx / 300 * 0.5;
+      _drag += d.delta;
+      _angle = _drag.dx / 300 * 0.5;
     });
   }
 
-  void _onPanEnd(DragEndDetails details) {
-    if (!_isDragging) return;
-    setState(() => _isDragging = false);
+  void _onPanEnd(DragEndDetails d) {
+    if (!_dragging) { return; }
+    setState(() => _dragging = false);
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final velocity = details.velocity.pixelsPerSecond;
+    final w = MediaQuery.of(context).size.width;
+    final vel = d.velocity.pixelsPerSecond;
+    final thresh = w * 0.35;
 
-    // Thresholds for swipe
-    final swipeThreshold = screenWidth * 0.35;
-    final velocityThreshold = 800.0;
-
-    if (_dragOffset.dx.abs() > swipeThreshold ||
-        velocity.dx.abs() > velocityThreshold) {
-      final isLike = _dragOffset.dx > 0;
-      _animateSwipe(isLike);
+    if (_drag.dx.abs() > thresh || vel.dx.abs() > 800) {
+      _animateSwipe(_drag.dx > 0);
     } else {
       _animateReturn();
     }
   }
 
   Future<void> _animateSwipe(bool isLike) async {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final targetX = isLike ? screenWidth * 1.3 : -screenWidth * 1.3;
+    final w = MediaQuery.of(context).size.width;
+    final targetX = isLike ? w * 1.3 : -w * 1.3;
 
-    // Capture provider before async
     final provider = context.read<DiscoveryProvider>();
-    final cards = provider.cards;
+    if (provider.cards.isEmpty) { return; }
 
-    if (cards.isEmpty) return;
+    final startDrag = _drag;
+    final startAngle = _angle;
 
-    // Animate card off screen
-    _cardController.reset();
-    void handleTick() {
+    void tick() {
+      final t = Curves.easeOutCubic.transform(_cardCtrl.value);
       setState(() {
-        _dragOffset = Offset.lerp(
-          _dragOffset,
-          Offset(targetX, _dragOffset.dy + 100 * _cardController.value),
-          Curves.easeOutCubic.transform(_cardController.value),
-        )!;
-        _dragAngle = _dragAngle + (isLike ? 0.3 : -0.3) * _cardController.value;
+        _drag = Offset.lerp(startDrag, Offset(targetX, startDrag.dy + 100), t)!;
+        _angle = startAngle + (isLike ? 0.3 : -0.3) * t;
       });
     }
 
-    _cardController.addListener(handleTick);
+    _cardCtrl.addListener(tick);
+    await _cardCtrl.forward(from: 0);
+    _cardCtrl.removeListener(tick);
 
-    await _cardController.forward(from: 0);
-    _cardController.removeListener(handleTick);
-
-    // Perform swipe action
+    // Perform API action
     try {
       bool isMatch = false;
       if (isLike) {
@@ -215,211 +164,441 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       } else {
         await provider.pass();
       }
-
-      // Check for match
       if (isMatch && provider.lastMatch != null) {
         _pendingMatch = provider.lastMatch;
-        _showMatchDialog();
+        _openMatchOverlay();
       }
     } catch (e) {
-      _showErrorSnackBar(e.toString());
+      debugPrint('⚠️ [Discovery] Swipe error: $e');
+      _snack(e.toString(), isError: true);
     }
 
-    // Reset card position
+    // Reset
     setState(() {
-      _dragOffset = Offset.zero;
-      _dragAngle = 0;
-      // Note: provider.currentIndex is updated by like()/pass()
+      _drag = Offset.zero;
+      _angle = 0;
     });
+    _cardCtrl.reset();
 
-    _cardController.reset();
-
-    // Load more if running low on cards
     if (provider.remainingCards <= 3) {
-      _loadMoreCards();
+      provider.loadCards();
     }
   }
 
   Future<void> _animateReturn() async {
-    _cardController.reset();
-    void handleTick() {
+    final startDrag = _drag;
+    final startAngle = _angle;
+
+    void tick() {
+      final t = Curves.easeOutCubic.transform(_cardCtrl.value);
       setState(() {
-        _dragOffset = Offset.lerp(
-          _dragOffset,
-          Offset.zero,
-          Curves.easeOutCubic.transform(_cardController.value),
-        )!;
-        _dragAngle = _dragAngle * (1 - _cardController.value);
+        _drag = Offset.lerp(startDrag, Offset.zero, t)!;
+        _angle = startAngle * (1 - t);
       });
     }
 
-    _cardController.addListener(handleTick);
-
-    await _cardController.forward(from: 0);
-    _cardController.removeListener(handleTick);
+    _cardCtrl.addListener(tick);
+    await _cardCtrl.forward(from: 0);
+    _cardCtrl.removeListener(tick);
 
     setState(() {
-      _dragOffset = Offset.zero;
-      _dragAngle = 0;
+      _drag = Offset.zero;
+      _angle = 0;
     });
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // MATCH ANIMATION
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ACTIONS (Super Like, Undo, Boost)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  void _showMatchDialog() {
-    if (_pendingMatch == null) return;
+  Future<void> _superLike() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isPaidUser) {
+      _premiumUpsell('Super Likes', 'Stand out and get noticed. Upgrade to Pro!');
+      return;
+    }
 
-    setState(() => _showMatchAnimation = true);
-    _matchController.reset();
-    _matchController.addListener(() {
-      setState(() {});
-    });
-    _matchController.forward(from: 0);
+    final provider = context.read<DiscoveryProvider>();
+    if (provider.cards.isEmpty) { return; }
+
+    HapticFeedback.mediumImpact();
+
+    try {
+      final isMatch = await provider.superLike();
+      if (isMatch && provider.lastMatch != null) {
+        _pendingMatch = provider.lastMatch;
+        _openMatchOverlay();
+      } else {
+        _snack("Super liked! They'll be notified.", icon: Icons.star_rounded);
+      }
+    } catch (e) {
+      debugPrint('⚠️ [Discovery] Super like error: $e');
+      _snack('Failed to super like.', isError: true);
+    }
   }
 
-  void _hideMatchDialog() {
-    _matchController.reverse().then((_) {
+  Future<void> _undo() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isPaidUser) {
+      _premiumUpsell('Unlimited Rewinds', 'Go back and change your last swipe with Pro.');
+      return;
+    }
+
+    final provider = context.read<DiscoveryProvider>();
+
+    try {
+      final ok = await provider.undo();
+      if (ok) {
+        _snack('Swipe undone', icon: Icons.undo_rounded);
+      } else {
+        _snack('Nothing to undo', isError: true);
+      }
+    } catch (e) {
+      debugPrint('⚠️ [Discovery] Undo error: $e');
+      _snack('Failed to undo.', isError: true);
+    }
+  }
+
+  void _showBoostDialog() {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isPaidUser) {
+      _premiumUpsell('Profile Boost', 'Get 10x more views! Upgrade to Pro to use boosts.');
+      return;
+    }
+
+    String? selected;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) {
+          final brightness = Theme.of(ctx).brightness;
+          return AlertDialog(
+            backgroundColor: AppColors.surface(brightness),
+            title: const Text('Boost Your Profile'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Your profile will appear at the top of discovery.'),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(child: _boostOption('24', '24 hours', '\$4.99', selected, (v) => setDlg(() => selected = v))),
+                    const SizedBox(width: 12),
+                    Expanded(child: _boostOption('7', '7 days', '\$24.99', selected, (v) => setDlg(() => selected = v))),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel', style: TextStyle(color: AppColors.textSec(brightness))),
+              ),
+              ElevatedButton(
+                onPressed: selected == null
+                    ? null
+                    : () {
+                        Navigator.pop(ctx);
+                        _processBoost(selected!);
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Boost Now'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _boostOption(String val, String dur, String price, String? selected, ValueChanged<String> onTap) {
+    final isSel = selected == val;
+    final brightness = Theme.of(context).brightness;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap(val);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSel ? AppColors.crimson : AppColors.border(brightness),
+            width: isSel ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: isSel ? AppColors.crimson.withValues(alpha: 0.1) : null,
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.rocket_launch_rounded, color: isSel ? AppColors.crimson : AppColors.crimson.withValues(alpha: 0.6)),
+            const SizedBox(height: 8),
+            Text(dur, style: TextStyle(fontWeight: FontWeight.w600, color: isSel ? AppColors.crimson : null)),
+            Text(price, style: TextStyle(color: isSel ? AppColors.crimson : AppColors.crimson.withValues(alpha: 0.6), fontWeight: FontWeight.w700, fontSize: 18)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processBoost(String duration) async {
+    const durations = {'24': '24 hours', '7': '7 days'};
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger.showSnackBar(SnackBar(
+      content: const Row(children: [
+        CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+        SizedBox(width: 12),
+        Text('Processing boost...'),
+      ]),
+      backgroundColor: AppColors.crimson,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+
+    // Simulated — real implementation would call SubscriptionService
+    await Future.delayed(const Duration(seconds: 1));
+
+    messenger.hideCurrentSnackBar();
+    _snack('Boost activated for ${durations[duration]}!', icon: Icons.check_circle_rounded);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MATCH OVERLAY
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  void _openMatchOverlay() {
+    if (_pendingMatch == null) { return; }
+    setState(() => _showMatch = true);
+    _matchCtrl.forward(from: 0);
+  }
+
+  void _closeMatchOverlay() {
+    _matchCtrl.reverse().then((_) {
       if (mounted) {
         setState(() {
-          _showMatchAnimation = false;
+          _showMatch = false;
           _pendingMatch = null;
         });
       }
     });
   }
 
-  // ═══════════════════════════════════════════════════════
-  // ERROR HANDLING
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FILTERS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
+  void _toggleFilters() {
+    setState(() => _showFilters = !_showFilters);
+    if (_showFilters) {
+      _filterCtrl.forward();
+    } else {
+      _filterCtrl.reverse();
+    }
+  }
+
+  void _toggleGenre(String g, bool on) {
+    setState(() {
+      if (on) { _selectedGenres.add(g); } else { _selectedGenres.remove(g); }
+    });
+    context.read<DiscoveryProvider>().setGenreFilter(_selectedGenres.toList());
+  }
+
+  void _toggleLocation(bool on) async {
+    final provider = context.read<DiscoveryProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _useLocation = on);
+
+    if (!on) {
+      provider.clearLocationFilter();
+      return;
+    }
+
+    try {
+      messenger.showSnackBar(SnackBar(
+        content: const Row(children: [
+          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+          SizedBox(width: 12),
+          Text('Getting your location...'),
+        ]),
         backgroundColor: AppColors.crimson,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        action: SnackBarAction(
-          label: 'Retry',
-          textColor: Colors.white,
-          onPressed: _loadDiscoveryFeed,
-        ),
+        margin: const EdgeInsets.all(16),
+      ));
+
+      final pos = await LocationService().getCurrentLocation();
+      provider.setLocationFilter(latitude: pos.latitude, longitude: pos.longitude, radiusMiles: 50);
+
+      messenger.hideCurrentSnackBar();
+      _snack('Showing within 50 miles', icon: Icons.location_on_rounded);
+    } catch (e) {
+      setState(() => _useLocation = false);
+      provider.clearLocationFilter();
+      messenger.hideCurrentSnackBar();
+
+      String msg = 'Could not get your location';
+      if (e is PermissionException) {
+        msg = 'Location permission denied. Enable in Settings.';
+      } else if (e is ServiceDisabledException) {
+        msg = 'Location services are disabled.';
+      }
+      _snack(msg, isError: true);
+    }
+  }
+
+  void _clearAllFilters() {
+    context.read<DiscoveryProvider>().clearFilters();
+    setState(() {
+      _selectedGenres.clear();
+      _useLocation = false;
+      _priceRange = const RangeValues(0, _maxPrice);
+      _minRating = 0;
+    });
+  }
+
+  void _applyFilters() {
+    final provider = context.read<DiscoveryProvider>();
+    provider.setPriceAndRatingFilters(
+      minPrice: _priceRange.start > 0 ? _priceRange.start : null,
+      maxPrice: _priceRange.end < _maxPrice ? _priceRange.end : null,
+      minRating: _minRating > 0 ? _minRating : null,
+    );
+    _toggleFilters();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UTILITIES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  void _snack(String msg, {IconData? icon, bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(children: [
+        if (icon != null) ...[Icon(icon, color: Colors.white, size: 20), const SizedBox(width: 12)],
+        Expanded(child: Text(msg)),
+      ]),
+      backgroundColor: isError ? AppColors.error : AppColors.success,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+      action: isError
+          ? SnackBarAction(label: 'Retry', textColor: Colors.white, onPressed: _loadFeed)
+          : null,
+    ));
+  }
+
+  void _premiumUpsell(String feature, String message) {
+    final brightness = Theme.of(context).brightness;
+    final nav = Navigator.of(context, rootNavigator: true);
+    HapticFeedback.mediumImpact();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface(brightness),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Icon(Icons.star_rounded, color: Colors.amber.shade600, size: 28),
+          const SizedBox(width: 8),
+          Expanded(child: Text(feature, style: TextStyle(color: AppColors.text(brightness), fontWeight: FontWeight.w700))),
+        ]),
+        content: Text(message, style: TextStyle(color: AppColors.textSec(brightness), fontSize: 15)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Later', style: TextStyle(color: AppColors.textSec(brightness))),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              nav.pushNamed('/premium');
+            },
+            icon: const Icon(Icons.diamond_rounded, size: 18),
+            label: const Text('Upgrade to Pro'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.crimson,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════
+  Color _scoreColor(double s) {
+    if (s >= 80) { return Colors.green.shade400; }
+    if (s >= 60) { return Colors.amber.shade400; }
+    if (s >= 40) { return Colors.orange.shade400; }
+    return Colors.red.shade400;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // BUILD
-  // ═══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final provider = context.watch<DiscoveryProvider>();
     final auth = context.watch<AuthProvider>();
-    final cards = provider.cards;
-    final isLoading = provider.isLoading;
-    final error = provider.errorMessage;
-    final isArtist = auth.isArtist;
 
-    return Stack(
-      children: [
-        // Main content
-        Scaffold(
-          backgroundColor: AppColors.background(brightness),
-          appBar: _buildAppBar(brightness, isArtist),
-          body: SafeArea(
-            top: false,
-            bottom: false,
-            child: Column(
-              children: [
-                // Filter chips
-                _buildFilterChips(brightness),
-
-                // Main content area
-                Expanded(
-                  child: _buildContent(
-                    cards,
-                    isLoading,
-                    error ?? '',
-                    brightness,
-                    provider.currentIndex,
-                  ),
-                ),
-
-                // Action buttons
-                _buildActionButtons(brightness),
-              ],
-            ),
-          ),
+    return Stack(children: [
+      Scaffold(
+        backgroundColor: AppColors.background(brightness),
+        appBar: _appBar(brightness, auth.isArtist),
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          child: Column(children: [
+            _filterChips(brightness),
+            Expanded(child: _content(provider, brightness)),
+            _actionBar(brightness),
+          ]),
         ),
-
-        // Filter panel
-        _buildFilterPanel(brightness),
-
-        // Match animation overlay
-        if (_showMatchAnimation) _buildMatchOverlay(brightness),
-      ],
-    );
+      ),
+      _filterPanel(brightness),
+      if (_showMatch) _matchOverlay(brightness),
+    ]);
   }
 
-  PreferredSizeWidget _buildAppBar(Brightness brightness, bool isArtist) {
-    final hasPriceFilter = _priceRange.start > 0 || _priceRange.end < _maxPrice;
-    final hasRatingFilter = _minRating > 0;
-    final activeFilterCount =
-        _selectedGenres.length +
-        (_useLocationFilter ? 1 : 0) +
-        (hasPriceFilter ? 1 : 0) +
-        (hasRatingFilter ? 1 : 0);
+  // ── App Bar ──────────────────────────────────────────────────────────────
+
+  PreferredSizeWidget _appBar(Brightness brightness, bool isArtist) {
+    final hasPF = _priceRange.start > 0 || _priceRange.end < _maxPrice;
+    final hasRF = _minRating > 0;
+    final cnt = _selectedGenres.length + (_useLocation ? 1 : 0) + (hasPF ? 1 : 0) + (hasRF ? 1 : 0);
 
     return AppBar(
       backgroundColor: AppColors.background(brightness),
       elevation: 0,
-      leading: Stack(
-        children: [
-          IconButton(
-            icon: Icon(
-              Icons.tune_rounded,
-              color: _showFilters || activeFilterCount > 0
-                  ? AppColors.crimson
-                  : AppColors.text(brightness),
-            ),
-            onPressed: _toggleFilters,
+      leading: Stack(children: [
+        IconButton(
+          icon: Icon(
+            Icons.tune_rounded,
+            color: _showFilters || cnt > 0 ? AppColors.crimson : AppColors.text(brightness),
           ),
-          if (activeFilterCount > 0)
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: AppColors.crimson,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '$activeFilterCount',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+          onPressed: _toggleFilters,
+        ),
+        if (cnt > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: AppColors.crimson, shape: BoxShape.circle),
+              child: Text('$cnt', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
             ),
-        ],
-      ),
+          ),
+      ]),
       title: Text(
         isArtist ? 'Discover Gigs' : 'Discover Artists',
-        style: TextStyle(
-          color: AppColors.text(brightness),
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-        ),
+        style: TextStyle(color: AppColors.text(brightness), fontSize: 22, fontWeight: FontWeight.w800),
       ),
       actions: [
-        // Boost button - only for Artists
         if (isArtist)
           IconButton(
             icon: Icon(Icons.rocket_launch_rounded, color: AppColors.crimson),
@@ -430,320 +609,219 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  Widget _buildFilterChips(Brightness brightness) {
-    final authProvider = context.watch<AuthProvider>();
-    final discoveryProvider = context.watch<DiscoveryProvider>();
-    final isPaid = authProvider.isPaidUser;
+  // ── Filter Chips ─────────────────────────────────────────────────────────
 
-    return Container(
+  Widget _filterChips(Brightness brightness) {
+    final disc = context.watch<DiscoveryProvider>();
+    final auth = context.watch<AuthProvider>();
+
+    return SizedBox(
       height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          // 🌍 Passport Mode chip (Pro/Premium only)
-          _buildStyledFilterChip(
-            label: 'Passport',
-            icon: Icons.public_rounded,
-            isSelected: discoveryProvider.passportMode,
-            brightness: brightness,
-            onSelected: (selected) {
-              if (!isPaid) {
-                _showPremiumUpsell(
-                  'Passport Mode',
-                  'Discover gigs and artists worldwide — no location limits. Upgrade to Pro!',
-                );
-                return;
-              }
-              discoveryProvider.togglePassportMode(selected);
-            },
-          ),
-          const SizedBox(width: 8),
-          // Location chip
-          _buildStyledFilterChip(
-            label: 'Nearby',
-            icon: _useLocationFilter
-                ? Icons.location_on_rounded
-                : Icons.location_off_rounded,
-            isSelected: _useLocationFilter,
-            brightness: brightness,
-            onSelected: (selected) => _toggleLocationFilter(selected),
-          ),
-          const SizedBox(width: 8),
-          // Genre chips - use first 5 genres
-          ..._availableGenres.take(5).map((genre) {
-            final isSelected = _selectedGenres.contains(genre);
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildStyledFilterChip(
-                label: genre,
-                isSelected: isSelected,
-                brightness: brightness,
-                onSelected: (selected) => _toggleGenre(genre, selected),
-              ),
-            );
+          _chip('Passport', Icons.public_rounded, disc.passportMode, brightness, (on) {
+            if (!auth.isPaidUser) {
+              _premiumUpsell('Passport Mode', 'Discover worldwide — no location limits. Upgrade to Pro!');
+              return;
+            }
+            disc.togglePassportMode(on);
           }),
-          // Show more genres button
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: _buildStyledFilterChip(
-              label: 'More',
-              icon: Icons.filter_list_rounded,
-              isSelected: false,
-              brightness: brightness,
-              onSelected: (_) => _toggleFilters(),
-            ),
-          ),
+          const SizedBox(width: 8),
+          _chip('Nearby', _useLocation ? Icons.location_on_rounded : Icons.location_off_rounded, _useLocation, brightness, _toggleLocation),
+          const SizedBox(width: 8),
+          ..._genres.take(5).map((g) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _chip(g, null, _selectedGenres.contains(g), brightness, (on) => _toggleGenre(g, on)),
+              )),
+          _chip('More', Icons.filter_list_rounded, false, brightness, (_) => _toggleFilters()),
         ],
       ),
     );
   }
 
-  /// M3 FilterChip for multi-select filtering
-  Widget _buildStyledFilterChip({
-    required String label,
-    IconData? icon,
-    required bool isSelected,
-    required Brightness brightness,
-    required ValueChanged<bool> onSelected,
-  }) {
+  Widget _chip(String label, IconData? icon, bool sel, Brightness brightness, ValueChanged<bool> onSel) {
     return FilterChip(
       label: Text(label),
-      selected: isSelected,
-      onSelected: onSelected,
-      avatar: icon != null
-          ? Icon(
-              icon,
-              size: 18,
-              color: isSelected ? Colors.white : AppColors.crimson,
-            )
-          : null,
+      selected: sel,
+      onSelected: onSel,
+      avatar: icon != null ? Icon(icon, size: 18, color: sel ? Colors.white : AppColors.crimson) : null,
       selectedColor: AppColors.crimson,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : AppColors.text(brightness),
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-      ),
+      labelStyle: TextStyle(color: sel ? Colors.white : AppColors.text(brightness), fontWeight: sel ? FontWeight.w600 : FontWeight.w500),
       backgroundColor: AppColors.surface(brightness),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(
-          color: isSelected ? AppColors.crimson : AppColors.border(brightness),
-          width: 1.5,
-        ),
+        side: BorderSide(color: sel ? AppColors.crimson : AppColors.border(brightness), width: 1.5),
       ),
       showCheckmark: false,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
     );
   }
 
-  Widget _buildContent(
-    List<DiscoveryCard> cards,
-    bool isLoading,
-    String error,
-    Brightness brightness,
-    int currentCardIndex,
-  ) {
-    if (isLoading && cards.isEmpty) {
-      return _buildLoadingState(brightness);
-    }
+  // ── Main Content ─────────────────────────────────────────────────────────
 
+  Widget _content(DiscoveryProvider prov, Brightness brightness) {
+    final cards = prov.cards;
+    final idx = prov.currentIndex;
+
+    if (prov.isLoading && cards.isEmpty) {
+      return _stateView(brightness, icon: null, title: 'Finding matches...', loading: true);
+    }
     if (cards.isEmpty) {
-      if (error.isNotEmpty) {
-        return _buildErrorState(error, brightness);
+      if (prov.errorMessage != null) {
+        return _stateView(brightness, icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: prov.errorMessage, retry: true);
       }
-      return _buildEmptyState(brightness);
+      final isArtist = context.watch<AuthProvider>().isArtist;
+      return _stateView(
+        brightness,
+        icon: isArtist ? Icons.business_rounded : Icons.mic_rounded,
+        title: isArtist ? 'No gigs yet' : 'No artists yet',
+        subtitle: 'Check back soon — we\'re growing fast!',
+        retry: true,
+      );
+    }
+    if (idx >= cards.length) {
+      return _stateView(brightness, icon: Icons.celebration_rounded, title: 'You\'ve seen everyone!', subtitle: 'Check back later for new matches', retry: true);
     }
 
-    // Check if we've swiped through all cards
-    if (currentCardIndex >= cards.length) {
-      return _buildAllDoneState(brightness);
-    }
+    // Build card stack (max 3 visible)
+    final end = math.min(idx + 3, cards.length);
+    final stack = <Widget>[];
 
-    // Build card stack
-    final endIndex = math.min(currentCardIndex + 3, cards.length);
-    final displayCards = <DiscoveryCard>[];
-    if (endIndex > currentCardIndex) {
-      for (int i = endIndex - 1; i >= currentCardIndex; i--) {
-        displayCards.add(cards[i]);
-      }
-    }
+    for (int i = end - 1; i >= idx; i--) {
+      final depth = i - idx;
+      final scale = 1.0 - depth * 0.05;
+      final yOff = depth * 8.0;
+      final isTop = depth == 0;
+      final card = cards[i];
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Background cards (already swiped)
-        ...cards
-            .take(currentCardIndex)
-            .map((item) => _buildCard(item, brightness, opacity: 0)),
+      Widget child = _cardBody(card, brightness);
 
-        // Current and upcoming cards
-        ...displayCards.asMap().entries.map((entry) {
-          final index = displayCards.length - 1 - entry.key;
-          final item = entry.value;
-          final scale = 1.0 - index * 0.05;
-          final offset = Offset(0, index * 8.0);
-          final isTopCard = index == 0;
-
-          return Positioned.fill(
-            child: Transform.translate(
-              offset: offset,
-              child: Transform.scale(
-                scale: scale,
-                child: _buildCard(item, brightness, isTopCard: isTopCard),
-              ),
-            ),
-          );
-        }),
-
-        // Remaining cards indicator (subtle at top)
-        if (cards.length - currentCardIndex <= 3)
-          Positioned(
-            top: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${cards.length - currentCardIndex} left',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
+      if (isTop) {
+        child = GestureDetector(
+          onPanStart: _onPanStart,
+          onPanUpdate: _onPanUpdate,
+          onPanEnd: _onPanEnd,
+          child: Transform.rotate(
+            angle: _angle,
+            child: Transform.translate(offset: _drag, child: child),
           ),
-      ],
-    );
+        );
+      }
+
+      stack.add(Positioned.fill(
+        child: Transform.translate(
+          offset: Offset(0, yOff),
+          child: Transform.scale(scale: scale, child: child),
+        ),
+      ));
+    }
+
+    // Remaining cards badge
+    if (cards.length - idx <= 5) {
+      stack.add(Positioned(
+        top: 16,
+        left: 0,
+        right: 0,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
+            child: Text('${cards.length - idx} left', style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)),
+          ),
+        ),
+      ));
+    }
+
+    return Stack(fit: StackFit.expand, children: stack);
   }
 
-  Widget _buildCard(
-    DiscoveryCard card,
-    Brightness brightness, {
-    double opacity = 1,
-    bool isTopCard = false,
-  }) {
-    final discoveryProvider = context.read<DiscoveryProvider>();
-
-    final item = DiscoveryItem.fromCard(card);
-
-    final cardWidth = MediaQuery.of(context).size.width - 48;
-
-    final cardHeight = MediaQuery.of(context).size.height * 0.65;
-
-    return VisibilityDetector(
-      key: Key('card_${card.id}'),
-
-      onVisibilityChanged: (info) {
-        final lastIndex = discoveryProvider.cards.length - 1;
-        final currentIdx = discoveryProvider.currentIndex;
-        final shouldLoadMore =
-            info.visibleFraction < 0.3 &&
-            lastIndex >= 0 &&
-            currentIdx >= lastIndex;
-        if (shouldLoadMore) {
-          _loadMoreCards();
-        }
-      },
-
-      child: isTopCard
-          ? GestureDetector(
-              onPanStart: _onPanStart,
-              onPanUpdate: _onPanUpdate,
-              onPanEnd: _onPanEnd,
-              child: Transform.rotate(
-                angle: _dragAngle,
-                child: Transform.translate(
-                  offset: _dragOffset,
-                  child: _buildCardBody(
-                    item,
-                    brightness,
-                    opacity,
-                    cardWidth,
-                    cardHeight,
-                  ),
-                ),
+  Widget _stateView(Brightness brightness, {IconData? icon, required String title, String? subtitle, bool loading = false, bool retry = false}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          if (loading)
+            CircularProgressIndicator(color: AppColors.crimson, strokeWidth: 3)
+          else if (icon != null)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(color: AppColors.surface(brightness), shape: BoxShape.circle),
+              child: Icon(icon, color: AppColors.crimson, size: 64),
+            ),
+          const SizedBox(height: 24),
+          Text(title, style: TextStyle(color: AppColors.text(brightness), fontSize: 22, fontWeight: FontWeight.w700), textAlign: TextAlign.center),
+          if (subtitle != null) ...[
+            const SizedBox(height: 12),
+            Text(subtitle, style: TextStyle(color: AppColors.textSec(brightness), fontSize: 15, height: 1.5), textAlign: TextAlign.center),
+          ],
+          if (retry) ...[
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _loadFeed,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: const Text('Refresh'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.crimson,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-            )
-          : _buildCardBody(item, brightness, opacity, cardWidth, cardHeight),
-    );
-  }
-
-  Widget _buildCardBody(
-    DiscoveryItem item,
-    Brightness brightness,
-    double opacity,
-    double cardWidth,
-    double cardHeight,
-  ) {
-    return Opacity(
-      opacity: opacity,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        width: cardWidth,
-        height: cardHeight,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
             ),
           ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _buildCardBackground(item, brightness),
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              _buildBadges(item, brightness),
-              _buildCardContent(item, brightness),
-              _buildSwipeIndicators(brightness),
-            ],
-          ),
-        ),
+        ]),
       ),
     );
   }
 
-  Widget _buildCardBackground(DiscoveryItem item, Brightness brightness) {
-    if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: item.imageUrl!,
-        fit: BoxFit.cover,
-        errorWidget: (_, _, _) => _buildPlaceholderGradient(brightness),
-      );
-    }
+  // ── Card ─────────────────────────────────────────────────────────────────
 
-    return _buildPlaceholderGradient(brightness);
+  Widget _cardBody(DiscoveryCard card, Brightness brightness) {
+    final item = _Item.fromCard(card);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 10))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(fit: StackFit.expand, children: [
+          // Background image
+          if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+            CachedNetworkImage(imageUrl: item.imageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => _gradient(brightness))
+          else
+            _gradient(brightness),
+
+          // Scrim
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+                ),
+              ),
+            ),
+          ),
+
+          // Badges
+          _badges(item),
+
+          // Info
+          _cardInfo(item, brightness),
+
+          // Swipe indicator
+          _swipeIndicator(brightness),
+        ]),
+      ),
+    );
   }
 
-  Widget _buildPlaceholderGradient(Brightness brightness) {
+  Widget _gradient(Brightness brightness) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -759,285 +837,136 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  Widget _buildBadges(DiscoveryItem item, Brightness brightness) {
-    final badges = <Widget>[];
-
-    if (item.isBoosted) {
-      badges.add(
+  Widget _badges(_Item item) {
+    return Stack(children: [
+      if (item.isBoosted)
         Positioned(
           top: 16,
-
           left: 16,
-
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-
-            decoration: BoxDecoration(
-              color: Colors.amber.shade600,
-
-              borderRadius: BorderRadius.circular(20),
-            ),
-
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-
-              children: const [
-                Icon(
-                  Icons.rocket_launch_rounded,
-
-                  color: Colors.white,
-
-                  size: 16,
-                ),
-
-                SizedBox(width: 4),
-
-                Text(
-                  'BOOSTED',
-
-                  style: TextStyle(
-                    color: Colors.white,
-
-                    fontSize: 11,
-
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
+            decoration: BoxDecoration(color: Colors.amber.shade600, borderRadius: BorderRadius.circular(20)),
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 16),
+              SizedBox(width: 4),
+              Text('BOOSTED', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+            ]),
           ),
         ),
-      );
-    }
-
-    if (item.isVerified) {
-      badges.add(
+      if (item.isVerified)
         Positioned(
           top: 16,
-
           right: 16,
-
           child: Container(
             padding: const EdgeInsets.all(6),
-
-            decoration: const BoxDecoration(
-              color: Colors.white,
-
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.verified_rounded,
-              color: Colors.blue,
-              size: 20,
-            ),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: const Icon(Icons.verified_rounded, color: Colors.blue, size: 20),
           ),
         ),
-      );
-    }
-
-    if (badges.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Stack(children: badges);
+    ]);
   }
 
-  Widget _buildCardContent(DiscoveryItem item, Brightness brightness) {
-    final infoChips = <Widget>[];
-
-    if (item.city != null && item.city!.isNotEmpty) {
-      infoChips.add(
-        _buildInfoChip(icon: Icons.location_on_rounded, label: item.city!),
-      );
-    }
-
-    if (item.distanceMiles > 0) {
-      infoChips.add(
-        _buildInfoChip(
-          icon: Icons.directions_walk_rounded,
-          label: '${item.distanceMiles.toStringAsFixed(0)} mi',
-        ),
-      );
-    }
-
-    if (item.rating != null && item.rating! > 0) {
-      infoChips.add(
-        _buildInfoChip(
-          icon: Icons.star_rounded,
-          iconColor: Colors.amber.shade400,
-          label: item.rating!.toStringAsFixed(1),
-        ),
-      );
-    }
-
-    if (item.priceMin != null) {
-      infoChips.add(
-        _buildInfoChip(
-          icon: Icons.attach_money_rounded,
-          iconColor: Colors.white,
-          label: '${item.priceMin!.toStringAsFixed(0)}+',
-        ),
-      );
-    }
+  Widget _cardInfo(_Item item, Brightness brightness) {
+    final chips = <Widget>[
+      if (item.city != null && item.city!.isNotEmpty)
+        _infoChip(Icons.location_on_rounded, item.city!),
+      if (item.distance > 0)
+        _infoChip(Icons.directions_walk_rounded, '${item.distance.toStringAsFixed(0)} mi'),
+      if (item.rating != null && item.rating! > 0)
+        _infoChip(Icons.star_rounded, item.rating!.toStringAsFixed(1), iconColor: Colors.amber.shade400),
+      if (item.price != null)
+        _infoChip(Icons.attach_money_rounded, '${item.price!.toStringAsFixed(0)}+'),
+    ];
 
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
-      child: Container(
+      child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                item.typeLabel.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                ),
-              ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          // Type label
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
+            child: Text(item.typeLabel.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+          ),
+          const SizedBox(height: 8),
+
+          // Title
+          Text(item.title, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800, height: 1.1), maxLines: 2, overflow: TextOverflow.ellipsis),
+
+          // Subtitle
+          if (item.subtitle != null && item.subtitle!.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
-              item.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                height: 1.1,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (item.subtitle != null && item.subtitle!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                item.subtitle!,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 16,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            if (infoChips.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Wrap(spacing: 8, runSpacing: 8, children: infoChips),
-            ],
-            if (item.recommendationScore > 0) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.auto_awesome_rounded,
-                      color: _getScoreColor(item.recommendationScore),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${item.recommendationScore.toStringAsFixed(0)}% match',
-                      style: TextStyle(
-                        color: _getScoreColor(item.recommendationScore),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            Text(item.subtitle!, style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 16), maxLines: 2, overflow: TextOverflow.ellipsis),
           ],
-        ),
+
+          // Info chips
+          if (chips.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(spacing: 8, runSpacing: 8, children: chips),
+          ],
+
+          // Recommendation score
+          if (item.score > 0) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.auto_awesome_rounded, color: _scoreColor(item.score), size: 16),
+                const SizedBox(width: 6),
+                Text('${item.score.toStringAsFixed(0)}% match', style: TextStyle(color: _scoreColor(item.score), fontSize: 13, fontWeight: FontWeight.w600)),
+              ]),
+            ),
+          ],
+        ]),
       ),
     );
   }
 
-  Widget _buildInfoChip({
-    required IconData icon,
-    required String label,
-    Color iconColor = Colors.white70,
-  }) {
+  Widget _infoChip(IconData icon, String label, {Color iconColor = Colors.white70}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: iconColor, size: 16),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: iconColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: iconColor, size: 16),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(color: iconColor, fontSize: 14, fontWeight: FontWeight.w500)),
+      ]),
     );
   }
 
-  Widget _buildSwipeIndicators(Brightness brightness) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final likeThreshold = screenWidth * 0.35;
+  Widget _swipeIndicator(Brightness brightness) {
+    final w = MediaQuery.of(context).size.width;
+    final thresh = w * 0.35 * 0.3;
+    final showLike = _drag.dx > thresh;
+    final showNope = _drag.dx < -thresh;
 
-    final showLike = _dragOffset.dx > likeThreshold * 0.3;
-    final showNope = _dragOffset.dx < -likeThreshold * 0.3;
+    if (!showLike && !showNope) { return const SizedBox.shrink(); }
 
-    if (!showLike && !showNope) {
-      return const SizedBox.shrink();
-    }
-
-    return Stack(
-      children: [
-        if (showLike)
-          Positioned(
-            top: 40,
-            right: 24,
-            child: Transform.rotate(
-              angle: 0.3,
-              child: _buildSwipeLabel(text: 'LIKE', color: Colors.green),
-            ),
-          ),
-        if (showNope)
-          Positioned(
-            top: 40,
-            left: 24,
-            child: Transform.rotate(
-              angle: -0.3,
-              child: _buildSwipeLabel(text: 'NOPE', color: AppColors.crimson),
-            ),
-          ),
-      ],
-    );
+    return Stack(children: [
+      if (showLike)
+        Positioned(
+          top: 40,
+          right: 24,
+          child: Transform.rotate(angle: 0.3, child: _swipeLabel('LIKE', Colors.green)),
+        ),
+      if (showNope)
+        Positioned(
+          top: 40,
+          left: 24,
+          child: Transform.rotate(angle: -0.3, child: _swipeLabel('NOPE', AppColors.crimson)),
+        ),
+    ]);
   }
 
-  Widget _buildSwipeLabel({required String text, required Color color}) {
+  Widget _swipeLabel(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -1045,586 +974,159 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white, width: 3),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 2,
-        ),
-      ),
+      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2)),
     );
   }
 
-  Widget _buildLoadingState(Brightness brightness) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: AppColors.crimson, strokeWidth: 3),
-          const SizedBox(height: 24),
-          Text(
-            'Finding matches...',
-            style: TextStyle(color: AppColors.text(brightness), fontSize: 16),
-          ),
-        ],
-      ),
-    );
-  }
+  // ── Action Bar ───────────────────────────────────────────────────────────
 
-  Widget _buildErrorState(String error, Brightness brightness) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: AppColors.crimson,
-              size: 64,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Oops! Something went wrong',
-              style: TextStyle(
-                color: AppColors.text(brightness),
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              error,
-              style: TextStyle(
-                color: AppColors.textSec(brightness),
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _loadDiscoveryFeed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.crimson,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 14,
-                ),
-              ),
-              child: const Text(
-                'Try Again',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(Brightness brightness) {
-    final auth = context.watch<AuthProvider>();
-    final isArtist = auth.isArtist;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.surface(brightness),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isArtist ? Icons.business_rounded : Icons.mic_rounded,
-                color: AppColors.crimson,
-                size: 64,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              isArtist ? 'No gigs yet' : 'No artists yet',
-              style: TextStyle(
-                color: AppColors.text(brightness),
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              isArtist
-                  ? 'Gigs in your area will appear here.\nWe\'re growing fast — check back soon!'
-                  : 'Artists in your area will appear here.\nWe\'re growing fast — check back soon!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textSec(brightness),
-                fontSize: 15,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: _loadDiscoveryFeed,
-              icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: const Text('Refresh'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.crimson,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAllDoneState(Brightness brightness) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.surface(brightness),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.celebration_rounded,
-              color: AppColors.crimson,
-              size: 64,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'You\'ve seen everyone!',
-            style: TextStyle(
-              color: AppColors.text(brightness),
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Check back later for new matches',
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 32),
-          OutlinedButton(
-            onPressed: _loadDiscoveryFeed,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-              side: BorderSide(color: AppColors.crimson),
-            ),
-            child: Text(
-              'Refresh',
-              style: TextStyle(
-                color: AppColors.crimson,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(Brightness brightness) {
-    return Container(
+  Widget _actionBar(Brightness brightness) {
+    return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Rewind button - M3 FilledTonal style
-          _buildM3ActionButton(
-            icon: Icons.replay_rounded,
-            color: Colors.blue.shade400,
-            size: 44,
-            label: 'Rewind',
-            brightness: brightness,
-            isTonal: true,
-            onTap: _undoLastSwipe,
-          ),
-
-          // Nope button - M3 Filled style
-          _buildM3ActionButton(
-            icon: Icons.close_rounded,
-            color: AppColors.crimson,
-            size: 58,
-            label: 'Pass',
-            brightness: brightness,
-            onTap: () => _animateSwipe(false),
-          ),
-
-          // Super like button - M3 FilledTonal style
-          _buildM3ActionButton(
-            icon: Icons.star_rounded,
-            color: Colors.blue.shade600,
-            size: 52,
-            label: 'Super',
-            brightness: brightness,
-            isTonal: true,
-            onTap: () => _superLike(),
-          ),
-
-          // Like button - M3 Filled style
-          _buildM3ActionButton(
-            icon: Icons.favorite_rounded,
-            color: Colors.green.shade500,
-            size: 58,
-            label: 'Like',
-            brightness: brightness,
-            onTap: () => _animateSwipe(true),
-          ),
-        ],
-      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        _actionBtn(Icons.replay_rounded, Colors.blue.shade400, 44, 'Rewind', brightness, tonal: true, onTap: _undo),
+        _actionBtn(Icons.close_rounded, AppColors.crimson, 58, 'Pass', brightness, onTap: () => _animateSwipe(false)),
+        _actionBtn(Icons.star_rounded, Colors.blue.shade600, 52, 'Super', brightness, tonal: true, onTap: _superLike),
+        _actionBtn(Icons.favorite_rounded, Colors.green.shade500, 58, 'Like', brightness, onTap: () => _animateSwipe(true)),
+      ]),
     );
   }
 
-  /// M3 Action Button with FilledButton or FilledTonalButton styling
-  Widget _buildM3ActionButton({
-    required IconData icon,
-    required Color color,
-    required double size,
-    required VoidCallback onTap,
-    required Brightness brightness,
-    String? label,
-    bool isTonal = false,
-  }) {
-    final buttonStyle = isTonal
-        ? IconButton.styleFrom(
-            backgroundColor: color.withValues(alpha: 0.15),
-            foregroundColor: color,
-            disabledBackgroundColor: color.withValues(alpha: 0.08),
-          )
-        : IconButton.styleFrom(
-            backgroundColor: AppColors.surface(brightness),
-            foregroundColor: color,
-          );
+  Widget _actionBtn(IconData icon, Color color, double size, String label, Brightness brightness, {bool tonal = false, required VoidCallback onTap}) {
+    final style = tonal
+        ? IconButton.styleFrom(backgroundColor: color.withValues(alpha: 0.15), foregroundColor: color)
+        : IconButton.styleFrom(backgroundColor: AppColors.surface(brightness), foregroundColor: color);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: IconButton(
-            onPressed: onTap,
-            icon: Icon(icon, size: size * 0.55),
-            style: buttonStyle.copyWith(
-              elevation: WidgetStatePropertyAll(isTonal ? 0 : 2),
-              shadowColor: WidgetStatePropertyAll(color.withValues(alpha: 0.3)),
-              shape: const WidgetStatePropertyAll(CircleBorder()),
-            ),
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      SizedBox(
+        width: size,
+        height: size,
+        child: IconButton(
+          onPressed: onTap,
+          icon: Icon(icon, size: size * 0.55),
+          style: style.copyWith(
+            elevation: WidgetStatePropertyAll(tonal ? 0 : 2),
+            shadowColor: WidgetStatePropertyAll(color.withValues(alpha: 0.3)),
+            shape: const WidgetStatePropertyAll(CircleBorder()),
           ),
         ),
-        if (label != null) ...[
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.textSec(brightness),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ],
-    );
+      ),
+      const SizedBox(height: 6),
+      Text(label, style: TextStyle(color: AppColors.textSec(brightness), fontSize: 11, fontWeight: FontWeight.w600)),
+    ]);
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // FILTER PANEL
-  // ═══════════════════════════════════════════════════════
+  // ── Filter Panel ─────────────────────────────────────────────────────────
 
-  void _toggleFilters() {
-    setState(() => _showFilters = !_showFilters);
-    if (_showFilters) {
-      _filterController.forward();
-    } else {
-      _filterController.reverse();
-    }
-  }
+  Widget _filterPanel(Brightness brightness) {
+    final panelW = MediaQuery.of(context).size.width * 0.85;
+    final hasPF = _priceRange.start > 0 || _priceRange.end < _maxPrice;
+    final hasRF = _minRating > 0;
+    final cnt = _selectedGenres.length + (_useLocation ? 1 : 0) + (hasPF ? 1 : 0) + (hasRF ? 1 : 0);
 
-  void _toggleLocationFilter(bool enabled) async {
-    final provider = context.read<DiscoveryProvider>();
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    setState(() => _useLocationFilter = enabled);
-
-    if (enabled) {
-      try {
-        // Show loading
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                ),
-                SizedBox(width: 12),
-                Text('Getting your location...'),
-              ],
-            ),
-            backgroundColor: AppColors.crimson,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-
-        // Get actual location
-        final position = await LocationService().getCurrentLocation();
-        provider.setLocationFilter(
-          latitude: position.latitude,
-          longitude: position.longitude,
-          radiusMiles: 50,
-        );
-
-        // Update snackbar
-        scaffoldMessenger.hideCurrentSnackBar();
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.location_on_rounded, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Location enabled', style: TextStyle(fontWeight: FontWeight.w600)),
-                      Text(
-                        'Showing gigs within 50 miles',
-                        style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      } catch (e) {
-        setState(() => _useLocationFilter = false);
-        provider.clearLocationFilter();
-
-        // Show error
-        scaffoldMessenger.hideCurrentSnackBar();
-        String errorMessage = 'Could not get your location';
-
-        if (e is PermissionException) {
-          errorMessage = 'Location permission denied. Please enable it in settings.';
-        } else if (e is ServiceDisabledException) {
-          errorMessage = 'Location services are disabled. Please enable them.';
-        }
-
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.location_off_rounded, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(child: Text(errorMessage)),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
-            action: e is PermissionException
-                ? SnackBarAction(
-                    label: 'Settings',
-                    textColor: Colors.white,
-                    onPressed: () => LocationService().openAppSettings(),
-                  )
-                : null,
-          ),
-        );
-      }
-    } else {
-      provider.clearLocationFilter();
-    }
-  }
-
-  void _toggleGenre(String genre, bool selected) {
-    setState(() {
-      if (selected) {
-        _selectedGenres.add(genre);
-      } else {
-        _selectedGenres.remove(genre);
-      }
-    });
-
-    final provider = context.read<DiscoveryProvider>();
-    provider.setGenreFilter(_selectedGenres.toList());
-  }
-
-  Widget _buildFilterPanel(Brightness brightness) {
     return AnimatedBuilder(
-      animation: _filterController,
-      builder: (context, child) {
-        final panelWidth = MediaQuery.of(context).size.width * 0.85;
-        final hasPriceFilter =
-            _priceRange.start > 0 || _priceRange.end < _maxPrice;
-        final hasRatingFilter = _minRating > 0;
-        final appliedCount =
-            _selectedGenres.length +
-            (_useLocationFilter ? 1 : 0) +
-            (hasPriceFilter ? 1 : 0) +
-            (hasRatingFilter ? 1 : 0);
-        final offset = _showFilters ? Offset.zero : Offset(-panelWidth, 0);
-
+      animation: _filterCtrl,
+      builder: (context, _) {
+        final offset = _showFilters ? Offset.zero : Offset(-panelW, 0);
         return Transform.translate(
           offset: offset,
           child: Container(
-            width: panelWidth,
+            width: panelW,
             height: MediaQuery.of(context).size.height,
             color: AppColors.surface(brightness),
             child: SafeArea(
               right: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Filters',
-                              style: TextStyle(
-                                color: AppColors.text(brightness),
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            if (appliedCount > 0) ...[
-                              const SizedBox(width: 10),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.crimson,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '$appliedCount applied',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            TextButton(
-                              onPressed: _clearAllFilters,
-                              child: Text(
-                                'Clear',
-                                style: TextStyle(
-                                  color: AppColors.textSec(brightness),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: _toggleFilters,
-                              icon: Icon(
-                                Icons.close_rounded,
-                                color: AppColors.textSec(brightness),
-                              ),
-                            ),
-                          ],
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Row(children: [
+                      Text('Filters', style: TextStyle(color: AppColors.text(brightness), fontSize: 20, fontWeight: FontWeight.w700)),
+                      if (cnt > 0) ...[
+                        const SizedBox(width: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: AppColors.crimson, borderRadius: BorderRadius.circular(12)),
+                          child: Text('$cnt applied', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                         ),
                       ],
-                    ),
-                  ),
+                    ]),
+                    Row(children: [
+                      TextButton(onPressed: _clearAllFilters, child: Text('Clear', style: TextStyle(color: AppColors.textSec(brightness), fontWeight: FontWeight.w600))),
+                      IconButton(onPressed: _toggleFilters, icon: Icon(Icons.close_rounded, color: AppColors.textSec(brightness))),
+                    ]),
+                  ]),
+                ),
 
-                  // Filter options
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      children: [
-                        _buildFilterSection('Location', [
-                          _buildFilterOption(
-                            'Use my location',
-                            Icons.my_location_rounded,
-                            _useLocationFilter,
-                            _onLocationFilterChanged,
-                          ),
-                        ]),
-                        _buildFilterSection('Genres', [
-                          _buildGenreFilter(),
-                        ]),
-                        _buildFilterSection('Price Range', [
-                          _buildPriceRangeSlider(),
-                        ]),
-                        _buildFilterSection('Rating', [_buildRatingFilter()]),
-                      ],
-                    ),
-                  ),
-
-                  // Apply button
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _applyPriceAndRatingFilters();
-                          _toggleFilters();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.crimson,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text(
-                          'Apply Filters',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                // Body
+                Expanded(
+                  child: ListView(padding: const EdgeInsets.symmetric(horizontal: 20), children: [
+                    _filterSection('Location', [
+                      _filterToggle('Use my location', Icons.my_location_rounded, _useLocation, (v) => _toggleLocation(v)),
+                    ]),
+                    _filterSection('Genres', [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _genres.map((g) {
+                          final on = _selectedGenres.contains(g);
+                          return FilterChip(
+                            label: Text(g),
+                            selected: on,
+                            selectedColor: AppColors.crimson,
+                            checkmarkColor: Colors.white,
+                            onSelected: (v) => _toggleGenre(g, v),
+                          );
+                        }).toList(),
                       ),
+                    ]),
+                    _filterSection('Price Range', [
+                      RangeSlider(
+                        values: _priceRange,
+                        min: 0,
+                        max: _maxPrice,
+                        divisions: 40,
+                        onChanged: (v) => setState(() => _priceRange = v),
+                        activeColor: AppColors.crimson,
+                        inactiveColor: AppColors.border(brightness),
+                      ),
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text('\$${_priceRange.start.toInt()}'),
+                        Text('\$${_priceRange.end.toInt()}'),
+                      ]),
+                    ]),
+                    _filterSection('Rating', [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [4.5, 4.0, 3.5, 3.0].map((r) {
+                          return FilterChip(
+                            label: Text('${r.toStringAsFixed(1)}+'),
+                            selected: _minRating == r,
+                            selectedColor: AppColors.crimson,
+                            checkmarkColor: Colors.white,
+                            onSelected: (v) => setState(() => _minRating = v ? r : 0),
+                          );
+                        }).toList(),
+                      ),
+                    ]),
+                  ]),
+                ),
+
+                // Apply
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _applyFilters,
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.crimson, padding: const EdgeInsets.symmetric(vertical: 16)),
+                      child: const Text('Apply Filters', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ]),
             ),
           ),
         );
@@ -1632,676 +1134,135 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  Widget _buildFilterSection(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-        const SizedBox(height: 12),
-        ...children,
-        const SizedBox(height: 24),
-      ],
-    );
+  Widget _filterSection(String title, List<Widget> children) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      const SizedBox(height: 12),
+      ...children,
+      const SizedBox(height: 24),
+    ]);
   }
 
-  Widget _buildFilterOption(
-    String title,
-    IconData icon,
-    bool selected,
-    Function(bool) onChanged,
-  ) {
+  Widget _filterToggle(String title, IconData icon, bool on, ValueChanged<bool> onChange) {
     final brightness = Theme.of(context).brightness;
     return GestureDetector(
-      onTap: () => onChanged(!selected),
-      child: Container(
+      onTap: () => onChange(!on),
+      child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.crimson),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: AppColors.text(brightness),
-                  fontSize: 15,
-                ),
-              ),
-            ),
-            Checkbox(
-              value: selected,
-              onChanged: (v) => onChanged(v ?? false),
-              activeColor: AppColors.crimson,
-            ),
-          ],
-        ),
+        child: Row(children: [
+          Icon(icon, color: AppColors.crimson),
+          const SizedBox(width: 12),
+          Expanded(child: Text(title, style: TextStyle(color: AppColors.text(brightness), fontSize: 15))),
+          Checkbox(value: on, onChanged: (v) => onChange(v ?? false), activeColor: AppColors.crimson),
+        ]),
       ),
     );
   }
 
-  Widget _buildPriceRangeSlider() {
-    return Column(
-      children: [
-        RangeSlider(
-          values: _priceRange,
-          min: 0,
-          max: 2000,
-          divisions: 40,
-          onChanged: (RangeValues values) {
-            setState(() {
-              _priceRange = values;
-            });
-          },
-          activeColor: AppColors.crimson,
-          inactiveColor: AppColors.border(Theme.of(context).brightness),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('\$${_priceRange.start.toInt()}'),
-            Text('\$${_priceRange.end.toInt()}'),
-          ],
-        ),
-      ],
-    );
-  }
+  // ── Match Overlay ────────────────────────────────────────────────────────
 
-  Widget _buildRatingFilter() {
-    final ratings = [4.5, 4.0, 3.5, 3.0];
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: ratings.map((rating) {
-        final bool isSelected = _minRating == rating;
-        return FilterChip(
-          label: Text('${rating.toStringAsFixed(1)}+'),
-          selected: isSelected,
-          selectedColor: AppColors.crimson,
-          checkmarkColor: Colors.white,
-          onSelected: (bool selected) {
-            setState(() {
-              _minRating = selected ? rating : 0;
-            });
-          },
-        );
-      }).toList(),
-    );
-  }
+  Widget _matchOverlay(Brightness brightness) {
+    final isArtist = context.read<AuthProvider>().isArtist;
 
-  Widget _buildGenreFilter() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: _availableGenres.map((genre) {
-        final bool isSelected = _selectedGenres.contains(genre);
-        return FilterChip(
-          label: Text(genre),
-          selected: isSelected,
-          selectedColor: AppColors.crimson,
-          checkmarkColor: Colors.white,
-          onSelected: (bool selected) {
-            setState(() {
-              if (selected) {
-                _selectedGenres.add(genre);
-              } else {
-                _selectedGenres.remove(genre);
-              }
-            });
-          },
-        );
-      }).toList(),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // MATCH OVERLAY
-  // ═══════════════════════════════════════════════════════
-
-  Widget _buildMatchOverlay(Brightness brightness) {
     return Material(
       color: Colors.black.withValues(alpha: 0.8),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background particles (simplified)
-          ...List.generate(20, (index) {
-            final random = math.Random(index);
-            return Positioned(
-              left: random.nextDouble() * 400,
-              top: random.nextDouble() * 800,
-              child: Icon(
-                Icons.star_rounded,
-                color: AppColors.crimson.withValues(alpha: 0.3),
-                size: random.nextDouble() * 20 + 10,
+      child: Stack(fit: StackFit.expand, children: [
+        // Particles
+        ...List.generate(20, (i) {
+          final r = math.Random(i);
+          return Positioned(
+            left: r.nextDouble() * 400,
+            top: r.nextDouble() * 800,
+            child: Icon(Icons.star_rounded, color: AppColors.crimson.withValues(alpha: 0.3), size: r.nextDouble() * 20 + 10),
+          );
+        }),
+
+        Center(
+          child: ScaleTransition(
+            scale: CurvedAnimation(parent: _matchCtrl, curve: Curves.elasticOut),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Text("It's a Match!", style: TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.w900, letterSpacing: 2)),
+              const SizedBox(height: 8),
+              Text(
+                'You and ${_pendingMatch?.getOtherPartyName(isArtist)} liked each other',
+                style: const TextStyle(color: Colors.white70, fontSize: 18),
               ),
-            );
-          }),
+              const SizedBox(height: 40),
 
-          // Match content
-          Center(
-            child: ScaleTransition(
-              scale: CurvedAnimation(
-                parent: _matchController,
-                curve: Curves.elasticOut,
+              // Avatars
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                _matchAvatar(isArtist),
+                const SizedBox(width: 20),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 20),
+                _matchAvatar(isArtist),
+              ]),
+              const SizedBox(height: 48),
+
+              // Action
+              ElevatedButton(
+                onPressed: () {
+                  _closeMatchOverlay();
+                  if (_pendingMatch != null) {
+                    final match = _pendingMatch!;
+                    final target = ChatTarget(
+                      matchId: match.id,
+                      participantId: match.otherUserProfileId ?? (isArtist ? match.venueId : match.artistId),
+                      participantName: match.otherUserName ?? (isArtist ? match.venue?.name : match.artist?.stageName) ?? 'Chat',
+                      participantPhoto: match.otherUserPhoto ?? (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto),
+                      isParticipantArtist: match.otherUserType == 'artist' || !isArtist,
+                      isMuted: match.isMuted,
+                    );
+                    ChatManager.instance.cacheFromMatches([match], isCurrentUserArtist: isArtist);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreenV2.fromTarget(target)));
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.crimson,
+                  padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                ),
+                child: const Text('Send Message', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "It's a Match!",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'You and ${_pendingMatch?.getOtherPartyName(context.read<AuthProvider>().isArtist)} liked each other',
-                    style: TextStyle(color: Colors.white70, fontSize: 18),
-                  ),
-                  const SizedBox(height: 40),
-                  // Profile photos
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildMatchAvatar(),
-                      const SizedBox(width: 20),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      _buildMatchAvatar(),
-                    ],
-                  ),
-                  const SizedBox(height: 48),
-                  // Action buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          _hideMatchDialog();
-                          if (_pendingMatch != null) {
-                            final match = _pendingMatch!;
-                            final auth = context.read<AuthProvider>();
-                            final isArtist = auth.isArtist;
-
-                            final target = ChatTarget(
-                              matchId: match.id,
-                              participantId: match.otherUserProfileId ??
-                                  (isArtist ? match.venueId : match.artistId),
-                              participantName: match.otherUserName ??
-                                  (isArtist ? match.venue?.name : match.artist?.stageName) ??
-                                  'Chat',
-                              participantPhoto: match.otherUserPhoto ??
-                                  (isArtist ? match.venue?.profilePhotoUrl : match.artist?.profilePhoto),
-                              isParticipantArtist: match.otherUserType == 'artist' || !isArtist,
-                              isMuted: match.isMuted,
-                            );
-
-                            ChatManager.instance.cacheFromMatches([match], isCurrentUserArtist: isArtist);
-
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreenV2.fromTarget(target),
-                              ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.crimson,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 48,
-                            vertical: 16,
-                          ),
-                        ),
-                        child: const Text(
-                          'Send Message',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _hideMatchDialog,
-                    child: Text(
-                      'Keep Swiping',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _closeMatchOverlay,
+                child: const Text('Keep Swiping', style: TextStyle(color: Colors.white70)),
               ),
-            ),
+            ]),
           ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 
-  Widget _buildMatchAvatar() {
+  Widget _matchAvatar(bool isArtist) {
+    final photo = _pendingMatch?.getOtherPartyPhoto(isArtist);
+    final hasPhoto = photo != null && photo.isNotEmpty;
+
     return Container(
       width: 80,
       height: 80,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 3),
-        image:
-            _pendingMatch?.getOtherPartyPhoto(
-                  context.read<AuthProvider>().isArtist,
-                ) !=
-                null
-            ? DecorationImage(
-                image: CachedNetworkImageProvider(
-                  _pendingMatch!.getOtherPartyPhoto(
-                    context.read<AuthProvider>().isArtist,
-                  ),
-                ),
-                fit: BoxFit.cover,
-              )
-            : null,
-        color: AppColors.crimson.withValues(alpha: 0.3),
+        image: hasPhoto ? DecorationImage(image: CachedNetworkImageProvider(photo), fit: BoxFit.cover) : null,
+        color: hasPhoto ? null : AppColors.crimson.withValues(alpha: 0.3),
       ),
-      child:
-          _pendingMatch?.getOtherPartyPhoto(
-                context.read<AuthProvider>().isArtist,
-              ) ==
-              null
-          ? Icon(Icons.person_rounded, color: Colors.white, size: 40)
-          : null,
+      child: hasPhoto ? null : const Icon(Icons.person_rounded, color: Colors.white, size: 40),
     );
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // HELPER METHODS
-  // ═══════════════════════════════════════════════════════
-
-  void _onLocationFilterChanged(bool enabled) {
-    _toggleLocationFilter(enabled);
-  }
-
-  void _clearAllFilters() {
-    final provider = context.read<DiscoveryProvider>();
-    provider.clearFilters();
-    setState(() {
-      _selectedGenres.clear();
-      _useLocationFilter = false;
-      _priceRange = RangeValues(0, _maxPrice);
-      _minRating = 0;
-    });
-  }
-
-  void _applyPriceAndRatingFilters() {
-    final provider = context.read<DiscoveryProvider>();
-    final minPrice = _priceRange.start <= 0 ? null : _priceRange.start;
-    final maxPrice = _priceRange.end >= _maxPrice ? null : _priceRange.end;
-    final minRating = _minRating > 0 ? _minRating : null;
-    provider.setPriceAndRatingFilters(
-      minPrice: minPrice,
-      maxPrice: maxPrice,
-      minRating: minRating,
-    );
-  }
-
-  Future<void> _undoLastSwipe() async {
-    // Premium feature — Rewind requires Pro
-    final authProvider = context.read<AuthProvider>();
-    if (!authProvider.isPaidUser) {
-      _showPremiumUpsell('Unlimited Rewinds', 'Go back and change your last swipe with Pro.');
-      return;
-    }
-
-    final provider = context.read<DiscoveryProvider>();
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    setState(() => _isActionLoading = true);
-
-    try {
-      final success = await provider.undo();
-      setState(() => _isActionLoading = false);
-
-      if (success) {
-        // Show success feedback
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.undo_rounded, color: Colors.white),
-                SizedBox(width: 12),
-                Text('Swipe undone'),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      } else {
-        _showErrorSnackBar('Nothing to undo');
-      }
-    } catch (e) {
-      setState(() => _isActionLoading = false);
-      _showErrorSnackBar('Failed to undo. Please try again.');
-    }
-  }
-
-  Future<void> _superLike() async {
-    // Premium feature — Super Like requires Pro
-    final authProvider = context.read<AuthProvider>();
-    if (!authProvider.isPaidUser) {
-      _showPremiumUpsell('Super Likes', 'Stand out and get noticed with Super Likes. Upgrade to Pro!');
-      return;
-    }
-
-    final provider = context.read<DiscoveryProvider>();
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    if (provider.cards.isEmpty) return;
-
-    HapticFeedback.mediumImpact();
-    setState(() => _isActionLoading = true);
-
-    try {
-      final isMatch = await provider.superLike();
-      setState(() => _isActionLoading = false);
-
-      if (isMatch && provider.lastMatch != null) {
-        // Show match overlay
-        setState(() {
-          _pendingMatch = provider.lastMatch;
-          _showMatchAnimation = true;
-        });
-        _matchController.forward(from: 0);
-      } else {
-        // Show success feedback
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.star_rounded, color: Colors.white),
-                SizedBox(width: 12),
-                Text('Super liked! They\'ll be notified.'),
-              ],
-            ),
-            backgroundColor: AppColors.crimson,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() => _isActionLoading = false);
-      _showErrorSnackBar('Failed to super like. Please try again.');
-    }
-  }
-
-  String? _selectedBoostDuration;
-  static const Map<String, String> _boostOptions = {
-    '24': '24 hours',
-    '7': '7 days',
-  };
-  static const Map<String, double> _boostPrices = {
-    '24': 4.99,
-    '7': 24.99,
-  };
-
-  void _showBoostDialog() {
-    // Premium feature — Boost requires Pro
-    final authProvider = context.read<AuthProvider>();
-    if (!authProvider.isPaidUser) {
-      _showPremiumUpsell('Profile Boost', 'Get 10x more profile views! Upgrade to Pro to use boosts.');
-      return;
-    }
-
-    setState(() => _selectedBoostDuration = null);
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surface(Theme.of(context).brightness),
-          title: const Text('Boost Your Profile'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Get seen by more venues! Your profile will appear at the top of discovery for the selected duration.',
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(child: _buildBoostOption('24', '24 hours', '\$4.99', setDialogState)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildBoostOption('7', '7 days', '\$24.99', setDialogState)),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: AppColors.textSec(Theme.of(context).brightness),
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: _selectedBoostDuration == null
-                  ? null
-                  : () async {
-                      Navigator.pop(context);
-                      await _processBoost(_selectedBoostDuration!);
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.crimson,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Boost Now'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBoostOption(String value, String duration, String price, StateSetter setDialogState) {
-    final isSelected = _selectedBoostDuration == value;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        setDialogState(() => _selectedBoostDuration = value);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: isSelected ? AppColors.crimson : AppColors.border(Theme.of(context).brightness),
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          color: isSelected ? AppColors.crimson.withValues(alpha: 0.1) : null,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.rocket_launch_rounded,
-              color: isSelected ? AppColors.crimson : AppColors.crimson.withValues(alpha: 0.6),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              duration,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isSelected ? AppColors.crimson : null,
-              ),
-            ),
-            Text(
-              price,
-              style: TextStyle(
-                color: isSelected ? AppColors.crimson : AppColors.crimson.withValues(alpha: 0.6),
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPremiumUpsell(String feature, String message) {
-    final brightness = Theme.of(context).brightness;
-    final navigator = Navigator.of(context, rootNavigator: true);
-    HapticFeedback.mediumImpact();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface(brightness),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.star_rounded, color: Colors.amber.shade600, size: 28),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                feature,
-                style: TextStyle(
-                  color: AppColors.text(brightness),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          message,
-          style: TextStyle(
-            color: AppColors.textSec(brightness),
-            fontSize: 15,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Later',
-              style: TextStyle(color: AppColors.textSec(brightness)),
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(ctx);
-              navigator.pushNamed('/premium');
-            },
-            icon: const Icon(Icons.diamond_rounded, size: 18),
-            label: const Text('Upgrade to Pro'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.crimson,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _processBoost(String duration) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    setState(() => _isActionLoading = true);
-
-    try {
-      // ignore: unused_local_variable (price will be used when Stripe integration is complete)
-      final price = _boostPrices[duration] ?? 4.99;
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              SizedBox(width: 12),
-              Text('Processing boost...'),
-            ],
-          ),
-          backgroundColor: AppColors.crimson,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-
-      // In a real app, this would call the subscription service
-      // For now, simulate success
-      await Future.delayed(const Duration(seconds: 1));
-
-      setState(() => _isActionLoading = false);
-
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Boost activated!', style: TextStyle(fontWeight: FontWeight.w600)),
-                    Text(
-                      'Your profile is now boosted for ${_boostOptions[duration]}.',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
-    } catch (e) {
-      setState(() => _isActionLoading = false);
-      _showErrorSnackBar('Failed to process boost. Please try again.');
-    }
-  }
-
-  Color _getScoreColor(double score) {
-    if (score >= 80) return Colors.green.shade400;
-
-    if (score >= 60) return Colors.amber.shade400;
-
-    if (score >= 40) return Colors.orange.shade400;
-
-    return Colors.red.shade400;
   }
 }
 
-class DiscoveryItem {
+// ═══════════════════════════════════════════════════════════════════════════════
+// VIEW MODEL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Lightweight view model extracted from [DiscoveryCard] for the card UI.
+class _Item {
   final String? imageUrl;
   final bool isBoosted;
   final bool isVerified;
@@ -2309,12 +1270,12 @@ class DiscoveryItem {
   final String title;
   final String? subtitle;
   final String? city;
-  final double distanceMiles;
+  final double distance;
   final double? rating;
-  final double? priceMin;
-  final double recommendationScore;
+  final double? price;
+  final double score;
 
-  const DiscoveryItem({
+  const _Item({
     this.imageUrl,
     required this.isBoosted,
     required this.isVerified,
@@ -2322,44 +1283,43 @@ class DiscoveryItem {
     required this.title,
     this.subtitle,
     this.city,
-    required this.distanceMiles,
+    required this.distance,
     this.rating,
-    this.priceMin,
-    required this.recommendationScore,
+    this.price,
+    required this.score,
   });
 
-  factory DiscoveryItem.fromCard(DiscoveryCard card) {
+  factory _Item.fromCard(DiscoveryCard card) {
     final artist = card.artist;
     final venue = card.venue;
     final gig = card.gig;
 
-    final String? imageUrl = card.primaryPhotoUrl.isNotEmpty
+    final img = card.primaryPhotoUrl.isNotEmpty
         ? card.primaryPhotoUrl
         : (card.galleryUrls.isNotEmpty ? card.galleryUrls.first : null);
 
-    final double? priceMin =
-        artist?.minPrice ?? venue?.gigPreferences?.minBudget ?? gig?.budget;
+    final priceMin = artist?.minPrice ?? venue?.gigPreferences?.minBudget ?? gig?.budget;
 
-    final String? subtitle = card.genres.isNotEmpty
+    final sub = card.genres.isNotEmpty
         ? card.genres.take(3).join(' • ')
         : (card.bio ?? gig?.description);
 
-    final double recommendationScore = card.isBoosted
-        ? 95
-        : (card.rating > 0 ? (card.rating / 5) * 100 : 0);
+    final score = card.recommendationScore > 0
+        ? card.recommendationScore
+        : (card.isBoosted ? 95.0 : (card.rating > 0 ? (card.rating / 5) * 100 : 0.0));
 
-    return DiscoveryItem(
-      imageUrl: imageUrl,
+    return _Item(
+      imageUrl: img,
       isBoosted: card.isBoosted,
       isVerified: card.isVerified,
       typeLabel: card.typeLabel,
       title: card.name,
-      subtitle: subtitle,
+      subtitle: sub,
       city: card.location ?? gig?.location.venueAddress ?? gig?.location.city,
-      distanceMiles: card.distance ?? 0,
+      distance: card.distance ?? 0,
       rating: card.rating > 0 ? card.rating : null,
-      priceMin: priceMin,
-      recommendationScore: recommendationScore,
+      price: priceMin,
+      score: score,
     );
   }
 }

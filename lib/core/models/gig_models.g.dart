@@ -119,6 +119,7 @@ Gig _$GigFromJson(Map<String, dynamic> json) => Gig(
   endTime: json['endTime'] as String?,
   durationMinutes: (json['durationMinutes'] as num?)?.toInt() ?? 60,
   numberOfSets: (json['numberOfSets'] as num?)?.toInt() ?? 1,
+  gigType: json['gigType'] as String?,
   requiredGenres:
       (json['requiredGenres'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -147,11 +148,9 @@ Gig _$GigFromJson(Map<String, dynamic> json) => Gig(
           ?.map((e) => GigApplication.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
-  bookedArtists:
-      (json['bookedArtists'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
-      const [],
+  bookedArtists: json['bookedArtists'] == null
+      ? const []
+      : _bookedArtistsFromJson(json['bookedArtists']),
   cancelledAt: json['cancelledAt'] == null
       ? null
       : DateTime.parse(json['cancelledAt'] as String),
@@ -178,6 +177,7 @@ Map<String, dynamic> _$GigToJson(Gig instance) => <String, dynamic>{
   'endTime': instance.endTime,
   'durationMinutes': instance.durationMinutes,
   'numberOfSets': instance.numberOfSets,
+  'gigType': instance.gigType,
   'requiredGenres': instance.requiredGenres,
   'specificRequirements': instance.specificRequirements,
   'artistsNeeded': instance.artistsNeeded,
@@ -192,7 +192,7 @@ Map<String, dynamic> _$GigToJson(Gig instance) => <String, dynamic>{
   'viewCount': instance.viewCount,
   'applicationCount': instance.applicationCount,
   'applications': instance.applications.map((e) => e.toJson()).toList(),
-  'bookedArtists': instance.bookedArtists,
+  'bookedArtists': _bookedArtistsToJson(instance.bookedArtists),
   'cancelledAt': instance.cancelledAt?.toIso8601String(),
   'cancellationReason': instance.cancellationReason,
   'completedAt': instance.completedAt?.toIso8601String(),
@@ -245,6 +245,7 @@ CreateGigRequest _$CreateGigRequestFromJson(Map<String, dynamic> json) =>
       endTime: json['endTime'] as String?,
       durationMinutes: (json['durationMinutes'] as num?)?.toInt(),
       numberOfSets: (json['numberOfSets'] as num?)?.toInt(),
+      gigType: json['gigType'] as String?,
       requiredGenres: (json['requiredGenres'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
@@ -277,6 +278,7 @@ Map<String, dynamic> _$CreateGigRequestToJson(CreateGigRequest instance) =>
       'endTime': instance.endTime,
       'durationMinutes': instance.durationMinutes,
       'numberOfSets': instance.numberOfSets,
+      'gigType': instance.gigType,
       'requiredGenres': instance.requiredGenres,
       'specificRequirements': instance.specificRequirements,
       'artistsNeeded': instance.artistsNeeded,

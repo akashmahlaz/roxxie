@@ -342,6 +342,8 @@ class _CreateGigScreenState extends State<CreateGigScreen>
           endTime: endTimeStr,
           budget: double.tryParse(_paymentController.text),
           requiredGenres: _selectedGenres,
+          gigType: _mapGigTypeToApi(_gigType),
+          durationMinutes: int.tryParse(_durationController.text),
           specificRequirements: _requirementsController.text.trim().isNotEmpty
               ? _requirementsController.text.trim()
               : null,
@@ -369,6 +371,8 @@ class _CreateGigScreenState extends State<CreateGigScreen>
           endTime: endTimeStr,
           budget: double.tryParse(_paymentController.text) ?? 100.0,
           requiredGenres: _selectedGenres,
+          gigType: _mapGigTypeToApi(_gigType),
+          durationMinutes: int.tryParse(_durationController.text),
           specificRequirements: _requirementsController.text.trim().isNotEmpty
               ? _requirementsController.text.trim()
               : null,
@@ -457,6 +461,21 @@ class _CreateGigScreenState extends State<CreateGigScreen>
         );
       }
     }
+  }
+
+  /// Map UI gig type label to backend enum value
+  String _mapGigTypeToApi(String uiLabel) {
+    const mapping = {
+      'Live Performance': 'live_performance',
+      'DJ Set': 'dj_set',
+      'Open Mic Host': 'acoustic',
+      'Background Music': 'solo',
+      'Private Event': 'private_party',
+      'Corporate Event': 'corporate',
+      'Wedding': 'wedding',
+      'Festival Set': 'festival',
+    };
+    return mapping[uiLabel] ?? 'live_performance';
   }
 
   void _confirmSaveGig() {

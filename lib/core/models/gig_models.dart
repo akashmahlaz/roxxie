@@ -199,6 +199,47 @@ class GigVenueSummary {
   Map<String, dynamic> toJson() => _$GigVenueSummaryToJson(this);
 }
 
+/// Lightweight model for bookedArtists — handles both unpopulated (string id)
+/// and populated (object with stageName, primaryPhoto, etc.) responses.
+class BookedArtistInfo {
+  final String id;
+  final String? stageName;
+  final String? displayName;
+  final String? primaryPhoto;
+  final String? profilePhoto;
+
+  const BookedArtistInfo({
+    required this.id,
+    this.stageName,
+    this.displayName,
+    this.primaryPhoto,
+    this.profilePhoto,
+  });
+
+  /// Best name to show in UI
+  String get name =>
+      stageName ?? displayName ?? 'Unknown Artist';
+
+  /// Best photo URL
+  String? get photo => primaryPhoto ?? profilePhoto;
+
+  factory BookedArtistInfo.fromDynamic(dynamic value) {
+    if (value is String) {
+      return BookedArtistInfo(id: value);
+    }
+    if (value is Map<String, dynamic>) {
+      return BookedArtistInfo(
+        id: value['_id']?.toString() ?? value['id']?.toString() ?? '',
+        stageName: value['stageName'] as String?,
+        displayName: value['displayName'] as String?,
+        primaryPhoto: value['primaryPhoto'] as String?,
+        profilePhoto: value['profilePhoto'] as String?,
+      );
+    }
+    return const BookedArtistInfo(id: '');
+  }
+}
+
 /// Core Gig model used across:
 /// - Artist discovery feed
 /// - Venue gig management
@@ -229,6 +270,9 @@ class Gig {
 
   final int numberOfSets;
 
+  /// e.g. 'live_performance', 'dj_set', 'acoustic', 'band', 'solo', etc.
+  final String? gigType;
+
   final List<String> requiredGenres;
 
   final String? specificRequirements;
@@ -258,7 +302,8 @@ class Gig {
 
   final List<GigApplication> applications;
 
-  final List<String> bookedArtists;
+  @JsonKey(fromJson: _bookedArtistsFromJson, toJson: _bookedArtistsToJson)
+  final List<BookedArtistInfo> bookedArtists;
 
   final DateTime? cancelledAt;
   final String? cancellationReason;
@@ -279,6 +324,7 @@ class Gig {
     this.endTime,
     this.durationMinutes = 60,
     this.numberOfSets = 1,
+    this.gigType,
     this.requiredGenres = const [],
     this.specificRequirements,
     this.artistsNeeded = 1,
@@ -355,6 +401,9 @@ class CreateGigRequest {
   final int? durationMinutes;
   final int? numberOfSets;
 
+  /// Gig type: live_performance, dj_set, acoustic, band, solo, corporate, wedding, private_party, festival, other
+  final String? gigType;
+
   final List<String>? requiredGenres;
   final String? specificRequirements;
   final int? artistsNeeded;
@@ -382,6 +431,7 @@ class CreateGigRequest {
     this.endTime,
     this.durationMinutes,
     this.numberOfSets,
+    this.gigType,
     this.requiredGenres,
     this.specificRequirements,
     this.artistsNeeded,
@@ -411,6 +461,7 @@ class UpdateGigRequest {
   final String? endTime;
   final int? durationMinutes;
   final int? numberOfSets;
+  final String? gigType;
   final List<String>? requiredGenres;
   final String? specificRequirements;
   final int? artistsNeeded;
@@ -431,6 +482,7 @@ class UpdateGigRequest {
     this.endTime,
     this.durationMinutes,
     this.numberOfSets,
+    this.gigType,
     this.requiredGenres,
     this.specificRequirements,
     this.artistsNeeded,
@@ -453,6 +505,7 @@ class UpdateGigRequest {
     if (endTime != null) data['endTime'] = endTime;
     if (durationMinutes != null) data['durationMinutes'] = durationMinutes;
     if (numberOfSets != null) data['numberOfSets'] = numberOfSets;
+    if (gigType != null) data['gigType'] = gigType;
     if (requiredGenres != null) data['requiredGenres'] = requiredGenres;
     if (specificRequirements != null) {
       data['specificRequirements'] = specificRequirements;
@@ -573,6 +626,18 @@ GigVenueSummary? _venueFromJson(dynamic value) {
 dynamic _venueToJson(GigVenueSummary? venue) {
   if (venue == null) return null;
   return venue.toJson();
+}
+
+List<BookedArtistInfo> _bookedArtistsFromJson(dynamic value) {
+  if (value == null) return const [];
+  if (value is List) {
+    return value.map((e) => BookedArtistInfo.fromDynamic(e)).toList();
+  }
+  return const [];
+}
+
+List<String> _bookedArtistsToJson(List<BookedArtistInfo> artists) {
+  return artists.map((a) => a.id).toList();
 }
 
 String? _gigStatusToWire(GigStatus? status) {

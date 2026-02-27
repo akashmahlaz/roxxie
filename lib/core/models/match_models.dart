@@ -104,6 +104,9 @@ class DiscoveryCard {
   final bool isVerified;
   final bool isBoosted;
 
+  // Server-computed recommendation score (0-100)
+  final double recommendationScore;
+
   // Artist-specific
   final Artist? artist;
 
@@ -128,6 +131,7 @@ class DiscoveryCard {
     this.reviewCount = 0,
     this.isVerified = false,
     this.isBoosted = false,
+    this.recommendationScore = 0.0,
     this.artist,
     this.venue,
     this.gig,
@@ -198,27 +202,56 @@ class DiscoveryCard {
     final typeValue = json['type'];
     final type = typeValue?.toString().toLowerCase();
 
+    final double serverScore = (json['recommendationScore'] as num?)?.toDouble() ?? 0.0;
+
     if (type == 'gig') {
       final gig = Gig.fromJson(json);
-      return DiscoveryCard.fromGig(
+      final card = DiscoveryCard.fromGig(
         gig,
         distance: (json['distance'] as num?)?.toDouble(),
+      );
+      return DiscoveryCard(
+        id: card.id, isArtist: card.isArtist, isGig: card.isGig,
+        name: card.name, bio: card.bio, primaryPhotoUrl: card.primaryPhotoUrl,
+        galleryUrls: card.galleryUrls, location: card.location,
+        distance: card.distance, genres: card.genres, rating: card.rating,
+        reviewCount: card.reviewCount, isVerified: card.isVerified,
+        isBoosted: card.isBoosted, recommendationScore: serverScore,
+        gig: card.gig,
       );
     }
 
     if (type == 'artist' || json['stageName'] != null || json['displayName'] != null) {
       final artist = Artist.fromJson(json);
-      return DiscoveryCard.fromArtist(
+      final card = DiscoveryCard.fromArtist(
         artist,
         distance: (json['distance'] as num?)?.toDouble(),
+      );
+      return DiscoveryCard(
+        id: card.id, isArtist: card.isArtist, isGig: card.isGig,
+        name: card.name, bio: card.bio, primaryPhotoUrl: card.primaryPhotoUrl,
+        galleryUrls: card.galleryUrls, location: card.location,
+        distance: card.distance, genres: card.genres, rating: card.rating,
+        reviewCount: card.reviewCount, isVerified: card.isVerified,
+        isBoosted: card.isBoosted, recommendationScore: serverScore,
+        artist: card.artist,
       );
     }
 
     // Default to venue
     final venue = Venue.fromJson(json);
-    return DiscoveryCard.fromVenue(
+    final card = DiscoveryCard.fromVenue(
       venue,
       distance: (json['distance'] as num?)?.toDouble(),
+    );
+    return DiscoveryCard(
+      id: card.id, isArtist: card.isArtist, isGig: card.isGig,
+      name: card.name, bio: card.bio, primaryPhotoUrl: card.primaryPhotoUrl,
+      galleryUrls: card.galleryUrls, location: card.location,
+      distance: card.distance, genres: card.genres, rating: card.rating,
+      reviewCount: card.reviewCount, isVerified: card.isVerified,
+      isBoosted: card.isBoosted, recommendationScore: serverScore,
+      venue: card.venue,
     );
   }
 

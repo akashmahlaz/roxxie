@@ -44,6 +44,7 @@ class _GigContractScreenState extends State<GigContractScreen>
   bool _isLoading = true;
   bool _isProcessing = false;
   bool _hasSignature = false;
+  Key _signatureKey = UniqueKey();
   String? _error;
 
   Booking? _booking;
@@ -768,16 +769,22 @@ class _GigContractScreenState extends State<GigContractScreen>
 
           const SizedBox(height: 16),
 
-          // Venue Provides (default items since not in model)
+          // Venue Provides — derived from additionalTerms when available
           _ContractSection(
             title: 'Venue Provides',
             icon: Icons.business_rounded,
-            items: [
-              'Performance space',
-              'Basic sound system',
-              'Loading access',
-              'Restroom facilities',
-            ],
+            items: booking.additionalTerms != null &&
+                    booking.additionalTerms!.trim().isNotEmpty
+                ? booking.additionalTerms!
+                    .split('\n')
+                    .where((l) => l.trim().isNotEmpty)
+                    .toList()
+                : [
+                    'Performance space',
+                    'Basic sound system',
+                    'Loading access',
+                    'Restroom facilities',
+                  ],
             brightness: brightness,
           ),
 
@@ -1014,6 +1021,7 @@ class _GigContractScreenState extends State<GigContractScreen>
                 ClipRRect(
                   borderRadius: BorderRadius.circular(15),
                   child: _SignatureCanvas(
+                    key: _signatureKey,
                     onSignatureChanged: (hasSignature) {
                       setState(() => _hasSignature = hasSignature);
                     },
@@ -1051,7 +1059,10 @@ class _GigContractScreenState extends State<GigContractScreen>
                     child: AnimatedTapFeedback(
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        setState(() => _hasSignature = false);
+                        setState(() {
+                          _hasSignature = false;
+                          _signatureKey = UniqueKey();
+                        });
                       },
                       child: Container(
                         padding: const EdgeInsets.all(8),
@@ -1577,7 +1588,7 @@ class _AgreementCheckbox extends StatelessWidget {
 class _SignatureCanvas extends StatefulWidget {
   final ValueChanged<bool> onSignatureChanged;
 
-  const _SignatureCanvas({required this.onSignatureChanged});
+  const _SignatureCanvas({super.key, required this.onSignatureChanged});
 
   @override
   State<_SignatureCanvas> createState() => _SignatureCanvasState();

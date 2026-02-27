@@ -106,13 +106,20 @@ class SwipeService {
           ? 'right'
           : 'left';
 
+      final data = <String, dynamic>{
+        'targetId': request.targetId,
+        'targetType': request.targetType,
+        'direction': direction,
+      };
+
+      // Send isSuperLike flag so backend can differentiate super likes from regular likes
+      if (request.action == SwipeAction.superLike) {
+        data['isSuperLike'] = true;
+      }
+
       final response = await _client.post(
         '${Endpoints.swipe}/${request.targetId}',
-        data: {
-          'targetId': request.targetId,
-          'targetType': request.targetType,
-          'direction': direction,
-        },
+        data: data,
       );
       return SwipeResponse.fromJson(response.data);
     } catch (e) {
