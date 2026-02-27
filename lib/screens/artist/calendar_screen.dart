@@ -32,6 +32,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
   String? _error;
 
   late DateTime _focusedMonth;
+  DateTime? _selectedDate;
   CalendarResponse? _data;
   Map<DateTime, List<CalendarEvent>> _eventsByDate = {};
 
@@ -634,19 +635,38 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                   final hasGig = events.any((e) => e.isGig);
                   final hasAvail = events.any((e) => e.isAvailability);
 
+                  final isSelected = _selectedDate != null &&
+                      date.year == _selectedDate!.year &&
+                      date.month == _selectedDate!.month &&
+                      date.day == _selectedDate!.day;
+
                   return Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: isPast
-                          ? null
-                          : () {
-                              HapticFeedback.selectionClick();
-                            },
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _selectedDate = date);
+                        _showDayDetail(date, br);
+                      },
                       child: SizedBox(
                         height: 44,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
+                            // Selected date: crimson ring
+                            if (isSelected && !isToday)
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.crimson,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+
                             // Today: white circle bg with crimson text
                             if (isToday)
                               Container(
@@ -718,7 +738,7 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
     );
   }
 
-  // ─── Add Availability Button ────────────────────────────────────────────
+  // ─── Add Availability Button (5% smaller) ──────────────────────────────
 
   Widget _buildAddButton(Brightness br) {
     final isDark = br == Brightness.dark;
@@ -727,17 +747,17 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
       onTap: _saving ? null : _addAvailability,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 18),
+        padding: const EdgeInsets.symmetric(vertical: 17, horizontal: 16),
         decoration: BoxDecoration(
           color: isDark ? Colors.white : AppColors.crimson,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(21),
           boxShadow: [
             BoxShadow(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.08)
                   : AppColors.crimson.withValues(alpha: 0.25),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -747,15 +767,15 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
             Icon(
               Icons.add_rounded,
               color: isDark ? AppColors.crimson : Colors.white,
-              size: 22,
+              size: 21,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 7),
             Text(
               'Add Availability',
               style: TextStyle(
                 fontFamily: 'Satoshi',
                 color: isDark ? AppColors.crimson : Colors.white,
-                fontSize: 16,
+                fontSize: 15.2,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
               ),
@@ -987,7 +1007,13 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
         ),
         child: Icon(Icons.delete_rounded, color: AppColors.crimson),
       ),
-      child: Container(
+      child: GestureDetector(
+        onTap: isAvail
+            ? () => _showEditAvailability(event, br)
+            : isGig && event.gigId != null
+                ? () => context.push('/gig/${event.gigId}')
+                : null,
+        child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? AppColors.charcoal : Colors.white,
@@ -1117,26 +1143,50 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
                 ),
               ),
             if (isAvail)
-              GestureDetector(
-                onTap: () => _deleteEvent(event),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: AppColors.crimson.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () => _showEditAvailability(event, br),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.crimson.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.edit_rounded,
+                        color: AppColors.crimson,
+                        size: 16,
+                      ),
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: AppColors.crimson.withValues(alpha: 0.6),
-                    size: 18,
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () => _deleteEvent(event),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.crimson.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: AppColors.crimson.withValues(alpha: 0.6),
+                        size: 16,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -1202,6 +1252,751 @@ class _ArtistCalendarScreenState extends State<ArtistCalendarScreen> {
         ),
       ),
     );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // DAY DETAIL BOTTOM SHEET
+  // ═════════════════════════════════════════════════════════════════════════
+
+  void _showDayDetail(DateTime date, Brightness br) {
+    final isDark = br == Brightness.dark;
+    final events = _eventsFor(date);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final isPast = date.isBefore(today);
+
+    debugPrint('📅 [Calendar] Day detail: ${_shortDate(date)}, ${events.length} events');
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.55,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.charcoal : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Handle bar ──
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textSec(br).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // ── Date header ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _shortDate(date),
+                          style: TextStyle(
+                            fontFamily: 'Satoshi',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.crimson,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          events.isEmpty
+                              ? 'No events'
+                              : '${events.length} event${events.length > 1 ? 's' : ''}',
+                          style: TextStyle(
+                            color: AppColors.textSec(br),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!isPast)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _addAvailabilityForDate(date);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white : AppColors.crimson,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              color: isDark ? AppColors.crimson : Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Add',
+                              style: TextStyle(
+                                fontFamily: 'Satoshi',
+                                color: isDark ? AppColors.crimson : Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Events list ──
+            if (events.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.event_busy_rounded,
+                      color: AppColors.textSec(br).withValues(alpha: 0.3),
+                      size: 44,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      isPast ? 'No past events' : 'Nothing scheduled',
+                      style: TextStyle(
+                        fontFamily: 'Satoshi',
+                        color: AppColors.textSec(br),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (!isPast) ...[                      const SizedBox(height: 4),
+                      Text(
+                        'Tap + to add availability',
+                        style: TextStyle(
+                          color: AppColors.textSec(br).withValues(alpha: 0.6),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              )
+            else
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  itemCount: events.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) {
+                    final e = events[i];
+                    final isAvail = e.isAvailability;
+                    final isGig = e.isGig;
+                    final accent = isGig
+                        ? AppColors.crimson
+                        : isAvail
+                            ? AppColors.success
+                            : AppColors.textSec(br);
+                    final icon = isGig
+                        ? Icons.music_note_rounded
+                        : isAvail
+                            ? Icons.check_circle_rounded
+                            : Icons.block_rounded;
+                    final label = isGig
+                        ? 'GIG'
+                        : isAvail
+                            ? 'AVAILABLE'
+                            : 'BLOCKED';
+
+                    return GestureDetector(
+                      onTap: isAvail
+                          ? () {
+                              Navigator.pop(ctx);
+                              _showEditAvailability(e, br);
+                            }
+                          : isGig && e.gigId != null
+                              ? () {
+                                  Navigator.pop(ctx);
+                                  context.push('/gig/${e.gigId}');
+                                }
+                              : null,
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? accent.withValues(alpha: 0.08)
+                              : accent.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: accent.withValues(alpha: 0.12),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: isDark ? 0.15 : 0.1),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(icon, color: accent, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontFamily: 'Satoshi',
+                                      color: accent,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '${e.displayStartTime} – ${e.displayEndTime}',
+                                    style: TextStyle(
+                                      fontFamily: 'Satoshi',
+                                      color: AppColors.text(br),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  if (e.venueName != null) ...[                                    const SizedBox(height: 2),
+                                    Text(
+                                      e.venueName!,
+                                      style: TextStyle(
+                                        color: AppColors.textSec(br),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            if (isAvail)
+                              Icon(
+                                Icons.edit_rounded,
+                                color: accent.withValues(alpha: 0.5),
+                                size: 18,
+                              ),
+                            if (isGig)
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: accent.withValues(alpha: 0.5),
+                                size: 16,
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // ADD AVAILABILITY FOR SPECIFIC DATE (from day detail sheet)
+  // ═════════════════════════════════════════════════════════════════════════
+
+  Future<void> _addAvailabilityForDate(DateTime date) async {
+    if (_saving) return;
+    final br = Theme.of(context).brightness;
+
+    debugPrint('📅 [Calendar] Add availability for ${_shortDate(date)}');
+
+    // Step 1: Pick start time
+    final startTime = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 18, minute: 0),
+      helpText: 'START TIME',
+      builder: (ctx, child) => Theme(
+        data: _timePickerTheme(ctx, br),
+        child: child!,
+      ),
+    );
+    if (startTime == null || !mounted) return;
+
+    // Step 2: Pick end time
+    final endTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: (startTime.hour + 4) % 24,
+        minute: startTime.minute,
+      ),
+      helpText: 'END TIME',
+      builder: (ctx, child) => Theme(
+        data: _timePickerTheme(ctx, br),
+        child: child!,
+      ),
+    );
+    if (endTime == null || !mounted) return;
+
+    // Save
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+
+    try {
+      final isOvernight = endTime.hour < startTime.hour;
+      final slot = AvailabilitySlot(
+        date: date,
+        startTime:
+            '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
+        endTime:
+            '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
+        isOvernight: isOvernight,
+        timezone: DateTime.now().timeZoneName,
+      );
+
+      debugPrint('📅 [Calendar] Saving for date: ${slot.toJson()}');
+      await _calService.addAvailability(slot);
+
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Availability added — ${_shortDate(date)}'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      );
+      await _loadCalendar();
+    } catch (e) {
+      debugPrint('❌ [Calendar] Save failed: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // EDIT AVAILABILITY BOTTOM SHEET
+  // ═════════════════════════════════════════════════════════════════════════
+
+  void _showEditAvailability(CalendarEvent event, Brightness br) {
+    final isDark = br == Brightness.dark;
+    HapticFeedback.mediumImpact();
+    debugPrint('📅 [Calendar] Edit availability: ${event.id}');
+
+    // Parse current times
+    TimeOfDay parseTimeOfDay(String t) {
+      final parts = t.split(':');
+      return TimeOfDay(
+        hour: int.tryParse(parts[0]) ?? 18,
+        minute: int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0,
+      );
+    }
+
+    final currentStart = parseTimeOfDay(event.startTime);
+    final currentEnd = parseTimeOfDay(event.endTime);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.charcoal : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textSec(br).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              Text(
+                'Edit Availability',
+                style: TextStyle(
+                  fontFamily: 'Satoshi',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.crimson,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _shortDate(event.date),
+                style: TextStyle(
+                  color: AppColors.textSec(br),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Current time display
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.success.withValues(alpha: 0.08)
+                      : AppColors.success.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      color: AppColors.success,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '${event.displayStartTime} – ${event.displayEndTime}',
+                      style: TextStyle(
+                        fontFamily: 'Satoshi',
+                        color: AppColors.text(br),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Action buttons — 3 options: Change Date, Change Time, Remove
+              Row(
+                children: [
+                  // Change Date button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _editAvailabilityDate(
+                          event,
+                          currentStart,
+                          currentEnd,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white : AppColors.crimson,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        alignment: Alignment.center,
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              color: isDark ? AppColors.crimson : Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Date',
+                              style: TextStyle(
+                                fontFamily: 'Satoshi',
+                                color: isDark ? AppColors.crimson : Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Change Time button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _editAvailabilityTime(
+                          event,
+                          currentStart,
+                          currentEnd,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white : AppColors.crimson,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        alignment: Alignment.center,
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.schedule_rounded,
+                              color: isDark ? AppColors.crimson : Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Time',
+                              style: TextStyle(
+                                fontFamily: 'Satoshi',
+                                color: isDark ? AppColors.crimson : Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Delete button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _deleteEvent(event);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        decoration: BoxDecoration(
+                          color: AppColors.crimson.withValues(alpha: isDark ? 0.12 : 0.06),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.crimson.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.delete_rounded,
+                              color: AppColors.crimson,
+                              size: 18,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Remove',
+                              style: TextStyle(
+                                fontFamily: 'Satoshi',
+                                color: AppColors.crimson,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Edit availability DATE: pick a new date, keep times, delete old + add new
+  Future<void> _editAvailabilityDate(
+    CalendarEvent event,
+    TimeOfDay currentStart,
+    TimeOfDay currentEnd,
+  ) async {
+    final br = Theme.of(context).brightness;
+    final now = DateTime.now();
+
+    final newDate = await showDatePicker(
+      context: context,
+      initialDate: event.date.isBefore(now) ? now : event.date,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      helpText: 'NEW DATE',
+      builder: (ctx, child) => Theme(
+        data: _datePickerTheme(ctx, br),
+        child: child!,
+      ),
+    );
+    if (newDate == null || !mounted) return;
+
+    debugPrint('📅 [Calendar] Edit date: ${_shortDate(event.date)} → ${_shortDate(newDate)}');
+    await _saveEditedAvailability(
+      event: event,
+      newDate: newDate,
+      newStart: currentStart,
+      newEnd: currentEnd,
+    );
+  }
+
+  /// Edit availability TIME: pick new start/end, keep date, delete old + add new
+  Future<void> _editAvailabilityTime(
+    CalendarEvent event,
+    TimeOfDay currentStart,
+    TimeOfDay currentEnd,
+  ) async {
+    final br = Theme.of(context).brightness;
+
+    // Pick new start
+    final newStart = await showTimePicker(
+      context: context,
+      initialTime: currentStart,
+      helpText: 'NEW START TIME',
+      builder: (ctx, child) => Theme(
+        data: _timePickerTheme(ctx, br),
+        child: child!,
+      ),
+    );
+    if (newStart == null || !mounted) return;
+
+    // Pick new end
+    final newEnd = await showTimePicker(
+      context: context,
+      initialTime: currentEnd,
+      helpText: 'NEW END TIME',
+      builder: (ctx, child) => Theme(
+        data: _timePickerTheme(ctx, br),
+        child: child!,
+      ),
+    );
+    if (newEnd == null || !mounted) return;
+
+    debugPrint('📅 [Calendar] Edit time: ${currentStart.format(context)} → ${newStart.format(context)}');
+    await _saveEditedAvailability(
+      event: event,
+      newDate: event.date,
+      newStart: newStart,
+      newEnd: newEnd,
+    );
+  }
+
+  /// Shared save logic for date/time edits: delete old + add new
+  Future<void> _saveEditedAvailability({
+    required CalendarEvent event,
+    required DateTime newDate,
+    required TimeOfDay newStart,
+    required TimeOfDay newEnd,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+
+    try {
+      // Remove old
+      final slotId = event.id.startsWith('avail-')
+          ? event.id.substring(6)
+          : event.id;
+      debugPrint('📅 [Calendar] Edit: removing old $slotId');
+      await _calService.removeAvailability(event.date, slotId: slotId);
+
+      // Add new
+      final isOvernight = newEnd.hour < newStart.hour;
+      final slot = AvailabilitySlot(
+        date: newDate,
+        startTime:
+            '${newStart.hour.toString().padLeft(2, '0')}:${newStart.minute.toString().padLeft(2, '0')}',
+        endTime:
+            '${newEnd.hour.toString().padLeft(2, '0')}:${newEnd.minute.toString().padLeft(2, '0')}',
+        isOvernight: isOvernight,
+        timezone: DateTime.now().timeZoneName,
+      );
+
+      debugPrint('📅 [Calendar] Edit: adding new ${slot.toJson()}');
+      await _calService.addAvailability(slot);
+
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+
+      // Jump to the new date's month if needed
+      if (newDate.month != _focusedMonth.month ||
+          newDate.year != _focusedMonth.year) {
+        _focusedMonth = DateTime(newDate.year, newDate.month);
+      }
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Availability updated — ${_shortDate(newDate)}'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      );
+      await _loadCalendar();
+    } catch (e) {
+      debugPrint('❌ [Calendar] Edit failed: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to update: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
   }
 
   // ═════════════════════════════════════════════════════════════════════════
