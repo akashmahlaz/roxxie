@@ -134,12 +134,21 @@ class DiscoveryProvider extends ChangeNotifier {
     }
   }
 
+  /// Resolve the correct targetType for the backend
+  /// Artists see gigs → 'gig'; Venues see artists → 'artist'
+  String _resolveTargetType(DiscoveryCard card) {
+    if (card.isGig) { return 'gig'; }
+    if (card.isArtist) { return 'artist'; }
+    return 'venue';
+  }
+
   /// 👍 Swipe right (like)
   Future<bool> like() async {
     if (!hasCards) return false;
 
     final card = currentCard!;
-    final targetType = card.isArtist ? 'artist' : 'venue';
+    final targetType = _resolveTargetType(card);
+    debugPrint('🎯 [Discovery] like → targetType=$targetType, id=${card.id}, isGig=${card.isGig}');
     _moveToNext();
 
     try {
@@ -172,7 +181,8 @@ class DiscoveryProvider extends ChangeNotifier {
     if (!hasCards) return;
 
     final card = currentCard!;
-    final targetType = card.isArtist ? 'artist' : 'venue';
+    final targetType = _resolveTargetType(card);
+    debugPrint('🎯 [Discovery] pass → targetType=$targetType, id=${card.id}');
     _moveToNext();
 
     try {
@@ -197,7 +207,8 @@ class DiscoveryProvider extends ChangeNotifier {
     if (!hasCards) return false;
 
     final card = currentCard!;
-    final targetType = card.isArtist ? 'artist' : 'venue';
+    final targetType = _resolveTargetType(card);
+    debugPrint('🎯 [Discovery] superLike → targetType=$targetType, id=${card.id}');
     _moveToNext();
 
     try {

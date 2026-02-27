@@ -13,6 +13,7 @@
 /// - Image prefetch for buttery scrolling
 library;
 
+import 'dart:developer' as dev;
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -777,26 +778,29 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         decoration: BoxDecoration(
           color: sel
               ? (isDark ? Colors.white : AppColors.crimson)
-              : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white),
+              : (isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF5F5F5)),
           borderRadius: BorderRadius.circular(20),
-          border: sel
-              ? null
-              : Border.all(color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFEEEEEE)),
+          border: Border.all(
+            color: sel
+                ? (isDark ? Colors.white : AppColors.crimson)
+                : AppColors.border(br),
+          ),
+          boxShadow: sel
+              ? [BoxShadow(color: (isDark ? Colors.white : AppColors.crimson).withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 2))]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 15, color: sel ? (isDark ? AppColors.crimson : Colors.white) : AppColors.crimson),
+              Icon(icon, size: 15, color: sel ? (isDark ? AppColors.crimson : Colors.white) : AppColors.textSec(br)),
               const SizedBox(width: 5),
             ],
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'Satoshi',
-                color: sel
-                    ? (isDark ? AppColors.crimson : Colors.white)
-                    : AppColors.text(br),
+                color: sel ? (isDark ? AppColors.crimson : Colors.white) : AppColors.text(br),
                 fontWeight: sel ? FontWeight.w700 : FontWeight.w600,
                 fontSize: 13,
               ),
@@ -976,15 +980,65 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Widget _buildCardBody(DiscoveryCard card, Brightness br) {
     final item = _Item.fromCard(card);
 
+    // ── Extensive card data logging ──
+    dev.log(
+      '[DiscoveryCard] '
+      'id=${card.id} | type=${card.isGig ? "GIG" : card.isArtist ? "ARTIST" : "VENUE"} | '
+      'name="${card.name}" | bio="${card.bio?.substring(0, card.bio!.length > 80 ? 80 : card.bio!.length) ?? 'null'}" | '
+      'photo=${card.primaryPhotoUrl.isNotEmpty ? "YES" : "NO"} | gallery=${card.galleryUrls.length} | '
+      'genres=${card.genres} | location="${card.location}" | distance=${card.distance} | '
+      'rating=${card.rating} | reviews=${card.reviewCount} | verified=${card.isVerified} | boosted=${card.isBoosted} | '
+      'recScore=${card.recommendationScore}',
+      name: 'DiscoveryScreen',
+    );
+    if (card.isGig && card.gig != null) {
+      final g = card.gig!;
+      dev.log(
+        '[GigCardDetail] '
+        'gigId=${g.id} | title="${g.title}" | '
+        'date=${g.date} | startTime=${g.startTime} | endTime=${g.endTime} | '
+        'budget=${g.budget} ${g.currency} | status=${g.status} | '
+        'venue=${g.venue?.venueName ?? "null"} | venueId=${g.venue?.id ?? "null"} | '
+        'genres=${g.requiredGenres} | location="${g.location.cityCountry}" | '
+        'artistsNeeded=${g.artistsNeeded} | applications=${g.applicationCount}',
+        name: 'DiscoveryScreen',
+      );
+    }
+    if (card.isArtist && card.artist != null) {
+      final a = card.artist!;
+      dev.log(
+        '[ArtistCardDetail] '
+        'artistId=${a.id} | stageName="${a.stageName}" | '
+        'genres=${a.genres} | rating=${a.rating} | reviews=${a.reviewCount} | '
+        'minPrice=${a.minPrice} | maxPrice=${a.maxPrice} | '
+        'verified=${a.isVerified} | boosted=${a.isBoosted}',
+        name: 'DiscoveryScreen',
+      );
+    }
+    dev.log(
+      '[CardViewModel] '
+      'isGig=${item.isGig} | title="${item.title}" | subtitle="${item.subtitle ?? 'null'}" | '
+      'city="${item.city ?? 'null'}" | distance=${item.distance} | '
+      'rating=${item.rating} | reviews=${item.reviewCount} | price=${item.price} | score=${item.score} | '
+      'genres=${item.genres} | dateDay=${item.dateDay} | dateMonth=${item.dateMonth} | '
+      'gigTime=${item.gigTime} | venueName=${item.venueName} | imageUrl=${item.imageUrl != null ? "present" : "null"}',
+      name: 'DiscoveryScreen',
+    );
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+          BoxShadow(
+            color: AppColors.crimson.withValues(alpha: 0.06),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
           ),
         ],
       ),
@@ -996,158 +1050,481 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             CachedNetworkImage(
               imageUrl: item.imageUrl!,
               fit: BoxFit.cover,
-              errorWidget: (context, url, error) => _buildGradient(),
+              placeholder: (_, _) => _buildShimmerPlaceholder(),
+              errorWidget: (_, _, _) => _buildCardGradient(item.isGig),
             )
           else
-            _buildGradient(),
+            _buildCardGradient(item.isGig),
 
-          // Scrim
+          // Premium scrim — different for gig vs artist
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  stops: const [0.3, 0.7, 1.0],
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.4),
-                    Colors.black.withValues(alpha: 0.85),
-                  ],
+                  stops: item.isGig
+                      ? const [0.0, 0.2, 0.6, 1.0]
+                      : const [0.35, 0.65, 1.0],
+                  colors: item.isGig
+                      ? [
+                          Colors.black.withValues(alpha: 0.5),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.3),
+                          Colors.black.withValues(alpha: 0.92),
+                        ]
+                      : [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.35),
+                          Colors.black.withValues(alpha: 0.88),
+                        ],
                 ),
               ),
             ),
           ),
 
-          // Badges
-          _buildBadges(item),
+          // Top badges row
+          _buildTopBadges(item),
 
-          // Info
-          _buildCardInfo(item, br),
+          // Gig cards get a special top header with date/budget
+          if (item.isGig) _buildGigHeader(item),
 
-          // Swipe indicator
-          _buildSwipeIndicator(),
+          // Bottom info — differentiated layout
+          item.isGig ? _buildGigInfo(item) : _buildArtistInfo(item),
+
+          // Swipe feedback overlays
+          _buildSwipeOverlays(),
         ]),
       ),
     );
   }
 
-  Widget _buildGradient() {
+  Widget _buildShimmerPlaceholder() {
+    return Container(
+      color: AppColors.charcoal,
+      child: Center(
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.crimson.withValues(alpha: 0.3),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardGradient(bool isGig) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.crimson.withValues(alpha: 0.6),
-            AppColors.rose.withValues(alpha: 0.4),
-            AppColors.crimson.withValues(alpha: 0.3),
+          colors: isGig
+              ? [
+                  const Color(0xFF1A1A2E),
+                  AppColors.crimson.withValues(alpha: 0.3),
+                  const Color(0xFF16213E),
+                ]
+              : [
+                  AppColors.crimson.withValues(alpha: 0.5),
+                  AppColors.rose.withValues(alpha: 0.35),
+                  AppColors.crimson.withValues(alpha: 0.25),
+                ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          isGig ? Icons.music_note_rounded : Icons.person_rounded,
+          color: Colors.white.withValues(alpha: 0.15),
+          size: 120,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBadges(_Item item) {
+    return Positioned(
+      top: 16,
+      left: 16,
+      right: 16,
+      child: Row(
+        children: [
+          // Type pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: item.isGig ? AppColors.crimson : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(
+                item.isGig ? Icons.event_rounded : Icons.mic_external_on_rounded,
+                color: item.isGig ? Colors.white : AppColors.crimson,
+                size: 13,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                item.typeLabel.toUpperCase(),
+                style: TextStyle(
+                  fontFamily: 'Satoshi',
+                  color: item.isGig ? Colors.white : AppColors.crimson,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ]),
+          ),
+
+          // Boosted badge
+          if (item.isBoosted) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade600,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.amber.shade600.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.bolt_rounded, color: Colors.white, size: 13),
+                SizedBox(width: 2),
+                Text(
+                  'BOOSTED',
+                  style: TextStyle(
+                    fontFamily: 'Satoshi',
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ]),
+            ),
+          ],
+
+          const Spacer(),
+
+          // Verified
+          if (item.isVerified)
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8),
+                ],
+              ),
+              child: const Icon(Icons.verified_rounded, color: Color(0xFF1DA1F2), size: 16),
+            ),
+
+          // Match score
+          if (item.score > 0) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _scoreColor(item.score).withValues(alpha: 0.4)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.auto_awesome_rounded, color: _scoreColor(item.score), size: 12),
+                const SizedBox(width: 4),
+                Text(
+                  '${item.score.toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontFamily: 'Satoshi',
+                    color: _scoreColor(item.score),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ]),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Gig-specific header: date, time & budget displayed prominently at top
+  Widget _buildGigHeader(_Item item) {
+    return Positioned(
+      top: 52,
+      left: 20,
+      right: 20,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(
+          children: [
+            // Date
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.crimson.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(
+                  item.dateDay ?? '--',
+                  style: const TextStyle(
+                    fontFamily: 'Satoshi',
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+                Text(
+                  item.dateMonth ?? '',
+                  style: TextStyle(
+                    fontFamily: 'Satoshi',
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ]),
+            ),
+            const SizedBox(width: 14),
+            // Time & venue
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (item.gigTime != null)
+                    Row(children: [
+                      Icon(Icons.schedule_rounded, color: Colors.white.withValues(alpha: 0.7), size: 14),
+                      const SizedBox(width: 5),
+                      Text(
+                        item.gigTime!,
+                        style: TextStyle(
+                          fontFamily: 'Satoshi',
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ]),
+                  if (item.venueName != null) ...[
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      Icon(Icons.business_rounded, color: Colors.white.withValues(alpha: 0.7), size: 14),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          item.venueName!,
+                          style: TextStyle(
+                            fontFamily: 'Satoshi',
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ]),
+                  ],
+                ],
+              ),
+            ),
+            // Budget
+            if (item.price != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                ),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(
+                    '\$${item.price!.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      fontFamily: 'Satoshi',
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    'budget',
+                    style: TextStyle(
+                      fontFamily: 'Satoshi',
+                      color: AppColors.success.withValues(alpha: 0.8),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ]),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBadges(_Item item) {
-    return Stack(children: [
-      if (item.isBoosted)
-        Positioned(
-          top: 16,
-          left: 16,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.amber.shade600,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 14),
-              const SizedBox(width: 4),
-              const Text(
-                'BOOSTED',
-                style: TextStyle(
-                  fontFamily: 'Satoshi',
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ]),
-          ),
-        ),
-      if (item.isVerified)
-        Positioned(
-          top: 16,
-          right: 16,
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-            child: const Icon(Icons.verified_rounded, color: Colors.blue, size: 18),
-          ),
-        ),
-    ]);
-  }
-
-  Widget _buildCardInfo(_Item item, Brightness br) {
-    final chips = <Widget>[
-      if (item.city != null && item.city!.isNotEmpty)
-        _buildInfoChip(Icons.location_on_rounded, item.city!),
-      if (item.distance > 0)
-        _buildInfoChip(Icons.directions_walk_rounded, '${item.distance.toStringAsFixed(0)} mi'),
-      if (item.rating != null && item.rating! > 0)
-        _buildInfoChip(Icons.star_rounded, item.rating!.toStringAsFixed(1), iconColor: Colors.amber.shade400),
-      if (item.price != null)
-        _buildInfoChip(Icons.attach_money_rounded, '${item.price!.toStringAsFixed(0)}+'),
-    ];
-
+  /// Artist card info — genres, location, rating, price
+  Widget _buildArtistInfo(_Item item) {
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Type badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-              ),
-              child: Text(
-                item.typeLabel.toUpperCase(),
-                style: const TextStyle(
-                  fontFamily: 'Satoshi',
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // Title
+            // Name
             Text(
               item.title,
               style: const TextStyle(
                 fontFamily: 'Satoshi',
                 color: Colors.white,
-                fontSize: 28,
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+                height: 1.1,
+                letterSpacing: -0.7,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+
+            // Genres as colored pills
+            if (item.genres.isNotEmpty)
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: item.genres.take(3).map((g) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.crimson.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    g,
+                    style: const TextStyle(
+                      fontFamily: 'Satoshi',
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                )).toList(),
+              ),
+            const SizedBox(height: 12),
+
+            // Stats row — bento style
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              ),
+              child: Row(
+                children: [
+                  if (item.city != null && item.city!.isNotEmpty) ...[
+                    Icon(Icons.location_on_rounded, color: AppColors.crimson.withValues(alpha: 0.8), size: 15),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        item.city!,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                  if (item.distance > 0) ...[
+                    const SizedBox(width: 12),
+                    Icon(Icons.near_me_rounded, color: Colors.white.withValues(alpha: 0.5), size: 13),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${item.distance.toStringAsFixed(0)} mi',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                  const Spacer(),
+                  if (item.rating != null && item.rating! > 0) ...[
+                    Icon(Icons.star_rounded, color: Colors.amber.shade400, size: 15),
+                    const SizedBox(width: 3),
+                    Text(
+                      item.rating!.toStringAsFixed(1),
+                      style: const TextStyle(color: Colors.white, fontFamily: 'Satoshi', fontSize: 13, fontWeight: FontWeight.w800),
+                    ),
+                    if (item.reviewCount > 0)
+                      Text(
+                        ' (${item.reviewCount})',
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontFamily: 'Satoshi', fontSize: 11),
+                      ),
+                  ],
+                  if (item.price != null) ...[
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '\$${item.price!.toStringAsFixed(0)}+',
+                        style: const TextStyle(color: Colors.white, fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Gig card info — title, description, genres, location at bottom
+  Widget _buildGigInfo(_Item item) {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Gig title
+            Text(
+              item.title,
+              style: const TextStyle(
+                fontFamily: 'Satoshi',
+                color: Colors.white,
+                fontSize: 26,
                 fontWeight: FontWeight.w900,
                 height: 1.1,
                 letterSpacing: -0.5,
@@ -1156,141 +1533,157 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               overflow: TextOverflow.ellipsis,
             ),
 
-            // Subtitle
+            // Description
             if (item.subtitle != null && item.subtitle!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
                 item.subtitle!,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 15,
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontSize: 14,
                   height: 1.3,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
+            const SizedBox(height: 12),
 
-            // Info chips
-            if (chips.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Wrap(spacing: 8, runSpacing: 8, children: chips),
-            ],
-
-            // Recommendation score
-            if (item.score > 0) ...[
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.auto_awesome_rounded, color: _scoreColor(item.score), size: 15),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${item.score.toStringAsFixed(0)}% match',
-                    style: TextStyle(
-                      fontFamily: 'Satoshi',
-                      color: _scoreColor(item.score),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ]),
+            // Genres + location row
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Required genres
+                  if (item.genres.isNotEmpty)
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        Text(
+                          'Looking for: ',
+                          style: TextStyle(
+                            fontFamily: 'Satoshi',
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        ...item.genres.take(4).map((g) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.crimson.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.crimson.withValues(alpha: 0.25)),
+                          ),
+                          child: Text(g, style: const TextStyle(fontFamily: 'Satoshi', color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                        )),
+                      ],
+                    ),
+                  if (item.city != null && item.city!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Icon(Icons.location_on_rounded, color: AppColors.crimson.withValues(alpha: 0.8), size: 14),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          item.city!,
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (item.distance > 0) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          '${item.distance.toStringAsFixed(0)} mi away',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontFamily: 'Satoshi', fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ]),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label, {Color iconColor = Colors.white70}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: iconColor, size: 14),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Satoshi',
-            color: iconColor,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ]),
-    );
-  }
-
-  Widget _buildSwipeIndicator() {
+  /// Enhanced swipe overlays: LIKE with glow green, NOPE with glow red, opacity driven by drag
+  Widget _buildSwipeOverlays() {
     final w = MediaQuery.of(context).size.width;
-    final thresh = w * 0.35 * 0.3;
-    final showLike = _drag.dx > thresh;
-    final showNope = _drag.dx < -thresh;
+    final maxDragForFull = w * 0.35;
+    final progress = (_drag.dx.abs() / maxDragForFull).clamp(0.0, 1.0);
+    final isRight = _drag.dx > 0;
 
-    if (!showLike && !showNope) { return const SizedBox.shrink(); }
+    if (progress < 0.05) { return const SizedBox.shrink(); }
 
     return Stack(children: [
-      if (showLike)
-        Positioned(
-          top: 50,
-          right: 28,
-          child: Transform.rotate(
-            angle: 0.3,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white, width: 3),
-              ),
-              child: const Text(
-                'LIKE',
-                style: TextStyle(
-                  fontFamily: 'Satoshi',
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2,
-                ),
-              ),
+      // Edge glow
+      Positioned.fill(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: (isRight ? AppColors.success : AppColors.crimson).withValues(alpha: progress * 0.8),
+              width: 3 + progress * 2,
             ),
           ),
         ),
-      if (showNope)
-        Positioned(
-          top: 50,
-          left: 28,
-          child: Transform.rotate(
-            angle: -0.3,
+      ),
+      // Label
+      Positioned(
+        top: 60,
+        left: isRight ? null : 24,
+        right: isRight ? 24 : null,
+        child: Transform.rotate(
+          angle: isRight ? 0.25 : -0.25,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 100),
+            opacity: progress,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.crimson.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white, width: 3),
+                color: (isRight ? AppColors.success : AppColors.crimson).withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white, width: 2.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isRight ? AppColors.success : AppColors.crimson).withValues(alpha: 0.4),
+                    blurRadius: 16,
+                  ),
+                ],
               ),
-              child: const Text(
-                'NOPE',
-                style: TextStyle(
-                  fontFamily: 'Satoshi',
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(
+                  isRight ? Icons.favorite_rounded : Icons.close_rounded,
                   color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2,
+                  size: 20,
                 ),
-              ),
+                const SizedBox(width: 6),
+                Text(
+                  isRight ? 'BOOK' : 'PASS',
+                  style: const TextStyle(
+                    fontFamily: 'Satoshi',
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ]),
             ),
           ),
         ),
+      ),
     ]);
   }
 
@@ -1919,28 +2312,46 @@ class _Item {
   final String? imageUrl;
   final bool isBoosted;
   final bool isVerified;
+  final bool isGig;
   final String typeLabel;
   final String title;
   final String? subtitle;
   final String? city;
   final double distance;
   final double? rating;
+  final int reviewCount;
   final double? price;
   final double score;
+  final List<String> genres;
+
+  // Gig-specific
+  final String? dateDay;
+  final String? dateMonth;
+  final String? gigTime;
+  final String? venueName;
 
   const _Item({
     this.imageUrl,
     required this.isBoosted,
     required this.isVerified,
+    required this.isGig,
     required this.typeLabel,
     required this.title,
     this.subtitle,
     this.city,
     required this.distance,
     this.rating,
+    this.reviewCount = 0,
     this.price,
     required this.score,
+    this.genres = const [],
+    this.dateDay,
+    this.dateMonth,
+    this.gigTime,
+    this.venueName,
   });
+
+  static const _months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
   factory _Item.fromCard(DiscoveryCard card) {
     final artist = card.artist;
@@ -1953,26 +2364,45 @@ class _Item {
 
     final priceMin = artist?.minPrice ?? venue?.gigPreferences?.minBudget ?? gig?.budget;
 
-    final sub = card.genres.isNotEmpty
-        ? card.genres.take(3).join(' • ')
-        : (card.bio ?? gig?.description);
+    final sub = card.isGig
+        ? (gig?.description ?? card.bio)
+        : (card.genres.isNotEmpty ? card.genres.take(3).join(' • ') : card.bio);
 
     final score = card.recommendationScore > 0
         ? card.recommendationScore
         : (card.isBoosted ? 95.0 : (card.rating > 0 ? (card.rating / 5) * 100 : 0.0));
 
+    // Gig date info
+    String? dateDay;
+    String? dateMonth;
+    String? gigTime;
+    if (gig != null) {
+      dateDay = gig.date.day.toString();
+      dateMonth = _months[gig.date.month - 1];
+      gigTime = gig.endTime != null && gig.endTime!.isNotEmpty
+          ? '${gig.startTime} – ${gig.endTime}'
+          : gig.startTime;
+    }
+
     return _Item(
       imageUrl: img,
       isBoosted: card.isBoosted,
       isVerified: card.isVerified,
+      isGig: card.isGig,
       typeLabel: card.typeLabel,
       title: card.name,
       subtitle: sub,
       city: card.location ?? gig?.location.venueAddress ?? gig?.location.city,
       distance: card.distance ?? 0,
       rating: card.rating > 0 ? card.rating : null,
+      reviewCount: card.reviewCount,
       price: priceMin,
       score: score,
+      genres: card.isGig ? (gig?.requiredGenres ?? card.genres) : card.genres,
+      dateDay: dateDay,
+      dateMonth: dateMonth,
+      gigTime: gigTime,
+      venueName: gig?.venue?.venueName,
     );
   }
 }
