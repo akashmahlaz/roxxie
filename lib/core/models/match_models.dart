@@ -2,6 +2,7 @@
 /// Models for swiping, matching, and discovery
 library;
 
+import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';
 import 'artist_models.dart';
 import 'gig_models.dart';
@@ -138,6 +139,14 @@ class DiscoveryCard {
   });
 
   factory DiscoveryCard.fromArtist(Artist artist, {double? distance}) {
+    dev.log(
+      '[DiscoveryCard.fromArtist] '
+      'id=${artist.id} | stageName="${artist.stageName}" | '
+      'profilePhoto=${artist.profilePhoto != null ? "YES(${artist.profilePhoto!.substring(0, artist.profilePhoto!.length > 50 ? 50 : artist.profilePhoto!.length)}...)" : "NULL"} | '
+      'galleryUrls=${artist.galleryUrls.length} | '
+      'primaryPhoto=${artist.primaryPhoto.isNotEmpty ? "YES" : "EMPTY"}',
+      name: 'MatchModels',
+    );
     return DiscoveryCard(
       id: artist.id,
       isArtist: true,
@@ -241,6 +250,14 @@ class DiscoveryCard {
     }
 
     if (type == 'artist' || json['stageName'] != null || json['displayName'] != null) {
+      dev.log(
+        '[DiscoveryCard.fromJson] ARTIST raw photo fields: '
+        'profilePhoto=${json['profilePhoto'] != null ? "YES" : "null"} | '
+        'profilePhotoUrl=${json['profilePhotoUrl'] != null ? "YES" : "null"} | '
+        'galleryUrls=${(json['galleryUrls'] as List?)?.length ?? 'null'} | '
+        'photos=${(json['photos'] as List?)?.length ?? 'null'}',
+        name: 'MatchModels',
+      );
       final artist = Artist.fromJson(json);
       final card = DiscoveryCard.fromArtist(
         artist,

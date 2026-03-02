@@ -18,6 +18,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../core/exceptions.dart';
@@ -537,10 +538,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppColors.charcoal : Colors.white,
+        backgroundColor: isDark ? AppColors.charcoal : AppColors.pureWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Row(children: [
-          Icon(Icons.star_rounded, color: Colors.amber.shade600, size: 26),
+          Icon(Icons.star_rounded, color: AppColors.gold, size: 26),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -599,8 +600,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   Color _scoreColor(double s) {
     if (s >= 80) { return AppColors.success; }
-    if (s >= 60) { return Colors.amber.shade400; }
-    if (s >= 40) { return Colors.orange.shade400; }
+    if (s >= 60) { return AppColors.superLike; }
+    if (s >= 40) { return AppColors.warning; }
     return AppColors.crimson;
   }
 
@@ -1031,14 +1032,14 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
           ),
           BoxShadow(
-            color: AppColors.crimson.withValues(alpha: 0.06),
-            blurRadius: 40,
-            offset: const Offset(0, 20),
+            color: AppColors.crimsonGlow.withValues(alpha: 0.08),
+            blurRadius: 48,
+            offset: const Offset(0, 24),
           ),
         ],
       ),
@@ -1056,7 +1057,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           else
             _buildCardGradient(item.isGig),
 
-          // Premium scrim — different for gig vs artist
+          // Premium scrim — cinematic gradient
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -1064,19 +1065,21 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   stops: item.isGig
-                      ? const [0.0, 0.2, 0.6, 1.0]
-                      : const [0.35, 0.65, 1.0],
+                      ? const [0.0, 0.15, 0.55, 0.85, 1.0]
+                      : const [0.3, 0.55, 0.75, 1.0],
                   colors: item.isGig
                       ? [
-                          Colors.black.withValues(alpha: 0.5),
+                          Colors.black.withValues(alpha: 0.55),
+                          Colors.black.withValues(alpha: 0.15),
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.3),
+                          Colors.black.withValues(alpha: 0.5),
                           Colors.black.withValues(alpha: 0.92),
                         ]
                       : [
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.35),
-                          Colors.black.withValues(alpha: 0.88),
+                          Colors.black.withValues(alpha: 0.15),
+                          Colors.black.withValues(alpha: 0.5),
+                          Colors.black.withValues(alpha: 0.92),
                         ],
                 ),
               ),
@@ -1101,14 +1104,14 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   Widget _buildShimmerPlaceholder() {
     return Container(
-      color: AppColors.charcoal,
+      color: AppColors.shimmerBase,
       child: Center(
         child: SizedBox(
           width: 32,
           height: 32,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: AppColors.crimson.withValues(alpha: 0.3),
+            color: AppColors.crimson.withValues(alpha: 0.25),
           ),
         ),
       ),
@@ -1118,28 +1121,38 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Widget _buildCardGradient(bool isGig) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isGig
-              ? [
-                  const Color(0xFF1A1A2E),
-                  AppColors.crimson.withValues(alpha: 0.3),
-                  const Color(0xFF16213E),
-                ]
-              : [
-                  AppColors.crimson.withValues(alpha: 0.5),
-                  AppColors.rose.withValues(alpha: 0.35),
-                  AppColors.crimson.withValues(alpha: 0.25),
-                ],
-        ),
+        gradient: isGig
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0A0A0C), Color(0xFF1A0A0A), Color(0xFF0A0A0C)],
+                stops: [0.0, 0.5, 1.0],
+              )
+            : AppColors.heroGradient,
       ),
-      child: Center(
-        child: Icon(
-          isGig ? Icons.music_note_rounded : Icons.person_rounded,
-          color: Colors.white.withValues(alpha: 0.15),
-          size: 120,
-        ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Subtle texture ring
+          Container(
+            width: 180,
+            height: 180,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: (isGig ? AppColors.crimson : AppColors.pureWhite)
+                    .withValues(alpha: 0.06),
+                width: 1.5,
+              ),
+            ),
+          ),
+          Icon(
+            isGig ? Icons.music_note_rounded : Icons.mic_external_on_rounded,
+            color: (isGig ? AppColors.crimson : AppColors.pureWhite)
+                .withValues(alpha: 0.12),
+            size: 80,
+          ),
+        ],
       ),
     );
   }
@@ -1151,62 +1164,73 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       right: 16,
       child: Row(
         children: [
-          // Type pill
+          // ── Type pill (glass morphism) ──
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: item.isGig ? AppColors.crimson : Colors.white,
+              color: item.isGig
+                  ? AppColors.crimson.withValues(alpha: 0.85)
+                  : AppColors.pureWhite.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: item.isGig
+                    ? AppColors.crimsonLight.withValues(alpha: 0.3)
+                    : AppColors.glassBorder,
+                width: 0.5,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 8,
+                  color: (item.isGig ? AppColors.crimson : Colors.black)
+                      .withValues(alpha: 0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(
-                item.isGig ? Icons.event_rounded : Icons.mic_external_on_rounded,
-                color: item.isGig ? Colors.white : AppColors.crimson,
+                item.isGig
+                    ? Icons.music_note_rounded
+                    : Icons.mic_external_on_rounded,
+                color: item.isGig ? AppColors.pureWhite : AppColors.crimson,
                 size: 13,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 5),
               Text(
                 item.typeLabel.toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'Satoshi',
-                  color: item.isGig ? Colors.white : AppColors.crimson,
+                style: AppTypography.overline.copyWith(
+                  color: item.isGig ? AppColors.pureWhite : AppColors.crimson,
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
+                  letterSpacing: 1.0,
                 ),
               ),
             ]),
           ),
 
-          // Boosted badge
+          // ── Boosted badge ──
           if (item.isBoosted) ...[
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.amber.shade600,
+                gradient: AppColors.goldPremiumGradient,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.amber.shade600.withValues(alpha: 0.3),
-                    blurRadius: 8,
+                    color: AppColors.gold.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.bolt_rounded, color: Colors.white, size: 13),
-                SizedBox(width: 2),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.bolt_rounded, color: AppColors.wine, size: 13),
+                const SizedBox(width: 3),
                 Text(
                   'BOOSTED',
-                  style: TextStyle(
-                    fontFamily: 'Satoshi',
-                    color: Colors.white,
+                  style: AppTypography.overline.copyWith(
+                    color: AppColors.wine,
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
@@ -1218,40 +1242,54 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
           const Spacer(),
 
-          // Verified
+          // ── Verified badge ──
           if (item.isVerified)
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.pureWhite,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
                 ],
               ),
-              child: const Icon(Icons.verified_rounded, color: Color(0xFF1DA1F2), size: 16),
+              child: const Icon(
+                Icons.verified_rounded,
+                color: AppColors.info,
+                size: 16,
+              ),
             ),
 
-          // Match score
+          // ── Match score ──
           if (item.score > 0) ...[
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: Colors.black.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _scoreColor(item.score).withValues(alpha: 0.4)),
+                border: Border.all(
+                  color: _scoreColor(item.score).withValues(alpha: 0.5),
+                  width: 0.5,
+                ),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.auto_awesome_rounded, color: _scoreColor(item.score), size: 12),
+                Icon(
+                  Icons.auto_awesome_rounded,
+                  color: _scoreColor(item.score),
+                  size: 12,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '${item.score.toStringAsFixed(0)}%',
-                  style: TextStyle(
-                    fontFamily: 'Satoshi',
+                  style: GoogleFonts.jetBrainsMono(
                     color: _scoreColor(item.score),
                     fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ]),
@@ -1262,81 +1300,98 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  /// Gig-specific header: date, time & budget displayed prominently at top
+  /// Gig-specific header: date, time & budget — glass morphism strip
   Widget _buildGigHeader(_Item item) {
     return Positioned(
       top: 52,
-      left: 20,
-      right: 20,
+      left: 16,
+      right: 16,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          color: AppColors.glassWhite,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.glassBorder, width: 0.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            // Date
+            // ── Date block (JetBrains Mono) ──
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.crimson.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.crimson.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.crimson.withValues(alpha: 0.2),
+                  width: 0.5,
+                ),
               ),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Text(
                   item.dateDay ?? '--',
-                  style: const TextStyle(
-                    fontFamily: 'Satoshi',
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
+                  style: GoogleFonts.jetBrainsMono(
+                    color: AppColors.pureWhite,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
                     height: 1,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   item.dateMonth ?? '',
-                  style: TextStyle(
-                    fontFamily: 'Satoshi',
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                  style: AppTypography.overline.copyWith(
+                    color: AppColors.pureWhite.withValues(alpha: 0.7),
+                    fontSize: 10,
+                    letterSpacing: 1.5,
                   ),
                 ),
               ]),
             ),
             const SizedBox(width: 14),
-            // Time & venue
+
+            // ── Time & venue ──
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (item.gigTime != null)
                     Row(children: [
-                      Icon(Icons.schedule_rounded, color: Colors.white.withValues(alpha: 0.7), size: 14),
-                      const SizedBox(width: 5),
+                      Icon(
+                        Icons.schedule_rounded,
+                        color: AppColors.pureWhite.withValues(alpha: 0.7),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
                       Text(
                         item.gigTime!,
-                        style: TextStyle(
-                          fontFamily: 'Satoshi',
-                          color: Colors.white.withValues(alpha: 0.9),
+                        style: GoogleFonts.jetBrainsMono(
+                          color: AppColors.pureWhite.withValues(alpha: 0.9),
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ]),
                   if (item.venueName != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Row(children: [
-                      Icon(Icons.business_rounded, color: Colors.white.withValues(alpha: 0.7), size: 14),
-                      const SizedBox(width: 5),
+                      Icon(
+                        Icons.business_rounded,
+                        color: AppColors.pureWhite.withValues(alpha: 0.6),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           item.venueName!,
-                          style: TextStyle(
-                            fontFamily: 'Satoshi',
-                            color: Colors.white.withValues(alpha: 0.8),
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.pureWhite.withValues(alpha: 0.75),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1349,32 +1404,36 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                 ],
               ),
             ),
-            // Budget
+
+            // ── Budget (JetBrains Mono, green accent) ──
             if (item.price != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                  color: AppColors.success.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.25),
+                    width: 0.5,
+                  ),
                 ),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(
                     '\$${item.price!.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontFamily: 'Satoshi',
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
+                    style: GoogleFonts.jetBrainsMono(
+                      color: AppColors.successLight,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    'budget',
-                    style: TextStyle(
-                      fontFamily: 'Satoshi',
-                      color: AppColors.success.withValues(alpha: 0.8),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
+                    'BUDGET',
+                    style: AppTypography.overline.copyWith(
+                      color: AppColors.success.withValues(alpha: 0.7),
+                      fontSize: 8,
+                      letterSpacing: 1.5,
                     ),
                   ),
                 ]),
@@ -1385,7 +1444,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  /// Artist card info — genres, location, rating, price
+  /// Artist card info — name, genres, stats with premium typography
   Widget _buildArtistInfo(_Item item) {
     return Positioned(
       bottom: 0,
@@ -1397,103 +1456,162 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Name
+            // ── Artist name (Satoshi, headline weight) ──
             Text(
               item.title,
-              style: const TextStyle(
-                fontFamily: 'Satoshi',
-                color: Colors.white,
-                fontSize: 30,
+              style: AppTypography.headlineMedium.copyWith(
+                color: AppColors.pureWhite,
+                fontSize: 32,
                 fontWeight: FontWeight.w900,
-                height: 1.1,
-                letterSpacing: -0.7,
+                height: 1.05,
+                letterSpacing: -0.8,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 12,
+                  ),
+                ],
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
-            // Genres as colored pills
+            // ── Genre pills (glass morphism, larger) ──
             if (item.genres.isNotEmpty)
               Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: item.genres.take(3).map((g) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.crimson.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.crimson.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(
-                    g,
-                    style: const TextStyle(
-                      fontFamily: 'Satoshi',
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                spacing: 8,
+                runSpacing: 8,
+                children: item.genres.take(3).map((g) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
                     ),
-                  ),
-                )).toList(),
+                    decoration: BoxDecoration(
+                      color: AppColors.crimson.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.crimson.withValues(alpha: 0.3),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Text(
+                      g,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.pureWhite,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
-            // Stats row — bento style
+            // ── Stats strip (glass container, icon + text pairs) ──
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AppColors.glassWhite,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                border: Border.all(color: AppColors.glassBorder, width: 0.5),
               ),
               child: Row(
                 children: [
+                  // Location
                   if (item.city != null && item.city!.isNotEmpty) ...[
-                    Icon(Icons.location_on_rounded, color: AppColors.crimson.withValues(alpha: 0.8), size: 15),
+                    Icon(
+                      Icons.location_on_rounded,
+                      color: AppColors.crimson.withValues(alpha: 0.85),
+                      size: 15,
+                    ),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         item.city!,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w600),
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppColors.pureWhite.withValues(alpha: 0.85),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
+                  // Distance
                   if (item.distance > 0) ...[
                     const SizedBox(width: 12),
-                    Icon(Icons.near_me_rounded, color: Colors.white.withValues(alpha: 0.5), size: 13),
+                    Icon(
+                      Icons.near_me_rounded,
+                      color: AppColors.pureWhite.withValues(alpha: 0.45),
+                      size: 13,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       '${item.distance.toStringAsFixed(0)} mi',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.jetBrainsMono(
+                        color: AppColors.pureWhite.withValues(alpha: 0.65),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
+
                   const Spacer(),
+
+                  // Rating
                   if (item.rating != null && item.rating! > 0) ...[
-                    Icon(Icons.star_rounded, color: Colors.amber.shade400, size: 15),
+                    Icon(
+                      Icons.star_rounded,
+                      color: AppColors.gold,
+                      size: 16,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       item.rating!.toStringAsFixed(1),
-                      style: const TextStyle(color: Colors.white, fontFamily: 'Satoshi', fontSize: 13, fontWeight: FontWeight.w800),
+                      style: GoogleFonts.jetBrainsMono(
+                        color: AppColors.pureWhite,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     if (item.reviewCount > 0)
                       Text(
                         ' (${item.reviewCount})',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontFamily: 'Satoshi', fontSize: 11),
+                        style: GoogleFonts.jetBrainsMono(
+                          color: AppColors.pureWhite.withValues(alpha: 0.45),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                   ],
+
+                  // Price
                   if (item.price != null) ...[
                     const SizedBox(width: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.success.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.2),
+                          width: 0.5,
+                        ),
                       ),
                       child: Text(
                         '\$${item.price!.toStringAsFixed(0)}+',
-                        style: const TextStyle(color: Colors.white, fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.jetBrainsMono(
+                          color: AppColors.successLight,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -1506,7 +1624,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  /// Gig card info — title, description, genres, location at bottom
+  /// Gig card info — title, description, genres, location with premium typography
   Widget _buildGigInfo(_Item item) {
     return Positioned(
       bottom: 0,
@@ -1518,44 +1636,49 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Gig title
+            // ── Gig title (Satoshi, headline) ──
             Text(
               item.title,
-              style: const TextStyle(
-                fontFamily: 'Satoshi',
-                color: Colors.white,
-                fontSize: 26,
+              style: AppTypography.headlineMedium.copyWith(
+                color: AppColors.pureWhite,
+                fontSize: 28,
                 fontWeight: FontWeight.w900,
-                height: 1.1,
-                letterSpacing: -0.5,
+                height: 1.08,
+                letterSpacing: -0.6,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 12,
+                  ),
+                ],
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
 
-            // Description
+            // ── Description (Inter, body) ──
             if (item.subtitle != null && item.subtitle!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
                 item.subtitle!,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.pureWhite.withValues(alpha: 0.72),
                   fontSize: 14,
-                  height: 1.3,
+                  height: 1.35,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
-            // Genres + location row
+            // ── Genres + location (glass container) ──
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AppColors.glassWhite,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                border: Border.all(color: AppColors.glassBorder, width: 0.5),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1563,38 +1686,63 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   // Required genres
                   if (item.genres.isNotEmpty)
                     Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         Text(
-                          'Looking for: ',
-                          style: TextStyle(
-                            fontFamily: 'Satoshi',
-                            color: Colors.white.withValues(alpha: 0.6),
+                          'Looking for:',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.pureWhite.withValues(alpha: 0.55),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        ...item.genres.take(4).map((g) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.crimson.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.crimson.withValues(alpha: 0.25)),
-                          ),
-                          child: Text(g, style: const TextStyle(fontFamily: 'Satoshi', color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                        )),
+                        ...item.genres.take(4).map((g) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.crimson.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.crimson.withValues(alpha: 0.25),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Text(
+                              g,
+                              style: AppTypography.labelSmall.copyWith(
+                                color: AppColors.pureWhite,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          );
+                        }),
                       ],
                     ),
+
+                  // Location row
                   if (item.city != null && item.city!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Row(children: [
-                      Icon(Icons.location_on_rounded, color: AppColors.crimson.withValues(alpha: 0.8), size: 14),
-                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: AppColors.crimson.withValues(alpha: 0.8),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 5),
                       Expanded(
                         child: Text(
                           item.city!,
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w500),
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.pureWhite.withValues(alpha: 0.7),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1603,7 +1751,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                         const SizedBox(width: 8),
                         Text(
                           '${item.distance.toStringAsFixed(0)} mi away',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontFamily: 'Satoshi', fontSize: 11, fontWeight: FontWeight.w600),
+                          style: GoogleFonts.jetBrainsMono(
+                            color: AppColors.pureWhite.withValues(alpha: 0.5),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ]),
@@ -1617,66 +1769,81 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     );
   }
 
-  /// Enhanced swipe overlays: LIKE with glow green, NOPE with glow red, opacity driven by drag
+  /// Swipe overlays: LIKE with green glow, NOPE with red glow
   Widget _buildSwipeOverlays() {
     final w = MediaQuery.of(context).size.width;
     final maxDragForFull = w * 0.35;
     final progress = (_drag.dx.abs() / maxDragForFull).clamp(0.0, 1.0);
     final isRight = _drag.dx > 0;
 
-    if (progress < 0.05) { return const SizedBox.shrink(); }
+    if (progress < 0.05) {
+      return const SizedBox.shrink();
+    }
+
+    final color = isRight ? AppColors.swipeLike : AppColors.swipeSkip;
+    final glowColor = isRight ? AppColors.swipeLikeGlow : AppColors.swipeSkipGlow;
 
     return Stack(children: [
-      // Edge glow
+      // Edge glow border
       Positioned.fill(
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: (isRight ? AppColors.success : AppColors.crimson).withValues(alpha: progress * 0.8),
-              width: 3 + progress * 2,
+              color: color.withValues(alpha: progress * 0.75),
+              width: 2.5 + progress * 2,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: glowColor.withValues(alpha: progress * 0.3),
+                blurRadius: 24,
+                spreadRadius: 4,
+              ),
+            ],
           ),
         ),
       ),
-      // Label
+      // Swipe label
       Positioned(
-        top: 60,
+        top: 65,
         left: isRight ? null : 24,
         right: isRight ? 24 : null,
         child: Transform.rotate(
-          angle: isRight ? 0.25 : -0.25,
+          angle: isRight ? 0.22 : -0.22,
           child: AnimatedOpacity(
             duration: const Duration(milliseconds: 100),
             opacity: progress,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
               decoration: BoxDecoration(
-                color: (isRight ? AppColors.success : AppColors.crimson).withValues(alpha: 0.9),
+                color: color.withValues(alpha: 0.88),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white, width: 2.5),
+                border: Border.all(
+                  color: AppColors.pureWhite.withValues(alpha: 0.9),
+                  width: 2.5,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: (isRight ? AppColors.success : AppColors.crimson).withValues(alpha: 0.4),
-                    blurRadius: 16,
+                    color: glowColor.withValues(alpha: 0.5),
+                    blurRadius: 20,
+                    spreadRadius: 2,
                   ),
                 ],
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(
                   isRight ? Icons.favorite_rounded : Icons.close_rounded,
-                  color: Colors.white,
-                  size: 20,
+                  color: AppColors.pureWhite,
+                  size: 22,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Text(
-                  isRight ? 'BOOK' : 'PASS',
-                  style: const TextStyle(
-                    fontFamily: 'Satoshi',
-                    color: Colors.white,
-                    fontSize: 22,
+                  isRight ? 'LIKE' : 'NOPE',
+                  style: AppTypography.headlineSmall.copyWith(
+                    color: AppColors.pureWhite,
+                    fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
+                    letterSpacing: 2.5,
                   ),
                 ),
               ]),
@@ -1700,7 +1867,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           // Rewind
           _buildActionButton(
             icon: Icons.replay_rounded,
-            color: Colors.blue.shade400,
+            color: AppColors.info,
             size: 44,
             label: 'Rewind',
             br: br,
@@ -1711,9 +1878,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           // Pass
           _buildActionButton(
             icon: Icons.close_rounded,
-            color: AppColors.crimson,
+            color: AppColors.swipeSkip,
             size: 58,
-            label: 'Pass',
+            label: 'Nope',
             br: br,
             isDark: isDark,
             onTap: () => _animateSwipe(false),
@@ -1721,7 +1888,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           // Super Like
           _buildActionButton(
             icon: Icons.star_rounded,
-            color: Colors.blue.shade600,
+            color: AppColors.superLike,
             size: 48,
             label: 'Super',
             br: br,
@@ -1732,7 +1899,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           // Like
           _buildActionButton(
             icon: Icons.favorite_rounded,
-            color: AppColors.success,
+            color: AppColors.swipeLike,
             size: 58,
             label: 'Like',
             br: br,
@@ -1767,22 +1934,25 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
             height: size,
             decoration: BoxDecoration(
               color: isSmall
-                  ? color.withValues(alpha: isDark ? 0.15 : 0.08)
-                  : (isDark ? AppColors.charcoal : Colors.white),
+                  ? color.withValues(alpha: isDark ? 0.12 : 0.08)
+                  : (isDark ? AppColors.charcoal : AppColors.pureWhite),
               shape: BoxShape.circle,
               border: isSmall
-                  ? null
+                  ? Border.all(
+                      color: color.withValues(alpha: 0.15),
+                      width: 1,
+                    )
                   : Border.all(
-                      color: color.withValues(alpha: 0.2),
+                      color: color.withValues(alpha: 0.25),
                       width: 2,
                     ),
               boxShadow: isSmall
                   ? null
                   : [
                       BoxShadow(
-                        color: color.withValues(alpha: 0.15),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        color: color.withValues(alpha: 0.18),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
                     ],
             ),
@@ -1793,8 +1963,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         const SizedBox(height: 6),
         Text(
           label,
-          style: TextStyle(
-            fontFamily: 'Satoshi',
+          style: AppTypography.labelSmall.copyWith(
             color: AppColors.textSec(br),
             fontSize: 11,
             fontWeight: FontWeight.w600,

@@ -521,13 +521,53 @@ class Artist {
     this.hasCompletedSetup = false,
   });
 
+  // ── Photo extraction helpers ──────────────────────────────────────────
+  /// Extract profile photo URL from backend `photos[]` array (Photo objects)
+  static String? _extractProfilePhotoFromPhotos(dynamic photos) {
+    if (photos == null || photos is! List || photos.isEmpty) {
+      return null;
+    }
+    // Prefer the one marked as profile photo
+    for (final p in photos) {
+      if (p is Map && p['isProfilePhoto'] == true && p['url'] != null) {
+        return p['url'] as String;
+      }
+    }
+    // Fallback: first photo with a url
+    for (final p in photos) {
+      if (p is Map && p['url'] != null) {
+        return p['url'] as String;
+      }
+    }
+    return null;
+  }
+
+  /// Extract gallery URL strings from either `galleryUrls` (string[]) or
+  /// `photos` (Photo objects with `.url`)
+  static List<String> _extractGalleryUrls(dynamic galleryUrls, dynamic photos) {
+    // If galleryUrls already has string URLs, use them
+    if (galleryUrls != null && galleryUrls is List && galleryUrls.isNotEmpty) {
+      return List<String>.from(galleryUrls);
+    }
+    // Otherwise, extract from photos[] objects
+    if (photos != null && photos is List && photos.isNotEmpty) {
+      return photos
+          .where((p) => p is Map && p['url'] != null)
+          .map<String>((p) => (p as Map)['url'] as String)
+          .toList();
+    }
+    return const [];
+  }
+
   factory Artist.fromJson(Map<String, dynamic> json) {
     return Artist(
       id: json['_id'] ?? json['id'] ?? '',
       userId: json['userId'] ?? '',
-      stageName: json['stageName'] ?? '',
+      stageName: json['stageName'] ?? json['displayName'] ?? '',
       bio: json['bio'],
-      profilePhoto: json['profilePhoto'],
+      profilePhoto: json['profilePhoto']
+          ?? json['profilePhotoUrl']
+          ?? _extractProfilePhotoFromPhotos(json['photos']),
       artistType: ArtistType.fromString(json['artistType'] ?? 'solo'),
       genres: List<String>.from(json['genres'] ?? []),
       experienceLevel: ExperienceLevel.fromString(
@@ -538,7 +578,7 @@ class Artist {
           ? Location.fromJson(json['location'])
           : null,
       maxTravelDistance: json['maxTravelDistance'] ?? 50,
-      galleryUrls: List<String>.from(json['galleryUrls'] ?? []),
+      galleryUrls: _extractGalleryUrls(json['galleryUrls'], json['photos']),
       audioSamples:
           (json['audioSamples'] as List?)
               ?.map((e) => AudioSample.fromJson(e))
