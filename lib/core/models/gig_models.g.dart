@@ -88,25 +88,7 @@ const _$GigApplicationStatusEnumMap = {
   GigApplicationStatus.withdrawn: 'withdrawn',
 };
 
-GigVenueSummary _$GigVenueSummaryFromJson(Map<String, dynamic> json) =>
-    GigVenueSummary(
-      id: json['_id'] as String,
-      venueName: json['venueName'] as String?,
-      venueType: json['venueType'] as String?,
-      coverPhoto: json['coverPhoto'] as String?,
-      location: json['location'] == null
-          ? null
-          : GigLocation.fromJson(json['location'] as Map<String, dynamic>),
-    );
-
-Map<String, dynamic> _$GigVenueSummaryToJson(GigVenueSummary instance) =>
-    <String, dynamic>{
-      '_id': instance.id,
-      'venueName': instance.venueName,
-      'venueType': instance.venueType,
-      'coverPhoto': instance.coverPhoto,
-      'location': instance.location?.toJson(),
-    };
+// GigVenueSummary now has custom fromJson/toJson — generated code removed.
 
 Gig _$GigFromJson(Map<String, dynamic> json) => Gig(
   id: json['_id'] as String,

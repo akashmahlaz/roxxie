@@ -172,7 +172,6 @@ enum GigStatus {
 
 /// Minimal venue data sometimes returned by backend when populating gig.venue.
 /// (We keep this flexible; backend may populate partial fields.)
-@JsonSerializable(explicitToJson: true)
 class GigVenueSummary {
   @JsonKey(name: '_id')
   final String id;
@@ -183,6 +182,8 @@ class GigVenueSummary {
 
   final String? coverPhoto;
 
+  final List<String> galleryUrls;
+
   final GigLocation? location;
 
   const GigVenueSummary({
@@ -190,13 +191,37 @@ class GigVenueSummary {
     this.venueName,
     this.venueType,
     this.coverPhoto,
+    this.galleryUrls = const [],
     this.location,
   });
 
-  factory GigVenueSummary.fromJson(Map<String, dynamic> json) =>
-      _$GigVenueSummaryFromJson(json);
+  factory GigVenueSummary.fromJson(Map<String, dynamic> json) {
+    // Manually parse to handle galleryUrls as List<String>
+    final id = (json['_id'] ?? json['id'] ?? '').toString();
+    final galleryRaw = json['galleryUrls'];
+    final gallery = galleryRaw is List
+        ? galleryRaw.map((e) => e.toString()).toList()
+        : <String>[];
+    return GigVenueSummary(
+      id: id,
+      venueName: json['venueName'] as String?,
+      venueType: json['venueType'] as String?,
+      coverPhoto: json['coverPhoto'] as String?,
+      galleryUrls: gallery,
+      location: json['location'] != null
+          ? GigLocation.fromJson(json['location'] as Map<String, dynamic>)
+          : null,
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$GigVenueSummaryToJson(this);
+  Map<String, dynamic> toJson() => {
+    '_id': id,
+    'venueName': venueName,
+    'venueType': venueType,
+    'coverPhoto': coverPhoto,
+    'galleryUrls': galleryUrls,
+    'location': location?.toJson(),
+  };
 }
 
 /// Lightweight model for bookedArtists — handles both unpopulated (string id)

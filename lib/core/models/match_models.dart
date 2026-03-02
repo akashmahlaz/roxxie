@@ -185,7 +185,7 @@ class DiscoveryCard {
       name: gig.title,
       bio: gig.description,
       primaryPhotoUrl: gig.venue?.coverPhoto ?? '',
-      galleryUrls: const [],
+      galleryUrls: gig.venue?.galleryUrls ?? const [],
       location: gig.location.venueAddress ?? gig.location.city,
       distance: distance,
       genres: gig.requiredGenres,
